@@ -36,6 +36,8 @@ class ELFStructs(object):
             self.Elf_sxword = SBInt32 if self.elfclass == 32 else SBInt64
         
         self._create_ehdr()
+        self._create_shdr()
+        self._create_sym()
     
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
