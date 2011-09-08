@@ -1,5 +1,11 @@
-# Mappings of enum names<->values to be inserted into construct's Enum adapter
+#-------------------------------------------------------------------------------
+# elftools: elf/enums.py
 #
+# Mappings of enum names to values
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
 
 # e_ident[EI_CLASS] in the ELF header
 ENUM_EI_CLASS = dict(

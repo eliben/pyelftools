@@ -85,7 +85,8 @@ class MappingAdapter(Adapter):
             return self.encoding[obj]
         except (KeyError, TypeError):
             if self.encdefault is NotImplemented:
-                raise MappingError("no encoding mapping for %r" % (obj,))
+                raise MappingError("no encoding mapping for %r [%s]" % (
+                    obj, self.subcon.name))
             if self.encdefault is Pass:
                 return obj
             return self.encdefault
@@ -94,7 +95,8 @@ class MappingAdapter(Adapter):
             return self.decoding[obj]
         except (KeyError, TypeError):
             if self.decdefault is NotImplemented:
-                raise MappingError("no decoding mapping for %r"  % (obj,))
+                raise MappingError("no decoding mapping for %r [%s]"  % (
+                    obj, self.subcon.name))
             if self.decdefault is Pass:
                 return obj
             return self.decdefault

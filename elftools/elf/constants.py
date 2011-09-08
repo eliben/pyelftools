@@ -1,4 +1,11 @@
+#-------------------------------------------------------------------------------
+# elftools: elf/constants.py
+#
 # Constants and flags, placed into classes for namespacing
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
 
 class SHN_INDICES(object):
     """ Special section indices

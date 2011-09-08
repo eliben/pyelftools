@@ -1,3 +1,13 @@
+#-------------------------------------------------------------------------------
+# elftools: elf/structs.py
+#
+# Encapsulation of Construct structs for parsing an ELF file, adjusted for
+# correct endianness and word-size.
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
+
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
@@ -9,6 +19,24 @@ from .enums import *
 
 
 class ELFStructs(object):
+    """ Accessible attributes:
+    
+            Elf_{byte|half|word|addr|offset|sword|xword|xsword}:
+                Data chunks, as specified by the ELF standard, adjusted for 
+                correct endianness and word-size.
+            
+            Elf_Ehdr:
+                ELF file header
+            
+            Elf_Phdr:
+                Program header
+            
+            Elf_Shdr:
+                Section header
+            
+            Elf_Sym:
+                Symbol table entry
+    """
     def __init__(self, little_endian=True, elfclass=32):
         assert elfclass == 32 or elfclass == 64
         self.little_endian = little_endian
