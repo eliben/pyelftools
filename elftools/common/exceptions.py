@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# elftools: exceptions.py
+# elftools: common/exceptions.py
 #
 # Exception classes for elftools
 #

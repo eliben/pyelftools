@@ -9,6 +9,9 @@ stream = open('binfiles/z.elf', 'rb')
 
 efile = ELFFile(stream)
 
+print '===> %s sections!' % efile.num_sections() 
+print '===> %s segments!' % efile.num_segments()
+
 for sec in efile.iter_sections():
     print sec.name
 

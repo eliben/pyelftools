@@ -6,13 +6,11 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-
-from cStringIO import StringIO
-
-from ..exceptions import ELFError, ELFParseError
-from ..construct import ConstructError, CString
+from ..common.exceptions import ELFError
+from ..common.utils import struct_parse
+from ..construct import ConstructError
 from .structs import ELFStructs
-from .sections import Section
+from .sections import Section, StringTableSection
 from .segments import Segment
 
 
@@ -35,7 +33,8 @@ class ELFFile(object):
             little_endian=self.little_endian,
             elfclass=self.elfclass)
         self.header = self._parse_elf_header()
-        self._stringtable = self._get_stringtable()
+        
+        self._file_stringtable_section = self._get_file_stringtable()
     
     def num_sections(self):
         """ Number of sections in the file
@@ -119,51 +118,40 @@ class ELFFile(object):
     def _get_section_header(self, n):
         """ Find the header of section #n, parse it and return the struct 
         """
-        self.stream.seek(self._section_offset(n))
-        return self._struct_parse(self.structs.Elf_Shdr)
-    
-    def _get_segment_header(self, n):
-        """ Find the header of segment #n, parse it and return the struct
-        """
-        self.stream.seek(self._segment_offset(n))
-        return self._struct_parse(self.structs.Elf_Phdr)
+        return struct_parse(
+            self.structs.Elf_Shdr,
+            self.stream,
+            stream_pos=self._section_offset(n))
     
     def _get_section_name(self, section_header):
         """ Given a section header, find this section's name in the file's
-            string table, and return it as a normal Python string.
+            string table
         """
-        offset = section_header['sh_name']
-        self._stringtable.seek(offset)
-        return CString('').parse_stream(self._stringtable)
+        name_offset = section_header['sh_name']
+        return self._file_stringtable_section.get_string(name_offset)
+
+    def _get_segment_header(self, n):
+        """ Find the header of segment #n, parse it and return the struct
+        """
+        return struct_parse(
+            self.structs.Elf_Phdr,
+            self.stream,
+            stream_pos=self._segment_offset(n))
     
-    def _get_stringtable(self):
-        """ Find the file's string table section, read it and return the string
-            table as a StringIO object pointing to the section's contents.
+    def _get_file_stringtable(self):
+        """ Find the file's string table section
         """
-        # Find the section header for the stringtable header, and read the 
-        # section's contents from it
-        #
         stringtable_section_num = self['e_shstrndx']
-        stringtable_header = self._get_section_header(stringtable_section_num)
-        self.stream.seek(stringtable_header['sh_offset'])
-        return StringIO(self.stream.read(stringtable_header['sh_size']))
+        return StringTableSection(
+                header=self._get_section_header(stringtable_section_num),
+                name='',
+                stream=self.stream)
     
     def _parse_elf_header(self):
         """ Parses the ELF file header and assigns the result to attributes
             of this object.
         """
-        self.stream.seek(0)
-        return self._struct_parse(self.structs.Elf_Ehdr)
-    
-    def _struct_parse(self, struct):
-        """ Convenience method for parsing at the current stream location with
-            the given struct. Also wraps the error thrown by construct with our
-            own error.
-        """
-        try:
-            return struct.parse_stream(self.stream)
-        except ConstructError as e:
-            raise ELFParseError(e.message)
+        return struct_parse(self.structs.Elf_Ehdr, self.stream, stream_pos=0)
     
     def _assert(self, cond, msg=''):
         """ Assert that cond is True, otherwise raise ELFError(msg)
