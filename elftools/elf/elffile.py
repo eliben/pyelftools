@@ -7,9 +7,12 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 
-from .structs import ELFStructs
+from cStringIO import StringIO
+
 from ..exceptions import ELFError, ELFParseError
-from ..construct import ConstructError
+from ..construct import ConstructError, CString
+from .structs import ELFStructs
+from .sections import Section
 
 
 class ELFFile(object):
@@ -31,6 +34,21 @@ class ELFFile(object):
             little_endian=self.little_endian,
             elfclass=self.elfclass)
         self.header = self._parse_elf_header()
+        self._stringtable = self._get_stringtable()
+    
+    def num_sections(self):
+        """ Get the number of sections in the file
+        """
+        return self['e_shnum']
+    
+    def get_section(self, n):
+        """ Get the section at index #n from the file (Section object)
+        """
+        section_header = self._get_section_header(n)
+        name = self._get_section_name(section_header)
+        return Section(section_header, name, self.stream)
+    
+    #-------------------------------- PRIVATE --------------------------------#
     
     def __getitem__(self, name):
         """ Implement dict-like access to header entries
@@ -63,6 +81,37 @@ class ELFFile(object):
             self.little_endian = False
         else:
             raise ELFError('Invalid EI_DATA %s' % repr(ei_data))
+    
+    def _section_offset(self, n):
+        """ Compute the offset of section #n in the file
+        """
+        return self['e_shoff'] + n * self['e_shentsize']
+    
+    def _get_section_header(self, n):
+        """ Find the header of section #n, parse it and return the struct 
+        """
+        self.stream.seek(self._section_offset(n))
+        return self._struct_parse(self.structs.Elf_Shdr)
+    
+    def _get_section_name(self, section_header):
+        """ Given a section header, find this section's name in the file's
+            string table, and return it as a normal Python string.
+        """
+        offset = section_header['sh_name']
+        self._stringtable.seek(offset)
+        return CString('').parse_stream(self._stringtable)
+    
+    def _get_stringtable(self):
+        """ Find the file's string table section, read it and return the string
+            table as a StringIO object pointing to the section's contents.
+        """
+        # Find the section header for the stringtable header, and read the 
+        # section's contents from it
+        #
+        stringtable_section_num = self['e_shstrndx']
+        stringtable_header = self._get_section_header(stringtable_section_num)
+        self.stream.seek(stringtable_header['sh_offset'])
+        return StringIO(self.stream.read(stringtable_header['sh_size']))
     
     def _parse_elf_header(self):
         """ Parses the ELF file header and assigns the result to attributes
