@@ -36,6 +36,7 @@ class ELFStructs(object):
             self.Elf_sxword = SBInt32 if self.elfclass == 32 else SBInt64
         
         self._create_ehdr()
+        self._create_phdr()
         self._create_shdr()
         self._create_sym()
     
@@ -63,6 +64,30 @@ class ELFStructs(object):
             self.Elf_half('e_shstrndx'),
         )
     
+    def _create_phdr(self):
+        if self.elfclass == 32:
+            self.Elf_Phdr = Struct('Elf_Phdr',
+                Enum(self.Elf_word('p_type'), **ENUM_P_TYPE),
+                self.Elf_offset('p_offset'),
+                self.Elf_addr('p_vaddr'),
+                self.Elf_addr('p_paddr'),
+                self.Elf_word('p_filesz'),
+                self.Elf_word('p_memsz'),
+                self.Elf_word('p_flags'),
+                self.Elf_word('p_align'),
+            )
+        else:
+            self.Elf_Phdr = Struct('Elf_Phdr',
+                Enum(self.Elf_word('p_type'), **ENUM_P_TYPE),
+                self.Elf_word('p_flags'),
+                self.Elf_offset('p_offset'),
+                self.Elf_addr('p_vaddr'),
+                self.Elf_addr('p_paddr'),
+                self.Elf_word('p_filesz'),
+                self.Elf_word('p_memsz'),
+                self.Elf_word('p_align'),
+            )   
+        
     def _create_shdr(self):
         self.Elf_Shdr = Struct('Elf_Shdr',
             self.Elf_word('sh_name'),
