@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..construct import CString
-from ..common.utils import struct_parse
+from ..common.utils import struct_parse, elf_assert
 
 
 class Section(object):
@@ -58,5 +58,3 @@ class SymbolTableSection(Section):
     def __init__(self, header, name, stream, stringtable):
         super(SymbolTableSection, self).__init__(header, name, stream)
         self.stringtable = stringtable
-    
-

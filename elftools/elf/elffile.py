@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..common.exceptions import ELFError
-from ..common.utils import struct_parse
+from ..common.utils import struct_parse, elf_assert
 from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import Section, StringTableSection, SymbolTableSection
@@ -87,7 +87,7 @@ class ELFFile(object):
         #
         self.stream.seek(0)
         magic = self.stream.read(4)
-        self._assert(magic == '\x7fELF', 'Magic number does not match')
+        elf_assert(magic == '\x7fELF', 'Magic number does not match')
         
         ei_class = self.stream.read(1)
         if ei_class == '\x01':
@@ -174,10 +174,4 @@ class ELFFile(object):
             of this object.
         """
         return struct_parse(self.structs.Elf_Ehdr, self.stream, stream_pos=0)
-    
-    def _assert(self, cond, msg=''):
-        """ Assert that cond is True, otherwise raise ELFError(msg)
-        """
-        if not cond:
-            raise ELFError(msg)
 

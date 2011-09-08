@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from .exceptions import ELFParseError
+from .exceptions import ELFParseError, ELFError
 
 
 def struct_parse(struct, stream, stream_pos=None):
@@ -23,3 +23,10 @@ def struct_parse(struct, stream, stream_pos=None):
     except ConstructError as e:
         raise ELFParseError(e.message)
     
+
+def elf_assert(cond, msg=''):
+    """ Assert that cond is True, otherwise raise ELFError(msg)
+    """
+    if not cond:
+        raise ELFError(msg)
+
