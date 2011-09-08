@@ -7,6 +7,7 @@ from elftools.elf.sections import *
 es = ELFStructs(True, 64)
 
 stream = open('binfiles/z.elf', 'rb')
+#stream = open('binfiles/z32.elf', 'rb')
 
 efile = ELFFile(stream)
 
