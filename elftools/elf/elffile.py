@@ -10,7 +10,7 @@ from ..common.exceptions import ELFError
 from ..common.utils import struct_parse
 from ..construct import ConstructError
 from .structs import ELFStructs
-from .sections import Section, StringTableSection
+from .sections import Section, StringTableSection, SymbolTableSection
 from .segments import Segment
 
 
@@ -42,11 +42,11 @@ class ELFFile(object):
         return self['e_shnum']
     
     def get_section(self, n):
-        """ Get the section at index #n from the file (Section object)
+        """ Get the section at index #n from the file (Section object or a
+            subclass)
         """
         section_header = self._get_section_header(n)
-        name = self._get_section_name(section_header)
-        return Section(section_header, name, self.stream)
+        return self._make_section(section_header)
     
     def iter_sections(self):
         """ Yield all the sections in the file
@@ -129,6 +129,28 @@ class ELFFile(object):
         """
         name_offset = section_header['sh_name']
         return self._file_stringtable_section.get_string(name_offset)
+
+    def _make_section(self, section_header):
+        """ Create a section object of the appropriate type
+        """
+        name = self._get_section_name(section_header)
+        sectype = section_header['sh_type']
+        
+        if sectype == 'SHT_STRTAB':
+            return StringTableSection(section_header, name, self.stream)
+        elif sectype in ('SHT_SYMTAB', 'SHT_DYNSYM'):
+            return self._make_symbol_table_section(section_header, name)
+        else:
+            return Section(section_header, name, self.stream)
+
+    def _make_symbol_table_section(self, section_header, name):
+        """ Create a SymbolTableSection
+        """
+        linked_strtab_index = section_header['sh_link']
+        strtab_section = self.get_section(linked_strtab_index)
+        return SymbolTableSection(
+            section_header, name, self.stream,
+            stringtable=strtab_section)
 
     def _get_segment_header(self, n):
         """ Find the header of segment #n, parse it and return the struct

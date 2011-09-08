@@ -1,6 +1,7 @@
 import sys
 from elftools.elf.structs import ELFStructs
 from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import *
 
 # read a little-endian, 64-bit file
 es = ELFStructs(True, 64)
@@ -13,10 +14,13 @@ print '===> %s sections!' % efile.num_sections()
 print '===> %s segments!' % efile.num_segments()
 
 for sec in efile.iter_sections():
-    print sec.name
+    print type(sec), sec.name
+    if isinstance(sec, SymbolTableSection):
+        print '   linked string table:', sec.stringtable.name
 
 for seg in efile.iter_segments():
     print seg['p_type'], seg['p_offset']
+
 
 #~ print 'num', efile.num_sections()
 #~ sec = efile.get_section(39)

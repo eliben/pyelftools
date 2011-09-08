@@ -7,7 +7,6 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
