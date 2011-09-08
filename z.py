@@ -9,12 +9,18 @@ stream = open('binfiles/z.elf', 'rb')
 
 efile = ELFFile(stream)
 
-print 'num', efile.num_sections()
-sec = efile.get_section(39)
+for sec in efile.iter_sections():
+    print sec.name
+
+for seg in efile.iter_segments():
+    print seg['p_type'], seg['p_offset']
+
+#~ print 'num', efile.num_sections()
+#~ sec = efile.get_section(39)
 #~ print sec.header
-print sec.name
-print sec['sh_type']
-print map(ord, sec.data())
+#~ print sec.name
+#~ print sec['sh_type']
+#~ print map(ord, sec.data())
 
 #~ print sec.stream
 #~ print map(ord, efile._stringtable)

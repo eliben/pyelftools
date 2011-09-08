@@ -13,6 +13,7 @@ from ..exceptions import ELFError, ELFParseError
 from ..construct import ConstructError, CString
 from .structs import ELFStructs
 from .sections import Section
+from .segments import Segment
 
 
 class ELFFile(object):
@@ -37,7 +38,7 @@ class ELFFile(object):
         self._stringtable = self._get_stringtable()
     
     def num_sections(self):
-        """ Get the number of sections in the file
+        """ Number of sections in the file
         """
         return self['e_shnum']
     
@@ -47,6 +48,29 @@ class ELFFile(object):
         section_header = self._get_section_header(n)
         name = self._get_section_name(section_header)
         return Section(section_header, name, self.stream)
+    
+    def iter_sections(self):
+        """ Yield all the sections in the file
+        """
+        for i in range(self.num_sections()):
+            yield self.get_section(i)
+    
+    def num_segments(self):
+        """ Number of segments in the file
+        """
+        return self['e_phnum']
+    
+    def get_segment(self, n):
+        """ Get the segment at index #n from the file (Segment object)
+        """
+        segment_header = self._get_segment_header(n)
+        return Segment(segment_header, self.stream)
+    
+    def iter_segments(self):
+        """ Yield all the segments in the file
+        """
+        for i in range(self.num_segments()):
+            yield self.get_segment(i)
     
     #-------------------------------- PRIVATE --------------------------------#
     
@@ -87,11 +111,22 @@ class ELFFile(object):
         """
         return self['e_shoff'] + n * self['e_shentsize']
     
+    def _segment_offset(self, n):
+        """ Compute the offset of segment #n in the file
+        """
+        return self['e_phoff'] + n * self['e_phentsize']
+    
     def _get_section_header(self, n):
         """ Find the header of section #n, parse it and return the struct 
         """
         self.stream.seek(self._section_offset(n))
         return self._struct_parse(self.structs.Elf_Shdr)
+    
+    def _get_segment_header(self, n):
+        """ Find the header of segment #n, parse it and return the struct
+        """
+        self.stream.seek(self._segment_offset(n))
+        return self._struct_parse(self.structs.Elf_Phdr)
     
     def _get_section_name(self, section_header):
         """ Given a section header, find this section's name in the file's

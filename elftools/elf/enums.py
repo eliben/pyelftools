@@ -89,6 +89,7 @@ ENUM_SH_TYPE = dict(
 )
 
 # p_type in the program header
+# some values scavenged from the ELF headers in binutils-2.21
 ENUM_P_TYPE = dict(
     PT_NULL=0,
     PT_LOAD=1,
@@ -99,5 +100,8 @@ ENUM_P_TYPE = dict(
     PT_PHDR=6,
     PT_LOPROC=0x70000000,
     PT_HIPROC=0x7fffffff,
+    PT_GNU_EH_FRAME=0x6474e550,
+    PT_GNU_STACK=0x6474e551,
+    PT_GNU_RELRO=0x6474e552,
 )
 
