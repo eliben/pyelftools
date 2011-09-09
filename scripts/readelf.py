@@ -87,11 +87,24 @@ class ReadElf(object):
         self._emitline('  Section header string table index: %s' %
                 header['e_shstrndx'])
 
+    def _format_addr(self, addr, fullhex=False, lead0x=True):
+        """ Format an address into a hexadecimal string.
 
-    def _format_addr(self, addr):
-        """ Format an address into a string
+            fullhex:
+                If True, include leading zeros in the address, adjusted for
+                the elfclass.
+
+            lead0x:
+                If True, leading 0x is added
         """
-        return '0x%x' % addr
+        s = '0x' if lead0x else ''
+        if fullhex:
+            if self.elffile.elfclass == 32:
+                return s + '%08x' % addr
+            else:
+                return s + '%016x' % addr
+        else:
+            return s + '%x' % addr
         
     def _emit(self, s):
         """ Emit an object to output
