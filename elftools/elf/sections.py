@@ -55,6 +55,50 @@ class SymbolTableSection(Section):
     """ ELF symbol table section. Has an associated StringTableSection that's
         passed in the constructor.
     """
-    def __init__(self, header, name, stream, stringtable):
+    def __init__(self, header, name, stream, elfstructs, stringtable):
         super(SymbolTableSection, self).__init__(header, name, stream)
+        self.elfstructs = elfstructs
         self.stringtable = stringtable
+        elf_assert(self['sh_entsize'] > 0,
+                'Expected entry size of section %s to be > 0' % name)
+        elf_assert(self['sh_size'] % self['sh_entsize'] == 0,
+                'Expected section size to be a multiple of entry size in section %s' % name)
+
+    def num_symbols(self):
+        """ Number of symbols in the table
+        """
+        return self['sh_size'] // self['sh_entsize']
+        
+    def get_symbol(self, n):
+        """ Get the symbol at index #n from the table (Symbol object)
+        """
+        # Grab the symbol's entry from the stream
+        entry_offset = self['sh_offset'] + n * self['sh_entsize']
+        entry = struct_parse(
+            self.elfstructs.Elf_Sym,
+            self.stream,
+            stream_pos=entry_offset)
+        # Find the symbol name in the associated string table
+        name = self.stringtable.get_string(entry['st_name'])
+        return Symbol(entry, name)
+
+    def iter_symbols(self):
+        """ Yield all the symbols in the table
+        """
+        for i in range(self.num_symbols()):
+            yield self.get_symbol(i)
+
+
+class Symbol(object):
+    """ Symbol object - representing a single symbol entry from a symbol table
+        section.
+    """
+    def __init__(self, entry, name):
+        self.entry = entry
+        self.name = name
+
+    def __getitem__(self, name):
+        """ Implement dict-like access to entries
+        """
+        return self.entry[name]
+

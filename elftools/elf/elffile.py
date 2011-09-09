@@ -150,6 +150,7 @@ class ELFFile(object):
         strtab_section = self.get_section(linked_strtab_index)
         return SymbolTableSection(
             section_header, name, self.stream,
+            elfstructs=self.structs,
             stringtable=strtab_section)
 
     def _get_segment_header(self, n):

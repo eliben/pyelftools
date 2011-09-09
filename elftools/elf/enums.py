@@ -105,3 +105,30 @@ ENUM_P_TYPE = dict(
     PT_GNU_RELRO=0x6474e552,
 )
 
+# st_info bindings in the symbol header
+ENUM_ST_INFO_BIND = dict(
+    STB_LOCAL=0,
+    STB_GLOBAL=1,
+    STB_WEAK=2,
+    STB_NUM=3,
+    STB_LOOS=10,
+    STB_HIOS=12,
+    STB_LOPROC=13,
+    STB_HIPROC=15,
+)
+
+# st_info type in the symbol header
+ENUM_ST_INFO_TYPE = dict(
+    STT_NOTYPE=0,
+    STT_OBJECT=1,
+    STT_FUNC=2,
+    STT_SECTION=3,
+    STT_FILE=4,
+    STT_COMMON=5,
+    STT_TLS=6,
+    STT_NUM=7,
+    STT_LOOS=10,
+    STT_HIOS=12,
+    STT_LOPROC=13,
+    STT_HIPROC=15,
+)

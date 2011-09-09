@@ -11,7 +11,7 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt32, SLInt32, SBInt64, SLInt64,
-    Struct, Array, Enum, Padding,
+    Struct, Array, Enum, Padding, BitStruct, BitField,
     )
 
 from .enums import *
@@ -130,19 +130,22 @@ class ELFStructs(object):
         )
     
     def _create_sym(self):
+        st_info_struct = BitStruct('st_info',
+            Enum(BitField('bind', 4), **ENUM_ST_INFO_BIND),
+            Enum(BitField('type', 4), **ENUM_ST_INFO_TYPE))
         if self.elfclass == 32:
             self.Elf_Sym = Struct('Elf_Sym',
                 self.Elf_word('st_name'),
                 self.Elf_addr('st_value'),
                 self.Elf_word('st_size'),
-                self.Elf_byte('st_info'),
+                st_info_struct,
                 self.Elf_byte('st_other'),
                 self.Elf_half('st_shndx'),
             )
         else:
             self.Elf_Sym = Struct('Elf_Sym',
                 self.Elf_word('st_name'),
-                self.Elf_byte('st_info'),
+                st_info_struct,
                 self.Elf_byte('st_other'),
                 self.Elf_half('st_shndx'),
                 self.Elf_addr('st_value'),

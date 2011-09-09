@@ -22,6 +22,12 @@ for sec in efile.iter_sections():
 for seg in efile.iter_segments():
     print seg['p_type'], seg['p_offset']
 
+for sec in efile.iter_sections():
+    if isinstance(sec, SymbolTableSection):
+        print 'symbol table "%s ~~~"' % sec.name
+        for sym in sec.iter_symbols():
+            print '%-26s %s %s' % (sym.name, sym['st_info']['type'], sym['st_info']['bind'])
+
 
 #~ print 'num', efile.num_sections()
 #~ sec = efile.get_section(39)
