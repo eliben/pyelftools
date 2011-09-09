@@ -27,6 +27,12 @@ def describe_ei_osabi(x):
 def describe_e_type(x):
     return _DESCR_E_TYPE.get(x, _unknown())
 
+def describe_e_machine(x):
+    return _DESCR_E_MACHINE.get(x, _unknown())
+
+def describe_e_version_numeric(x):
+    return '0x%x' % ENUM_E_VERSION[x]
+
 
 #-------------------------------------------------------------------------------
 def _unknown():
@@ -74,3 +80,19 @@ _DESCR_E_TYPE = dict(
     PROC_SPECIFIC='Processor Specific',
 )
 
+_DESCR_E_MACHINE = dict(
+    EM_NONE='None',
+    EM_M32='WE32100',
+    EM_SPARC='Sparc',
+    EM_386='Intel 80386',
+    EM_68K='MC68000',
+    EM_88K='MC88000',
+    EM_860='Intel 80860',
+    EM_MIPS='MIPS R3000',
+    EM_S370='IBM System/370',
+    EM_MIPS_RS4_BE='MIPS 4000 big-endian',
+    EM_IA_64='Intel IA-64',
+    EM_X86_64='Advanced Micro Devices X86-64',
+    EM_AVR='Atmel AVR 8-bit microcontroller',
+    RESERVED='RESERVED',
+)

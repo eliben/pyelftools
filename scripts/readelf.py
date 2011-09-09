@@ -21,7 +21,8 @@ from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 from elftools.elf.descriptions import (
     describe_ei_class, describe_ei_data, describe_ei_version,
-    describe_ei_osabi, describe_e_type,
+    describe_ei_osabi, describe_e_type, describe_e_machine,
+    describe_e_version_numeric,
     )
 
 
@@ -59,6 +60,10 @@ class ReadElf(object):
                 e_ident['EI_ABIVERSION'])
         self._emitline('  Type:                              %s' %
                 describe_e_type(header['e_type']))
+        self._emitline('  Machine:                           %s' % 
+                describe_e_machine(header['e_machine']))
+        self._emitline('  Version:                           %s' %
+                describe_e_version_numeric(header['e_version']))
 
     def _emit(self, s):
         """ Emit an object to output
