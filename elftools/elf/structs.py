@@ -74,7 +74,9 @@ class ELFStructs(object):
                 Enum(self.Elf_byte('EI_CLASS'), **ENUM_EI_CLASS),
                 Enum(self.Elf_byte('EI_DATA'), **ENUM_EI_DATA),
                 Enum(self.Elf_byte('EI_VERSION'), **ENUM_E_VERSION),
-                Padding(9)                
+                Enum(self.Elf_byte('EI_OSABI'), **ENUM_EI_OSABI),
+                self.Elf_byte('EI_ABIVERSION'),
+                Padding(7)
             ),
             Enum(self.Elf_half('e_type'), **ENUM_E_TYPE),
             Enum(self.Elf_half('e_machine'), **ENUM_E_MACHINE),
@@ -130,6 +132,8 @@ class ELFStructs(object):
         )
     
     def _create_sym(self):
+        # Note that st_info is hierarchical. To access the type, use
+        # container['st_info']['type']
         st_info_struct = BitStruct('st_info',
             Enum(BitField('bind', 4), **ENUM_ST_INFO_BIND),
             Enum(BitField('type', 4), **ENUM_ST_INFO_TYPE))

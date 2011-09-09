@@ -92,6 +92,9 @@ class SymbolTableSection(Section):
 class Symbol(object):
     """ Symbol object - representing a single symbol entry from a symbol table
         section.
+
+        Similarly to Section objects, allows dictionary-like access to the
+        symbol entry.
     """
     def __init__(self, entry, name):
         self.entry = entry

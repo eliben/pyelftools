@@ -25,6 +25,9 @@ class ELFFile(object):
 
             header:
                 the complete ELF file header
+
+            e_ident_raw:
+                the raw e_ident field of the header
     """
     def __init__(self, stream):
         self.stream = stream
@@ -33,6 +36,9 @@ class ELFFile(object):
             little_endian=self.little_endian,
             elfclass=self.elfclass)
         self.header = self._parse_elf_header()
+
+        self.stream.seek(0)
+        self.e_ident_raw = self.stream.read(16)
         
         self._file_stringtable_section = self._get_file_stringtable()
     
