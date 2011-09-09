@@ -64,12 +64,40 @@ class ReadElf(object):
                 describe_e_machine(header['e_machine']))
         self._emitline('  Version:                           %s' %
                 describe_e_version_numeric(header['e_version']))
+        self._emitline('  Entry point address:               %s' % 
+                self._format_addr(header['e_entry']))
+        self._emit('  Start of program headers           %s' % 
+                header['e_phoff'])
+        self._emitline(' (bytes into file)')
+        self._emit('  Start of section headers           %s' % 
+                header['e_shoff'])
+        self._emitline(' (bytes into file)')
+        self._emitline('  Flags:                             %s' % 
+                self._format_addr(header['e_flags']))
+        self._emitline('  Size of this header:               %s (bytes)' %
+                header['e_ehsize'])
+        self._emitline('  Size of program headers:           %s (bytes)' %
+                header['e_phentsize'])
+        self._emitline('  Number of program headers:         %s' %
+                header['e_phnum'])
+        self._emitline('  Size of section headers:           %s (bytes)' %
+                header['e_shentsize'])
+        self._emitline('  Number of section headers:         %s' %
+                header['e_shnum'])
+        self._emitline('  Section header string table index: %s' %
+                header['e_shstrndx'])
 
+
+    def _format_addr(self, addr):
+        """ Format an address into a string
+        """
+        return '0x%x' % addr
+        
     def _emit(self, s):
         """ Emit an object to output
         """
         self.output.write(str(s))
-        
+
     def _emitline(self, s):
         """ Emit an object to output, followed by a newline
         """
