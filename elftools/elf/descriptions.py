@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from .enums import ENUM_E_VERSION
+from .constants import P_FLAGS
 
 
 def describe_ei_class(x):
@@ -32,6 +33,15 @@ def describe_e_machine(x):
 
 def describe_e_version_numeric(x):
     return '0x%x' % ENUM_E_VERSION[x]
+
+def describe_p_type(x):
+    return _DESCR_P_TYPE.get(x, _unknown())
+
+def describe_p_flags(x):
+    s = ''
+    for flag in (P_FLAGS.PF_R, P_FLAGS.PF_W, P_FLAGS.PF_X):
+        s += _DESCR_P_FLAGS[flag] if (x & flag) else ' ' 
+    return s
 
 
 #-------------------------------------------------------------------------------
@@ -96,3 +106,24 @@ _DESCR_E_MACHINE = dict(
     EM_AVR='Atmel AVR 8-bit microcontroller',
     RESERVED='RESERVED',
 )
+
+_DESCR_P_TYPE = dict(
+    PT_NULL='NULL',
+    PT_LOAD='LOAD',
+    PT_DYNAMIC='DYNAMIC',
+    PT_INTERP='INTERP',
+    PT_NOTE='NOTE',
+    PT_SHLIB='SHLIB',
+    PT_PHDR='PHDR',
+    PT_GNU_EH_FRAME='GNU_EH_FRAME',
+    PT_GNU_STACK='GNU_STACK',
+    PT_GNU_RELRO='GNU_RELR0',
+)
+
+_DESCR_P_FLAGS = {
+    P_FLAGS.PF_X: 'E',
+    P_FLAGS.PF_R: 'R',
+    P_FLAGS.PF_W: 'W',
+}
+
+
