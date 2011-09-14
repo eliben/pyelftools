@@ -112,9 +112,9 @@ class ELFStructs(object):
                 self.Elf_offset('p_offset'),
                 self.Elf_addr('p_vaddr'),
                 self.Elf_addr('p_paddr'),
-                self.Elf_word('p_filesz'),
-                self.Elf_word('p_memsz'),
-                self.Elf_word('p_align'),
+                self.Elf_xword('p_filesz'),
+                self.Elf_xword('p_memsz'),
+                self.Elf_xword('p_align'),
             )   
         
     def _create_shdr(self):

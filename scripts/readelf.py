@@ -129,6 +129,18 @@ class ReadElf(object):
                     self._format_hex(segment['p_memsz'], fieldsize=5),
                     describe_p_flags(segment['p_flags']),
                     self._format_hex(segment['p_align'])))
+            else: # 64
+                self._emitline('%s %s %s' % (
+                    self._format_hex(segment['p_offset'], fullhex=True),
+                    self._format_hex(segment['p_vaddr'], fullhex=True),
+                    self._format_hex(segment['p_paddr'], fullhex=True)))
+                self._emitline('                 %s %s  %-3s    %s' % (
+                    self._format_hex(segment['p_filesz'], fullhex=True),
+                    self._format_hex(segment['p_memsz'], fullhex=True),
+                    describe_p_flags(segment['p_flags']),
+                    # lead0x set to False for p_align, to mimic readelf.
+                    # No idea why the difference from 32-bit mode :-|
+                    self._format_hex(segment['p_align'], lead0x=False)))
 
             if isinstance(segment, InterpSegment):
                 self._emitline('      [Requesting program interpreter: %s]' % 
