@@ -10,11 +10,11 @@ from .exceptions import ELFParseError, ELFError
 
 
 def struct_parse(struct, stream, stream_pos=None):
-    """ Convenience function for using the given struct to parse a stream (at
-        its current location).
+    """ Convenience function for using the given struct to parse a stream.
         If stream_pos is provided, the stream is seeked to this position before
-        the parsing is done.
-        Wraps the error thrown by construct with our own error.
+        the parsing is done. Otherwise, the current position of the stream is
+        used.
+        Wraps the error thrown by construct with ELFParseError.
     """
     try:
         if stream_pos is not None:

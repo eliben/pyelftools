@@ -11,7 +11,7 @@ from ..common.utils import struct_parse, elf_assert
 from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import Section, StringTableSection, SymbolTableSection
-from .segments import Segment
+from .segments import Segment, InterpSegment
 
 
 class ELFFile(object):
@@ -69,7 +69,7 @@ class ELFFile(object):
         """ Get the segment at index #n from the file (Segment object)
         """
         segment_header = self._get_segment_header(n)
-        return Segment(segment_header, self.stream)
+        return self._make_segment(segment_header)
     
     def iter_segments(self):
         """ Yield all the segments in the file
@@ -121,6 +121,15 @@ class ELFFile(object):
         """
         return self['e_phoff'] + n * self['e_phentsize']
     
+    def _make_segment(self, segment_header):
+        """ Create a Segment object of the appropriate type
+        """
+        segtype = segment_header['p_type']
+        if segtype == 'PT_INTERP':
+            return InterpSegment(segment_header, self.stream)
+        else:
+            return Segment(segment_header, self.stream)
+
     def _get_section_header(self, n):
         """ Find the header of section #n, parse it and return the struct 
         """

@@ -20,7 +20,7 @@ for sec in efile.iter_sections():
         print '   linked string table:', sec.stringtable.name
 
 for seg in efile.iter_segments():
-    print seg['p_type'], seg['p_offset']
+    print type(seg), seg['p_type'], seg['p_offset']
 
 for sec in efile.iter_sections():
     if isinstance(sec, SymbolTableSection):

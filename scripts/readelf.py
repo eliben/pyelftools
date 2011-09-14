@@ -19,6 +19,7 @@ except ImportError:
 
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
+from elftools.elf.segments import InterpSegment
 from elftools.elf.descriptions import (
     describe_ei_class, describe_ei_data, describe_ei_version,
     describe_ei_osabi, describe_e_type, describe_e_machine,
@@ -128,6 +129,10 @@ class ReadElf(object):
                     self._format_hex(segment['p_memsz'], fieldsize=5),
                     describe_p_flags(segment['p_flags']),
                     self._format_hex(segment['p_align'])))
+
+            if isinstance(segment, InterpSegment):
+                self._emitline('      [Requesting program interpreter: %s]' % 
+                    segment.get_interp_name())
 
 
 
