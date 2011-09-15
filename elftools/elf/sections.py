@@ -29,11 +29,26 @@ class Section(object):
         self.stream.seek(self['sh_offset'])
         return self.stream.read(self['sh_size'])
 
+    def is_null(self):
+        """ Is this a null section?
+        """
+        return False
+        
     def __getitem__(self, name):
         """ Implement dict-like access to header entries
         """
         return self.header[name]
 
+
+class NullSection(Section):
+    """ ELF NULL section
+    """
+    def __init__(self, header, name, stream):
+        super(NullSection, self).__init__(header, name, stream)
+
+    def is_null(self):
+        return True
+        
 
 class StringTableSection(Section):
     """ ELF string table section.

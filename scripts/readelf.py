@@ -146,6 +146,25 @@ class ReadElf(object):
                 self._emitline('      [Requesting program interpreter: %s]' % 
                     segment.get_interp_name())
 
+        # Sections to segments mapping
+        #
+        if self.elffile.num_sections() == 0:
+            # No sections? We're done
+            return 
+
+        self._emitline('\n Section to Segment mapping:')
+        self._emitline('  Segment Sections...\n')
+
+        for nseg, segment in enumerate(self.elffile.iter_segments()):
+            self._emit('   %2.2d    ' % nseg)
+
+            for section in self.elffile.iter_sections():
+                if (    not section.is_null() and 
+                        segment.section_in_segment(section)):
+                    self._emit('%s ' % section.name)
+
+            self._emitline('')
+
 
 
         

@@ -119,6 +119,7 @@ ENUM_P_TYPE = dict(
     PT_NOTE=4,
     PT_SHLIB=5,
     PT_PHDR=6,
+    PT_TLS=7,
     PT_LOPROC=0x70000000,
     PT_HIPROC=0x7fffffff,
     PT_GNU_EH_FRAME=0x6474e550,
