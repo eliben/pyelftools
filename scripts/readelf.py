@@ -243,7 +243,8 @@ class ReadElf(object):
                 self._emitline('   Num:    Value          Size Type    Bind   Vis      Ndx Name')
 
             for nsym, symbol in enumerate(section.iter_symbols()):
-                self._emitline('%6d: %s %5d %-7s %-6s %-7s %4s %s' % (
+                # symbol names are truncated to 25 chars, similarly to readelf
+                self._emitline('%6d: %s %5d %-7s %-6s %-7s %4s %.25s' % (
                     nsym,
                     self._format_hex(symbol['st_value'], fullhex=True, lead0x=False),
                     symbol['st_size'],
