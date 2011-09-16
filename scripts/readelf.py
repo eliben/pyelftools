@@ -292,21 +292,28 @@ class ReadElf(object):
 
 def main():
     optparser = OptionParser(
+            usage='usage: %prog [options] <elf-file>',
+            description='Display information about the contents of ELF format files',
             add_help_option=False, # -h is a real option of readelf
             prog='readelf.py')
     optparser.add_option('-H', '--help',
             action='store_true', dest='help',
             help='Display this information')
     optparser.add_option('-h', '--file-header',
-            action='store_true', dest='show_file_header')
+            action='store_true', dest='show_file_header',
+            help='Display the ELF file header')
     optparser.add_option('-l', '--program-headers', '--segments',
-            action='store_true', dest='show_program_headers')
+            action='store_true', dest='show_program_headers',
+            help='Display the program headers')
     optparser.add_option('-S', '--section-headers', '--sections',
-            action='store_true', dest='show_section_headers')
+            action='store_true', dest='show_section_headers',
+            help="Display the sections' headers")
     optparser.add_option('-e', '--headers',
-            action='store_true', dest='show_all_headers')
+            action='store_true', dest='show_all_headers',
+            help='Equivalent to: -h -l -S')
     optparser.add_option('-s', '--symbols', '--syms',
-            action='store_true', dest='show_symbols')
+            action='store_true', dest='show_symbols',
+            help='Display the symbol table')
     options, args = optparser.parse_args()
 
     if options.help or len(args) == 0:
