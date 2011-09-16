@@ -291,8 +291,27 @@ class ReadElf(object):
 
 
 def main():
-    optparser = OptionParser()
+    optparser = OptionParser(
+            add_help_option=False, # -h is a real option of readelf
+            prog='readelf.py')
+    optparser.add_option('-H', '--help',
+            action='store_true', dest='help',
+            help='Display this information')
+    optparser.add_option('-h', '--file-header',
+            action='store_true', dest='show_file_header')
+    optparser.add_option('-l', '--program-headers', '--segments',
+            action='store_true', dest='show_program_headers')
+    optparser.add_option('-S', '--section-headers', '--sections',
+            action='store_true', dest='show_section_headers')
+    optparser.add_option('-e', '--headers',
+            action='store_true', dest='show_all_headers')
+    optparser.add_option('-s', '--symbols', '--syms',
+            action='store_true', dest='show_symbols')
     options, args = optparser.parse_args()
+
+    if options.help or len(args) == 0:
+        optparser.print_help()
+        sys.exit(0)
 
     with open(args[0], 'rb') as file:
         try:
