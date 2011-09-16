@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #-------------------------------------------------------------------------------
 # readelf.py
 #
@@ -20,11 +21,14 @@ except ImportError:
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 from elftools.elf.segments import InterpSegment
+from elftools.elf.sections import SymbolTableSection
 from elftools.elf.descriptions import (
     describe_ei_class, describe_ei_data, describe_ei_version,
     describe_ei_osabi, describe_e_type, describe_e_machine,
     describe_e_version_numeric, describe_p_type, describe_p_flags,
     describe_sh_type, describe_sh_flags,
+    describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
+    describe_symbol_shndx,
     )
 
 
@@ -218,6 +222,37 @@ class ReadElf(object):
         self._emitline('  I (info), L (link order), G (group), x (unknown)')
         self._emitline('  O (extra OS processing required) o (OS specific), p (processor specific)')
 
+    def display_symbol_tables(self):
+        """ Display the symbol tables contained in the file
+        """
+        for section in self.elffile.iter_sections():
+            if not isinstance(section, SymbolTableSection):
+                continue
+
+            if section['sh_entsize'] == 0:
+                self._emitline("\nSymbol table '%s' has a sh_entsize of zero!" % (
+                    section.name))
+                continue
+
+            self._emitline("\nSymbol table '%s' contains %s entries:" % (
+                section.name, section.num_symbols()))
+
+            if self.elffile.elfclass == 32:
+                self._emitline('   Num:    Value  Size Type    Bind   Vis      Ndx Name')
+            else: # 64
+                self._emitline('   Num:    Value          Size Type    Bind   Vis      Ndx Name')
+
+            for nsym, symbol in enumerate(section.iter_symbols()):
+                self._emitline('%6d: %s %5d %-7s %-6s %-7s %4s %s' % (
+                    nsym,
+                    self._format_hex(symbol['st_value'], fullhex=True, lead0x=False),
+                    symbol['st_size'],
+                    describe_symbol_type(symbol['st_info']['type']),
+                    describe_symbol_bind(symbol['st_info']['bind']),
+                    describe_symbol_visibility(symbol['st_other']['visibility']),
+                    describe_symbol_shndx(symbol['st_shndx']),
+                    symbol.name))
+        
     def _format_hex(self, addr, fieldsize=None, fullhex=False, lead0x=True):
         """ Format an address into a hexadecimal string.
 
@@ -261,10 +296,10 @@ def main():
     with open(args[0], 'rb') as file:
         try:
             readelf = ReadElf(file, sys.stdout)
-            readelf.display_file_header()
-            print '----'
+            #readelf.display_file_header()
             #readelf.display_program_headers()
-            readelf.display_section_headers()
+            #readelf.display_section_headers()
+            readelf.display_symbol_tables()
         except ELFError as ex:
             sys.stderr.write('ELF read error: %s\n' % ex)
             sys.exit(1)

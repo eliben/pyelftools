@@ -6,6 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from ..construct import Pass
+
 
 # e_ident[EI_CLASS] in the ELF header
 ENUM_EI_CLASS = dict(
@@ -152,8 +154,27 @@ ENUM_ST_INFO_TYPE = dict(
     STT_COMMON=5,
     STT_TLS=6,
     STT_NUM=7,
+    STT_RELC=8,
+    STT_SRELC=9,
     STT_LOOS=10,
     STT_HIOS=12,
     STT_LOPROC=13,
     STT_HIPROC=15,
 )
+
+# visibility from st_other
+ENUM_ST_VISIBILITY = dict(
+    STV_DEFAULT=0,
+    STV_INTERNAL=1,
+    STV_HIDDEN=2,
+    STV_PROTECTED=3,
+)
+
+# st_shndx
+ENUM_ST_SHNDX = dict(
+    SHN_UNDEF=0,
+    SHN_ABS=0xfff1,
+    SHN_COMMON=0xfff2,
+    _default_=Pass,
+)
+

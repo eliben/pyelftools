@@ -56,6 +56,18 @@ def describe_sh_flags(x):
         s += _DESCR_SH_FLAGS[flag] if (x & flag) else ''
     return s
 
+def describe_symbol_type(x):
+    return _DESCR_ST_INFO_TYPE.get(x, _unknown())
+
+def describe_symbol_bind(x):
+    return _DESCR_ST_INFO_BIND.get(x, _unknown())
+
+def describe_symbol_visibility(x):
+    return _DESCR_ST_VISIBILITY.get(x, _unknown())
+
+def describe_symbol_shndx(x):
+    return _DESCR_ST_SHNDX.get(x, '%3s' % x)
+
 
 #-------------------------------------------------------------------------------
 def _unknown():
@@ -177,4 +189,37 @@ _DESCR_SH_FLAGS = {
     SH_FLAGS.SHF_TLS: 'T',
     SH_FLAGS.SHF_EXCLUDE: 'E',
 }
+
+_DESCR_ST_INFO_TYPE = dict(
+    STT_NOTYPE='NOTYPE',
+    STT_OBJECT='OBJECT',
+    STT_FUNC='FUNC',
+    STT_SECTION='SECTION',
+    STT_FILE='FILE',
+    STT_COMMON='COMMON',
+    STT_TLS='TLS',
+    STT_NUM='NUM',
+    STT_RELC='RELC',
+    STT_SRELC='SRELC',
+)
+
+_DESCR_ST_INFO_BIND = dict(
+    STB_LOCAL='LOCAL',
+    STB_GLOBAL='GLOBAL',
+    STB_WEAK='WEAK',
+)
+
+_DESCR_ST_VISIBILITY = dict(
+    STV_DEFAULT='DEFAULT',
+    STV_INTERNAL='INTERNAL',
+    STV_HIDDEN='HIDDEN',
+    STD_PROTECTED='PROTECTED',
+)
+
+_DESCR_ST_SHNDX = dict(
+    SHN_UNDEF='UND',
+    SHN_ABS='ABS',
+    SHN_COMMON='COM',
+)
+
 
