@@ -24,7 +24,7 @@ from elftools.elf.descriptions import (
     describe_ei_class, describe_ei_data, describe_ei_version,
     describe_ei_osabi, describe_e_type, describe_e_machine,
     describe_e_version_numeric, describe_p_type, describe_p_flags,
-
+    describe_sh_type, describe_sh_flags,
     )
 
 
@@ -95,11 +95,13 @@ class ReadElf(object):
         self._emitline()
         elfheader = self.elffile.header
         self._emitline('Elf file type is %s' %
-                describe_e_type(elfheader['e_type']))
+            describe_e_type(elfheader['e_type']))
         self._emitline('Entry point is %s' %
-                self._format_hex(elfheader['e_entry']))
+            self._format_hex(elfheader['e_entry']))
+        # readelf weirness - why isn't e_phoff printed as hex? (for section
+        # headers, it is...)
         self._emitline('There are %s program headers, starting at offset %s' % (
-                elfheader['e_phnum'], elfheader['e_phoff']))
+            elfheader['e_phnum'], elfheader['e_phoff']))
 
         self._emitline('\nProgram headers:')
 
@@ -165,9 +167,57 @@ class ReadElf(object):
 
             self._emitline('')
 
+    def display_section_headers(self):
+        """ Display the ELF section headers
+        """
+        elfheader = self.elffile.header
+        self._emitline('There are %s section headers, starting at offset %s' % (
+            elfheader['e_shnum'], self._format_hex(elfheader['e_shoff'])))
 
+        self._emitline('\nSection header%s:' % (
+            's' if elfheader['e_shnum'] > 1 else ''))
 
-        
+        # Different formatting constraints of 32-bit and 64-bit addresses
+        #
+        if self.elffile.elfclass == 32:
+            self._emitline('  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al')
+        else:
+            self._emitline('  [Nr] Name              Type             Address           Offset')
+            self._emitline('       Size              EntSize          Flags  Link  Info  Align')
+
+        # Now the entries
+        #
+        for nsec, section in enumerate(self.elffile.iter_sections()):
+            self._emit('  [%2u] %-17.17s %-15.15s ' % (
+                nsec, section.name, describe_sh_type(section['sh_type'])))
+
+            if self.elffile.elfclass == 32:
+                self._emitline('%s %s %s %s %3s %2s %3s %2s' % (
+                    self._format_hex(section['sh_addr'], fieldsize=8, lead0x=False),
+                    self._format_hex(section['sh_offset'], fieldsize=6, lead0x=False),
+                    self._format_hex(section['sh_size'], fieldsize=6, lead0x=False),
+                    self._format_hex(section['sh_entsize'], fieldsize=2, lead0x=False),
+                    describe_sh_flags(section['sh_flags']),
+                    section['sh_link'], section['sh_info'],
+                    section['sh_addralign']))
+            else: # 64
+                self._emitline(' %s  %s' % (
+                    self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
+                    self._format_hex(section['sh_offset'],
+                        fieldsize=16 if section['sh_offset'] > 0xffffffff else 8,
+                        lead0x=False)))
+                self._emitline('       %s  %s %3s      %2s   %3s     %s' % (
+                    self._format_hex(section['sh_size'], fullhex=True, lead0x=False),
+                    self._format_hex(section['sh_entsize'], fullhex=True, lead0x=False),
+                    describe_sh_flags(section['sh_flags']),
+                    section['sh_link'], section['sh_info'],
+                    section['sh_addralign']))
+
+        self._emitline('Key to Flags:')
+        self._emitline('  W (write), A (alloc), X (execute), M (merge), S (strings)')
+        self._emitline('  I (info), L (link order), G (group), x (unknown)')
+        self._emitline('  O (extra OS processing required) o (OS specific), p (processor specific)')
+
     def _format_hex(self, addr, fieldsize=None, fullhex=False, lead0x=True):
         """ Format an address into a hexadecimal string.
 
@@ -213,7 +263,8 @@ def main():
             readelf = ReadElf(file, sys.stdout)
             readelf.display_file_header()
             print '----'
-            readelf.display_program_headers()
+            #readelf.display_program_headers()
+            readelf.display_section_headers()
         except ELFError as ex:
             sys.stderr.write('ELF read error: %s\n' % ex)
             sys.exit(1)

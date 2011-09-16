@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from .enums import ENUM_E_VERSION
-from .constants import P_FLAGS
+from .constants import P_FLAGS, SH_FLAGS
 
 
 def describe_ei_class(x):
@@ -41,6 +41,19 @@ def describe_p_flags(x):
     s = ''
     for flag in (P_FLAGS.PF_R, P_FLAGS.PF_W, P_FLAGS.PF_X):
         s += _DESCR_P_FLAGS[flag] if (x & flag) else ' ' 
+    return s
+
+def describe_sh_type(x):
+    return _DESCR_SH_TYPE.get(x, _unknown())
+
+def describe_sh_flags(x):
+    s = ''
+    for flag in (
+            SH_FLAGS.SHF_WRITE, SH_FLAGS.SHF_ALLOC, SH_FLAGS.SHF_EXECINSTR,
+            SH_FLAGS.SHF_MERGE, SH_FLAGS.SHF_STRINGS, SH_FLAGS.SHF_INFO_LINK,
+            SH_FLAGS.SHF_LINK_ORDER, SH_FLAGS.SHF_OS_NONCONFORMING,
+            SH_FLAGS.SHF_GROUP, SH_FLAGS.SHF_TLS, SH_FLAGS.SHF_EXCLUDE):
+        s += _DESCR_SH_FLAGS[flag] if (x & flag) else ''
     return s
 
 
@@ -126,4 +139,42 @@ _DESCR_P_FLAGS = {
     P_FLAGS.PF_W: 'W',
 }
 
+_DESCR_SH_TYPE = dict(
+    SHT_NULL='NULL',
+    SHT_PROGBITS='PROGBITS',
+    SHT_SYMTAB='SYMTAB',
+    SHT_STRTAB='STRTAB',
+    SHT_RELA='RELA',
+    SHT_HASH='HASH',
+    SHT_DYNAMIC='DYNAMIC',
+    SHT_NOTE='NOTE',
+    SHT_NOBITS='NOBITS',
+    SHT_REL='REL',
+    SHT_SHLIB='SHLIB',
+    SHT_DYNSYM='DYNSYM',
+    SHT_INIT_ARRAY='INIT_ARRAY',
+    SHT_FINI_ARRAY='FINI_ARRAY',
+    SHT_PREINIT_ARRAY='PREINIT_ARRAY',
+    SHT_GNU_HASH='GNU_HASH',
+    SHT_GROUP='GROUP',
+    SHT_SYMTAB_SHNDX='SYMTAB SECTION INDICIES',
+    SHT_GNU_verdef='VERDEF',
+    SHT_GNU_verneed='VERNEED',
+    SHT_GNU_versym='VERSYM',
+    SHT_GNU_LIBLIST='GNU_LIBLIST',
+)
+
+_DESCR_SH_FLAGS = {
+    SH_FLAGS.SHF_WRITE: 'W',
+    SH_FLAGS.SHF_ALLOC: 'A',
+    SH_FLAGS.SHF_EXECINSTR: 'X',
+    SH_FLAGS.SHF_MERGE: 'M',
+    SH_FLAGS.SHF_STRINGS: 'S',
+    SH_FLAGS.SHF_INFO_LINK: 'I',
+    SH_FLAGS.SHF_LINK_ORDER: 'L',
+    SH_FLAGS.SHF_OS_NONCONFORMING: 'O',
+    SH_FLAGS.SHF_GROUP: 'G',
+    SH_FLAGS.SHF_TLS: 'T',
+    SH_FLAGS.SHF_EXCLUDE: 'E',
+}
 
