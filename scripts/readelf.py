@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
-# readelf.py
+# scripts/readelf.py
 #
 # A clone of 'readelf' in Python, based on the pyelftools library
 #
@@ -73,10 +73,10 @@ class ReadElf(object):
                 describe_e_version_numeric(header['e_version']))
         self._emitline('  Entry point address:               %s' % 
                 self._format_hex(header['e_entry']))
-        self._emit('  Start of program headers           %s' % 
+        self._emit('  Start of program headers:          %s' % 
                 header['e_phoff'])
         self._emitline(' (bytes into file)')
-        self._emit('  Start of section headers           %s' % 
+        self._emit('  Start of section headers:          %s' % 
                 header['e_shoff'])
         self._emitline(' (bytes into file)')
         self._emitline('  Flags:                             %s' % 
@@ -100,6 +100,10 @@ class ReadElf(object):
             (Elf file type is...)
         """
         self._emitline()
+        if self.elffile.num_segments() == 0:
+            self._emitline('There are no program headers in this file.')
+            return
+
         elfheader = self.elffile.header
         if show_heading:
             self._emitline('Elf file type is %s' %
@@ -112,7 +116,7 @@ class ReadElf(object):
                 elfheader['e_phnum'], elfheader['e_phoff']))
             self._emitline()
 
-        self._emitline('Program headers:')
+        self._emitline('Program Headers:')
 
         # Now comes the table of program headers with their attributes. Note
         # that due to different formatting constraints of 32-bit and 64-bit
@@ -164,10 +168,10 @@ class ReadElf(object):
             return 
 
         self._emitline('\n Section to Segment mapping:')
-        self._emitline('  Segment Sections...\n')
+        self._emitline('  Segment Sections...')
 
         for nseg, segment in enumerate(self.elffile.iter_segments()):
-            self._emit('   %2.2d    ' % nseg)
+            self._emit('   %2.2d     ' % nseg)
 
             for section in self.elffile.iter_sections():
                 if (    not section.is_null() and 
@@ -184,7 +188,7 @@ class ReadElf(object):
             self._emitline('There are %s section headers, starting at offset %s' % (
                 elfheader['e_shnum'], self._format_hex(elfheader['e_shoff'])))
 
-        self._emitline('\nSection header%s:' % (
+        self._emitline('\nSection Header%s:' % (
             's' if elfheader['e_shnum'] > 1 else ''))
 
         # Different formatting constraints of 32-bit and 64-bit addresses
@@ -344,11 +348,11 @@ def main():
             readelf = ReadElf(file, sys.stdout)
             if do_file_header:
                 readelf.display_file_header()
-            if do_program_header:
-                readelf.display_program_headers(
-                        show_heading=not do_file_header)
             if do_section_header:
                 readelf.display_section_headers(
+                        show_heading=not do_file_header)
+            if do_program_header:
+                readelf.display_program_headers(
                         show_heading=not do_file_header)
             if options.show_symbols:
                 readelf.display_symbol_tables()
