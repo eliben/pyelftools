@@ -18,6 +18,7 @@ try:
 except ImportError:
     sys.path.extend(['.', '..'])
 
+from elftools import __version__
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 from elftools.elf.segments import InterpSegment
@@ -93,21 +94,25 @@ class ReadElf(object):
         self._emitline('  Section header string table index: %s' %
                 header['e_shstrndx'])
 
-    def display_program_headers(self):
-        """ Display the ELF program headers
+    def display_program_headers(self, show_heading=True):
+        """ Display the ELF program headers.
+            If show_heading is True, displays the heading for this information
+            (Elf file type is...)
         """
         self._emitline()
         elfheader = self.elffile.header
-        self._emitline('Elf file type is %s' %
-            describe_e_type(elfheader['e_type']))
-        self._emitline('Entry point is %s' %
-            self._format_hex(elfheader['e_entry']))
-        # readelf weirness - why isn't e_phoff printed as hex? (for section
-        # headers, it is...)
-        self._emitline('There are %s program headers, starting at offset %s' % (
-            elfheader['e_phnum'], elfheader['e_phoff']))
+        if show_heading:
+            self._emitline('Elf file type is %s' %
+                describe_e_type(elfheader['e_type']))
+            self._emitline('Entry point is %s' %
+                self._format_hex(elfheader['e_entry']))
+            # readelf weirness - why isn't e_phoff printed as hex? (for section
+            # headers, it is...)
+            self._emitline('There are %s program headers, starting at offset %s' % (
+                elfheader['e_phnum'], elfheader['e_phoff']))
+            self._emitline()
 
-        self._emitline('\nProgram headers:')
+        self._emitline('Program headers:')
 
         # Now comes the table of program headers with their attributes. Note
         # that due to different formatting constraints of 32-bit and 64-bit
@@ -171,12 +176,13 @@ class ReadElf(object):
 
             self._emitline('')
 
-    def display_section_headers(self):
+    def display_section_headers(self, show_heading=True):
         """ Display the ELF section headers
         """
         elfheader = self.elffile.header
-        self._emitline('There are %s section headers, starting at offset %s' % (
-            elfheader['e_shnum'], self._format_hex(elfheader['e_shoff'])))
+        if show_heading:
+            self._emitline('There are %s section headers, starting at offset %s' % (
+                elfheader['e_shnum'], self._format_hex(elfheader['e_shoff'])))
 
         self._emitline('\nSection header%s:' % (
             's' if elfheader['e_shnum'] > 1 else ''))
@@ -290,12 +296,18 @@ class ReadElf(object):
         self.output.write(str(s) + '\n')
 
 
+SCRIPT_DESCRIPTION = 'Display information about the contents of ELF format files'
+VERSION_STRING = '%%prog: based on pyelftools %s' % __version__
+
+
 def main():
+    # parse the command-line arguments and invoke ReadElf
     optparser = OptionParser(
             usage='usage: %prog [options] <elf-file>',
-            description='Display information about the contents of ELF format files',
+            description=SCRIPT_DESCRIPTION,
             add_help_option=False, # -h is a real option of readelf
-            prog='readelf.py')
+            prog='readelf.py',
+            version=VERSION_STRING)
     optparser.add_option('-H', '--help',
             action='store_true', dest='help',
             help='Display this information')
@@ -303,10 +315,10 @@ def main():
             action='store_true', dest='show_file_header',
             help='Display the ELF file header')
     optparser.add_option('-l', '--program-headers', '--segments',
-            action='store_true', dest='show_program_headers',
+            action='store_true', dest='show_program_header',
             help='Display the program headers')
     optparser.add_option('-S', '--section-headers', '--sections',
-            action='store_true', dest='show_section_headers',
+            action='store_true', dest='show_section_header',
             help="Display the sections' headers")
     optparser.add_option('-e', '--headers',
             action='store_true', dest='show_all_headers',
@@ -320,15 +332,28 @@ def main():
         optparser.print_help()
         sys.exit(0)
 
+    if options.show_all_headers:
+        do_file_header = do_section_header = do_program_header = True
+    else:
+        do_file_header = options.show_file_header
+        do_section_header = options.show_section_header
+        do_program_header = options.show_program_header
+
     with open(args[0], 'rb') as file:
         try:
             readelf = ReadElf(file, sys.stdout)
-            #readelf.display_file_header()
-            #readelf.display_program_headers()
-            #readelf.display_section_headers()
-            readelf.display_symbol_tables()
+            if do_file_header:
+                readelf.display_file_header()
+            if do_program_header:
+                readelf.display_program_headers(
+                        show_heading=not do_file_header)
+            if do_section_header:
+                readelf.display_section_headers(
+                        show_heading=not do_file_header)
+            if options.show_symbols:
+                readelf.display_symbol_tables()
         except ELFError as ex:
-            sys.stderr.write('ELF read error: %s\n' % ex)
+            sys.stderr.write('ELF error: %s\n' % ex)
             sys.exit(1)
 
 
