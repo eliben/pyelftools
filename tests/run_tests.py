@@ -8,6 +8,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os, sys
+from difflib import SequenceMatcher
 import logging
 import subprocess
 import tempfile
@@ -75,14 +76,35 @@ def compare_output(s1, s2):
         Return pair success, errmsg. If comparison succeeds, success is True
         and errmsg is empty. Otherwise success is False and errmsg holds a
         description of the mismatch.
+
+        Note: this function contains some rather horrible hacks to ignore
+        differences which are not important for the verification of pyelftools.
+        This is due to some intricacies of binutils's readelf which pyelftools
+        doesn't currently implement. Read the documentation for more details.
     """
     lines1 = s1.splitlines()
     lines2 = s2.splitlines()
     if len(lines1) != len(lines2):
         return False, 'Number of lines different: %s vs %s' % (
                 len(lines1), len(lines2))
+
+    flag_after_symtable = False
+
     for i in range(len(lines1)):
+        if 'Symbol table' in lines1[i]:
+            flag_after_symtable = True
+        # Compare ignoring whitespace
         if lines1[i].split() != lines2[i].split():
+            if flag_after_symtable:
+                sm = SequenceMatcher()
+                sm.set_seqs(lines1[i], lines2[i])
+                # Detect readelf's adding @ with lib and version after 
+                # symbol name.
+                changes = sm.get_opcodes()
+                if (    len(changes) == 2 and changes[1][0] == 'delete' and
+                        lines1[i][changes[1][1]] == '@'):
+                    continue
+
             errmsg = 'Mismatch on line #%s:\n>>%s<<\n>>%s<<\n' % (
                     i, lines1[i], lines2[i])
             return False, errmsg
