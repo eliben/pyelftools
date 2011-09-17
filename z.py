@@ -1,3 +1,7 @@
+# Just a script for playing around with pyelftools during testing
+# please ignore it!
+#
+
 import sys
 from elftools.elf.structs import ELFStructs
 from elftools.elf.elffile import ELFFile

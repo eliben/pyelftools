@@ -264,6 +264,51 @@ class ReadElf(object):
                     describe_symbol_shndx(symbol['st_shndx']),
                     symbol.name))
         
+    def display_hex_dump(self, section_spec):
+        """ Display a hex dump of a section. section_spec is either a section
+            number or a name.
+        """
+        secnum = self._section_num_from_spec(section_spec)
+        if secnum is None:
+            self._emitline("Section '%s' does not exist in the file!" % (
+                section_spec))
+            return
+
+        section = self.elffile.get_section(secnum)
+        self._emitline("\nHex dump of section '%s':" % section.name)
+
+        addr = section['sh_addr']
+        data = section.data()
+        dataptr = 0
+
+        while dataptr < len(data):
+            bytesleft = len(data) - dataptr
+            # chunks of 16 bytes per line
+            linebytes = 16 if bytesleft > 16 else bytesleft
+
+            self._emit('  %s ' % self._format_hex(addr, fieldsize=8))
+            for i in range(16):
+                if i < linebytes:
+                    self._emit('%2.2x' % ord(data[dataptr + i]))
+                else:
+                    self._emit('  ')
+                if i % 4 == 3:
+                    self._emit(' ')
+
+            for i in range(linebytes):
+                c = data[dataptr + i]
+                if c >= ' ' and ord(c) <= 0x7f:
+                    self._emit(c)
+                else:
+                    self._emit('.')
+
+            self._emitline()
+            addr += linebytes
+            dataptr += linebytes
+
+        self._emitline()
+
+
     def _format_hex(self, addr, fieldsize=None, fullhex=False, lead0x=True):
         """ Format an address into a hexadecimal string.
 
@@ -289,6 +334,19 @@ class ReadElf(object):
             field = '%' + '0%sx' % fieldsize
         return s + field % addr
         
+    def _section_num_from_spec(self, spec):
+        """ Translate a section "spec" (either number or name) to its number.
+            Return None if no such section exists in the file.
+        """
+        try:
+            num = int(spec)
+            return num if num < self.elffile.num_sections() else None
+        except ValueError:
+            # Not a number. Must be a name then
+            for nsec, section in enumerate(self.elffile.iter_sections()):
+                if section.name == spec:
+                    return nsec
+
     def _emit(self, s=''):
         """ Emit an object to output
         """
@@ -330,6 +388,9 @@ def main():
     optparser.add_option('-s', '--symbols', '--syms',
             action='store_true', dest='show_symbols',
             help='Display the symbol table')
+    optparser.add_option('-x', '--hex-dump',
+            action='store', dest='show_hex_dump', metavar='<number|name>',
+            help='Dump the contents of section <number|name> as bytes')
     options, args = optparser.parse_args()
 
     if options.help or len(args) == 0:
@@ -356,6 +417,8 @@ def main():
                         show_heading=not do_file_header)
             if options.show_symbols:
                 readelf.display_symbol_tables()
+            if options.show_hex_dump:
+                readelf.display_hex_dump(options.show_hex_dump)
         except ELFError as ex:
             sys.stderr.write('ELF error: %s\n' % ex)
             sys.exit(1)
