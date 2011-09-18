@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from .exceptions import ELFParseError, ELFError
+from ..construct import ConstructError
 
 
 def struct_parse(struct, stream, stream_pos=None):
