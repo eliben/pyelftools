@@ -7,8 +7,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import sys
+import os, sys
 from optparse import OptionParser
+import string
+
 
 # If elftools is not installed, maybe we're running from the root or scripts
 # dir of the source distribution
@@ -308,6 +310,46 @@ class ReadElf(object):
 
         self._emitline()
 
+    def display_string_dump(self, section_spec):
+        """ Display a strings dump of a section. section_spec is either a
+            section number or a name.
+        """
+        secnum = self._section_num_from_spec(section_spec)
+        if secnum is None:
+            self._emitline("Section '%s' does not exist in the file!" % (
+                section_spec))
+            return
+
+        printables = set(string.printable)
+
+        section = self.elffile.get_section(secnum)
+        self._emitline("\nString dump of section '%s':" % section.name)
+
+        found = False
+        data = section.data()
+        dataptr = 0
+
+        while dataptr < len(data):
+            while dataptr < len(data) and data[dataptr] not in printables:
+                dataptr += 1
+
+            if dataptr >= len(data):
+                break
+
+            endptr = dataptr
+            while endptr < len(data) and data[endptr] != '\x00':
+                endptr += 1
+
+            found = True
+            self._emitline('  [%6x]  %s' % (
+                dataptr, data[dataptr:endptr]))
+
+            dataptr = endptr
+
+        if not found:
+            self._emitline('  No strings found in this section.')
+        else:
+            self._emitline()
 
     def _format_hex(self, addr, fieldsize=None, fullhex=False, lead0x=True):
         """ Format an address into a hexadecimal string.
@@ -391,6 +433,10 @@ def main():
     optparser.add_option('-x', '--hex-dump',
             action='store', dest='show_hex_dump', metavar='<number|name>',
             help='Dump the contents of section <number|name> as bytes')
+    optparser.add_option('-p', '--string-dump',
+            action='store', dest='show_string_dump', metavar='<number|name>',
+            help='Dump the contents of section <number|name> as strings')
+
     options, args = optparser.parse_args()
 
     if options.help or len(args) == 0:
@@ -419,6 +465,8 @@ def main():
                 readelf.display_symbol_tables()
             if options.show_hex_dump:
                 readelf.display_hex_dump(options.show_hex_dump)
+            if options.show_string_dump:
+                readelf.display_string_dump(options.show_string_dump)
         except ELFError as ex:
             sys.stderr.write('ELF error: %s\n' % ex)
             sys.exit(1)

@@ -44,10 +44,12 @@ def run_exe(exe_path, args):
     
 
 def run_test_on_file(filename):
-    """ Runs a test on the given input filename
+    """ Runs a test on the given input filename. Return True if all test
+        runs succeeded.
     """
+    success = True
     testlog.info("Running test on file '%s'" % filename)
-    for option in ['-e', '-s', '-x.text']:
+    for option in ['-e', '-s', '-x.text', '-p.shstrtab']:
         testlog.info("..option='%s'" % option)
         # stdouts will be a 2-element list: output of readelf and output 
         # of scripts/readelf.py
@@ -66,9 +68,11 @@ def run_test_on_file(filename):
         if success:
             testlog.info('.......................SUCCESS')
         else:
+            success = False
             testlog.info('.......................FAIL')
             testlog.info('@@ ' + errmsg)
             dump_output_to_temp_files(*stdouts)
+    return success
 
 
 def compare_output(s1, s2):
@@ -141,8 +145,14 @@ def main():
     if not is_in_rootdir():
         die('Please run me from the root dir of pyelftools!')
 
+    success = True
     for filename in discover_testfiles('tests/testfiles'):
-        run_test_on_file(filename)
+        success = success and run_test_on_file(filename)
+
+    if success:
+        testlog.info('\nConclusion: SUCCESS')
+    else:
+        testlog.info('\nConclusion: FAIL')
 
 
 if __name__ == '__main__':
