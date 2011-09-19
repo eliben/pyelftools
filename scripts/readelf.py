@@ -270,13 +270,12 @@ class ReadElf(object):
         """ Display a hex dump of a section. section_spec is either a section
             number or a name.
         """
-        secnum = self._section_num_from_spec(section_spec)
-        if secnum is None:
+        section = self._section_from_spec(section_spec)
+        if section is None:
             self._emitline("Section '%s' does not exist in the file!" % (
                 section_spec))
             return
 
-        section = self.elffile.get_section(secnum)
         self._emitline("\nHex dump of section '%s':" % section.name)
 
         addr = section['sh_addr']
@@ -314,15 +313,13 @@ class ReadElf(object):
         """ Display a strings dump of a section. section_spec is either a
             section number or a name.
         """
-        secnum = self._section_num_from_spec(section_spec)
-        if secnum is None:
+        section = self._section_from_spec(section_spec)
+        if section is None:
             self._emitline("Section '%s' does not exist in the file!" % (
                 section_spec))
             return
 
         printables = set(string.printable)
-
-        section = self.elffile.get_section(secnum)
         self._emitline("\nString dump of section '%s':" % section.name)
 
         found = False
@@ -376,18 +373,19 @@ class ReadElf(object):
             field = '%' + '0%sx' % fieldsize
         return s + field % addr
         
-    def _section_num_from_spec(self, spec):
-        """ Translate a section "spec" (either number or name) to its number.
+    def _section_from_spec(self, spec):
+        """ Retrieve a section given a "spec" (either number or name).
             Return None if no such section exists in the file.
         """
         try:
             num = int(spec)
-            return num if num < self.elffile.num_sections() else None
+            if num < self.elffile.num_sections():
+                return self.elffile.get_section(num) 
+            else:
+                return None
         except ValueError:
             # Not a number. Must be a name then
-            for nsec, section in enumerate(self.elffile.iter_sections()):
-                if section.name == spec:
-                    return nsec
+            return self.elffile.get_section_by_name(spec)
 
     def _emit(self, s=''):
         """ Emit an object to output
