@@ -61,7 +61,7 @@ def run_test_on_file(filename):
             rc, stdout = run_exe(exe_path, args)
             if rc != 0:
                 testlog.error("@@ aborting - '%s' returned '%s'" % (exe_path, rc))
-                break
+                return False
             stdouts.append(stdout)
         testlog.info('....comparing output...')
         success, errmsg = compare_output(*stdouts)

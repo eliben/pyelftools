@@ -104,6 +104,22 @@ class SymbolTableSection(Section):
             yield self.get_symbol(i)
 
 
+class RelocationSection(Section):
+    def __init__(self, header, name, stream, elfstructs):
+        super(RelocationSection, self).__init__(header, name, stream)
+        self.elfstructs = elfstructs
+        if self.header['sh_type'] == 'SHT_REL':
+            expected_size = self.elfstructs.Elf_Rel.sizeof()
+        elif self.header['sh_type'] == 'SHT_RELA':
+            expected_size = self.elfstructs.Elf_Rela.sizeof()
+        else:
+            elf_assert(False, 'Unknown relocation type section')
+
+        elf_assert(
+            self.header['sh_entsize'] == expected_size,
+            'Expected sh_entsize of SHT_REL section to be %s' % expected_size)
+
+
 class Symbol(object):
     """ Symbol object - representing a single symbol entry from a symbol table
         section.

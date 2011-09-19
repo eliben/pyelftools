@@ -11,7 +11,8 @@ from ..common.utils import struct_parse, elf_assert
 from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
-        Section, StringTableSection, SymbolTableSection, NullSection)
+        Section, StringTableSection, SymbolTableSection, NullSection,
+        RelocationSection)
 from .segments import Segment, InterpSegment
 
 
@@ -158,6 +159,9 @@ class ELFFile(object):
             return NullSection(section_header, name, self.stream)
         elif sectype in ('SHT_SYMTAB', 'SHT_DYNSYM'):
             return self._make_symbol_table_section(section_header, name)
+        elif sectype in ('SHT_REL', 'SHT_RELA'):
+            return RelocationSection(
+                section_header, name, self.stream, self.structs)
         else:
             return Section(section_header, name, self.stream)
 

@@ -35,6 +35,9 @@ class ELFStructs(object):
             
             Elf_Sym:
                 Symbol table entry
+
+            Elf_Rel, Elf_Rela:
+                Entries in relocation sections
     """
     def __init__(self, little_endian=True, elfclass=32):
         assert elfclass == 32 or elfclass == 64
@@ -66,6 +69,7 @@ class ELFStructs(object):
         self._create_phdr()
         self._create_shdr()
         self._create_sym()
+        self._create_rel()
     
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
@@ -105,7 +109,7 @@ class ELFStructs(object):
                 self.Elf_word('p_flags'),
                 self.Elf_word('p_align'),
             )
-        else:
+        else: # 64
             self.Elf_Phdr = Struct('Elf_Phdr',
                 Enum(self.Elf_word('p_type'), **ENUM_P_TYPE),
                 self.Elf_word('p_flags'),
@@ -131,6 +135,29 @@ class ELFStructs(object):
             self.Elf_xword('sh_entsize'),
         )
     
+    def _create_rel(self):
+        # r_info is hierarchical. To access the type, use
+        # container['r_info']['type']
+        if self.elfclass == 32:
+            r_info_struct = BitStruct('r_info',
+                BitField('sym', 24),
+                BitField('type', 8))
+        else: # 64
+            r_info_struct = BitStruct('r_info',
+                BitField('sym', 32),
+                Padding(24),
+                BitField('type', 8))
+
+        self.Elf_Rel = Struct('Elf_Rel',
+            self.Elf_addr('r_offset'),
+            r_info_struct,
+        )
+        self.Elf_Rela = Struct('Elf_Rela',
+            self.Elf_addr('r_offset'),
+            r_info_struct,
+            self.Elf_sxword('r_addend'),
+        )
+
     def _create_sym(self):
         # st_info is hierarchical. To access the type, use
         # container['st_info']['type']
