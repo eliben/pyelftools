@@ -14,6 +14,7 @@ from .sections import (
         Section, StringTableSection, SymbolTableSection, NullSection,
         RelocationSection)
 from .segments import Segment, InterpSegment
+from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionLocator
 
 
 class ELFFile(object):
@@ -97,6 +98,39 @@ class ELFFile(object):
         for i in range(self.num_segments()):
             yield self.get_segment(i)
     
+    def has_dwarf_info(self):
+        """ Check whether this file appears to have debugging information. 
+        """
+        return bool(self.get_section_by_name('.debug_info'))
+    
+    def get_dwarf_info(self):
+        """ Return a DWARFInfo object representing the debugging information in
+            this file.
+        """
+        # Expect has_dwarf_info that was called, so at least .debug_info is 
+        # present. Check also the presence of other must-have debug sections.
+        #
+        debug_sections = {}
+        for secname in ('.debug_info', '.debug_abbrev', '.debug_str', 
+                        '.debug_line'):
+            section = self.get_section_by_name(secname)
+            elf_assert(
+                section is not None, 
+                "Expected to find DWARF section '%s' in the file" % (
+                    secname))
+            debug_sections[secname] = DebugSectionLocator(
+                offset=section['sh_offset'],
+                size=section['sh_size'])
+        
+        return DWARFInfo(
+                stream=self.stream,
+                little_endian=self.little_endian,
+                dwarfclass=self.elfclass,
+                debug_info_loc=debug_sections['.debug_info'],
+                debug_abbrev_loc=debug_sections['.debug_abbrev'],
+                debug_str_loc=debug_sections['.debug_str'],
+                debug_line_loc=debug_sections['.debug_line'])                
+            
     #-------------------------------- PRIVATE --------------------------------#
     
     def __getitem__(self, name):

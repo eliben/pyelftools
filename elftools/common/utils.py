@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from .exceptions import ELFParseError, ELFError
+from .exceptions import ELFParseError, ELFError, DWARFError
 from ..construct import ConstructError
 
 
@@ -40,3 +40,4 @@ def dwarf_assert(cond, msg=''):
 def _assert_with_exception(cond, msg, exception_type):
     if not cond:
         raise exception_type(msg)
+

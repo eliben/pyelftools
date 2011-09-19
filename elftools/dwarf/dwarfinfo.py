@@ -58,18 +58,22 @@ class DWARFInfo(object):
             containers.
         """
         offset = self.debug_info_loc.offset
-        section_boundary = self.debug_info_loc.offset + self.debug_info_loc.length
+        print 'loc', self.debug_info_loc
+        section_boundary = self.debug_info_loc.offset + self.debug_info_loc.size
         CUlist = []
         while offset < section_boundary:
             cu_header = struct_parse(
                 self.structs.Dwarf_CU_header, self.stream, offset)
-            dwarf_assert(self._is_supported_version(cu_header['version']))
+            print offset, cu_header
+            dwarf_assert(
+                self._is_supported_version(cu_header['version']),
+                "Expected supported DWARF version. Got '%s'" % cu_header['version'])
             CUlist.append(CompileUnit(cu_header, None))
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.
             offset = (  offset + 
-                        cu['unit_length'] + 
+                        cu_header['unit_length'] + 
                         self.initial_lenght_field_size())
         return CUlist
         

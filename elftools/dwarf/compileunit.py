@@ -9,9 +9,10 @@
 
 
 class CompileUnit(object):
-    def __init__(self, header, cu_die):
+    def __init__(self, header, format_bits, cu_die):
         self.header = header
-        self.cu_die
+        self.format_bits = format_bits
+        self.cu_die = cu_die
     
     def __getitem__(self, name):
         """ Implement dict-like access to header entries

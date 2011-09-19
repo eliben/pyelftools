@@ -14,17 +14,22 @@ stream = open('tests/testfiles/z.elf', 'rb')
 #stream = open('binfiles/z32.elf', 'rb')
 
 efile = ELFFile(stream)
-
+print efile.elfclass, efile.little_endian
 print '===> %s sections!' % efile.num_sections() 
 
-print efile.get_section_by_name('.debug_info').name
+print efile.has_dwarf_info()
+
+print efile.get_dwarf_info()
+
+
+#~ print efile.get_section_by_name('.debug_info').name
 
 #~ print '===> %s segments!' % efile.num_segments()
 
-for sec in efile.iter_sections():
-    print type(sec), sec.name
-    if isinstance(sec, SymbolTableSection):
-        print '   linked string table:', sec.stringtable.name
+#~ for sec in efile.iter_sections():
+    #~ print type(sec), sec.name
+    #~ if isinstance(sec, SymbolTableSection):
+        #~ print '   linked string table:', sec.stringtable.name
 
 #~ for seg in efile.iter_segments():
     #~ print type(seg), seg['p_type'], seg['p_offset']
