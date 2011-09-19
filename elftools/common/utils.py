@@ -28,6 +28,15 @@ def struct_parse(struct, stream, stream_pos=None):
 def elf_assert(cond, msg=''):
     """ Assert that cond is True, otherwise raise ELFError(msg)
     """
-    if not cond:
-        raise ELFError(msg)
+    _assert_with_exception(cond, msg, ELFError)
 
+
+def dwarf_assert(cond, msg=''):
+    """ Assert that cond is True, otherwise raise DWARFError(msg)
+    """
+    _assert_with_exception(cond, msg, DWARFError)
+
+
+def _assert_with_exception(cond, msg, exception_type):
+    if not cond:
+        raise exception_type(msg)

@@ -12,3 +12,6 @@ class ELFError(Exception):
 class ELFParseError(ELFError):
     pass
 
+class DWARFError(Exception):
+    pass
+

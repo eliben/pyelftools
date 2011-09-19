@@ -17,7 +17,10 @@ from .segments import Segment, InterpSegment
 
 
 class ELFFile(object):
-    """ Accessible attributes:
+    """ Creation: the constructor accepts a stream (file-like object) with the
+        contents of an ELF file.
+    
+        Accessible attributes:
         
             elfclass: 
                 32 or 64 - specifies the word size of the target machine

@@ -1,4 +1,9 @@
+# Just a script for playing around with pyelftools during testing
+# please ignore it!
+#
+
 from elftools.dwarf.structs import DWARFStructs
+from elftools.dwarf.dwarfinfo import DWARFInfo
 
 
 ds = DWARFStructs(

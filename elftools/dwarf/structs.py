@@ -15,28 +15,31 @@ from ..construct import (
 
 
 class DWARFStructs(object):
-    """ Accessible attributes:
+    """ Accessible attributes (mostly described by in chapter 7 of the DWARF
+        spec v3):
     
             Dwarf_uint{8,16,32,64):
                 Data chunks of the common sizes
             
-            Dwarf_xword:
-                32-bit or 64-bit word, depending on dwarfclass
+            Dwarf_xword, Dwarf_offset:
+                32-bit or 64-bit word, depending on dwarfclass (xword and offset
+                are synonyms here).
             
             Dwarf_initial_length:
-                "Initial length field" encoding, as described in DWARFv3 spec 
+                "Initial length field" encoding
                 section 7.4
             
             Dwarf_{u,s}leb128:
-                ULEB128 and SLEB128 variable-length encoding, as described in
-                DWARFv3 spec section 7.6
+                ULEB128 and SLEB128 variable-length encoding
+            
+            Dwarf_CU_header:
+                Compilation unit header
     """
     def __init__(self, little_endian=True, dwarfclass=32):
         assert dwarfclass == 32 or dwarfclass == 64
         self.little_endian = little_endian
         self.dwarfclass = dwarfclass        
         self._create_structs()
-        self._create_leb128()
 
     def _create_structs(self):
         if self.little_endian:
@@ -51,9 +54,12 @@ class DWARFStructs(object):
             self.Dwarf_uint32 = UBInt32
             self.Dwarf_uint64 = UBInt64
             self.Dwarf_xword = UBInt32 if self.dwarfclass == 32 else UBInt64
+        self.Dwarf_offset = self.Dwarf_xword
 
         self._create_initial_length()
-    
+        self._create_leb128()
+        self._create_cu_header()
+
     def _create_initial_length(self):
         def _InitialLength(name):
             # Adapts a Struct that parses forward a full initial length field.
@@ -71,6 +77,13 @@ class DWARFStructs(object):
     def _create_leb128(self):
         self.Dwarf_uleb128 = _ULEB128
         self.Dwarf_sleb128 = _SLEB128
+
+    def _create_cu_header(self):
+        self.Dwarf_CU_header = Struct('Dwarf_CU_header',
+            self.Dwarf_initial_length('unit_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_offset('debug_abbrev_offset'),
+            self.Dwarf_uint8('address_size'))
 
 
 class _InitialLengthAdapter(Adapter):

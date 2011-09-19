@@ -10,7 +10,7 @@ from elftools.elf.sections import *
 # read a little-endian, 64-bit file
 es = ELFStructs(True, 64)
 
-stream = open('binfiles/z.elf', 'rb')
+stream = open('tests/testfiles/z.elf', 'rb')
 #stream = open('binfiles/z32.elf', 'rb')
 
 efile = ELFFile(stream)
