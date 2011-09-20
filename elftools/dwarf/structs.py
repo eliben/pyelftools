@@ -10,7 +10,7 @@
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
-    Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename,
+    Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename, Enum,
     )
 
 from .enums import *
@@ -39,9 +39,9 @@ class DWARFStructs(object):
             Dwarf_CU_header:
                 Compilation unit header
         
-            Dwarf_abbrev_entry:
-                Abbreviation table entry - doesn't include the initial code,
-                only the contents.
+            Dwarf_abbrev_declaration:
+                Abbreviation table declaration - doesn't include the initial
+                code, only the contents.
         
         See also the documentation of public methods.
     """
@@ -73,7 +73,7 @@ class DWARFStructs(object):
         self._create_initial_length()
         self._create_leb128()
         self._create_cu_header()
-        self._create_abbrev_entry()
+        self._create_abbrev_declaration()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -100,14 +100,16 @@ class DWARFStructs(object):
             self.Dwarf_offset('debug_abbrev_offset'),
             self.Dwarf_uint8('address_size'))
     
-    def _create_abbrev_entry(self):
-        self.Dwarf_abbrev_entry = Struct('Dwarf_abbrev_entry',
-            self.Dwarf_uleb128('tag'),                  # ZZZ: wrap in enums
-            self.Dwarf_uint8('children_flag'),
-            RepeatUntil(lambda obj, ctx: obj.name == obj.form == 0,
+    def _create_abbrev_declaration(self):
+        self.Dwarf_abbrev_declaration = Struct('Dwarf_abbrev_entry',
+            Enum(self.Dwarf_uleb128('tag'), **ENUM_DW_TAG),
+            Enum(self.Dwarf_uint8('children_flag'), **ENUM_DW_CHILDREN),
+            RepeatUntil(
+                lambda obj, ctx: 
+                    obj.name == 'DW_AT_null' and obj.form == 'DW_FORM_null',
                 Struct('spec',
-                    self.Dwarf_uleb128('name'),
-                    self.Dwarf_uleb128('form'))))
+                    Enum(self.Dwarf_uleb128('name'), **ENUM_DW_AT),
+                    Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM))))
 
 
 class _InitialLengthAdapter(Adapter):

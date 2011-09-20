@@ -71,15 +71,14 @@ class DWARFInfo(object):
             AbbrevTable objects are cached internally (two calls for the same
             offset will return the same object).
         """
-        section_boundary = self.debug_abbrev_loc.offset + self.debug_abbrev_loc.size
         dwarf_assert(
-            self.debug_abbrev_loc.offset <= offset < section_boundary,
+            offset < self.debug_abbrev_loc.size,
             "Offset '0x%x' to abbrev table out of section bounds" % offset)
         if offset not in self._abbrevtable_cache:
             self._abbrevtable_cache[offset] = AbbrevTable(
                 structs=self.structs,
-                stream=self.stream)
-        
+                stream=self.stream,
+                offset=offset + self.debug_abbrev_loc.offset)
         return self._abbrevtable_cache[offset]
     
     def _parse_CUs(self):
@@ -110,7 +109,10 @@ class DWARFInfo(object):
             dwarf_assert(
                 self._is_supported_version(cu_header['version']),
                 "Expected supported DWARF version. Got '%s'" % cu_header['version'])
-            CUlist.append(CompileUnit(cu_header, cu_structs, None))
+            CUlist.append(CompileUnit(
+                header=cu_header,
+                dwarfinfo=self,
+                structs=cu_structs))
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.

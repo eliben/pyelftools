@@ -2,7 +2,7 @@
 # please ignore it!
 #
 
-import sys
+import sys, pprint
 from elftools.elf.structs import ELFStructs
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import *
@@ -20,9 +20,20 @@ print '===> %s sections!' % efile.num_sections()
 print efile.has_dwarf_info()
 
 dwarfinfo = efile.get_dwarf_info()
-print dwarfinfo
-for cu in dwarfinfo._CU:
-    print cu, cu.header
+
+#~ print dwarfinfo.structs.Dwarf_abbrev_entry.parse('\x13\x01\x01\x03\x50\x04\x00\x00')
+
+print id(dwarfinfo.get_abbrev_table(0))
+print id(dwarfinfo.get_abbrev_table(0))
+pprint.pprint(dwarfinfo.get_abbrev_table(0)._abbrev_map)
+
+print dwarfinfo.get_abbrev_table(0).get_abbrev(1).decl
+print dwarfinfo.get_abbrev_table(0).get_abbrev(1).has_children()
+
+#~ for cu in dwarfinfo._CU:
+    #~ print cu, cu.header
+
+
 
 
 #~ print efile.get_section_by_name('.debug_info').name

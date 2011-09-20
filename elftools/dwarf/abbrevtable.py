@@ -6,11 +6,69 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from ..common.utils import struct_parse, dwarf_assert
 
 
 class AbbrevTable(object):
-    def __init__(self, structs, stream):
+    """ Represents a DWARF abbreviation table.
+    """
+    def __init__(self, structs, stream, offset):
+        """ Create new abbreviation table. Parses the actual table from the
+            stream and stores it internally.
+        
+            structs:
+                A DWARFStructs instance for parsing the data
+            
+            stream, offset:
+                The stream and offset into the stream where this abbreviation
+                table lives.
+                Note that this is the absolute offset into the stream, not 
+                relative to the debug_abbrev section.
+        """
         self.structs = structs
         self.stream = stream
+        self.offset = offset
+        
+        self._abbrev_map = self._parse_abbrev_table()
+
+    def get_abbrev(self, code):
+        """ Get the AbbrevDecl for a given code. Raise KeyError if no
+            declaration for this code exists.
+        """
+        return AbbrevDecl(code, self._abbrev_map[code])
+
+    def _parse_abbrev_table(self):
+        """ Parse the abbrev table from the stream
+        """
+        map = {}
+        self.stream.seek(self.offset)
+        while True:
+            decl_code = struct_parse(
+                struct=self.structs.Dwarf_uleb128(''),
+                stream=self.stream)
+            if decl_code == 0:
+                break
+            declaration = struct_parse(
+                struct=self.structs.Dwarf_abbrev_declaration,
+                stream=self.stream)
+            map[decl_code] = declaration
+        return map
+
+
+class AbbrevDecl(object):
+    """ Wraps a parsed abbreviation declaration, exposing its fields with 
+        dict-like access, and adding some convenience methods.
+    """
+    def __init__(self, code, decl):
+        self.code = code
+        self.decl = decl
+    
+    def has_children(self):
+        return self['children_flag'] == 'DW_CHILDREN_yes'
+    
+    def __getitem__(self, entry):
+        return self.decl[entry]
+
+
 
 
