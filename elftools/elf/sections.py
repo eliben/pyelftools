@@ -110,14 +110,37 @@ class RelocationSection(Section):
         self.elfstructs = elfstructs
         if self.header['sh_type'] == 'SHT_REL':
             expected_size = self.elfstructs.Elf_Rel.sizeof()
+            self.entry_struct = self.elfstructs.Elf_Rel
         elif self.header['sh_type'] == 'SHT_RELA':
             expected_size = self.elfstructs.Elf_Rela.sizeof()
+            self.entry_struct = self.elfstructs.Elf_Rela
         else:
             elf_assert(False, 'Unknown relocation type section')
 
         elf_assert(
             self.header['sh_entsize'] == expected_size,
             'Expected sh_entsize of SHT_REL section to be %s' % expected_size)
+
+    def num_relocations(self):
+        """ Number of relocations in the section
+        """
+        return self['sh_size'] // self['sh_entsize']
+        
+    def get_relocation(self, n):
+        """ Get the relocation at index #n from the section (Relocation object)
+        """
+        entry_offset = self['sh_offset'] + n * self['sh_entsize']
+        entry = struct_parse(
+            self.entry_struct,
+            self.stream,
+            stream_pos=entry_offset)
+        return Relocation(entry)
+
+    def iter_relocations(self):
+        """ Yield all the relocations in the section
+        """
+        for i in range(self.num_relocations()):
+            yield self.get_relocation(i)
 
 
 class Symbol(object):
@@ -135,4 +158,20 @@ class Symbol(object):
         """ Implement dict-like access to entries
         """
         return self.entry[name]
+
+
+class Relocation(object):
+    """ Relocation object - representing a single relocation entry. Allows
+        dictionary-like access to the entry's fields.
+
+        Can be either a REL or RELA relocation.
+    """
+    def __init__(self, entry):
+        self.entry = entry
+        
+    def __getitem__(self, name):
+        """ Dict-like access to entries
+        """
+        return self.entry[name]
+
 

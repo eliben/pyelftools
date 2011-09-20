@@ -24,7 +24,7 @@ from elftools import __version__
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 from elftools.elf.segments import InterpSegment
-from elftools.elf.sections import SymbolTableSection
+from elftools.elf.sections import SymbolTableSection, RelocationSection
 from elftools.elf.descriptions import (
     describe_ei_class, describe_ei_data, describe_ei_version,
     describe_ei_osabi, describe_e_type, describe_e_machine,
@@ -266,6 +266,23 @@ class ReadElf(object):
                     describe_symbol_shndx(symbol['st_shndx']),
                     symbol.name))
         
+    def display_relocations(self):
+        """ Display the relocations contained in the file
+        """
+        has_relocation_sections = False
+        for section in self.elffile.iter_sections():
+            if not isinstance(section, RelocationSection):
+                continue
+
+            has_relocation_sections = True
+            self._emitline("\nRelocation section '%s' at offset %s contains %s entries:" % (
+                1, 2, 3))
+            for rel in section.iter_relocations():
+                print rel, rel.entry
+
+        if not has_relocation_sections:
+            self._emitline('\nThere are no relocations in this file.')
+        
     def display_hex_dump(self, section_spec):
         """ Display a hex dump of a section. section_spec is either a section
             number or a name.
@@ -428,6 +445,9 @@ def main():
     optparser.add_option('-s', '--symbols', '--syms',
             action='store_true', dest='show_symbols',
             help='Display the symbol table')
+    optparser.add_option('-r', '--relocs',
+            action='store_true', dest='show_relocs',
+            help='Display the relocations (if present)')
     optparser.add_option('-x', '--hex-dump',
             action='store', dest='show_hex_dump', metavar='<number|name>',
             help='Dump the contents of section <number|name> as bytes')
@@ -461,6 +481,8 @@ def main():
                         show_heading=not do_file_header)
             if options.show_symbols:
                 readelf.display_symbol_tables()
+            if options.show_relocs:
+                readelf.display_relocations()
             if options.show_hex_dump:
                 readelf.display_hex_dump(options.show_hex_dump)
             if options.show_string_dump:
