@@ -26,7 +26,8 @@ ENUM_EI_DATA = dict(
 # e_version in the ELF header
 ENUM_E_VERSION = dict(
     EV_NONE=0,
-    EV_CURRENT=1
+    EV_CURRENT=1,
+    _default_=Pass,
 )
 
 # e_ident[EI_OSABI] in the ELF header
@@ -48,6 +49,7 @@ ENUM_EI_OSABI = dict(
     ELFOSABI_AROS=15,
     ELFOSABI_ARM=97,
     ELFOSABI_STANDALONE=255,
+    _default_=Pass,
 )
 
 # e_type in the ELF header
@@ -59,7 +61,7 @@ ENUM_E_TYPE = dict(
     ET_CORE=4,
     ET_LOPROC=0xff00,
     ET_HIPROC=0xffff,
-    _default_='PROC_SPECIFIC',
+    _default_=Pass,
 )
 
 # e_machine in the ELF header
@@ -78,7 +80,7 @@ ENUM_E_MACHINE = dict(
     EM_IA_64=50,
     EM_X86_64=62,
     EM_AVR=83,
-    _default_='RESERVED',
+    _default_=Pass,
 )
 
 # sh_type in the section header
@@ -111,7 +113,7 @@ ENUM_SH_TYPE = dict(
     SHT_LOUSER=0x80000000,
     SHT_HIUSER=0xffffffff,
     SHT_AMD64_UNWIND=0x70000001,
-    _default_='RESERVED',
+    _default_=Pass,
 )
 
 # p_type in the program header
@@ -130,6 +132,7 @@ ENUM_P_TYPE = dict(
     PT_GNU_EH_FRAME=0x6474e550,
     PT_GNU_STACK=0x6474e551,
     PT_GNU_RELRO=0x6474e552,
+    _default_=Pass,
 )
 
 # st_info bindings in the symbol header
@@ -142,6 +145,7 @@ ENUM_ST_INFO_BIND = dict(
     STB_HIOS=12,
     STB_LOPROC=13,
     STB_HIPROC=15,
+    _default_=Pass,
 )
 
 # st_info type in the symbol header
@@ -160,6 +164,7 @@ ENUM_ST_INFO_TYPE = dict(
     STT_HIOS=12,
     STT_LOPROC=13,
     STT_HIPROC=15,
+    _default_=Pass,
 )
 
 # visibility from st_other
@@ -168,6 +173,7 @@ ENUM_ST_VISIBILITY = dict(
     STV_INTERNAL=1,
     STV_HIDDEN=2,
     STV_PROTECTED=3,
+    _default_=Pass,
 )
 
 # st_shndx
