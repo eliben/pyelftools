@@ -6,8 +6,7 @@ from elftools.dwarf.structs import DWARFStructs
 from elftools.dwarf.dwarfinfo import DWARFInfo
 
 
-ds = DWARFStructs(
-    little_endian=True,
+ds = DWARFStructs(little_endian=True,
     dwarfclass=32)
 
 print ds.Dwarf_xword('x').parse('\x04\x01\x00\x00')

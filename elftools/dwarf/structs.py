@@ -15,15 +15,17 @@ from ..construct import (
 
 
 class DWARFStructs(object):
-    """ Accessible attributes (mostly described by in chapter 7 of the DWARF
+    """ Exposes Construct structs suitable for parsing information from DWARF 
+        sections. Configurable with endianity and format (32 or 64-bit)
+    
+        Accessible attributes (mostly described by in chapter 7 of the DWARF
         spec v3):
     
             Dwarf_uint{8,16,32,64):
                 Data chunks of the common sizes
             
-            Dwarf_xword, Dwarf_offset:
-                32-bit or 64-bit word, depending on dwarfclass (xword and offset
-                are synonyms here).
+            Dwarf_offset:
+                32-bit or 64-bit word, depending on dwarf_format
             
             Dwarf_initial_length:
                 "Initial length field" encoding
@@ -34,12 +36,19 @@ class DWARFStructs(object):
             
             Dwarf_CU_header:
                 Compilation unit header
+        
+        See also the documentation of public methods.
     """
-    def __init__(self, little_endian=True, dwarfclass=32):
-        assert dwarfclass == 32 or dwarfclass == 64
+    def __init__(self, little_endian=True, dwarf_format=32):
+        assert dwarf_format == 32 or dwarf_format == 64
         self.little_endian = little_endian
-        self.dwarfclass = dwarfclass        
+        self.dwarf_format = dwarf_format        
         self._create_structs()
+
+    def initial_lenght_field_size(self):
+        """ Size of an initial length field.
+        """
+        return 4 if self.dwarf_format == 32 else 12
 
     def _create_structs(self):
         if self.little_endian:
@@ -47,14 +56,13 @@ class DWARFStructs(object):
             self.Dwarf_uint16 = ULInt16
             self.Dwarf_uint32 = ULInt32
             self.Dwarf_uint64 = ULInt64
-            self.Dwarf_xword = ULInt32 if self.dwarfclass == 32 else ULInt64
+            self.Dwarf_offset = ULInt32 if self.dwarf_format == 32 else ULInt64
         else:
             self.Dwarf_uint8 = UBInt8
             self.Dwarf_uint16 = UBInt16
             self.Dwarf_uint32 = UBInt32
             self.Dwarf_uint64 = UBInt64
-            self.Dwarf_xword = UBInt32 if self.dwarfclass == 32 else UBInt64
-        self.Dwarf_offset = self.Dwarf_xword
+            self.Dwarf_offest = UBInt32 if self.dwarf_format == 32 else UBInt64
 
         self._create_initial_length()
         self._create_leb128()

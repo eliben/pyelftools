@@ -23,13 +23,11 @@ class DWARFInfo(object):
     """ Creation: the constructor accepts a stream (file-like object) that
         contains debug sections, along with locators (DebugSectionLocator)
         of the required sections. In addition, little_endian is a boolean
-        parameter specifying endianity, and dwarfclass is 32 or 64, depending
-        on the type of file the DWARF info was read from.
+        parameter specifying endianity.
     """
     def __init__(self, 
             stream,
             little_endian,
-            dwarfclass,
             debug_info_loc,
             debug_abbrev_loc,
             debug_str_loc,
@@ -41,47 +39,53 @@ class DWARFInfo(object):
         self.debug_line_loc = debug_line_loc
         
         self.little_endian = little_endian
-        self.dwarfclass = dwarfclass
+        self.dwarf_format = 32
         self.structs = DWARFStructs(
             little_endian=self.little_endian,
-            dwarfclass=self.dwarfclass)
+            dwarf_format=self.dwarf_format)
         
+        # Populate the list with CUs found in debug_info
         self._CU = self._parse_CUs()
     
-    def initial_lenght_field_size(self):
-        """ Size of an initial length field.
-        """
-        return 4 if self.dwarfclass == 32 else 12
-
     def _parse_CUs(self):
-        """ Parse CU entries from debug_info and return them as a list of
-            containers.
+        """ Parse CU entries from debug_info.
         """
         offset = self.debug_info_loc.offset
-        print 'loc', self.debug_info_loc
         section_boundary = self.debug_info_loc.offset + self.debug_info_loc.size
         CUlist = []
         while offset < section_boundary:
+            # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v3
+            # states that the first 32-bit word of the CU header determines 
+            # whether the CU is represented with 32-bit or 64-bit DWARF format.
+            # 
+            # So we peek at the first byte in the CU header to determine its
+            # dwarf format. Based on it, we then create a new DWARFStructs
+            # instance suitable for this CU and use it to parse the rest.
+            #
+            initial_length = struct_parse(
+                self.structs.Dwarf_uint32(''), self.stream, offset)
+            if initial_length == 0xFFFFFFFF:
+                self.dwarf_format = 64
+            cu_structs = DWARFStructs(
+                little_endian=self.little_endian,
+                dwarf_format=self.dwarf_format)
+            
             cu_header = struct_parse(
                 self.structs.Dwarf_CU_header, self.stream, offset)
-            print offset, cu_header
             dwarf_assert(
                 self._is_supported_version(cu_header['version']),
                 "Expected supported DWARF version. Got '%s'" % cu_header['version'])
-            CUlist.append(CompileUnit(cu_header, None))
+            CUlist.append(CompileUnit(cu_header, cu_structs, None))
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.
             offset = (  offset + 
                         cu_header['unit_length'] + 
-                        self.initial_lenght_field_size())
+                        cu_structs.initial_lenght_field_size())
         return CUlist
         
     def _is_supported_version(self, version):
         """ DWARF version supported by this parser
         """
         return 2 <= version <= 3
-
-
-
 

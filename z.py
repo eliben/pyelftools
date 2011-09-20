@@ -19,7 +19,10 @@ print '===> %s sections!' % efile.num_sections()
 
 print efile.has_dwarf_info()
 
-print efile.get_dwarf_info()
+dwarfinfo = efile.get_dwarf_info()
+print dwarfinfo
+for cu in dwarfinfo._CU:
+    print cu, cu.header
 
 
 #~ print efile.get_section_by_name('.debug_info').name

@@ -125,7 +125,6 @@ class ELFFile(object):
         return DWARFInfo(
                 stream=self.stream,
                 little_endian=self.little_endian,
-                dwarfclass=self.elfclass,
                 debug_info_loc=debug_sections['.debug_info'],
                 debug_abbrev_loc=debug_sections['.debug_abbrev'],
                 debug_str_loc=debug_sections['.debug_str'],
