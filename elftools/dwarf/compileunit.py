@@ -10,9 +10,7 @@
 
 class CompileUnit(object):
     def __init__(self, dwarfinfo, header, structs):
-        """ Arguments:
-            
-            dwarfinfo:
+        """ dwarfinfo:
                 The DWARFInfo context object which created this one
             
             header:
@@ -24,7 +22,6 @@ class CompileUnit(object):
         self.dwarfinfo = dwarfinfo
         self.header = header
         self.structs = structs
-        self.cu_die = cu_die
     
     def __getitem__(self, name):
         """ Implement dict-like access to header entries

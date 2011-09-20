@@ -13,6 +13,8 @@ from ..construct import (
     Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename,
     )
 
+from .enums import *
+
 
 class DWARFStructs(object):
     """ Exposes Construct structs suitable for parsing information from DWARF 
@@ -36,6 +38,10 @@ class DWARFStructs(object):
             
             Dwarf_CU_header:
                 Compilation unit header
+        
+            Dwarf_abbrev_entry:
+                Abbreviation table entry - doesn't include the initial code,
+                only the contents.
         
         See also the documentation of public methods.
     """
@@ -67,6 +73,7 @@ class DWARFStructs(object):
         self._create_initial_length()
         self._create_leb128()
         self._create_cu_header()
+        self._create_abbrev_entry()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -92,6 +99,15 @@ class DWARFStructs(object):
             self.Dwarf_uint16('version'),
             self.Dwarf_offset('debug_abbrev_offset'),
             self.Dwarf_uint8('address_size'))
+    
+    def _create_abbrev_entry(self):
+        self.Dwarf_abbrev_entry = Struct('Dwarf_abbrev_entry',
+            self.Dwarf_uleb128('tag'),                  # ZZZ: wrap in enums
+            self.Dwarf_uint8('children_flag'),
+            RepeatUntil(lambda obj, ctx: obj.name == obj.form == 0,
+                Struct('spec',
+                    self.Dwarf_uleb128('name'),
+                    self.Dwarf_uleb128('form'))))
 
 
 class _InitialLengthAdapter(Adapter):
