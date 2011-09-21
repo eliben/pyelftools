@@ -59,6 +59,22 @@ class DWARFInfo(object):
         # Cache for abbrev tables: a dict keyed by offset
         self._abbrevtable_cache = {}
     
+    def num_CUs(self):
+        """ Number of compile units in the debug info
+        """
+        return len(self._CU)
+    
+    def get_CU(self, n):
+        """ Get the compile unit (CompileUnit object) at index #n
+        """
+        return self._CU[n]
+    
+    def iter_CUs(self):
+        """ Yield all the compile units (CompileUnit objects) in the debug info
+        """
+        for i in range(self.num_CUs()):
+            yield self.get_CU(i)
+    
     def get_abbrev_table(self, offset):
         """ Get an AbbrevTable from the given offset in the debug_abbrev
             section.
@@ -80,6 +96,16 @@ class DWARFInfo(object):
                 stream=self.stream,
                 offset=offset + self.debug_abbrev_loc.offset)
         return self._abbrevtable_cache[offset]
+    
+    def info_offset2absolute(self, offset):
+        """ Given an offset into the debug_info section, translate it to an 
+            absolute offset into the stream. Raise an exception if the offset
+            exceeds the section bounds.
+        """
+        dwarf_assert(
+            offset < self.debug_info_loc.size,
+            "Offset '0x%x' to debug_info out of section bounds" % offset)
+        return offset + self.debug_info_loc.offset
     
     def _parse_CUs(self):
         """ Parse CU entries from debug_info.
@@ -106,13 +132,15 @@ class DWARFInfo(object):
             
             cu_header = struct_parse(
                 cu_structs.Dwarf_CU_header, self.stream, offset)
+            cu_die_offset = self.stream.tell()
             dwarf_assert(
                 self._is_supported_version(cu_header['version']),
                 "Expected supported DWARF version. Got '%s'" % cu_header['version'])
             CUlist.append(CompileUnit(
                 header=cu_header,
                 dwarfinfo=self,
-                structs=cu_structs))
+                structs=cu_structs,
+                cu_die_offset=cu_die_offset))
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.

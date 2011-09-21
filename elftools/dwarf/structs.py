@@ -11,6 +11,7 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
     Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename, Enum,
+    PrefixedArray, CString,
     )
 
 from .enums import *
@@ -42,6 +43,11 @@ class DWARFStructs(object):
             Dwarf_abbrev_declaration:
                 Abbreviation table declaration - doesn't include the initial
                 code, only the contents.
+            
+            Dwarf_dw_form:
+                A dictionary mapping 'DW_FORM_*' keys into construct Structs
+                that parse such forms. These Structs have already been given
+                dummy names.
         
         See also the documentation of public methods.
     """
@@ -68,12 +74,13 @@ class DWARFStructs(object):
             self.Dwarf_uint16 = UBInt16
             self.Dwarf_uint32 = UBInt32
             self.Dwarf_uint64 = UBInt64
-            self.Dwarf_offest = UBInt32 if self.dwarf_format == 32 else UBInt64
+            self.Dwarf_offset = UBInt32 if self.dwarf_format == 32 else UBInt64
 
         self._create_initial_length()
         self._create_leb128()
         self._create_cu_header()
         self._create_abbrev_declaration()
+        self._create_dw_form()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -107,9 +114,47 @@ class DWARFStructs(object):
             RepeatUntil(
                 lambda obj, ctx: 
                     obj.name == 'DW_AT_null' and obj.form == 'DW_FORM_null',
-                Struct('spec',
+                Struct('attr_spec',
                     Enum(self.Dwarf_uleb128('name'), **ENUM_DW_AT),
                     Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM))))
+
+    def _create_dw_form(self):
+        self.Dwarf_dw_form = dict(
+            DW_FORM_addr=self.Dwarf_offset(''),
+            
+            DW_FORM_block1=self._make_block_struct(self.Dwarf_uint8),
+            DW_FORM_block2=self._make_block_struct(self.Dwarf_uint16),
+            DW_FORM_block4=self._make_block_struct(self.Dwarf_uint32),
+            DW_FORM_block=self._make_block_struct(self.Dwarf_uleb128),
+            
+            # All DW_FORM_data<n> forms are assumed to be unsigned
+            DW_FORM_data1=self.Dwarf_uint8(''),
+            DW_FORM_data2=self.Dwarf_uint16(''),
+            DW_FORM_data4=self.Dwarf_uint32(''),
+            DW_FORM_data8=self.Dwarf_uint64(''),
+            DW_FORM_sdata=self.Dwarf_sleb128(''),
+            DW_FORM_udata=self.Dwarf_uleb128(''),
+            
+            DW_FORM_string=CString(''),
+            DW_FORM_strp=self.Dwarf_offset(''),
+            DW_FORM_flag=self.Dwarf_uint8(''),
+            
+            DW_FORM_ref1=self.Dwarf_uint8(''),
+            DW_FORM_ref2=self.Dwarf_uint16(''),
+            DW_FORM_ref4=self.Dwarf_uint32(''),
+            DW_FORM_ref8=self.Dwarf_uint64(''),
+            DW_FORM_ref_udata=self.Dwarf_uleb128(''),
+            DW_FORM_ref_addr=self.Dwarf_offset(''),
+            
+            DW_FORM_indirect=self.Dwarf_uleb128(''),
+        )
+
+    def _make_block_struct(self, length_field):
+        """ Create a struct for DW_FORM_block<size> 
+        """
+        return PrefixedArray(
+                    subcon=self.Dwarf_uint8('elem'),
+                    length_field=length_field(''))
 
 
 class _InitialLengthAdapter(Adapter):
@@ -170,4 +215,5 @@ def _SLEB128(name):
     """ A construct creator for SLEB128 encoding.
     """
     return Rename(name, _SLEB128Adapter(_LEB128_reader()))
+
 

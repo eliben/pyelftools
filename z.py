@@ -21,14 +21,21 @@ print efile.has_dwarf_info()
 
 dwarfinfo = efile.get_dwarf_info()
 
+cu = dwarfinfo.get_CU(1)
+print cu.get_top_DIE()
+
 #~ print dwarfinfo.structs.Dwarf_abbrev_entry.parse('\x13\x01\x01\x03\x50\x04\x00\x00')
 
-print id(dwarfinfo.get_abbrev_table(0))
-print id(dwarfinfo.get_abbrev_table(0))
-pprint.pprint(dwarfinfo.get_abbrev_table(0)._abbrev_map)
+#~ abbrevtable = dwarfinfo.get_abbrev_table(95)
+#~ print id(abbrevtable)
+#~ pprint.pprint(abbrevtable._abbrev_map)
 
-print dwarfinfo.get_abbrev_table(0).get_abbrev(1).decl
-print dwarfinfo.get_abbrev_table(0).get_abbrev(1).has_children()
+#~ ab1 = abbrevtable.get_abbrev(2)
+#~ print ab1.has_children()
+#~ for name, form in ab1.iter_attr_specs():
+    #~ print name, form
+
+#~ print dwarfinfo.get_abbrev_table(0).get_abbrev(1).has_children()
 
 #~ for cu in dwarfinfo._CU:
     #~ print cu, cu.header
