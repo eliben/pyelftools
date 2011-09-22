@@ -20,12 +20,13 @@ print '===> %s sections!' % efile.num_sections()
 print efile.has_dwarf_info()
 
 dwarfinfo = efile.get_dwarf_info()
-
-print dwarfinfo.get_string_from_table(126)
+tt = dwarfinfo.structs.Dwarf_dw_form['DW_FORM_block1'].parse('\x03\x12\x34\x46')
 
 cu = dwarfinfo.get_CU(1)
 print 'CU header', cu.header
-print cu.get_top_DIE()
+topdie = cu.get_top_DIE()
+
+print topdie.size, topdie.attributes
 
 #~ print dwarfinfo.structs.Dwarf_abbrev_entry.parse('\x13\x01\x01\x03\x50\x04\x00\x00')
 
