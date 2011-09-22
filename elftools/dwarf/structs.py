@@ -8,8 +8,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..construct import (
-    UBInt8, UBInt16, UBInt32, UBInt64,
-    ULInt8, ULInt16, ULInt32, ULInt64,
+    UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename, Enum,
     PrefixedArray, CString,
     )
@@ -19,7 +18,8 @@ from .enums import *
 
 class DWARFStructs(object):
     """ Exposes Construct structs suitable for parsing information from DWARF 
-        sections. Configurable with endianity and format (32 or 64-bit)
+        sections. Each compile unit in DWARF info can have its own structs
+        object.
     
         Accessible attributes (mostly described by in chapter 7 of the DWARF
         spec v3):
@@ -29,6 +29,9 @@ class DWARFStructs(object):
             
             Dwarf_offset:
                 32-bit or 64-bit word, depending on dwarf_format
+            
+            Dwarf_target_addr:
+                32-bit or 64-bit word, depending on address size
             
             Dwarf_initial_length:
                 "Initial length field" encoding
@@ -51,10 +54,22 @@ class DWARFStructs(object):
         
         See also the documentation of public methods.
     """
-    def __init__(self, little_endian=True, dwarf_format=32):
+    def __init__(self, little_endian, dwarf_format, address_size):
+        """ little_endian:
+                True if the file is little endian, False if big
+            
+            dwarf_format:
+                DWARF Format: 32 or 64-bit (see spec section 7.4)
+            
+            address_size:
+                Target machine address size, in bytes (4 or 8). (See spec 
+                section 7.5.1)
+        """
         assert dwarf_format == 32 or dwarf_format == 64
+        assert address_size == 8 or address_size == 4
         self.little_endian = little_endian
-        self.dwarf_format = dwarf_format        
+        self.dwarf_format = dwarf_format  
+        self.address_size = address_size
         self._create_structs()
 
     def initial_lenght_field_size(self):
@@ -69,12 +84,16 @@ class DWARFStructs(object):
             self.Dwarf_uint32 = ULInt32
             self.Dwarf_uint64 = ULInt64
             self.Dwarf_offset = ULInt32 if self.dwarf_format == 32 else ULInt64
+            self.Dwarf_target_addr = (
+                ULInt32 if self.address_size == 4 else ULInt64)
         else:
             self.Dwarf_uint8 = UBInt8
             self.Dwarf_uint16 = UBInt16
             self.Dwarf_uint32 = UBInt32
             self.Dwarf_uint64 = UBInt64
             self.Dwarf_offset = UBInt32 if self.dwarf_format == 32 else UBInt64
+            self.Dwarf_target_addr = (
+                UBInt32 if self.address_size == 4 else UBInt64)
 
         self._create_initial_length()
         self._create_leb128()
@@ -120,7 +139,7 @@ class DWARFStructs(object):
 
     def _create_dw_form(self):
         self.Dwarf_dw_form = dict(
-            DW_FORM_addr=self.Dwarf_offset(''),
+            DW_FORM_addr=self.Dwarf_target_addr(''),
             
             DW_FORM_block1=self._make_block_struct(self.Dwarf_uint8),
             DW_FORM_block2=self._make_block_struct(self.Dwarf_uint16),

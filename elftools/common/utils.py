@@ -41,3 +41,18 @@ def _assert_with_exception(cond, msg, exception_type):
     if not cond:
         raise exception_type(msg)
 
+
+from contextlib import contextmanager
+
+@contextmanager
+def preserve_stream_pos(stream):
+    """ Usage:
+            
+            # stream has some position FOO (return value of stream.tell())
+            with preserve_stream_pos(stream):
+                # do stuff that manipulates the stream
+            # stream still has position FOO
+    """
+    saved_pos = stream.tell()
+    yield
+    stream.seek(saved_pos)

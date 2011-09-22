@@ -8,6 +8,7 @@
 #-------------------------------------------------------------------------------
 from collections import namedtuple
 
+from ..construct import CString
 from ..common.exceptions import DWARFError
 from ..common.utils import struct_parse, dwarf_assert
 from .structs import DWARFStructs
@@ -48,10 +49,14 @@ class DWARFInfo(object):
         self.debug_line_loc = debug_line_loc
         
         self.little_endian = little_endian
-        self.dwarf_format = 32
+        
+        # This is the DWARFStructs the context uses, so it doesn't depend on 
+        # DWARF format and address_size (these are determined per CU) - so we
+        # set them to default values.
         self.structs = DWARFStructs(
             little_endian=self.little_endian,
-            dwarf_format=self.dwarf_format)
+            dwarf_format=32,
+            address_size=4)
         
         # Populate the list with CUs found in debug_info
         self._CU = self._parse_CUs()
@@ -107,6 +112,15 @@ class DWARFInfo(object):
             "Offset '0x%x' to debug_info out of section bounds" % offset)
         return offset + self.debug_info_loc.offset
     
+    def get_string_from_table(self, offset):
+        """ Obtain a string from the string table section, given an offset 
+            relative to the section.
+        """
+        return struct_parse(
+            CString(''),
+            self.stream,
+            stream_pos=self.debug_str_loc.offset + offset)
+    
     def _parse_CUs(self):
         """ Parse CU entries from debug_info.
         """
@@ -124,14 +138,27 @@ class DWARFInfo(object):
             #
             initial_length = struct_parse(
                 self.structs.Dwarf_uint32(''), self.stream, offset)
-            if initial_length == 0xFFFFFFFF:
-                self.dwarf_format = 64
+            dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
+            
+            # At this point we still haven't read the whole header, so we don't
+            # know the address_size. Therefore, we're going to create structs
+            # with a default address_size=4. If, after parsing the header, we
+            # find out address_size is actually 8, we just create a new structs
+            # object for this CU.
+            #
             cu_structs = DWARFStructs(
                 little_endian=self.little_endian,
-                dwarf_format=self.dwarf_format)
+                dwarf_format=dwarf_format,
+                address_size=4)
             
             cu_header = struct_parse(
                 cu_structs.Dwarf_CU_header, self.stream, offset)
+            if cu_header['address_size'] == 8:
+                cu_structs = DWARFStructs(
+                    little_endian=self.little_endian,
+                    dwarf_format=dwarf_format,
+                    address_size=8)
+            
             cu_die_offset = self.stream.tell()
             dwarf_assert(
                 self._is_supported_version(cu_header['version']),

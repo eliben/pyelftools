@@ -21,7 +21,10 @@ print efile.has_dwarf_info()
 
 dwarfinfo = efile.get_dwarf_info()
 
+print dwarfinfo.get_string_from_table(126)
+
 cu = dwarfinfo.get_CU(1)
+print 'CU header', cu.header
 print cu.get_top_DIE()
 
 #~ print dwarfinfo.structs.Dwarf_abbrev_entry.parse('\x13\x01\x01\x03\x50\x04\x00\x00')
