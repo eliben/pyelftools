@@ -11,7 +11,7 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt32, SLInt32, SBInt64, SLInt64,
-    Struct, Array, Enum, Padding, BitStruct, BitField,
+    Struct, Array, Enum, Padding, BitStruct, BitField, Value,
     )
 
 from .enums import *
@@ -148,13 +148,22 @@ class ELFStructs(object):
                 Padding(24),
                 BitField('type', 8))
 
+        # Since the raw value of r_info is also needed, it's being re-computed
+        # in 'r_info_raw'
+        r_info_raw = Value('r_info_raw',
+                lambda ctx: 
+                    (ctx['r_info']['sym'] << 8 if self.elfclass == 32 else 32) +
+                    ctx['r_info']['type'])
+
         self.Elf_Rel = Struct('Elf_Rel',
             self.Elf_addr('r_offset'),
             r_info_struct,
+            r_info_raw,
         )
         self.Elf_Rela = Struct('Elf_Rela',
             self.Elf_addr('r_offset'),
             r_info_struct,
+            r_info_raw,
             self.Elf_sxword('r_addend'),
         )
 

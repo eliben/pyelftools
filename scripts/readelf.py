@@ -276,9 +276,14 @@ class ReadElf(object):
 
             has_relocation_sections = True
             self._emitline("\nRelocation section '%s' at offset %s contains %s entries:" % (
-                1, 2, 3))
+                section.name,
+                self._format_hex(section['sh_offset']),
+                section.num_relocations()))
             for rel in section.iter_relocations():
-                print rel, rel.entry
+                self._emitline('%s %s' % (
+                    self._format_hex(rel['r_offset'], fullhex=True, lead0x=False),
+                    self._format_hex(rel['r_info_raw'], fullhex=True, lead0x=False)))
+                #print rel, rel.entry
 
         if not has_relocation_sections:
             self._emitline('\nThere are no relocations in this file.')
