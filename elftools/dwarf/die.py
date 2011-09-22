@@ -60,8 +60,18 @@ class DIE(object):
         self.dwarfinfo = self.cu.dwarfinfo # get DWARFInfo context
         self.stream = stream
         self.offset = offset
+        
         self.attributes = OrderedDict()
-        self._parse_DIE()
+        self.tag = None
+        self.has_children = None
+        self.size = 0
+        
+        self._parse_DIE()   
+    
+    def is_null(self):
+        """ Is this a null entry?
+        """
+        return self.tag is None
     
     def _parse_DIE(self):
         """ Parses the DIE info from the section, based on the abbreviation
@@ -76,14 +86,22 @@ class DIE(object):
         #
         abbrev_code = struct_parse(
             structs.Dwarf_uleb128(''), self.stream, self.offset)
+        
+        # This may be a null entry
+        if abbrev_code == 0:
+            self.size = self.stream.tell() - self.offset
+            return
+        
         with preserve_stream_pos(self.stream):
             abbrev_decl = self.cu.get_abbrev_table().get_abbrev(abbrev_code)
+        self.tag = abbrev_decl['tag']
         self.has_children = abbrev_decl.has_children()
         
         # Guided by the attributes listed in the abbreviation declaration, parse
         # values from the stream.
         #
         for name, form in abbrev_decl.iter_attr_specs():
+            print '**', self.stream.tell()
             raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
             value = self._translate_attr_value(form, raw_value)            
             self.attributes[name] = AttributeValue(form, value, raw_value)

@@ -26,7 +26,8 @@ cu = dwarfinfo.get_CU(1)
 print 'CU header', cu.header
 topdie = cu.get_top_DIE()
 
-print topdie.size, topdie.attributes
+print topdie.size, topdie.tag
+print topdie.attributes
 
 #~ print dwarfinfo.structs.Dwarf_abbrev_entry.parse('\x13\x01\x01\x03\x50\x04\x00\x00')
 
