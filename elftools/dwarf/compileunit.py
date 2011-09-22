@@ -10,6 +10,23 @@ from .die import DIE
 
 
 class CompileUnit(object):
+    """ A DWARF compilation unit (CU). 
+    
+            A normal compilation unit typically represents the text and data
+            contributed to an executable by a single relocatable object file.
+            It may be derived from several source files, 
+            including pre-processed "include files"
+            
+        Serves as a container and context to DIEs that describe objects and code
+        belonging to a compilation unit.
+        
+        CU header entries can be accessed as dict keys from this object, i.e.
+           cu = CompileUnit(...)
+           cu['version']  # version field of the CU header
+        
+        To get the top-level DIE describing the compilation unit, call the 
+        get_top_DIE method.
+    """
     def __init__(self, header, dwarfinfo, structs, cu_die_offset):
         """ header:
                 CU header for this compile unit

@@ -25,7 +25,11 @@ from ..common.utils import struct_parse, preserve_stream_pos
 #   Raw value as parsed from the section - used for debugging and presentation
 #   (e.g. for a DW_FORM_strp it's the raw string offset into the table)
 #
-AttributeValue = namedtuple('AttributeValue', 'form value raw_value')
+# offset:
+#   Offset of this attribute's value in the stream
+#
+AttributeValue = namedtuple(
+    'AttributeValue', 'form value raw_value offset')
 
 
 class DIE(object):
@@ -73,6 +77,8 @@ class DIE(object):
         """
         return self.tag is None
     
+    #------ PRIVATE ------#
+    
     def _parse_DIE(self):
         """ Parses the DIE info from the section, based on the abbreviation
             table of the CU
@@ -101,10 +107,14 @@ class DIE(object):
         # values from the stream.
         #
         for name, form in abbrev_decl.iter_attr_specs():
-            print '**', self.stream.tell()
+            attr_offset = self.stream.tell()
             raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
             value = self._translate_attr_value(form, raw_value)            
-            self.attributes[name] = AttributeValue(form, value, raw_value)
+            self.attributes[name] = AttributeValue(
+                form=form,
+                value=value,
+                raw_value=raw_value,
+                offset=attr_offset)
         
         self.size = self.stream.tell() - self.offset
 

@@ -51,14 +51,19 @@ class DWARFInfo(object):
         self.little_endian = little_endian
         
         # This is the DWARFStructs the context uses, so it doesn't depend on 
-        # DWARF format and address_size (these are determined per CU) - so we
-        # set them to default values.
+        # DWARF format and address_size (these are determined per CU) - set them
+        # to default values.
         self.structs = DWARFStructs(
             little_endian=self.little_endian,
             dwarf_format=32,
             address_size=4)
         
-        # Populate the list with CUs found in debug_info
+        # Populate the list with CUs found in debug_info. For each CU only its
+        # header is parsed immediately (the abbrev table isn't loaded before
+        # it's being referenced by one of the CU's DIEs). 
+        # Since there usually aren't many CUs in a single object, this
+        # shouldn't present a performance problem.
+        #
         self._CU = self._parse_CUs()
         
         # Cache for abbrev tables: a dict keyed by offset
@@ -121,6 +126,8 @@ class DWARFInfo(object):
             self.stream,
             stream_pos=self.debug_str_loc.offset + offset)
     
+    #------ PRIVATE ------#
+    
     def _parse_CUs(self):
         """ Parse CU entries from debug_info.
         """
@@ -157,7 +164,7 @@ class DWARFInfo(object):
                 cu_structs = DWARFStructs(
                     little_endian=self.little_endian,
                     dwarf_format=dwarf_format,
-                    address_size=8)
+                     address_size=8)
             
             cu_die_offset = self.stream.tell()
             dwarf_assert(

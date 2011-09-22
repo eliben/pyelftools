@@ -22,12 +22,13 @@ print efile.has_dwarf_info()
 dwarfinfo = efile.get_dwarf_info()
 tt = dwarfinfo.structs.Dwarf_dw_form['DW_FORM_block1'].parse('\x03\x12\x34\x46')
 
-cu = dwarfinfo.get_CU(1)
+cu = dwarfinfo.get_CU(0)
 print 'CU header', cu.header
 topdie = cu.get_top_DIE()
 
 print topdie.size, topdie.tag
-print topdie.attributes
+for attrname, val in topdie.attributes.iteritems():
+    print attrname, val
 
 #~ print dwarfinfo.structs.Dwarf_abbrev_entry.parse('\x13\x01\x01\x03\x50\x04\x00\x00')
 
