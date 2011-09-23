@@ -97,7 +97,7 @@ def compare_output(s1, s2):
     flag_after_symtable = False
 
     for i in range(len(lines1)):
-        if 'Symbol table' in lines1[i]:
+        if 'symbol table' in lines1[i]:
             flag_after_symtable = True
 
         # Compare ignoring whitespace
