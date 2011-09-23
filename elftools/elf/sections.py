@@ -121,6 +121,11 @@ class RelocationSection(Section):
             self.header['sh_entsize'] == expected_size,
             'Expected sh_entsize of SHT_REL section to be %s' % expected_size)
 
+    def is_RELA(self):
+        """ Is this a RELA relocation section? If not, it's REL.
+        """
+        return self.header['sh_type'] == 'SHT_RELA'
+
     def num_relocations(self):
         """ Number of relocations in the section
         """
@@ -168,6 +173,11 @@ class Relocation(object):
     """
     def __init__(self, entry):
         self.entry = entry
+        
+    def is_RELA(self):
+        """ Is this a RELA relocation? If not, it's REL.
+        """
+        return 'r_addend' in self.entry
         
     def __getitem__(self, name):
         """ Dict-like access to entries
