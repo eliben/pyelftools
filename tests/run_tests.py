@@ -64,8 +64,8 @@ def run_test_on_file(filename):
                 return False
             stdouts.append(stdout)
         testlog.info('....comparing output...')
-        success, errmsg = compare_output(*stdouts)
-        if success:
+        rc, errmsg = compare_output(*stdouts)
+        if rc:
             testlog.info('.......................SUCCESS')
         else:
             success = False
@@ -97,11 +97,12 @@ def compare_output(s1, s2):
     for i in range(len(lines1)):
         if 'Symbol table' in lines1[i]:
             flag_after_symtable = True
+
         # Compare ignoring whitespace
         if lines1[i].split() != lines2[i].split():
+            sm = SequenceMatcher()
+            sm.set_seqs(lines1[i], lines2[i])
             if flag_after_symtable:
-                sm = SequenceMatcher()
-                sm.set_seqs(lines1[i], lines2[i])
                 # Detect readelf's adding @ with lib and version after 
                 # symbol name.
                 changes = sm.get_opcodes()
@@ -145,8 +146,16 @@ def main():
     if not is_in_rootdir():
         die('Please run me from the root dir of pyelftools!')
 
+    # If file names are given as command-line arguments, only these files
+    # are taken as inputs. Otherwise, autodiscovery is performed.
+    #
+    if len(sys.argv) > 1:
+        filenames = sys.argv[1:]
+    else:
+        filenames = list(discover_testfiles('tests/testfiles'))
+
     success = True
-    for filename in discover_testfiles('tests/testfiles'):
+    for filename in filenames:
         success = success and run_test_on_file(filename)
 
     if success:

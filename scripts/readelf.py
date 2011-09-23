@@ -289,21 +289,25 @@ class ReadElf(object):
 
             for rel in section.iter_relocations():
                 hexwidth = 8 if self.elffile.elfclass == 32 else 12
-                symbol = symtable.get_symbol(rel['r_info_sym'])
-                self._emit('%s  %s %-17.17s %s %s%s' % (
+                self._emit('%s  %s %-17.17s' % (
                     self._format_hex(rel['r_offset'], 
                         fieldsize=hexwidth, lead0x=False),
                     self._format_hex(rel['r_info'], 
                         fieldsize=hexwidth, lead0x=False),
                     describe_reloc_type(
-                        rel['r_info_type'], self.elffile['e_machine']),
+                        rel['r_info_type'], self.elffile['e_machine'])))
+
+                if rel['r_info_sym'] == 0:
+                    self._emitline()
+                    continue
+
+                symbol = symtable.get_symbol(rel['r_info_sym'])
+                self._emit(' %s %s%s' % (
                     self._format_hex(
                         symbol['st_value'],
                         fullhex=True, lead0x=False),
                     '  ' if self.elffile.elfclass == 32 else '',
-                    symbol.name,
-                    ))
-
+                    symbol.name))
                 if section.is_RELA():
                     self._emit(' %s %x' % (
                         '+' if rel['r_addend'] >= 0 else '-',
@@ -345,7 +349,7 @@ class ReadElf(object):
 
             for i in range(linebytes):
                 c = data[dataptr + i]
-                if c >= ' ' and ord(c) <= 0x7f:
+                if c >= ' ' and ord(c) < 0x7f:
                     self._emit(c)
                 else:
                     self._emit('.')
