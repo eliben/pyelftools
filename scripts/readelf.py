@@ -282,7 +282,7 @@ class ReadElf(object):
             for rel in section.iter_relocations():
                 self._emitline('%s %s' % (
                     self._format_hex(rel['r_offset'], fullhex=True, lead0x=False),
-                    self._format_hex(rel['r_info_raw'], fullhex=True, lead0x=False)))
+                    self._format_hex(rel['r_info'], fullhex=True, lead0x=False)))
                 #print rel, rel.entry
 
         if not has_relocation_sections:
