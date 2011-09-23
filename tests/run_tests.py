@@ -84,10 +84,12 @@ def compare_output(s1, s2):
         Note: this function contains some rather horrible hacks to ignore
         differences which are not important for the verification of pyelftools.
         This is due to some intricacies of binutils's readelf which pyelftools
-        doesn't currently implement. Read the documentation for more details.
+        doesn't currently implement, or silly inconsistencies in the output of
+        readelf, which I was reluctant to replicate.
+        Read the documentation for more details.
     """
-    lines1 = s1.splitlines()
-    lines2 = s2.splitlines()
+    lines1 = s1.lower().splitlines()
+    lines2 = s2.lower().splitlines()
     if len(lines1) != len(lines2):
         return False, 'Number of lines different: %s vs %s' % (
                 len(lines1), len(lines2))

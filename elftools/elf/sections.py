@@ -39,6 +39,9 @@ class Section(object):
         """
         return self.header[name]
 
+    def __eq__(self, other):
+        return self.header == other.header
+
 
 class NullSection(Section):
     """ ELF NULL section

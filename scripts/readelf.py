@@ -302,12 +302,19 @@ class ReadElf(object):
                     continue
 
                 symbol = symtable.get_symbol(rel['r_info_sym'])
+                # Some symbols have zero 'st_name', so instead what's used is
+                # the name of the section they point at
+                if symbol['st_name'] == 0:
+                    symsec = self.elffile.get_section(symbol['st_shndx'])
+                    symbol_name = symsec.name
+                else:
+                    symbol_name = symbol.name
                 self._emit(' %s %s%s' % (
                     self._format_hex(
                         symbol['st_value'],
                         fullhex=True, lead0x=False),
                     '  ' if self.elffile.elfclass == 32 else '',
-                    symbol.name))
+                    symbol_name))
                 if section.is_RELA():
                     self._emit(' %s %x' % (
                         '+' if rel['r_addend'] >= 0 else '-',
@@ -328,7 +335,7 @@ class ReadElf(object):
             return
 
         self._emitline("\nHex dump of section '%s':" % section.name)
-
+        self._note_relocs_for_section(section)
         addr = section['sh_addr']
         data = section.data()
         dataptr = 0
@@ -437,6 +444,17 @@ class ReadElf(object):
         except ValueError:
             # Not a number. Must be a name then
             return self.elffile.get_section_by_name(spec)
+
+    def _note_relocs_for_section(self, section):
+        """ If there are relocation sections pointing to the givne section,
+            emit a note about it.
+        """
+        for relsec in self.elffile.iter_sections():
+            if isinstance(relsec, RelocationSection):
+                info_idx = relsec['sh_info']
+                if self.elffile.get_section(info_idx) == section:
+                    self._emitline('  Note: This section has relocations against it, but these have NOT been applied to this dump.')
+                    return
 
     def _emit(self, s=''):
         """ Emit an object to output
