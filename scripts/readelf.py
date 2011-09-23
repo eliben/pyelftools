@@ -31,7 +31,7 @@ from elftools.elf.descriptions import (
     describe_e_version_numeric, describe_p_type, describe_p_flags,
     describe_sh_type, describe_sh_flags,
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
-    describe_symbol_shndx,
+    describe_symbol_shndx, describe_reloc_type,
     )
 
 
@@ -279,11 +279,36 @@ class ReadElf(object):
                 section.name,
                 self._format_hex(section['sh_offset']),
                 section.num_relocations()))
+            if section.is_RELA():
+                self._emitline("  Offset          Info           Type           Sym. Value    Sym. Name + Addend")
+            else:
+                self._emitline(" Offset     Info    Type            Sym.Value  Sym. Name")
+
+            # The symbol table section pointed to in sh_link
+            symtable = self.elffile.get_section(section['sh_link'])
+
             for rel in section.iter_relocations():
-                self._emitline('%s %s' % (
-                    self._format_hex(rel['r_offset'], fullhex=True, lead0x=False),
-                    self._format_hex(rel['r_info_raw'], fullhex=True, lead0x=False)))
-                #print rel, rel.entry
+                hexwidth = 8 if self.elffile.elfclass == 32 else 12
+                symbol = symtable.get_symbol(rel['r_info_sym'])
+                self._emit('%s  %s %-17.17s %s %s%s' % (
+                    self._format_hex(rel['r_offset'], 
+                        fieldsize=hexwidth, lead0x=False),
+                    self._format_hex(rel['r_info'], 
+                        fieldsize=hexwidth, lead0x=False),
+                    describe_reloc_type(
+                        rel['r_info_type'], self.elffile['e_machine']),
+                    self._format_hex(
+                        symbol['st_value'],
+                        fullhex=True, lead0x=False),
+                    '  ' if self.elffile.elfclass == 32 else '',
+                    symbol.name,
+                    ))
+
+                if section.is_RELA():
+                    self._emit(' %s %x' % (
+                        '+' if rel['r_addend'] >= 0 else '-',
+                        abs(rel['r_addend'])))
+                self._emitline()
 
         if not has_relocation_sections:
             self._emitline('\nThere are no relocations in this file.')

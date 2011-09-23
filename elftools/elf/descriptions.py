@@ -6,15 +6,15 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from .enums import ENUM_E_VERSION
+from .enums import ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
 from .constants import P_FLAGS, SH_FLAGS
 
 
 def describe_ei_class(x):
-    return _DESCR_EI_CLASS.get(x, _unknown())
+    return _DESCR_EI_CLASS.get(x, _unknown)
 
 def describe_ei_data(x):
-    return _DESCR_EI_DATA.get(x, _unknown())
+    return _DESCR_EI_DATA.get(x, _unknown)
 
 def describe_ei_version(x):
     s = '%d' % ENUM_E_VERSION[x]
@@ -23,19 +23,19 @@ def describe_ei_version(x):
     return s
     
 def describe_ei_osabi(x):
-    return _DESCR_EI_OSABI.get(x, _unknown())
+    return _DESCR_EI_OSABI.get(x, _unknown)
 
 def describe_e_type(x):
-    return _DESCR_E_TYPE.get(x, _unknown())
+    return _DESCR_E_TYPE.get(x, _unknown)
 
 def describe_e_machine(x):
-    return _DESCR_E_MACHINE.get(x, _unknown())
+    return _DESCR_E_MACHINE.get(x, _unknown)
 
 def describe_e_version_numeric(x):
     return '0x%x' % ENUM_E_VERSION[x]
 
 def describe_p_type(x):
-    return _DESCR_P_TYPE.get(x, _unknown())
+    return _DESCR_P_TYPE.get(x, _unknown)
 
 def describe_p_flags(x):
     s = ''
@@ -44,7 +44,7 @@ def describe_p_flags(x):
     return s
 
 def describe_sh_type(x):
-    return _DESCR_SH_TYPE.get(x, _unknown())
+    return _DESCR_SH_TYPE.get(x, _unknown)
 
 def describe_sh_flags(x):
     s = ''
@@ -57,21 +57,28 @@ def describe_sh_flags(x):
     return s
 
 def describe_symbol_type(x):
-    return _DESCR_ST_INFO_TYPE.get(x, _unknown())
+    return _DESCR_ST_INFO_TYPE.get(x, _unknown)
 
 def describe_symbol_bind(x):
-    return _DESCR_ST_INFO_BIND.get(x, _unknown())
+    return _DESCR_ST_INFO_BIND.get(x, _unknown)
 
 def describe_symbol_visibility(x):
-    return _DESCR_ST_VISIBILITY.get(x, _unknown())
+    return _DESCR_ST_VISIBILITY.get(x, _unknown)
 
 def describe_symbol_shndx(x):
     return _DESCR_ST_SHNDX.get(x, '%3s' % x)
 
+def describe_reloc_type(x, e_machine):
+    if e_machine in ('EM_386', 'EM_486'):
+        return _DESCR_RELOC_TYPE_i386.get(x, _unknown)
+    elif e_machine in ('EM_X86_64', 'EM_L10M'):
+        return _DESCR_RELOC_TYPE_x64.get(x, _unknown)
+    else:
+        return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
+
 
 #-------------------------------------------------------------------------------
-def _unknown():
-    return '<unknown>'
+_unknown = '<unknown>'
 
     
 _DESCR_EI_CLASS = dict(
@@ -221,5 +228,11 @@ _DESCR_ST_SHNDX = dict(
     SHN_ABS='ABS',
     SHN_COMMON='COM',
 )
+
+_DESCR_RELOC_TYPE_i386 = dict(
+        (v, k) for k, v in ENUM_RELOC_TYPE_i386.iteritems())
+
+_DESCR_RELOC_TYPE_x64 = dict(
+        (v, k) for k, v in ENUM_RELOC_TYPE_x64.iteritems())
 
 

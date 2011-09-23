@@ -49,7 +49,7 @@ def run_test_on_file(filename):
     """
     success = True
     testlog.info("Running test on file '%s'" % filename)
-    for option in ['-e', '-s', '-x.text', '-p.shstrtab']:
+    for option in ['-e', '-s', '-r', '-x.text', '-p.shstrtab']:
         testlog.info("..option='%s'" % option)
         # stdouts will be a 2-element list: output of readelf and output 
         # of scripts/readelf.py

@@ -136,34 +136,30 @@ class ELFStructs(object):
         )
     
     def _create_rel(self):
-        # r_info is hierarchical. To access the type, use
-        # container['r_info']['type']
+        # r_info is also taken apart into r_info_sym and r_info_type.
+        # This is done in Value to avoid endianity issues while parsing.
         if self.elfclass == 32:
-            r_info_struct = BitStruct('r_info',
-                BitField('sym', 24),
-                BitField('type', 8))
+            r_info_sym = Value('r_info_sym',
+                lambda ctx: (ctx['r_info'] >> 8) & 0xFFFFFF)
+            r_info_type = Value('r_info_type',
+                lambda ctx: ctx['r_info'] & 0xFF)
         else: # 64
-            r_info_struct = BitStruct('r_info',
-                BitField('sym', 32),
-                Padding(24),
-                BitField('type', 8))
-
-        # Since the raw value of r_info is also needed, it's being re-computed
-        # in 'r_info_raw'
-        r_info_raw = Value('r_info_raw',
-                lambda ctx: 
-                    (ctx['r_info']['sym'] << 8 if self.elfclass == 32 else 32) +
-                    ctx['r_info']['type'])
+            r_info_sym = Value('r_info_sym',
+                lambda ctx: (ctx['r_info'] >> 32) & 0xFFFFFFFF)
+            r_info_type = Value('r_info_type',
+                lambda ctx: ctx['r_info'] & 0xFFFFFFFF)
 
         self.Elf_Rel = Struct('Elf_Rel',
             self.Elf_addr('r_offset'),
-            r_info_struct,
-            r_info_raw,
+            self.Elf_xword('r_info'),
+            r_info_sym,
+            r_info_type,
         )
         self.Elf_Rela = Struct('Elf_Rela',
             self.Elf_addr('r_offset'),
-            r_info_struct,
-            r_info_raw,
+            self.Elf_xword('r_info'),
+            r_info_sym,
+            r_info_type,
             self.Elf_sxword('r_addend'),
         )
 
