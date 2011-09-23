@@ -309,7 +309,7 @@ class ReadElf(object):
                     symbol_name = symsec.name
                 else:
                     symbol_name = symbol.name
-                self._emit(' %s %s%s' % (
+                self._emit(' %s %s%22.22s' % (
                     self._format_hex(
                         symbol['st_value'],
                         fullhex=True, lead0x=False),
