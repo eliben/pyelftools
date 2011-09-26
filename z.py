@@ -10,7 +10,7 @@ from elftools.elf.sections import *
 # read a little-endian, 64-bit file
 es = ELFStructs(True, 64)
 
-stream = open('tests/testfiles/z.elf', 'rb')
+stream = open('tests/testfiles/exe_simple64.elf', 'rb')
 #stream = open('binfiles/z32.elf', 'rb')
 
 efile = ELFFile(stream)
@@ -22,13 +22,20 @@ print efile.has_dwarf_info()
 dwarfinfo = efile.get_dwarf_info()
 tt = dwarfinfo.structs.Dwarf_dw_form['DW_FORM_block1'].parse('\x03\x12\x34\x46')
 
-cu = dwarfinfo.get_CU(0)
+cu = dwarfinfo.get_CU(1)
 print 'CU header', cu.header
 topdie = cu.get_top_DIE()
 
-print topdie.size, topdie.tag
-for attrname, val in topdie.attributes.iteritems():
-    print attrname, val
+for die in cu._dielist:
+    print 'DIE %s, size=%s' % (die.tag, die.size)
+    for attrname, val in die.attributes.iteritems():
+        print '    ', attrname, val
+
+#~ topdie = cu.get_top_DIE()
+
+#~ print topdie.size, topdie.tag
+
+#~ print len(cu._dielist)
 
 #~ print dwarfinfo.structs.Dwarf_abbrev_entry.parse('\x13\x01\x01\x03\x50\x04\x00\x00')
 

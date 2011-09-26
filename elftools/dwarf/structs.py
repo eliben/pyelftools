@@ -72,7 +72,7 @@ class DWARFStructs(object):
         self.address_size = address_size
         self._create_structs()
 
-    def initial_lenght_field_size(self):
+    def initial_length_field_size(self):
         """ Size of an initial length field.
         """
         return 4 if self.dwarf_format == 32 else 12

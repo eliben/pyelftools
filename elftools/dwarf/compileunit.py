@@ -27,7 +27,7 @@ class CompileUnit(object):
         To get the top-level DIE describing the compilation unit, call the 
         get_top_DIE method.
     """
-    def __init__(self, header, dwarfinfo, structs, cu_die_offset):
+    def __init__(self, header, dwarfinfo, structs, cu_offset, cu_die_offset):
         """ header:
                 CU header for this compile unit
             
@@ -37,17 +37,24 @@ class CompileUnit(object):
             structs:
                 A DWARFStructs instance suitable for this compile unit
             
+            cu_offset:
+                Offset in the stream to the beginning of this CU (its header)
+            
             cu_die_offset:
                 Offset in the stream of the top DIE of this CU
         """
         self.dwarfinfo = dwarfinfo
         self.header = header
         self.structs = structs
+        self.cu_offset = cu_offset
         self.cu_die_offset = cu_die_offset
         
         # The abbreviation table for this CU. Filled lazily when DIEs are 
         # requested.
         self._abbrev_table = None
+        
+        # A list of DIEs belonging to this CU. Lazily parsed.
+        self._dielist = []
         
     def get_abbrev_table(self):
         """ Get the abbreviation table (AbbrevTable object) for this CU
@@ -61,14 +68,30 @@ class CompileUnit(object):
         """ Get the top DIE (which is either a DW_TAG_compile_unit or 
             DW_TAG_partial_unit) of this CU
         """
-        return DIE(
-            cu=self,
-            stream=self.dwarfinfo.stream,
-            offset=self.cu_die_offset)
+        return self._get_DIE(0)
 
     def __getitem__(self, name):
         """ Implement dict-like access to header entries
         """
         return self.header[name]
 
+    def _get_DIE(self, index):
+        """ Get the DIE at the given index 
+        """
+        if len(self._dielist) == 0:
+            self._parse_DIEs()
+        return self._dielist[index]
     
+    def _parse_DIEs(self):
+        # Compute the boundary (one byte past the bounds) of this CU in the 
+        # stream
+        cu_boundary = ( self.cu_offset + 
+                        self['unit_length'] + 
+                        self.structs.initial_length_field_size())
+        
+        die_offset = self.cu_die_offset
+        while die_offset < cu_boundary:
+            die = DIE(cu=self, stream=self.dwarfinfo.stream, offset=die_offset)
+            self._dielist.append(die)
+            die_offset += die.size
+

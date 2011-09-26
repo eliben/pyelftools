@@ -174,13 +174,14 @@ class DWARFInfo(object):
                 header=cu_header,
                 dwarfinfo=self,
                 structs=cu_structs,
+                cu_offset=offset,
                 cu_die_offset=cu_die_offset))
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.
             offset = (  offset + 
                         cu_header['unit_length'] + 
-                        cu_structs.initial_lenght_field_size())
+                        cu_structs.initial_length_field_size())
         return CUlist
         
     def _is_supported_version(self, version):

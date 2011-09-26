@@ -44,6 +44,9 @@ class DIE(object):
             size:
                 The size this DIE occupies in the section
             
+            offset:
+                The offset of this DIE in the stream
+            
             attributes:
                 An ordered dictionary mapping attribute names to values. It's 
                 ordered to enable both efficient name->value mapping and
