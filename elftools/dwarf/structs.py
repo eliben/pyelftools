@@ -19,9 +19,12 @@ from .enums import *
 class DWARFStructs(object):
     """ Exposes Construct structs suitable for parsing information from DWARF 
         sections. Each compile unit in DWARF info can have its own structs
-        object.
+        object. Keep in mind that these structs have to be given a name (by 
+        calling them with a name) before being used for parsing (like other
+        Construct structs). Those that should be used without a name are marked
+        by (+).
     
-        Accessible attributes (mostly described by in chapter 7 of the DWARF
+        Accessible attributes (mostly as described in chapter 7 of the DWARF
         spec v3):
     
             Dwarf_uint{8,16,32,64):
@@ -40,14 +43,14 @@ class DWARFStructs(object):
             Dwarf_{u,s}leb128:
                 ULEB128 and SLEB128 variable-length encoding
             
-            Dwarf_CU_header:
+            Dwarf_CU_header (+):
                 Compilation unit header
         
-            Dwarf_abbrev_declaration:
+            Dwarf_abbrev_declaration (+):
                 Abbreviation table declaration - doesn't include the initial
                 code, only the contents.
             
-            Dwarf_dw_form:
+            Dwarf_dw_form (+):
                 A dictionary mapping 'DW_FORM_*' keys into construct Structs
                 that parse such forms. These Structs have already been given
                 dummy names.
