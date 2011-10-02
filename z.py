@@ -20,16 +20,39 @@ print '===> %s sections!' % efile.num_sections()
 print efile.has_dwarf_info()
 
 dwarfinfo = efile.get_dwarf_info()
-tt = dwarfinfo.structs.Dwarf_dw_form['DW_FORM_block1'].parse('\x03\x12\x34\x46')
 
-cu = dwarfinfo.get_CU(1)
+cu = dwarfinfo.get_CU(3)
 print 'CU header', cu.header
 topdie = cu.get_top_DIE()
 
-for die in cu._dielist:
-    print 'DIE %s, size=%s' % (die.tag, die.size)
-    for attrname, val in die.attributes.iteritems():
-        print '    ', attrname, val
+c = topdie.iter_children().next()
+
+print c
+
+print 'siblings.....'
+
+for s in c.iter_siblings():
+    print s
+
+#~ print c.get_parent()
+#~ print topdie
+
+#~ def recp(d, indent=0):
+    #~ s = str(d)
+    #~ lines = s.split('\n')
+    #~ print '\n'.join(' ' * indent + l for l in lines)
+    
+    #~ for c in d.iter_children():
+        #~ recp(c, indent + 6)
+
+#~ recp(topdie)
+    
+#~ for c in topdie.iter_children():
+    #~ print c
+#~ for die in cu._dielist:
+    #~ print 'DIE %s, size=%s' % (die.tag, die.size)
+    #~ for attrname, val in die.attributes.iteritems():
+        #~ print '    ', attrname, val
 
 #~ topdie = cu.get_top_DIE()
 

@@ -54,6 +54,8 @@ class DIE(object):
             
             has_children:
                 Specifies whether this DIE has children
+        
+        See also the public methods.
     """
     def __init__(self, cu, stream, offset):
         """ cu:
@@ -72,6 +74,8 @@ class DIE(object):
         self.tag = None
         self.has_children = None
         self.size = 0
+        self._children = []
+        self._parent = None
         
         self._parse_DIE()   
     
@@ -80,7 +84,47 @@ class DIE(object):
         """
         return self.tag is None
     
+    def get_parent(self):
+        """ The parent DIE of this DIE. None if the DIE has no parent (i.e. a 
+            top-level DIE).
+        """
+        return self._parent
+    
+    def iter_children(self):
+        """ Yield all children of this DIE
+        """
+        return iter(self._children)
+    
+    def iter_siblings(self):
+        """ Yield all siblings of this DIE
+        """
+        if self._parent:
+            for sibling in self._parent.iter_children():
+                if sibling is not self:
+                    yield sibling
+        else:
+            raise StopIteration()
+
+    # The following methods are used while creating the DIE and should not be
+    # interesting to consumers
+    #
+    def add_child(self, die):
+        self._children.append(die)
+    
+    def set_parent(self, die):
+        self._parent = die
+
     #------ PRIVATE ------#
+    
+    def __repr__(self):
+        s = 'DIE %s, size=%s, has_chidren=%s\n' % (
+            self.tag, self.size, self.has_children)
+        for attrname, attrval in self.attributes.iteritems():
+            s += '    |%-18s:  %s\n' % (attrname, attrval)
+        return s
+    
+    def __str__(self):
+        return self.__repr__()
     
     def _parse_DIE(self):
         """ Parses the DIE info from the section, based on the abbreviation

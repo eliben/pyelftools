@@ -69,7 +69,9 @@ class CompileUnit(object):
             DW_TAG_partial_unit) of this CU
         """
         return self._get_DIE(0)
-
+    
+    #------ PRIVATE ------#
+    
     def __getitem__(self, name):
         """ Implement dict-like access to header entries
         """
@@ -83,15 +85,47 @@ class CompileUnit(object):
         return self._dielist[index]
     
     def _parse_DIEs(self):
+        """ Parse all the DIEs pertaining to this CU from the stream and shove
+            them sequentially into self._dielist.
+            Also set the child/sibling/parent links in the DIEs according
+            (unflattening the prefix-order of the DIE tree).
+        """
         # Compute the boundary (one byte past the bounds) of this CU in the 
         # stream
         cu_boundary = ( self.cu_offset + 
                         self['unit_length'] + 
                         self.structs.initial_length_field_size())
         
+        # First pass: parse all DIEs and place them into self._dielist
         die_offset = self.cu_die_offset
         while die_offset < cu_boundary:
             die = DIE(cu=self, stream=self.dwarfinfo.stream, offset=die_offset)
             self._dielist.append(die)
             die_offset += die.size
+
+        # Second pass - unflatten the DIE tree
+        self._unflatten_tree()
+    
+    def _unflatten_tree(self):
+        """ "Unflatten" the DIE tree from it serial representation, by setting
+            the child/sibling/parent links of DIEs.
+            
+            Assumes self._dielist was already populated by a linear list of DIEs
+            read from the stream section
+        """
+        # the first DIE in the list is the root node
+        root = self._dielist[0]
+        parentstack = [root]
+        
+        for die in self._dielist[1:]:
+            if not die.is_null():
+                cur_parent = parentstack[-1]
+                # This DIE is a child of the current parent
+                cur_parent.add_child(die)
+                die.set_parent(cur_parent)
+                if die.has_children:
+                    parentstack.append(die)
+            else:
+                # end of children for the current parent
+                parentstack.pop()
 
