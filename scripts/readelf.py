@@ -33,6 +33,7 @@ from elftools.elf.descriptions import (
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type,
     )
+from elftools.dwarf.dwarfinfo import DWARFInfo, DebugSectionLocator
 
 
 class ReadElf(object):
@@ -47,6 +48,9 @@ class ReadElf(object):
         """
         self.elffile = ELFFile(file)
         self.output = output
+        
+        # Lazily initialized if a debug dump is requested
+        self._dwarfinfo = None
 
     def display_file_header(self):
         """ Display the ELF file header
@@ -406,6 +410,18 @@ class ReadElf(object):
         else:
             self._emitline()
 
+    def display_debug_dump(self, section_name):
+        """ Dump a DWARF section
+        """
+        self._init_dwarfinfo()
+        if self._dwarfinfo is None:
+            return
+        
+        if section_name == 'info':
+            self._dump_debug_info()
+        else:
+            self._emitline('debug dump not yet supported for "%s"' % section_name)
+
     def _format_hex(self, addr, fieldsize=None, fullhex=False, lead0x=True):
         """ Format an address into a hexadecimal string.
 
@@ -455,6 +471,52 @@ class ReadElf(object):
                 if self.elffile.get_section(info_idx) == section:
                     self._emitline('  Note: This section has relocations against it, but these have NOT been applied to this dump.')
                     return
+
+    def _init_dwarfinfo(self):
+        """ Initialize the DWARF info contained in the file and assign it to
+            self._dwarfinfo.
+            Leave self._dwarfinfo at None if no DWARF info was found in the file
+        """
+        if self._dwarfinfo is not None:
+            return
+        
+        if self.elffile.has_dwarf_info():
+            self._dwarfinfo = self.elffile.get_dwarf_info()
+        else:
+            self._dwarfinfo = None
+
+    def _dump_debug_info(self):
+        """ Dump the debugging info section.
+        """
+        # Offset of the .debug_info section in the stream
+        section_offset = self._dwarfinfo.debug_info_loc.offset
+        
+        for cu in self._dwarfinfo.iter_CUs():
+            self._emitline('  Compilation Unit @ offset %s' %
+                self._format_hex(cu.cu_offset - section_offset))
+            self._emitline('   Length:        %s (%s)' % (
+                self._format_hex(cu['unit_length']),
+                '%s-bit' % cu.dwarf_format()))
+            self._emitline('   Version:       %s' % cu['version']),
+            self._emitline('   Abbrev Offset: %s' % cu['debug_abbrev_offset']),
+            self._emitline('   Pointer Size:  %s' % cu['address_size'])
+            
+            # The nesting depth of each DIE within the tree of DIEs must be 
+            # displayed. To implement this, a counter is incremented each time
+            # the current DIE has children, and decremented when a null die is
+            # encountered. Due to the way the DIE tree is serialized, this will
+            # correctly reflect the nesting depth
+            #
+            die_depth = 0
+            for die in cu.iter_DIEs():
+                if die.is_null():
+                    die_depth -= 1
+                    continue
+                self._emitline(' <%s><%x>: Abbrev Number: %s' % (
+                    die_depth, die.offset - section_offset, die.abbrev_code))
+                
+                if die.has_children:
+                    die_depth += 1
 
     def _emit(self, s=''):
         """ Emit an object to output
@@ -506,6 +568,9 @@ def main():
     optparser.add_option('-p', '--string-dump',
             action='store', dest='show_string_dump', metavar='<number|name>',
             help='Dump the contents of section <number|name> as strings')
+    optparser.add_option('--debug-dump',
+            action='store', dest='debug_dump_section', metavar='<section>',
+            help='Display the contents of DWARF debug sections')
 
     options, args = optparser.parse_args()
 
@@ -539,6 +604,8 @@ def main():
                 readelf.display_hex_dump(options.show_hex_dump)
             if options.show_string_dump:
                 readelf.display_string_dump(options.show_string_dump)
+            if options.debug_dump_section:
+                readelf.display_debug_dump(options.debug_dump_section)
         except ELFError as ex:
             sys.stderr.write('ELF error: %s\n' % ex)
             sys.exit(1)

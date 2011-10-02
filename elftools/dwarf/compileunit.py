@@ -55,7 +55,12 @@ class CompileUnit(object):
         
         # A list of DIEs belonging to this CU. Lazily parsed.
         self._dielist = []
-        
+    
+    def dwarf_format(self):
+        """ Get the DWARF format (32 or 64) for this CU
+        """
+        return self.structs.dwarf_format
+    
     def get_abbrev_table(self):
         """ Get the abbreviation table (AbbrevTable object) for this CU
         """
@@ -70,6 +75,13 @@ class CompileUnit(object):
         """
         return self._get_DIE(0)
     
+    def iter_DIEs(self):
+        """ Iterate over all the DIEs in the CU, in order of their appearance.
+            Note that null DIEs will also be returned.
+        """
+        self._parse_DIEs()
+        return iter(self._dielist)
+    
     #------ PRIVATE ------#
     
     def __getitem__(self, name):
@@ -80,8 +92,7 @@ class CompileUnit(object):
     def _get_DIE(self, index):
         """ Get the DIE at the given index 
         """
-        if len(self._dielist) == 0:
-            self._parse_DIEs()
+        self._parse_DIEs()
         return self._dielist[index]
     
     def _parse_DIEs(self):
@@ -90,6 +101,9 @@ class CompileUnit(object):
             Also set the child/sibling/parent links in the DIEs according
             (unflattening the prefix-order of the DIE tree).
         """
+        if len(self._dielist) > 0:
+            return
+            
         # Compute the boundary (one byte past the bounds) of this CU in the 
         # stream
         cu_boundary = ( self.cu_offset + 

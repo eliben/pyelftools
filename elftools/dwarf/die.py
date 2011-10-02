@@ -54,6 +54,11 @@ class DIE(object):
             
             has_children:
                 Specifies whether this DIE has children
+            
+            abbrev_code:
+                The abbreviation code pointing to an abbreviation entry (not
+                that this is for informational pusposes only - this object 
+                interacts with its abbreviation table transparently).
         
         See also the public methods.
     """
@@ -73,6 +78,7 @@ class DIE(object):
         self.attributes = OrderedDict()
         self.tag = None
         self.has_children = None
+        self.abbrev_code = None
         self.size = 0
         self._children = []
         self._parent = None
@@ -137,16 +143,17 @@ class DIE(object):
         # Note: here and elsewhere, preserve_stream_pos is used on operations
         # that manipulate the stream by reading data from it.
         #
-        abbrev_code = struct_parse(
+        self.abbrev_code = struct_parse(
             structs.Dwarf_uleb128(''), self.stream, self.offset)
         
         # This may be a null entry
-        if abbrev_code == 0:
+        if self.abbrev_code == 0:
             self.size = self.stream.tell() - self.offset
             return
         
         with preserve_stream_pos(self.stream):
-            abbrev_decl = self.cu.get_abbrev_table().get_abbrev(abbrev_code)
+            abbrev_decl = self.cu.get_abbrev_table().get_abbrev(
+                self.abbrev_code)
         self.tag = abbrev_decl['tag']
         self.has_children = abbrev_decl.has_children()
         
