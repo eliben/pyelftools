@@ -49,8 +49,7 @@ class DIE(object):
             
             attributes:
                 An ordered dictionary mapping attribute names to values. It's 
-                ordered to enable both efficient name->value mapping and
-                preserve the order of attributes in the section
+                ordered to preserve the order of attributes in the section
             
             has_children:
                 Specifies whether this DIE has children
@@ -190,5 +189,5 @@ class DIE(object):
         else:
             value = raw_value
         return value
-        
-         
+    
+

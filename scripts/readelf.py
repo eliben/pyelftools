@@ -34,6 +34,7 @@ from elftools.elf.descriptions import (
     describe_symbol_shndx, describe_reloc_type,
     )
 from elftools.dwarf.dwarfinfo import DWARFInfo, DebugSectionLocator
+from elftools.dwarf.descriptions import describe_attr_value
 
 
 class ReadElf(object):
@@ -512,11 +513,21 @@ class ReadElf(object):
                 if die.is_null():
                     die_depth -= 1
                     continue
-                self._emitline(' <%s><%x>: Abbrev Number: %s' % (
-                    die_depth, die.offset - section_offset, die.abbrev_code))
+                self._emitline(' <%s><%x>: Abbrev Number: %s (%s)' % (
+                    die_depth,
+                    die.offset - section_offset,
+                    die.abbrev_code,
+                    die.tag))
+                
+                for attrname, attr in die.attributes.iteritems():
+                    self._emitline('    <%2x>   %-18s: %s' % (
+                        attr.offset - section_offset,
+                        attrname,
+                        describe_attr_value(attr, die, section_offset)))
                 
                 if die.has_children:
                     die_depth += 1
+                    
 
     def _emit(self, s=''):
         """ Emit an object to output
