@@ -185,9 +185,18 @@ ENUM_DW_AT = dict(
     DW_AT_main_subprogram       = 0x6a,
     DW_AT_data_bit_offset       = 0x6b,
     DW_AT_const_expr            = 0x6c,
-
-    DW_AT_lo_user               = 0x2000,
-    DW_AT_hi_user               = 0x3fff,
+    
+    DW_AT_MIPS_fde                      = 0x2001,
+    DW_AT_MIPS_loop_begin               = 0x2002,
+    DW_AT_MIPS_tail_loop_begin          = 0x2003,
+    DW_AT_MIPS_epilog_begin             = 0x2004,
+    DW_AT_MIPS_loop_unroll_factor       = 0x2005,
+    DW_AT_MIPS_software_pipeline_depth  = 0x2006,
+    DW_AT_MIPS_linkage_name             = 0x2007,
+    DW_AT_MIPS_stride                   = 0x2008,
+    DW_AT_MIPS_abstract_name            = 0x2009,
+    DW_AT_MIPS_clone_origin             = 0x200a,
+    DW_AT_MIPS_has_inlines              = 0x200b,
 
     _default_                   = Pass,
 )

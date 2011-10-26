@@ -523,7 +523,8 @@ class ReadElf(object):
                     self._emitline('    <%2x>   %-18s: %s' % (
                         attr.offset - section_offset,
                         attrname,
-                        describe_attr_value(attr, die, section_offset)))
+                        describe_attr_value(
+                            attrname, attr, die, section_offset)))
                 
                 if die.has_children:
                     die_depth += 1
