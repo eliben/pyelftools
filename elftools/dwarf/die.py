@@ -14,6 +14,9 @@ from ..common.utils import struct_parse, preserve_stream_pos
 
 # AttributeValue - describes an attribute value in the DIE: 
 #
+# name:
+#   The name (DW_AT_*) of this attribute
+# 
 # form: 
 #   The DW_FORM_* name of this attribute
 #
@@ -29,7 +32,7 @@ from ..common.utils import struct_parse, preserve_stream_pos
 #   Offset of this attribute's value in the stream
 #
 AttributeValue = namedtuple(
-    'AttributeValue', 'form value raw_value offset')
+    'AttributeValue', 'name form value raw_value offset')
 
 
 class DIE(object):
@@ -164,6 +167,7 @@ class DIE(object):
             raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
             value = self._translate_attr_value(form, raw_value)            
             self.attributes[name] = AttributeValue(
+                name=name,
                 form=form,
                 value=value,
                 raw_value=raw_value,

@@ -11,10 +11,9 @@ from collections import defaultdict
 from .constants import *
 
 
-def describe_attr_value(attrname, attr, die, section_offset):
-    """ Given an attribute (attrname is the name, attr is the AttributeValue),
-        return the textual representation of its value, suitable for tools like
-        readelf.
+def describe_attr_value(attr, die, section_offset):
+    """ Given an attribute attr, return the textual representation of its
+        value, suitable for tools like readelf.
         
         To cover all cases, this function needs some extra arguments:
 
@@ -25,7 +24,7 @@ def describe_attr_value(attrname, attr, die, section_offset):
     val_description = descr_func(attr, die, section_offset)
     
     # For some attributes we can display further information
-    extra_info_func = _EXTRA_INFO_DESCRIPTION_MAP[attrname]
+    extra_info_func = _EXTRA_INFO_DESCRIPTION_MAP[attr.name]
     extra_info = extra_info_func(attr, die, section_offset)
     return str(val_description) + '\t' + extra_info    
 
@@ -211,6 +210,9 @@ def _make_extra_string(s=''):
         return s
     return extra
 
+
+def location_list_extra(attr, die, section_offset):
+    pass
 _location_list_extra = _make_extra_string('(location list)')
 
 

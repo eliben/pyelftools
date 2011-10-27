@@ -524,7 +524,7 @@ class ReadElf(object):
                         attr.offset - section_offset,
                         attrname,
                         describe_attr_value(
-                            attrname, attr, die, section_offset)))
+                            attr, die, section_offset)))
                 
                 if die.has_children:
                     die_depth += 1
