@@ -9,6 +9,7 @@
 #-------------------------------------------------------------------------------
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
+    SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename, Enum,
     PrefixedArray, CString,
     )
@@ -27,8 +28,9 @@ class DWARFStructs(object):
         Accessible attributes (mostly as described in chapter 7 of the DWARF
         spec v3):
     
-            Dwarf_uint{8,16,32,64):
-                Data chunks of the common sizes
+            Dwarf_uint{8,16,32,64}:
+            Dwarf_int{8,16,32,64}
+                Data chunks of the common sizes (unsigned and signed)
             
             Dwarf_offset:
                 32-bit or 64-bit word, depending on dwarf_format
@@ -86,6 +88,10 @@ class DWARFStructs(object):
             self.Dwarf_uint16 = ULInt16
             self.Dwarf_uint32 = ULInt32
             self.Dwarf_uint64 = ULInt64
+            self.Dwarf_int8 = SLInt8
+            self.Dwarf_int16 = SLInt16
+            self.Dwarf_int32 = SLInt32
+            self.Dwarf_int64 = SLInt64
             self.Dwarf_offset = ULInt32 if self.dwarf_format == 32 else ULInt64
             self.Dwarf_target_addr = (
                 ULInt32 if self.address_size == 4 else ULInt64)
@@ -94,6 +100,10 @@ class DWARFStructs(object):
             self.Dwarf_uint16 = UBInt16
             self.Dwarf_uint32 = UBInt32
             self.Dwarf_uint64 = UBInt64
+            self.Dwarf_int8 = SBInt8
+            self.Dwarf_int16 = SBInt16
+            self.Dwarf_int32 = SBInt32
+            self.Dwarf_int64 = SBInt64
             self.Dwarf_offset = UBInt32 if self.dwarf_format == 32 else UBInt64
             self.Dwarf_target_addr = (
                 UBInt32 if self.address_size == 4 else UBInt64)

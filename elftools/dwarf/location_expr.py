@@ -154,16 +154,63 @@ class GenericLocationExprVisitor(object):
     def _visit_OP_with_no_args(self, opcode, opcode_name):
         self._cur_args = []
 
-    def _visit_OP_addr(self, opcode, opcode_name):
-        self._cur_args = [
-                struct_parse(self.structs.Dwarf_target_addr(''), self.stream)]
+    def _make_visitor_for_struct(self, struct):
+        """ Make a visitor function that parses a single argument from the
+            stream, based on the given struct.
+        """
+        def visitor(opcode, opcode_name):
+            self._cur_args = [struct_parse(struct, self.stream)]
+        return visitor
 
     def _init_dispatch_table(self):
         self._dispatch_table = {}
         def add(opcode_name, func):
             self._dispatch_table[DW_OP_name2opcode[opcode_name]] = func
             
-        add('DW_OP_addr', self._visit_OP_addr)
-        add('DW_OP_deref', self._visit_OP_with_no_args)
+        for op in (
+                'DW_OP_deref', 'DW_OP_dup', 'DW_OP_drop', 'DW_OP_over',
+                'DW_OP_swap', 'DW_OP_rot', 'DW_OP_xderef', 'DW_OP_abs',
+                'DW_OP_and', 'DW_OP_div', 'DW_OP_minus', 'DW_OP_mod',
+                'DW_OP_mul', 'DW_OP_neg', 'DW_OP_not', 'DW_OP_or',
+                'DW_OP_eq', 'DW_OP_ge', 'DW_OP_gt', 'DW_OP_le', 'DW_OP_lt',
+                'DW_OP_ne', 'DW_OP_plus', 'DW_OP_shl', 'DW_OP_shr',
+                'DW_OP_shra'):
+            add(op, self._visit_OP_with_no_args)
 
+        add('DW_OP_addr', self._make_visitor_for_struct(
+            self.structs.Dwarf_target_addr('')))
+        add('DW_OP_const1u', self._make_visitor_for_struct(
+            self.structs.Dwarf_uint8('')))
+        add('DW_OP_const1s', self._make_visitor_for_struct(
+            self.structs.Dwarf_int8('')))
+        add('DW_OP_const2u', self._make_visitor_for_struct(
+            self.structs.Dwarf_uint16('')))
+        add('DW_OP_const2s', self._make_visitor_for_struct(
+            self.structs.Dwarf_int16('')))
+        add('DW_OP_const4u', self._make_visitor_for_struct(
+            self.structs.Dwarf_uint32('')))
+        add('DW_OP_const4s', self._make_visitor_for_struct(
+            self.structs.Dwarf_int32('')))
+        add('DW_OP_const8u', self._make_visitor_for_struct(
+            self.structs.Dwarf_uint64('')))
+        add('DW_OP_const8s', self._make_visitor_for_struct(
+            self.structs.Dwarf_int64('')))
+        add('DW_OP_constu', self._make_visitor_for_struct(
+            self.structs.Dwarf_uleb128('')))
+        add('DW_OP_consts', self._make_visitor_for_struct(
+            self.structs.Dwarf_sleb128('')))
+        add('DW_OP_plus_uconst', self._make_visitor_for_struct(
+            self.structs.Dwarf_uleb128('')))
+        add('DW_OP_pick', self._make_visitor_for_struct(
+            self.structs.Dwarf_uint8('')))
+        add('DW_OP_bra', self._make_visitor_for_struct(
+            self.structs.Dwarf_int16('')))
+        add('DW_OP_skip', self._make_visitor_for_struct(
+            self.structs.Dwarf_int16('')))
+
+        for i in range(32):
+            add('DW_OP_lit%s' % i, self._visit_OP_with_no_args)
+            add('DW_OP_reg%s' % i, self._visit_OP_with_no_args)
+            add('DW_OP_breg%s' % i, self._make_visitor_for_struct(
+                self.structs.Dwarf_sleb128('')))
 
