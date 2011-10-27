@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
-# tests/run_tests.py
+# tests/run_readelf_tests.py
 #
 # Automatic test runner for elftools & readelf
 #

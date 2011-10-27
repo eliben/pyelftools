@@ -10,6 +10,13 @@ from .exceptions import ELFParseError, ELFError, DWARFError
 from ..construct import ConstructError
 
 
+def bytelist2string(bytelist):
+    """ Convert a list of byte values (e.g. [0x10 0x20 0x00]) to a string
+        (e.g. '\x10\x20\x00').
+    """
+    return ''.join(chr(b) for b in bytelist)
+
+
 def struct_parse(struct, stream, stream_pos=None):
     """ Convenience function for using the given struct to parse a stream.
         If stream_pos is provided, the stream is seeked to this position before

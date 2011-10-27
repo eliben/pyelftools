@@ -34,66 +34,9 @@ print 'siblings.....'
 for s in c.iter_siblings():
     print s
 
-#~ print c.get_parent()
-#~ print topdie
+from elftools.dwarf.location_expr import _DW_OP_name2opcode, _DW_OP_opcode2name
 
-#~ def recp(d, indent=0):
-    #~ s = str(d)
-    #~ lines = s.split('\n')
-    #~ print '\n'.join(' ' * indent + l for l in lines)
-    
-    #~ for c in d.iter_children():
-        #~ recp(c, indent + 6)
+print hex(_DW_OP_name2opcode['DW_OP_lit14'])
+print _DW_OP_opcode2name[0x0e]
 
-#~ recp(topdie)
-    
-#~ for c in topdie.iter_children():
-    #~ print c
-#~ for die in cu._dielist:
-    #~ print 'DIE %s, size=%s' % (die.tag, die.size)
-    #~ for attrname, val in die.attributes.iteritems():
-        #~ print '    ', attrname, val
-
-#~ topdie = cu.get_top_DIE()
-
-#~ print topdie.size, topdie.tag
-
-#~ print len(cu._dielist)
-
-#~ print dwarfinfo.structs.Dwarf_abbrev_entry.parse('\x13\x01\x01\x03\x50\x04\x00\x00')
-
-#~ abbrevtable = dwarfinfo.get_abbrev_table(95)
-#~ print id(abbrevtable)
-#~ pprint.pprint(abbrevtable._abbrev_map)
-
-#~ ab1 = abbrevtable.get_abbrev(2)
-#~ print ab1.has_children()
-#~ for name, form in ab1.iter_attr_specs():
-    #~ print name, form
-
-#~ print dwarfinfo.get_abbrev_table(0).get_abbrev(1).has_children()
-
-#~ for cu in dwarfinfo._CU:
-    #~ print cu, cu.header
-
-
-
-
-#~ print efile.get_section_by_name('.debug_info').name
-
-#~ print '===> %s segments!' % efile.num_segments()
-
-#~ for sec in efile.iter_sections():
-    #~ print type(sec), sec.name
-    #~ if isinstance(sec, SymbolTableSection):
-        #~ print '   linked string table:', sec.stringtable.name
-
-#~ for seg in efile.iter_segments():
-    #~ print type(seg), seg['p_type'], seg['p_offset']
-
-#~ for sec in efile.iter_sections():
-    #~ if isinstance(sec, SymbolTableSection):
-        #~ print 'symbol table "%s ~~~"' % sec.name
-        #~ for sym in sec.iter_symbols():
-            #~ print '%-26s %s %s' % (sym.name, sym['st_info']['type'], sym['st_info']['bind'])
 

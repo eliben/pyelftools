@@ -211,9 +211,14 @@ def _make_extra_string(s=''):
     return extra
 
 
-def location_list_extra(attr, die, section_offset):
-    pass
-_location_list_extra = _make_extra_string('(location list)')
+def _location_list_extra(attr, die, section_offset):
+    # According to section 2.6 of the DWARF spec v3, class loclistptr means
+    # a location list, and class block means a location expression.
+    #
+    if attr.form in ('DW_FORM_data4', 'DW_FORM_data8'):
+        return '(location list)'
+    else:
+        return '<<ZZZ>> %s %s' % (attr.value, type(attr.value))
 
 
 _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
@@ -246,6 +251,10 @@ _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
     DW_AT_segment=_location_list_extra,
     DW_AT_static_link=_location_list_extra,
     DW_AT_use_location=_location_list_extra,
+    DW_AT_allocated=_location_list_extra,
+    DW_AT_associated=_location_list_extra,
+    DW_AT_data_location=_location_list_extra,
+    DW_AT_stride=_location_list_extra,
 )
 
 
