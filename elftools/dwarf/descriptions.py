@@ -91,35 +91,6 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
 )
 
 
-
-def _describe_empty(attr, die, section_offset):
-    return ''
-
-def _describe_dw_inl_extra(attr, die, section_offset):
-    return _DESCR_DW_INL.get(
-        attr.value,
-        '  (Unknown inline attribute value: %x)' % attr.value)
-
-def _describe_dw_lang_extra(attr, die, section_offset):
-    return _DESCR_DW_LANG.get(
-        attr.value,
-        '  (Unknown: %x)' % attr.value)
-
-def _describe_dw_ate_extra(attr, die, section_offset):
-    return _DESCR_DW_ATE.get(
-        attr.value,
-        '  (unknown type)')
-
-
-_EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
-    lambda: _describe_empty, # default_factory
-    
-    DW_AT_inline=_describe_dw_inl_extra,
-    DW_AT_language=_describe_dw_lang_extra,
-    DW_AT_encoding=_describe_dw_ate_extra,
-)
-
-
 _DESCR_DW_INL = {
     DW_INL_not_inlined: '(not inlined)',
     DW_INL_inlined: '(inlined)',
@@ -182,4 +153,97 @@ _DESCR_DW_ATE = {
     DW_ATE_HP_imaginary_float80: '(HP_imaginary_float80)',
     DW_ATE_HP_imaginary_float128: '(HP_imaginary_float128)',
 }
+
+_DESCR_DW_ACCESS = {
+    DW_ACCESS_public: '(public)',
+    DW_ACCESS_protected: '(protected)',
+    DW_ACCESS_private: '(private)',
+}
+
+_DESCR_DW_VIS = {
+    DW_VIS_local: '(local)',
+    DW_VIS_exported: '(exported)',
+    DW_VIS_qualified: '(qualified)',
+}
+
+_DESCR_DW_VIRTUALITY = {
+    DW_VIRTUALITY_none: '(none)',
+    DW_VIRTUALITY_virtual: '(virtual)',
+    DW_VIRTUALITY_pure_virtual: '(pure virtual)',
+}
+
+_DESCR_DW_ID_CASE = {
+    DW_ID_case_sensitive: '(case_sensitive)',
+    DW_ID_up_case: '(up_case)',
+    DW_ID_down_case: '(down_case)',
+    DW_ID_case_insensitive: '(case_insensitive)',
+}
+
+_DESCR_DW_CC = {
+    DW_CC_normal: '(normal)',
+    DW_CC_program: '(program)',
+    DW_CC_nocall: '(nocall)',
+}
+
+_DESCR_DW_ORD = {
+    DW_ORD_row_major: '(row major)',
+    DW_ORD_col_major: '(column major)',
+}
+
+
+def _make_extra_mapper(mapping, default, default_interpolate_value=False):
+    """ Create a mapping function from attribute parameters to an extra
+        value that should be displayed.
+    """
+    def mapper(attr, die, section_offset):
+        if default_interpolate_value:
+            d = default % attr.value
+        else:
+            d = default
+        return mapping.get(attr.value, d)
+    return mapper
+
+
+def _make_extra_string(s=''):
+    """ Create an extra function that just returns a constant string.
+    """
+    def extra(attr, die, section_offset):
+        return s
+    return extra
+
+_location_list_extra = _make_extra_string('(location list)')
+
+
+_EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
+    lambda: _make_extra_string(''), # default_factory
+    
+    DW_AT_inline=_make_extra_mapper(
+        _DESCR_DW_INL, '(Unknown inline attribute value: %x',
+        default_interpolate_value=True),
+    DW_AT_language=_make_extra_mapper(
+        _DESCR_DW_LANG, '(Unknown: %x)', default_interpolate_value=True),
+    DW_AT_encoding=_make_extra_mapper(_DESCR_DW_ATE, '(unknown type)'),
+    DW_AT_accessibility=_make_extra_mapper(
+        _DESCR_DW_ACCESS, '(unknown accessibility)'),
+    DW_AT_visibility=_make_extra_mapper(
+        _DESCR_DW_VIS, '(unknown visibility)'),
+    DW_AT_virtuality=_make_extra_mapper(
+        _DESCR_DW_VIRTUALITY, '(unknown virtuality)'),
+    DW_AT_identifier_case=_make_extra_mapper(
+        _DESCR_DW_ID_CASE, '(unknown case)'),
+    DW_AT_calling_convention=_make_extra_mapper(
+        _DESCR_DW_CC, '(unknown convention)'),
+    DW_AT_ordering=_make_extra_mapper(
+        _DESCR_DW_ORD, '(undefined)'),
+    DW_AT_frame_base=_location_list_extra,
+    DW_AT_location=_location_list_extra,
+    DW_AT_string_length=_location_list_extra,
+    DW_AT_return_addr=_location_list_extra,
+    DW_AT_data_member_location=_location_list_extra,
+    DW_AT_vtable_elem_location=_location_list_extra,
+    DW_AT_segment=_location_list_extra,
+    DW_AT_static_link=_location_list_extra,
+    DW_AT_use_location=_location_list_extra,
+)
+
 

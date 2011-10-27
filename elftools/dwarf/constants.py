@@ -76,3 +76,45 @@ DW_ATE_HP_imaginary_float80=0x85
 DW_ATE_HP_imaginary_float128=0x86
 
 
+# Access
+#
+DW_ACCESS_public=1
+DW_ACCESS_protected=2
+DW_ACCESS_private=3
+
+
+# Visibility
+#
+DW_VIS_local=1
+DW_VIS_exported=2
+DW_VIS_qualified=3
+
+
+# Virtuality
+#
+DW_VIRTUALITY_none=0
+DW_VIRTUALITY_virtual=1
+DW_VIRTUALITY_pure_virtual=2
+
+
+# ID case
+#
+DW_ID_case_sensitive=0
+DW_ID_up_case=1
+DW_ID_down_case=2
+DW_ID_case_insensitive=3
+
+
+# Calling convention
+#
+DW_CC_normal=0x1
+DW_CC_program=0x2
+DW_CC_nocall=0x3
+
+
+# Ordering
+#
+DW_ORD_row_major=0
+DW_ORD_col_major=1
+
+
