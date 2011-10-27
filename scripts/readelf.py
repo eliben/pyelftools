@@ -519,10 +519,10 @@ class ReadElf(object):
                     die.abbrev_code,
                     die.tag))
                 
-                for attrname, attr in die.attributes.iteritems():
+                for attr in die.attributes.itervalues():
                     self._emitline('    <%2x>   %-18s: %s' % (
                         attr.offset - section_offset,
-                        attrname,
+                        attr.name,
                         describe_attr_value(
                             attr, die, section_offset)))
                 
