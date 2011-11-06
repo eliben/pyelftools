@@ -223,6 +223,8 @@ class GenericLocationExprVisitor(object):
             add('DW_OP_breg%s' % n, 
                 self._make_visitor_arg_struct(self.structs.Dwarf_sleb128('')))
 
+        add('DW_OP_fbreg',
+            self._make_visitor_arg_struct(self.structs.Dwarf_sleb128('')))
         add('DW_OP_regx',
             self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
         add('DW_OP_bregx',
@@ -262,7 +264,7 @@ class LocationExpressionDumper(GenericLocationExprVisitor):
             'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_constu', 'DW_OP_consts',
             'DW_OP_pick', 'DW_OP_plus_uconst', 'DW_OP_bra', 'DW_OP_skip',
             'DW_OP_fbreg', 'DW_OP_piece', 'DW_OP_deref_size',
-            'DW_OP_xderef_size', 'DW_OP_regx', 'DW_OP_fbreg', ])
+            'DW_OP_xderef_size', 'DW_OP_regx',])
         
         for n in range(0, 32):
             self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)

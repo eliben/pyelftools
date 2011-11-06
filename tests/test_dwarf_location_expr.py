@@ -24,6 +24,11 @@ class TestLocationExpressionDumper(unittest.TestCase):
         self.visitor.process_expr([0x74, 0x82, 0x01])
         self.assertEqual(self.visitor.get_str(),
             'DW_OP_breg4: 130')
+        
+        self.setUp()
+        self.visitor.process_expr([0x91, 0x82, 0x01])
+        self.assertEqual(self.visitor.get_str(),
+            'DW_OP_fbreg: 130')
 
         self.setUp()
         self.visitor.process_expr([0x9d, 0x8f, 0x0A, 0x90, 0x01])
