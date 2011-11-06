@@ -70,18 +70,6 @@ DW_OP_name2opcode = dict(
     DW_OP_form_tls_address=0x9b,
     DW_OP_call_frame_cfa=0x9c,
     DW_OP_bit_piece=0x9d,
-    DW_OP_implicit_value=0x9e,
-    DW_OP_stack_value=0x9f,
-    DW_OP_GNU_push_tls_address=0xe0,
-    DW_OP_GNU_uninit=0xf0,
-    DW_OP_GNU_encoded_addr=0xf1,
-    DW_OP_GNU_implicit_pointer=0xf2,
-    DW_OP_GNU_entry_value=0xf3,
-    DW_OP_GNU_const_type=0xf4,
-    DW_OP_GNU_regval_type=0xf5,
-    DW_OP_GNU_deref_type=0xf6,
-    DW_OP_GNU_convert=0xf7,
-    DW_OP_GNU_reinterpret=0xf9,
 )
 
 def _generate_dynamic_values(map, prefix, index_start, index_end, value_start):
@@ -115,11 +103,12 @@ class GenericLocationExprVisitor(object):
         """ Process (visit) a location expression. Currently two possible
             types are supported for expr:
 
-            1. file-like stream object
+            1. File-like stream object
             2. List of byte values (the result of parsed DW_FORM_block*
                attributes).
         """
         if hasattr(expr, 'read') and hasattr(expr, 'seek'):
+            # looks like a stream
             self.stream = expr
         else:
             self.stream = StringIO(bytelist2string(expr))
@@ -134,6 +123,8 @@ class GenericLocationExprVisitor(object):
             # Decode the opcode and its name
             self._cur_opcode = ord(byte)
             self._cur_opcode_name = DW_OP_opcode2name[self._cur_opcode]
+            # Will be filled in by visitors
+            self._cur_args = [] 
 
             # Dispatch to a visitor function
             visitor = self._dispatch_table.get(
@@ -158,12 +149,97 @@ class GenericLocationExprVisitor(object):
         self._cur_args = [
                 struct_parse(self.structs.Dwarf_target_addr(''), self.stream)]
 
+    def _make_visitor_arg_struct(self, struct_arg):
+        """ Create a visitor method for an opcode that that accepts a single
+            argument, specified by a struct.
+        """
+        def visitor(self, opcode, opcode_name):
+            self._cur_args = [struct_parse(struct_arg, self.stream)]
+        return visitor
+
+    def _make_visitor_arg_struct2(self, struct_arg1, struct_arg2):
+        """ Create a visitor method for an opcode that that accepts two
+            arguments, specified by structs.
+        """
+        def visitor(self, opcode, opcode_name):
+            self._cur_args = [
+                struct_parse(struct_arg1, self.stream),
+                struct_parse(struct_arg2, self.stream)]
+        return visitor
+
     def _init_dispatch_table(self):
         self._dispatch_table = {}
         def add(opcode_name, func):
             self._dispatch_table[DW_OP_name2opcode[opcode_name]] = func
             
         add('DW_OP_addr', self._visit_OP_addr)
-        add('DW_OP_deref', self._visit_OP_with_no_args)
+        add('DW_OP_const1u', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_uint8('')))
+        add('DW_OP_const1s', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
+        add('DW_OP_const2u', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_uint16('')))
+        add('DW_OP_const2s', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
+        add('DW_OP_const4u', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
+        add('DW_OP_const4s', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_int32('')))
+        add('DW_OP_const8u', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_uint64('')))
+        add('DW_OP_const8s', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_int64('')))
+        add('DW_OP_constu',
+            self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
+        add('DW_OP_consts',
+            self._make_visitor_arg_struct(self.structs.Dwarf_sleb128('')))
+        add('DW_OP_pick',
+            self._make_visitor_arg_struct(self.structs.Dwarf_uint8('')))
+        add('DW_OP_plus_uconst',
+            self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
+        add('DW_OP_bra', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
+        add('DW_OP_skip', 
+            self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
+
+        for opname in [ 'DW_OP_deref', 'DW_OP_dup', 'DW_OP_drop', 'DW_OP_over',
+                        'DW_OP_swap', 'DW_OP_swap', 'DW_OP_rot', 'DW_OP_xderef',
+                        'DW_OP_abs', 'DW_OP_and', 'DW_OP_div', 'DW_OP_minus',
+                        'DW_OP_mod', 'DW_OP_mul', 'DW_OP_neg', 'DW_OP_not',
+                        'DW_OP_plus', 'DW_OP_shl', 'DW_OP_shr', 'DW_OP_shra',
+                        'DW_OP_xor', 'DW_OP_eq', 'DW_OP_ge', 'DW_OP_gt',
+                        'DW_OP_le', 'DW_OP_lt', 'DW_OP_ne', 'DW_OP_nop',
+                        'DW_OP_push_object_address', 'DW_OP_form_tls_address',
+                        'DW_OP_call_frame_cfa', 'DW_OP_stack_value',]:
+            add(opname, self._visit_OP_with_no_args)
+
+        for n in range(0, 32):
+            add('DW_OP_lit%s' % n, self._visit_OP_with_no_args)
+            add('DW_OP_reg%s' % n, self._visit_OP_with_no_args)
+            add('DW_OP_breg%s' % n, 
+                self._make_visitor_arg_struct(self.structs.Dwarf_sleb128('')))
+
+        add('DW_OP_regx',
+            self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
+        add('DW_OP_bregx',
+            self._make_visitor_arg_struct(
+                self.structs.Dwarf_uleb128(''),
+                self.structs.Dwarf_sleb128('')))
+        add('DW_OP_piece',
+            self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
+        add('DW_OP_bit_piece',
+            self._make_visitor_arg_struct(
+                self.structs.Dwarf_uleb128(''),
+                self.structs.Dwarf_uleb128('')))
+        add('DW_OP_deref_size',
+            self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
+        add('DW_OP_xderef_size',
+            self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
+        add('DW_OP_call2',
+            self._make_visitor_arg_struct(self.structs.Dwarf_uint16('')))
+        add('DW_OP_call4',
+            self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
+        add('DW_OP_call_ref',
+            self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
 
 

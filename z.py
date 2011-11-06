@@ -17,26 +17,26 @@ efile = ELFFile(stream)
 print efile.elfclass, efile.little_endian
 print '===> %s sections!' % efile.num_sections() 
 
-print efile.has_dwarf_info()
+#~ print efile.has_dwarf_info()
 
-dwarfinfo = efile.get_dwarf_info()
+#~ dwarfinfo = efile.get_dwarf_info()
 
-cu = dwarfinfo.get_CU(3)
-print 'CU header', cu.header
-topdie = cu.get_top_DIE()
+#~ cu = dwarfinfo.get_CU(3)
+#~ print 'CU header', cu.header
+#~ topdie = cu.get_top_DIE()
 
-c = topdie.iter_children().next()
+#~ c = topdie.iter_children().next()
 
-print c
+#~ print c
 
-print 'siblings.....'
+#~ print 'siblings.....'
 
-for s in c.iter_siblings():
-    print s
+#~ for s in c.iter_siblings():
+    #~ print s
 
-from elftools.dwarf.location_expr import _DW_OP_name2opcode, _DW_OP_opcode2name
+from elftools.dwarf.location_expr import DW_OP_name2opcode, DW_OP_opcode2name
 
-print hex(_DW_OP_name2opcode['DW_OP_lit14'])
-print _DW_OP_opcode2name[0x0e]
+print hex(DW_OP_name2opcode['DW_OP_lit14'])
+print DW_OP_opcode2name[0x0e]
 
 
