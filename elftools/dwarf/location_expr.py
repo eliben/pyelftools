@@ -11,8 +11,7 @@ from cStringIO import StringIO
 from ..common.utils import struct_parse, bytelist2string
 
 
-# Location expression opcodes. 
-#
+# Location expression opcodes. name -> opcode mapping
 DW_OP_name2opcode = dict(
     DW_OP_addr=0x03,
     DW_OP_deref=0x06,
@@ -86,20 +85,20 @@ _generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_lit', 0, 31, 0x30)
 _generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_reg', 0, 31, 0x50)
 _generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_breg', 0, 31, 0x70)
 
+# opcode -> name mapping
 DW_OP_opcode2name = dict((v, k) for k, v in DW_OP_name2opcode.iteritems())
 
 
 class GenericLocationExprVisitor(object):
     def __init__(self, structs):
         self.structs = structs
-        self.stream = None
         self._init_dispatch_table()
-
+        self.stream = None
         self._cur_opcode = None
         self._cur_opcode_name = None
         self._cur_args = []
 
-    def process_expr(self, expr):
+    def process_expr(self, loc_expr):
         """ Process (visit) a location expression. Currently two possible
             types are supported for expr:
 
@@ -107,11 +106,11 @@ class GenericLocationExprVisitor(object):
             2. List of byte values (the result of parsed DW_FORM_block*
                attributes).
         """
-        if hasattr(expr, 'read') and hasattr(expr, 'seek'):
+        if hasattr(loc_expr, 'read') and hasattr(loc_expr, 'seek'):
             # looks like a stream
-            self.stream = expr
+            self.stream = loc_expr
         else:
-            self.stream = StringIO(bytelist2string(expr))
+            self.stream = StringIO(bytelist2string(loc_expr))
 
         while True:
             # Get the next opcode from the stream. If nothing is left in the
@@ -122,7 +121,8 @@ class GenericLocationExprVisitor(object):
 
             # Decode the opcode and its name
             self._cur_opcode = ord(byte)
-            self._cur_opcode_name = DW_OP_opcode2name[self._cur_opcode]
+            self._cur_opcode_name = DW_OP_opcode2name.get(
+                self._cur_opcode, 'OP:0x%x' % self._cur_opcode)
             # Will be filled in by visitors
             self._cur_args = [] 
 
@@ -136,11 +136,11 @@ class GenericLocationExprVisitor(object):
             self._after_visit(
                     self._cur_opcode, self._cur_opcode_name, self._cur_args)
 
-    def _after_visit(self, opcode, opcode_name, *args):
-        raise NotImplementedError()
+    def _after_visit(self, opcode, opcode_name, args):
+        pass
         
     def _default_visitor(self, opcode, opcode_name):
-        raise NotImplementedError()
+        pass
         
     def _visit_OP_with_no_args(self, opcode, opcode_name):
         self._cur_args = []
@@ -153,7 +153,7 @@ class GenericLocationExprVisitor(object):
         """ Create a visitor method for an opcode that that accepts a single
             argument, specified by a struct.
         """
-        def visitor(self, opcode, opcode_name):
+        def visitor(opcode, opcode_name):
             self._cur_args = [struct_parse(struct_arg, self.stream)]
         return visitor
 
@@ -161,7 +161,7 @@ class GenericLocationExprVisitor(object):
         """ Create a visitor method for an opcode that that accepts two
             arguments, specified by structs.
         """
-        def visitor(self, opcode, opcode_name):
+        def visitor(opcode, opcode_name):
             self._cur_args = [
                 struct_parse(struct_arg1, self.stream),
                 struct_parse(struct_arg2, self.stream)]
@@ -186,9 +186,13 @@ class GenericLocationExprVisitor(object):
         add('DW_OP_const4s', 
             self._make_visitor_arg_struct(self.structs.Dwarf_int32('')))
         add('DW_OP_const8u', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint64('')))
+            self._make_visitor_arg_struct2(
+                self.structs.Dwarf_uint32(''),
+                self.structs.Dwarf_uint32('')))
         add('DW_OP_const8s', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int64('')))
+            self._make_visitor_arg_struct2(
+                self.structs.Dwarf_int32(''),
+                self.structs.Dwarf_int32('')))
         add('DW_OP_constu',
             self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
         add('DW_OP_consts',
@@ -210,7 +214,7 @@ class GenericLocationExprVisitor(object):
                         'DW_OP_xor', 'DW_OP_eq', 'DW_OP_ge', 'DW_OP_gt',
                         'DW_OP_le', 'DW_OP_lt', 'DW_OP_ne', 'DW_OP_nop',
                         'DW_OP_push_object_address', 'DW_OP_form_tls_address',
-                        'DW_OP_call_frame_cfa', 'DW_OP_stack_value',]:
+                        'DW_OP_call_frame_cfa']:
             add(opname, self._visit_OP_with_no_args)
 
         for n in range(0, 32):
@@ -222,13 +226,13 @@ class GenericLocationExprVisitor(object):
         add('DW_OP_regx',
             self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
         add('DW_OP_bregx',
-            self._make_visitor_arg_struct(
+            self._make_visitor_arg_struct2(
                 self.structs.Dwarf_uleb128(''),
                 self.structs.Dwarf_sleb128('')))
         add('DW_OP_piece',
             self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
         add('DW_OP_bit_piece',
-            self._make_visitor_arg_struct(
+            self._make_visitor_arg_struct2(
                 self.structs.Dwarf_uleb128(''),
                 self.structs.Dwarf_uleb128('')))
         add('DW_OP_deref_size',
@@ -241,5 +245,48 @@ class GenericLocationExprVisitor(object):
             self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
         add('DW_OP_call_ref',
             self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
+
+
+class LocationExpressionDumper(GenericLocationExprVisitor):
+    def __init__(self, structs):
+        super(LocationExpressionDumper, self).__init__(structs)
+        self._init_lookups()
+        self._str_parts = []
+    
+    def get_str(self):
+        return '; '.join(self._str_parts)
+
+    def _init_lookups(self):        
+        self._ops_with_decimal_arg = set([
+            'DW_OP_const1u', 'DW_OP_const1s', 'DW_OP_const2u', 'DW_OP_const2s',
+            'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_constu', 'DW_OP_consts',
+            'DW_OP_pick', 'DW_OP_plus_uconst', 'DW_OP_bra', 'DW_OP_skip',
+            'DW_OP_fbreg', 'DW_OP_piece', 'DW_OP_deref_size',
+            'DW_OP_xderef_size', 'DW_OP_regx', 'DW_OP_fbreg', ])
+        
+        for n in range(0, 32):
+            self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)
+        
+        self._ops_with_two_decimal_args = set([
+            'DW_OP_const8u', 'DW_OP_const8s', 'DW_OP_bregx', 'DW_OP_bit_piece'])
+
+        self._ops_with_hex_arg = set(
+            ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
+
+    def _after_visit(self, opcode, opcode_name, args):
+        self._str_parts.append(self._dump_to_string(opcode, opcode_name, args))
+
+    def _dump_to_string(self, opcode, opcode_name, args):
+        if len(args) == 0:
+            return opcode_name
+        elif opcode_name in self._ops_with_decimal_arg:
+            return '%s: %s' % (opcode_name, args[0])
+        elif opcode_name in self._ops_with_hex_arg:
+            return '%s: %x' % (opcode_name, args[0])
+        elif opcode_name in self._ops_with_two_decimal_args:
+            return '%s: %s %s' % (opcode_name, args[0], args[1])
+        else:
+            return '<unknown %s>' % opcode_name
+
 
 
