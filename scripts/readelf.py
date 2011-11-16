@@ -493,11 +493,13 @@ class ReadElf(object):
     def _dump_debug_info(self):
         """ Dump the debugging info section.
         """
+        self._emitline('Contents of the .debug_info section:\n')
+        
         # Offset of the .debug_info section in the stream
         section_offset = self._dwarfinfo.debug_info_loc.offset
         
         for cu in self._dwarfinfo.iter_CUs():
-            self._emitline('  Compilation Unit @ offset %s' %
+            self._emitline('  Compilation Unit @ offset %s:' %
                 self._format_hex(cu.cu_offset - section_offset))
             self._emitline('   Length:        %s (%s)' % (
                 self._format_hex(cu['unit_length']),

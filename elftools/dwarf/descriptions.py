@@ -9,6 +9,7 @@
 from collections import defaultdict
 
 from .constants import *
+from .location_expr import LocationExpressionDumper
 
 
 def describe_attr_value(attr, die, section_offset):
@@ -218,7 +219,9 @@ def _location_list_extra(attr, die, section_offset):
     if attr.form in ('DW_FORM_data4', 'DW_FORM_data8'):
         return '(location list)'
     else:
-        return '<<ZZZ>> %s %s' % (attr.value, type(attr.value))
+        location_expr_dumper = LocationExpressionDumper(die.cu.structs)
+        location_expr_dumper.process_expr(attr.value)
+        return '(' + location_expr_dumper.get_str() + ')'
 
 
 _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
