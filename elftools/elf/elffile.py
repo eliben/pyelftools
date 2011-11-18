@@ -212,7 +212,7 @@ class ELFFile(object):
             return self._make_symbol_table_section(section_header, name)
         elif sectype in ('SHT_REL', 'SHT_RELA'):
             return RelocationSection(
-                section_header, name, self.stream, self.structs)
+                section_header, name, self.stream, self)
         else:
             return Section(section_header, name, self.stream)
 
@@ -223,7 +223,7 @@ class ELFFile(object):
         strtab_section = self.get_section(linked_strtab_index)
         return SymbolTableSection(
             section_header, name, self.stream,
-            elfstructs=self.structs,
+            elffile=self,
             stringtable=strtab_section)
 
     def _get_segment_header(self, n):

@@ -8,6 +8,7 @@
 #-------------------------------------------------------------------------------
 from ..construct import CString
 from ..common.utils import struct_parse, elf_assert
+from .relocation import Relocation
 
 
 class Section(object):
@@ -73,9 +74,10 @@ class SymbolTableSection(Section):
     """ ELF symbol table section. Has an associated StringTableSection that's
         passed in the constructor.
     """
-    def __init__(self, header, name, stream, elfstructs, stringtable):
+    def __init__(self, header, name, stream, elffile, stringtable):
         super(SymbolTableSection, self).__init__(header, name, stream)
-        self.elfstructs = elfstructs
+        self.elffile = elffile
+        self.elfstructs = self.elffile.structs
         self.stringtable = stringtable
         elf_assert(self['sh_entsize'] > 0,
                 'Expected entry size of section %s to be > 0' % name)
@@ -108,9 +110,10 @@ class SymbolTableSection(Section):
 
 
 class RelocationSection(Section):
-    def __init__(self, header, name, stream, elfstructs):
+    def __init__(self, header, name, stream, elffile):
         super(RelocationSection, self).__init__(header, name, stream)
-        self.elfstructs = elfstructs
+        self.elffile = elffile
+        self.elfstructs = self.elffile.structs
         if self.header['sh_type'] == 'SHT_REL':
             expected_size = self.elfstructs.Elf_Rel.sizeof()
             self.entry_struct = self.elfstructs.Elf_Rel
@@ -142,7 +145,7 @@ class RelocationSection(Section):
             self.entry_struct,
             self.stream,
             stream_pos=entry_offset)
-        return Relocation(entry)
+        return Relocation(entry, self.elffile)
 
     def iter_relocations(self):
         """ Yield all the relocations in the section
@@ -167,31 +170,4 @@ class Symbol(object):
         """
         return self.entry[name]
 
-
-class Relocation(object):
-    """ Relocation object - representing a single relocation entry. Allows
-        dictionary-like access to the entry's fields.
-
-        Can be either a REL or RELA relocation.
-    """
-    def __init__(self, entry):
-        self.entry = entry
-        
-    def is_RELA(self):
-        """ Is this a RELA relocation? If not, it's REL.
-        """
-        return 'r_addend' in self.entry
-        
-    def __getitem__(self, name):
-        """ Dict-like access to entries
-        """
-        return self.entry[name]
-
-    def __repr__(self):
-        return '<Relocation (%s): %s>' % (
-                'RELA' if self.is_RELA() else 'REL',
-                self.entry)
-
-    def __str__(self):
-        return self.__repr__()
 
