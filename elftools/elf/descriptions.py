@@ -68,10 +68,10 @@ def describe_symbol_visibility(x):
 def describe_symbol_shndx(x):
     return _DESCR_ST_SHNDX.get(x, '%3s' % x)
 
-def describe_reloc_type(x, e_machine):
-    if e_machine in ('EM_386', 'EM_486'):
+def describe_reloc_type(x, elffile):
+    if elffile.architecture_is_x86():
         return _DESCR_RELOC_TYPE_i386.get(x, _unknown)
-    elif e_machine in ('EM_X86_64', 'EM_L10M'):
+    elif elffile.architecture_is_x64():
         return _DESCR_RELOC_TYPE_x64.get(x, _unknown)
     else:
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)

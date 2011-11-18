@@ -29,10 +29,10 @@ print cu.structs.Dwarf_dw_form['DW_FORM_strp'].parse('\x01\x00\x00\x00\x01\x00\x
 print 'CU header', cu.header
 topdie = cu.get_top_DIE()
 
-#print topdie
+print topdie
 dinfo_sec = efile.get_section_by_name('.debug_info')
 relman = DWARFRelocationManager(efile, dinfo_sec.name)
 
 print relman._reloc_section.name, relman._reloc_section['sh_offset']
-pprint.pprint(relman._relocs)
+#pprint.pprint(relman._relocs)
 

@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.exceptions import ELFError
+from ..common.exceptions import ELFError, ELFRelocationError
 from ..common.utils import struct_parse, elf_assert
 from ..construct import ConstructError
 from .structs import ELFStructs
@@ -14,6 +14,7 @@ from .sections import (
         Section, StringTableSection, SymbolTableSection, NullSection,
         RelocationSection)
 from .segments import Segment, InterpSegment
+from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionLocator
 
 
@@ -124,12 +125,34 @@ class ELFFile(object):
         
         return DWARFInfo(
                 stream=self.stream,
-                little_endian=self.little_endian,
+                elffile=self,
                 debug_info_loc=debug_sections['.debug_info'],
                 debug_abbrev_loc=debug_sections['.debug_abbrev'],
                 debug_str_loc=debug_sections['.debug_str'],
                 debug_line_loc=debug_sections['.debug_line'])                
             
+    def architecture_is_x86(self):
+        return self['e_machine'] in ('EM_386', 'EM_486')
+
+    def architecture_is_x64(self):
+        return self['e_machine'] == 'EM_X86_64'
+        
+    def apply_relocation(self, reloc_section, reloc_index, offset, value):
+        """ Apply a relocation to the offset. The original value at offset is
+            also provided. Return a relocated value that should be written
+            back into the offset.
+
+            The relocation to apply is specified by an index and a relocation
+            section where this index points.
+
+            Throw ELFRelocationError if there's a problem with the relocation.
+        """
+        # The symbol table associated with this relocation section
+        symtab = self.get_section(reloc_section['sh_link'])
+        # Relocation object
+        reloc = reloc_section.get_relocation(reloc_index)
+        return self._do_apply_relocation(reloc, symtab, offset, value)
+
     #-------------------------------- PRIVATE --------------------------------#
     
     def __getitem__(self, name):
@@ -242,10 +265,55 @@ class ELFFile(object):
                 header=self._get_section_header(stringtable_section_num),
                 name='',
                 stream=self.stream)
-    
+
     def _parse_elf_header(self):
         """ Parses the ELF file header and assigns the result to attributes
             of this object.
         """
         return struct_parse(self.structs.Elf_Ehdr, self.stream, stream_pos=0)
+
+    def _do_apply_relocation(self, reloc, symtab, offset, value):
+        # Only basic sanity checking here
+        if reloc['r_info_sym'] >= symtab.num_symbols():
+            raise ELFRelocationError(
+                'Invalid symbol reference in relocation: index %s' % (
+                    reloc['r_info_sym']))
+        sym_value = symtab.get_symbol(reloc['r_info_sym'])['st_value']
+        reloc_type = reloc['r_info_type']
+
+        if self.architecture_is_x86():
+            if reloc.is_RELA():
+                raise ELFRelocationError(
+                    'Unexpected RELA relocation for x86: %s' % reloc)
+            if reloc_type == ENUM_RELOC_TYPE_i386['R_386_NONE']:
+                # No relocation
+                return value
+            elif reloc_type == ENUM_RELOC_TYPE_i386['R_386_32']:
+                return sym_value + value
+            elif reloc_type == ENUM_RELOC_TYPE_i386['R_386_PC32']:
+                return sym_value + value - offset
+            else:
+                raise ELFRelocationError('Unsupported relocation type %s' % (
+                    reloc_type))
+        elif self.architecture_is_x64():
+            if not reloc.is_RELA():
+                raise ELFRelocationError(
+                    'Unexpected REL relocation for x64: %s' % reloc)
+            if reloc_type == ENUM_RELOC_TYPE_x64['R_X86_64_NONE']:
+                # No relocation
+                return value
+            elif reloc_type in (
+                    ENUM_RELOC_TYPE_x64['R_X86_64_64'],
+                    ENUM_RELOC_TYPE_x64['R_X86_64_32'],
+                    ENUM_RELOC_TYPE_x64['R_X86_64_32S']):
+                return sym_value + reloc['r_addend']
+            else:
+                raise ELFRelocationError('Unsupported relocation type %s' % (
+                    reloc_type))
+        else:
+            raise ELFRelocationError(
+                'Relocations not supported for architecture %s' % (
+                    self['e_machine']))
+
+        raise ELFRelocationError('unreachable relocation code')
 

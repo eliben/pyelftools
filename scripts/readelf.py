@@ -304,7 +304,7 @@ class ReadElf(object):
                     self._format_hex(rel['r_info'], 
                         fieldsize=hexwidth, lead0x=False),
                     describe_reloc_type(
-                        rel['r_info_type'], self.elffile['e_machine'])))
+                        rel['r_info_type'], self.elffile)))
 
                 if rel['r_info_sym'] == 0:
                     self._emitline()

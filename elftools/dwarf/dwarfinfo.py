@@ -14,6 +14,7 @@ from ..common.utils import struct_parse, dwarf_assert
 from .structs import DWARFStructs
 from .compileunit import CompileUnit
 from .abbrevtable import AbbrevTable
+from .dwarfrelocationmanager import DWARFRelocationManager
 
 
 # Describes a debug section in a stream: offset and size
@@ -27,7 +28,7 @@ class DWARFInfo(object):
     """
     def __init__(self,
             stream,
-            little_endian,
+            elffile,
             debug_info_loc,
             debug_abbrev_loc,
             debug_str_loc,
@@ -35,9 +36,9 @@ class DWARFInfo(object):
         """ stream: 
                 A stream (file-like object) that contains debug sections
             
-            little_endian:
-                Section contents are in little-endian data format
-            
+            elffile:
+                ELFFile reference
+
             debug_*_loc:
                 DebugSectionLocator for this section, specifying where it can
                 be found in the stream
@@ -48,7 +49,13 @@ class DWARFInfo(object):
         self.debug_str_loc = debug_str_loc
         self.debug_line_loc = debug_line_loc
         
-        self.little_endian = little_endian
+        self.elffile = elffile
+        self.little_endian = self.elffile.little_endian
+
+        self.relocation_manager = {}
+        self.relocation_manager['.debug_info'] = DWARFRelocationManager(
+                elffile=self.elffile,
+                section_name='.debug_info')
         
         # This is the DWARFStructs the context uses, so it doesn't depend on 
         # DWARF format and address_size (these are determined per CU) - set them

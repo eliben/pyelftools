@@ -9,6 +9,9 @@
 class ELFError(Exception): 
     pass
 
+class ELFRelocationError(ELFError):
+    pass
+        
 class ELFParseError(ELFError):
     pass
 
