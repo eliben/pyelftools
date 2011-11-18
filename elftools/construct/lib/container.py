@@ -37,6 +37,8 @@ class Container(object):
         if name not in d:
             self.__attrs__.append(name)
         d[name] = value
+    def __contains__(self, name):
+        return name in self.__dict__
     def __getitem__(self, name):
         return self.__dict__[name]
     def __delitem__(self, name):

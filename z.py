@@ -7,6 +7,8 @@ from elftools.elf.structs import ELFStructs
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import *
 
+from elftools.dwarf.dwarfrelocationmanager import DWARFRelocationManager
+
 # read a little-endian, 64-bit file
 es = ELFStructs(True, 64)
 
@@ -27,16 +29,10 @@ print cu.structs.Dwarf_dw_form['DW_FORM_strp'].parse('\x01\x00\x00\x00\x01\x00\x
 print 'CU header', cu.header
 topdie = cu.get_top_DIE()
 
-print topdie
+#print topdie
+dinfo_sec = efile.get_section_by_name('.debug_info')
+relman = DWARFRelocationManager(efile, dinfo_sec.name, dinfo_sec['sh_offset'])
 
-#~ print 'siblings.....'
-
-#~ for s in c.iter_siblings():
-    #~ print s
-
-#~ from elftools.dwarf.location_expr import DW_OP_name2opcode, DW_OP_opcode2name
-
-#~ print hex(DW_OP_name2opcode['DW_OP_lit14'])
-#~ print DW_OP_opcode2name[0x0e]
-
+print relman._reloc_section.name, relman._reloc_section['sh_offset']
+pprint.pprint(relman._relocs)
 

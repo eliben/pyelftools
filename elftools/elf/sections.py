@@ -187,4 +187,11 @@ class Relocation(object):
         """
         return self.entry[name]
 
+    def __repr__(self):
+        return '<Relocation (%s): %s>' % (
+                'RELA' if self.is_RELA() else 'REL',
+                self.entry)
+
+    def __str__(self):
+        return self.__repr__()
 
