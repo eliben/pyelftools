@@ -8,7 +8,6 @@
 #-------------------------------------------------------------------------------
 from ..construct import CString
 from ..common.utils import struct_parse, elf_assert
-from .relocation import Relocation
 
 
 class Section(object):
@@ -107,51 +106,6 @@ class SymbolTableSection(Section):
         """
         for i in range(self.num_symbols()):
             yield self.get_symbol(i)
-
-
-class RelocationSection(Section):
-    def __init__(self, header, name, stream, elffile):
-        super(RelocationSection, self).__init__(header, name, stream)
-        self.elffile = elffile
-        self.elfstructs = self.elffile.structs
-        if self.header['sh_type'] == 'SHT_REL':
-            expected_size = self.elfstructs.Elf_Rel.sizeof()
-            self.entry_struct = self.elfstructs.Elf_Rel
-        elif self.header['sh_type'] == 'SHT_RELA':
-            expected_size = self.elfstructs.Elf_Rela.sizeof()
-            self.entry_struct = self.elfstructs.Elf_Rela
-        else:
-            elf_assert(False, 'Unknown relocation type section')
-
-        elf_assert(
-            self.header['sh_entsize'] == expected_size,
-            'Expected sh_entsize of SHT_REL section to be %s' % expected_size)
-
-    def is_RELA(self):
-        """ Is this a RELA relocation section? If not, it's REL.
-        """
-        return self.header['sh_type'] == 'SHT_RELA'
-
-    def num_relocations(self):
-        """ Number of relocations in the section
-        """
-        return self['sh_size'] // self['sh_entsize']
-        
-    def get_relocation(self, n):
-        """ Get the relocation at index #n from the section (Relocation object)
-        """
-        entry_offset = self['sh_offset'] + n * self['sh_entsize']
-        entry = struct_parse(
-            self.entry_struct,
-            self.stream,
-            stream_pos=entry_offset)
-        return Relocation(entry, self.elffile)
-
-    def iter_relocations(self):
-        """ Yield all the relocations in the section
-        """
-        for i in range(self.num_relocations()):
-            yield self.get_relocation(i)
 
 
 class Symbol(object):

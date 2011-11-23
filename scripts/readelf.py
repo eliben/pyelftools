@@ -497,6 +497,8 @@ class ReadElf(object):
         
         # Offset of the .debug_info section in the stream
         section_offset = self._dwarfinfo.debug_info_loc.offset
+
+        print '&&& section_offset', section_offset
         
         for cu in self._dwarfinfo.iter_CUs():
             self._emitline('  Compilation Unit @ offset %s:' %

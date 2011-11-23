@@ -6,16 +6,17 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.exceptions import ELFError, ELFRelocationError
+from cStringIO import StringIO
+from ..common.exceptions import ELFError
 from ..common.utils import struct_parse, elf_assert
 from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
-        Section, StringTableSection, SymbolTableSection, NullSection,
-        RelocationSection)
+        Section, StringTableSection, SymbolTableSection, NullSection)
 from .segments import Segment, InterpSegment
 from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
-from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionLocator
+from .relocation import RelocationHandler
+from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor
 
 
 class ELFFile(object):
@@ -23,7 +24,10 @@ class ELFFile(object):
         contents of an ELF file.
     
         Accessible attributes:
-        
+
+            stream:
+                The stream holding the data of the file
+
             elfclass: 
                 32 or 64 - specifies the word size of the target machine
             
@@ -104,11 +108,14 @@ class ELFFile(object):
         """
         return bool(self.get_section_by_name('.debug_info'))
     
-    def get_dwarf_info(self):
+    def get_dwarf_info(self, relocate_dwarf_sections=True):
         """ Return a DWARFInfo object representing the debugging information in
             this file.
+
+            If relocate_dwarf_sections is True, relocations for DWARF sections
+            are looked up and applied.
         """
-        # Expect has_dwarf_info that was called, so at least .debug_info is 
+        # Expect that has_dwarf_info was called, so at least .debug_info is 
         # present. Check also the presence of other must-have debug sections.
         #
         debug_sections = {}
@@ -119,17 +126,16 @@ class ELFFile(object):
                 section is not None, 
                 "Expected to find DWARF section '%s' in the file" % (
                     secname))
-            debug_sections[secname] = DebugSectionLocator(
-                offset=section['sh_offset'],
-                size=section['sh_size'])
+            debug_sections[secname] = self._read_dwarf_section(
+                    section,
+                    relocate_dwarf_sections)
         
         return DWARFInfo(
-                stream=self.stream,
                 elffile=self,
-                debug_info_loc=debug_sections['.debug_info'],
-                debug_abbrev_loc=debug_sections['.debug_abbrev'],
-                debug_str_loc=debug_sections['.debug_str'],
-                debug_line_loc=debug_sections['.debug_line'])                
+                debug_info_sec=debug_sections['.debug_info'],
+                debug_abbrev_sec=debug_sections['.debug_abbrev'],
+                debug_str_sec=debug_sections['.debug_str'],
+                debug_line_sec=debug_sections['.debug_line'])                
             
     def architecture_is_x86(self):
         return self['e_machine'] in ('EM_386', 'EM_486')
@@ -137,22 +143,6 @@ class ELFFile(object):
     def architecture_is_x64(self):
         return self['e_machine'] == 'EM_X86_64'
         
-    def apply_relocation(self, reloc_section, reloc_index, offset, value):
-        """ Apply a relocation to the offset. The original value at offset is
-            also provided. Return a relocated value that should be written
-            back into the offset.
-
-            The relocation to apply is specified by an index and a relocation
-            section where this index points.
-
-            Throw ELFRelocationError if there's a problem with the relocation.
-        """
-        # The symbol table associated with this relocation section
-        symtab = self.get_section(reloc_section['sh_link'])
-        # Relocation object
-        reloc = reloc_section.get_relocation(reloc_index)
-        return self._do_apply_relocation(reloc, symtab, offset, value)
-
     #-------------------------------- PRIVATE --------------------------------#
     
     def __getitem__(self, name):
@@ -272,48 +262,25 @@ class ELFFile(object):
         """
         return struct_parse(self.structs.Elf_Ehdr, self.stream, stream_pos=0)
 
-    def _do_apply_relocation(self, reloc, symtab, offset, value):
-        # Only basic sanity checking here
-        if reloc['r_info_sym'] >= symtab.num_symbols():
-            raise ELFRelocationError(
-                'Invalid symbol reference in relocation: index %s' % (
-                    reloc['r_info_sym']))
-        sym_value = symtab.get_symbol(reloc['r_info_sym'])['st_value']
-        reloc_type = reloc['r_info_type']
+    def _read_dwarf_section(self, section, relocate_dwarf_sections):
+        """ Read the contents of a DWARF section from the stream and return a
+            DebugSectionDescriptor. Apply relocations if asked to.
+        """
+        self.stream.seek(section['sh_offset'])
+        # The section data is read into a new stream, for processing
+        section_stream = StringIO(self.stream.read(section['sh_size']))
 
-        if self.architecture_is_x86():
-            if reloc.is_RELA():
-                raise ELFRelocationError(
-                    'Unexpected RELA relocation for x86: %s' % reloc)
-            if reloc_type == ENUM_RELOC_TYPE_i386['R_386_NONE']:
-                # No relocation
-                return value
-            elif reloc_type == ENUM_RELOC_TYPE_i386['R_386_32']:
-                return sym_value + value
-            elif reloc_type == ENUM_RELOC_TYPE_i386['R_386_PC32']:
-                return sym_value + value - offset
-            else:
-                raise ELFRelocationError('Unsupported relocation type %s' % (
-                    reloc_type))
-        elif self.architecture_is_x64():
-            if not reloc.is_RELA():
-                raise ELFRelocationError(
-                    'Unexpected REL relocation for x64: %s' % reloc)
-            if reloc_type == ENUM_RELOC_TYPE_x64['R_X86_64_NONE']:
-                # No relocation
-                return value
-            elif reloc_type in (
-                    ENUM_RELOC_TYPE_x64['R_X86_64_64'],
-                    ENUM_RELOC_TYPE_x64['R_X86_64_32'],
-                    ENUM_RELOC_TYPE_x64['R_X86_64_32S']):
-                return sym_value + reloc['r_addend']
-            else:
-                raise ELFRelocationError('Unsupported relocation type %s' % (
-                    reloc_type))
-        else:
-            raise ELFRelocationError(
-                'Relocations not supported for architecture %s' % (
-                    self['e_machine']))
+        if relocate_dwarf_sections:
+            reloc_handler = RelocationHandler(self)
+            reloc_section = reloc_handler.find_relocations_for_section(section)
+            if reloc_section is not None:
+                reloc_handler.apply_section_relocations(
+                        section_stream, reloc_section)
 
-        raise ELFRelocationError('unreachable relocation code')
+        return DebugSectionDescriptor(
+                stream=section_stream,
+                name=section.name,
+                global_offset=section['sh_offset'],
+                size=section['sh_size'])
+
 

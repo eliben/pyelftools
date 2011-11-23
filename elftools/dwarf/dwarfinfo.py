@@ -17,9 +17,15 @@ from .abbrevtable import AbbrevTable
 from .dwarfrelocationmanager import DWARFRelocationManager
 
 
-# Describes a debug section in a stream: offset and size
+# Describes a debug section
+# 
+# stream: a stream object containing the data of this section
+# name: section name in the container file
+# global_offset: the global offset of the section in its container file
+# size: the size of the section's data, in bytes
 #
-DebugSectionLocator = namedtuple('DebugSectionLocator', 'offset size')
+DebugSectionDescriptor = namedtuple('DebugSectionLocator', 
+        'stream name global_offset size')
 
 
 class DWARFInfo(object):
@@ -27,29 +33,26 @@ class DWARFInfo(object):
         various parts of the debug infromation.
     """
     def __init__(self,
-            stream,
             elffile,
-            debug_info_loc,
-            debug_abbrev_loc,
-            debug_str_loc,
-            debug_line_loc):
+            debug_info_sec,
+            debug_abbrev_sec,
+            debug_str_sec,
+            debug_line_sec):
         """ stream: 
                 A stream (file-like object) that contains debug sections
             
             elffile:
                 ELFFile reference
 
-            debug_*_loc:
-                DebugSectionLocator for this section, specifying where it can
-                be found in the stream
+            debug_*_sec:
+                DebugSectionDescriptor for this section
         """
-        self.stream = stream
-        self.debug_info_loc = debug_info_loc
-        self.debug_abbrev_loc = debug_abbrev_loc
-        self.debug_str_loc = debug_str_loc
-        self.debug_line_loc = debug_line_loc
-        
         self.elffile = elffile
+        self.debug_info_sec = debug_info_sec
+        self.debug_abbrev_sec = debug_abbrev_sec
+        self.debug_str_sec = debug_str_sec
+        self.debug_line_sec = debug_line_sec
+        
         self.little_endian = self.elffile.little_endian
 
         self.relocation_manager = {}
