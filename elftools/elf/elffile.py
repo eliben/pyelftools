@@ -13,9 +13,9 @@ from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection, NullSection)
+from .relocation import RelocationSection, RelocationHandler
 from .segments import Segment, InterpSegment
 from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
-from .relocation import RelocationHandler
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor
 
 
@@ -268,7 +268,10 @@ class ELFFile(object):
         """
         self.stream.seek(section['sh_offset'])
         # The section data is read into a new stream, for processing
-        section_stream = StringIO(self.stream.read(section['sh_size']))
+        section_stream = StringIO()
+        # Using .write instead of initializing StringIO with the string because
+        # such a StringIO from cStringIO is read-only.
+        section_stream.write(self.stream.read(section['sh_size']))
 
         if relocate_dwarf_sections:
             reloc_handler = RelocationHandler(self)

@@ -9,6 +9,9 @@
 from collections import namedtuple
 
 from ..common.exceptions import ELFRelocationError
+from ..common.utils import elf_assert, struct_parse
+from .sections import Section
+from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
 
 
 class Relocation(object):
@@ -102,7 +105,7 @@ class RelocationHandler(object):
         # Find the relocation section aimed at this one. Currently assume
         # that either .rel or .rela section exists for this section, but
         # not both.
-        for relsection in self.iter_sections():
+        for relsection in self.elffile.iter_sections():
             if (    isinstance(relsection, RelocationSection) and
                     relsection.name in reloc_section_names):
                 return relsection
@@ -119,70 +122,104 @@ class RelocationHandler(object):
             self._do_apply_relocation(stream, reloc, symtab)
 
     def _do_apply_relocation(self, stream, reloc, symtab):
-        # ZZZ: steps
-        # 1. Read the value from the stream (with correct size and endianness)
-        # 2. Apply the relocation to the value
-        # 3. Write the relocated value back into the stream
-        #
-        # To make it generic, have a map of "relocation recipes" per
-        # relocation.
-        #
-
-
-        # Some basic sanity checking
-        if self.architecture_is_x86() and reloc.is_RELA():
-            raise ELFRelocationError(
-                'Unexpected RELA relocation for x86: %s' % reloc)
-        elif self.architecture_is_x64() and not reloc.is_RELA():
-            raise ELFRelocationError(
-                'Unexpected REL relocation for x64: %s' % reloc)
-
+        # Preparations for performing the relocation: obtain the value of
+        # the symbol mentioned in the relocation, as well as the relocation
+        # recipe which tells us how to actually perform it.
+        # All peppered with some sanity checking.
         if reloc['r_info_sym'] >= symtab.num_symbols():
             raise ELFRelocationError(
                 'Invalid symbol reference in relocation: index %s' % (
                     reloc['r_info_sym']))
-
         sym_value = symtab.get_symbol(reloc['r_info_sym'])['st_value']
+
         reloc_type = reloc['r_info_type']
+        recipe = None
 
-        if self.architecture_is_x86():
-            if reloc_type == ENUM_RELOC_TYPE_i386['R_386_NONE']:
-                # No relocation
-                return value
-            elif reloc_type == ENUM_RELOC_TYPE_i386['R_386_32']:
-                return sym_value + value
-            elif reloc_type == ENUM_RELOC_TYPE_i386['R_386_PC32']:
-                return sym_value + value - offset
-            else:
-                raise ELFRelocationError('Unsupported relocation type %s' % (
-                    reloc_type))
-        elif self.architecture_is_x64():
-            if reloc_type == ENUM_RELOC_TYPE_x64['R_X86_64_NONE']:
-                # No relocation
-                return value
-            elif reloc_type in (
-                    ENUM_RELOC_TYPE_x64['R_X86_64_64'],
-                    ENUM_RELOC_TYPE_x64['R_X86_64_32'],
-                    ENUM_RELOC_TYPE_x64['R_X86_64_32S']):
-                return sym_value + reloc['r_addend']
-            else:
-                raise ELFRelocationError('Unsupported relocation type %s' % (
-                    reloc_type))
-        else:
+        if self.elffile.architecture_is_x86():
+            if reloc.is_RELA():
+                raise ELFRelocationError(
+                    'Unexpected RELA relocation for x86: %s' % reloc)
+            recipe = self._RELOCATION_RECIPES_X86.get(reloc_type, None)
+        elif self.elffile.architecture_is_x64():
+            if not reloc.is_RELA():
+                raise ELFRelocationError(
+                    'Unexpected REL relocation for x64: %s' % reloc)
+            recipe = self._RELOCATION_RECIPES_X64.get(reloc_type, None)
+
+        if recipe is None:
             raise ELFRelocationError(
-                'Relocations not supported for architecture %s' % (
-                    self['e_machine']))
+                    'Unsupported relocation type: %s' % reloc_type)
 
-        raise ELFRelocationError('unreachable relocation code')
+        # So now we have everything we need to actually perform the relocation.
+        # Let's get to it:
 
-    # Relocations are represented by "recipes". Each recipe specifies
+        # 0. Find out which struct we're going to be using to read this value
+        #    from the stream and write it back.
+        if recipe.bytesize == 4:
+            value_struct = self.elffile.structs.Elf_word('')
+        elif recipe.bytesize == 8:
+            value_struct = self.elffile.structs.Elf_word64('')
+        else:
+            raise ELFRelocationError('Invalid bytesize %s for relocation' % 
+                    recipe_bytesize)
+
+        # 1. Read the value from the stream (with correct size and endianness)
+        original_value = struct_parse(
+            value_struct,
+            stream,
+            stream_pos=reloc['r_offset'])
+        # 2. Apply the relocation to the value, acting according to the recipe
+        relocated_value = recipe.calc_func(
+            value=original_value,
+            sym_value=sym_value,
+            offset=reloc['r_offset'],
+            addend=reloc['r_addend'] if recipe.has_addend else 0)
+        # 3. Write the relocated value back into the stream
+        stream.seek(reloc['r_offset'])
+        value_struct.build_stream(relocated_value, stream)
+
+    # Relocations are represented by "recipes". Each recipe specifies:
+    #  bytesize: The number of bytes to read (and write back) to the section.
+    #            This is the unit of data on which relocation is performed.
+    #  has_addend: Does this relocation have an extra addend?
+    #  calc_func: A function that performs the relocation on an extracted
+    #             value, and returns the updated value.
+    #
     _RELOCATION_RECIPE_TYPE = namedtuple('_RELOCATION_RECIPE_TYPE',
         'bytesize has_addend calc_func')
 
-    def _reloc_calc_identity(value, offset, addend=0):
+    def _reloc_calc_identity(value, sym_value, offset, addend=0):
         return value
+
+    def _reloc_calc_sym_plus_value(value, sym_value, offset, addend=0):
+        return sym_value + value
+
+    def _reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
+        return sym_value + value - offset
         
-    _RELOCATION_RECIPES = {
-        'R_386_NONE':
+    def _reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
+        return sym_value + addend
+        
+    _RELOCATION_RECIPES_X86 = {
+        ENUM_RELOC_TYPE_i386['R_386_NONE']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
+        ENUM_RELOC_TYPE_i386['R_386_32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False,
+            calc_func=_reloc_calc_sym_plus_value),
+        ENUM_RELOC_TYPE_i386['R_386_PC32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False,
+            calc_func=_reloc_calc_sym_plus_value_pcrel),
     }
+    
+    _RELOCATION_RECIPES_X64 = {
+        ENUM_RELOC_TYPE_x64['R_X86_64_NONE']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_identity),
+        ENUM_RELOC_TYPE_x64['R_X86_64_64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_x64['R_X86_64_32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_x64['R_X86_64_32S']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+    }
+
 

@@ -22,8 +22,6 @@ class AbbrevTable(object):
             stream, offset:
                 The stream and offset into the stream where this abbreviation
                 table lives.
-                Note that this is the absolute offset into the stream, not 
-                relative to the debug_abbrev section.
         """
         self.structs = structs
         self.stream = stream

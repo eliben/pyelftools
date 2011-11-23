@@ -7,7 +7,7 @@ from elftools.elf.structs import ELFStructs
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import *
 
-from elftools.dwarf.dwarfrelocationmanager import DWARFRelocationManager
+from elftools.elf.relocation import *
 
 # read a little-endian, 64-bit file
 es = ELFStructs(True, 64)

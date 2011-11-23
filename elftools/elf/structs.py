@@ -20,10 +20,10 @@ from .enums import *
 class ELFStructs(object):
     """ Accessible attributes:
     
-            Elf_{byte|half|word|addr|offset|sword|xword|xsword}:
+            Elf_{byte|half|word|word64|addr|offset|sword|xword|xsword}:
                 Data chunks, as specified by the ELF standard, adjusted for 
                 correct endianness and word-size.
-            
+
             Elf_Ehdr:
                 ELF file header
             
@@ -50,6 +50,7 @@ class ELFStructs(object):
             self.Elf_byte = ULInt8
             self.Elf_half = ULInt16
             self.Elf_word = ULInt32
+            self.Elf_word64 = ULInt64
             self.Elf_addr = ULInt32 if self.elfclass == 32 else ULInt64
             self.Elf_offset = self.Elf_addr
             self.Elf_sword = SLInt32
@@ -59,6 +60,7 @@ class ELFStructs(object):
             self.Elf_byte = UBInt8
             self.Elf_half = UBInt16
             self.Elf_word = UBInt32
+            self.Elf_word64 = UBInt64
             self.Elf_addr = UBInt32 if self.elfclass == 32 else UBInt64
             self.Elf_offset = self.Elf_addr
             self.Elf_sword = SBInt32

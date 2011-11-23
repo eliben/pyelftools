@@ -14,7 +14,6 @@ from ..common.utils import struct_parse, dwarf_assert
 from .structs import DWARFStructs
 from .compileunit import CompileUnit
 from .abbrevtable import AbbrevTable
-from .dwarfrelocationmanager import DWARFRelocationManager
 
 
 # Describes a debug section
@@ -24,7 +23,7 @@ from .dwarfrelocationmanager import DWARFRelocationManager
 # global_offset: the global offset of the section in its container file
 # size: the size of the section's data, in bytes
 #
-DebugSectionDescriptor = namedtuple('DebugSectionLocator', 
+DebugSectionDescriptor = namedtuple('DebugSectionDescriptor', 
         'stream name global_offset size')
 
 
@@ -45,7 +44,7 @@ class DWARFInfo(object):
                 ELFFile reference
 
             debug_*_sec:
-                DebugSectionDescriptor for this section
+                DebugSectionDescriptor for a section
         """
         self.elffile = elffile
         self.debug_info_sec = debug_info_sec
@@ -55,11 +54,6 @@ class DWARFInfo(object):
         
         self.little_endian = self.elffile.little_endian
 
-        self.relocation_manager = {}
-        self.relocation_manager['.debug_info'] = DWARFRelocationManager(
-                elffile=self.elffile,
-                section_name='.debug_info')
-        
         # This is the DWARFStructs the context uses, so it doesn't depend on 
         # DWARF format and address_size (these are determined per CU) - set them
         # to default values.
@@ -108,24 +102,14 @@ class DWARFInfo(object):
             offset will return the same object).
         """
         dwarf_assert(
-            offset < self.debug_abbrev_loc.size,
+            offset < self.debug_abbrev_sec.size,
             "Offset '0x%x' to abbrev table out of section bounds" % offset)
         if offset not in self._abbrevtable_cache:
             self._abbrevtable_cache[offset] = AbbrevTable(
                 structs=self.structs,
                 stream=self.stream,
-                offset=offset + self.debug_abbrev_loc.offset)
+                offset=offset)
         return self._abbrevtable_cache[offset]
-    
-    def info_offset2absolute(self, offset):
-        """ Given an offset into the debug_info section, translate it to an 
-            absolute offset into the stream. Raise an exception if the offset
-            exceeds the section bounds.
-        """
-        dwarf_assert(
-            offset < self.debug_info_loc.size,
-            "Offset '0x%x' to debug_info out of section bounds" % offset)
-        return offset + self.debug_info_loc.offset
     
     def get_string_from_table(self, offset):
         """ Obtain a string from the string table section, given an offset 
@@ -134,15 +118,15 @@ class DWARFInfo(object):
         return struct_parse(
             CString(''),
             self.stream,
-            stream_pos=self.debug_str_loc.offset + offset)
+            stream_pos=offset)
     
     #------ PRIVATE ------#
     
     def _parse_CUs(self):
         """ Parse CU entries from debug_info.
         """
-        offset = self.debug_info_loc.offset
-        section_boundary = self.debug_info_loc.offset + self.debug_info_loc.size
+        offset = 0
+        section_boundary = self.debug_info_sec.size
         CUlist = []
         while offset < section_boundary:
             # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v3
