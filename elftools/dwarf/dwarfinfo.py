@@ -107,7 +107,7 @@ class DWARFInfo(object):
         if offset not in self._abbrevtable_cache:
             self._abbrevtable_cache[offset] = AbbrevTable(
                 structs=self.structs,
-                stream=self.stream,
+                stream=self.debug_abbrev_sec.stream,
                 offset=offset)
         return self._abbrevtable_cache[offset]
     
@@ -117,7 +117,7 @@ class DWARFInfo(object):
         """
         return struct_parse(
             CString(''),
-            self.stream,
+            self.debug_str_sec.stream,
             stream_pos=offset)
     
     #------ PRIVATE ------#
@@ -138,7 +138,7 @@ class DWARFInfo(object):
             # instance suitable for this CU and use it to parse the rest.
             #
             initial_length = struct_parse(
-                self.structs.Dwarf_uint32(''), self.stream, offset)
+                self.structs.Dwarf_uint32(''), self.debug_info_sec.stream, offset)
             dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
             
             # At this point we still haven't read the whole header, so we don't
@@ -153,14 +153,14 @@ class DWARFInfo(object):
                 address_size=4)
             
             cu_header = struct_parse(
-                cu_structs.Dwarf_CU_header, self.stream, offset)
+                cu_structs.Dwarf_CU_header, self.debug_info_sec.stream, offset)
             if cu_header['address_size'] == 8:
                 cu_structs = DWARFStructs(
                     little_endian=self.little_endian,
                     dwarf_format=dwarf_format,
                      address_size=8)
             
-            cu_die_offset = self.stream.tell()
+            cu_die_offset = self.debug_info_sec.stream.tell()
             dwarf_assert(
                 self._is_supported_version(cu_header['version']),
                 "Expected supported DWARF version. Got '%s'" % cu_header['version'])

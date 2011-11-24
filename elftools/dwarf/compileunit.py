@@ -113,7 +113,10 @@ class CompileUnit(object):
         # First pass: parse all DIEs and place them into self._dielist
         die_offset = self.cu_die_offset
         while die_offset < cu_boundary:
-            die = DIE(cu=self, stream=self.dwarfinfo.stream, offset=die_offset)
+            die = DIE(
+                    cu=self,
+                    stream=self.dwarfinfo.debug_info_sec.stream,
+                    offset=die_offset)
             self._dielist.append(die)
             die_offset += die.size
 

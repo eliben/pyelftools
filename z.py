@@ -31,8 +31,4 @@ topdie = cu.get_top_DIE()
 
 print topdie
 dinfo_sec = efile.get_section_by_name('.debug_info')
-relman = DWARFRelocationManager(efile, dinfo_sec.name)
-
-print relman._reloc_section.name, relman._reloc_section['sh_offset']
-#pprint.pprint(relman._relocs)
 

@@ -24,7 +24,8 @@ from elftools import __version__
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 from elftools.elf.segments import InterpSegment
-from elftools.elf.sections import SymbolTableSection, RelocationSection
+from elftools.elf.sections import SymbolTableSection
+from elftools.elf.relocation import RelocationSection
 from elftools.elf.descriptions import (
     describe_ei_class, describe_ei_data, describe_ei_version,
     describe_ei_osabi, describe_e_type, describe_e_machine,
@@ -33,7 +34,7 @@ from elftools.elf.descriptions import (
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type,
     )
-from elftools.dwarf.dwarfinfo import DWARFInfo, DebugSectionLocator
+from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import describe_attr_value
 
 
@@ -496,13 +497,11 @@ class ReadElf(object):
         self._emitline('Contents of the .debug_info section:\n')
         
         # Offset of the .debug_info section in the stream
-        section_offset = self._dwarfinfo.debug_info_loc.offset
+        section_offset = self._dwarfinfo.debug_info_sec.global_offset
 
-        print '&&& section_offset', section_offset
-        
         for cu in self._dwarfinfo.iter_CUs():
             self._emitline('  Compilation Unit @ offset %s:' %
-                self._format_hex(cu.cu_offset - section_offset))
+                self._format_hex(cu.cu_offset))
             self._emitline('   Length:        %s (%s)' % (
                 self._format_hex(cu['unit_length']),
                 '%s-bit' % cu.dwarf_format()))
@@ -523,13 +522,13 @@ class ReadElf(object):
                     continue
                 self._emitline(' <%s><%x>: Abbrev Number: %s (%s)' % (
                     die_depth,
-                    die.offset - section_offset,
+                    die.offset,
                     die.abbrev_code,
                     die.tag))
                 
                 for attr in die.attributes.itervalues():
                     self._emitline('    <%2x>   %-18s: %s' % (
-                        attr.offset - section_offset,
+                        attr.offset,
                         attr.name,
                         describe_attr_value(
                             attr, die, section_offset)))

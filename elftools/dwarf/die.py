@@ -162,12 +162,7 @@ class DIE(object):
         
         # The offset of the .debug_info section in the stream. Used to compute
         # relative offset of attribute values to the beginning of the section.
-        section_offset = self.dwarfinfo.debug_info_loc.offset
-
-        # Some attribute values need relocations. These are computed with the
-        # help of a DWARFRelocationManager for .debug_info, which is held by
-        # DWARFInfo for this purpose.
-        relocation_manager = self.dwarfinfo.relocation_manager['.debug_info']
+        section_offset = self.dwarfinfo.debug_info_sec.global_offset
 
         # Guided by the attributes listed in the abbreviation declaration, parse
         # values from the stream.
@@ -175,18 +170,6 @@ class DIE(object):
         for name, form in abbrev_decl.iter_attr_specs():
             attr_offset = self.stream.tell()
             raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
-
-            # raw_value may need to be relocated, if there's a relocation
-            # registered for this offset in the relocation manager.
-            # Relocations are listed by offset relative to the beginning of
-            # the section.
-            offset_from_section = attr_offset - section_offset
-            if relocation_manager.has_relocation(offset_from_section):
-                # Applying the relocation may change the stream, so preserve it
-                with preserve_stream_pos(self.stream):
-                    raw_value = relocation_manager.apply_relocation(
-                            offset=offset_from_section,
-                            value=raw_value)
 
             value = self._translate_attr_value(form, raw_value)            
             self.attributes[name] = AttributeValue(

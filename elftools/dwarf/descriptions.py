@@ -35,7 +35,7 @@ def describe_attr_value(attr, die, section_offset):
 #-------------------------------------------------------------------------------
 
 def _describe_attr_ref(attr, die, section_offset):
-    return '<0x%x>' % (attr.value + die.cu.cu_offset - section_offset)
+    return '<0x%x>' % (attr.value + die.cu.cu_offset)
 
 def _describe_attr_value_passthrough(attr, die, section_offset):
     return attr.value
