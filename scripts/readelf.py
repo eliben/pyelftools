@@ -536,6 +536,7 @@ class ReadElf(object):
                 if die.has_children:
                     die_depth += 1
                     
+        self._emitline()
 
     def _emit(self, s=''):
         """ Emit an object to output

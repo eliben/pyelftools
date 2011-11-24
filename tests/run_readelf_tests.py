@@ -8,6 +8,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os, sys
+import re
 from difflib import SequenceMatcher
 import logging
 import subprocess
@@ -49,7 +50,9 @@ def run_test_on_file(filename):
     """
     success = True
     testlog.info("Running test on file '%s'" % filename)
-    for option in ['-e', '-s', '-r', '-x.text', '-p.shstrtab']:
+    for option in [
+            '-e', '-s', '-r', '-x.text', '-p.shstrtab',
+            '--debug-dump=info']:
         testlog.info("..option='%s'" % option)
         # stdouts will be a 2-element list: output of readelf and output 
         # of scripts/readelf.py
@@ -104,14 +107,26 @@ def compare_output(s1, s2):
         if lines1[i].split() != lines2[i].split():
             sm = SequenceMatcher()
             sm.set_seqs(lines1[i], lines2[i])
+            changes = sm.get_opcodes()
             if flag_after_symtable:
                 # Detect readelf's adding @ with lib and version after 
                 # symbol name.
-                changes = sm.get_opcodes()
                 if (    len(changes) == 2 and changes[1][0] == 'delete' and
                         lines1[i][changes[1][1]] == '@'):
                     continue
+            elif 'dw_op' in lines1[i] and 'reg' in lines1[i]:
+                # readelf decodes register names, we don't do that.
+                no_worries = False
+                for change in changes:
+                    if (    change[0] == 'delete' and
+                            re.search('\(\w+', lines1[i][change[1]:change[2]])):
+                        no_worries = True
+                if no_worries:
+                    continue
 
+            else:
+                print changes
+                print lines1[i][changes[3][1]:changes[3][2]]
             errmsg = 'Mismatch on line #%s:\n>>%s<<\n>>%s<<\n' % (
                     i, lines1[i], lines2[i])
             return False, errmsg
