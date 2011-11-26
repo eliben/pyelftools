@@ -214,6 +214,8 @@ def _make_extra_string(s=''):
     return extra
 
 
+_LOCATION_EXPR_DUMPER_CACHE = {}
+
 def _location_list_extra(attr, die, section_offset):
     # According to section 2.6 of the DWARF spec v3, class loclistptr means
     # a location list, and class block means a location expression.
@@ -221,7 +223,16 @@ def _location_list_extra(attr, die, section_offset):
     if attr.form in ('DW_FORM_data4', 'DW_FORM_data8'):
         return '(location list)'
     else:
-        location_expr_dumper = LocationExpressionDumper(die.cu.structs)
+        # Since this function can be called a lot, initializing a fresh new
+        # LocationExpressionDumper per call is expensive. So a rudimentary
+        # caching scheme is in place to create only one such dumper per
+        # processed CU.
+        cache_key = id(die.cu.structs)
+        if cache_key not in _LOCATION_EXPR_DUMPER_CACHE:
+            _LOCATION_EXPR_DUMPER_CACHE[cache_key] = \
+                LocationExpressionDumper(die.cu.structs)
+        location_expr_dumper = _LOCATION_EXPR_DUMPER_CACHE[cache_key]
+        location_expr_dumper.clear()
         location_expr_dumper.process_expr(attr.value)
         return '(' + location_expr_dumper.get_str() + ')'
 

@@ -254,11 +254,14 @@ class LocationExpressionDumper(GenericLocationExprVisitor):
         super(LocationExpressionDumper, self).__init__(structs)
         self._init_lookups()
         self._str_parts = []
-    
+
+    def clear(self):
+        self._str_parts = []
+
     def get_str(self):
         return '; '.join(self._str_parts)
 
-    def _init_lookups(self):        
+    def _init_lookups(self):
         self._ops_with_decimal_arg = set([
             'DW_OP_const1u', 'DW_OP_const1s', 'DW_OP_const2u', 'DW_OP_const2s',
             'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_constu', 'DW_OP_consts',
