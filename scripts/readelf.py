@@ -553,7 +553,7 @@ SCRIPT_DESCRIPTION = 'Display information about the contents of ELF format files
 VERSION_STRING = '%%prog: based on pyelftools %s' % __version__
 
 
-def main():
+def main(stream=None):
     # parse the command-line arguments and invoke ReadElf
     optparser = OptionParser(
             usage='usage: %prog [options] <elf-file>',
@@ -607,7 +607,7 @@ def main():
 
     with open(args[0], 'rb') as file:
         try:
-            readelf = ReadElf(file, sys.stdout)
+            readelf = ReadElf(file, stream or sys.stdout)
             if do_file_header:
                 readelf.display_file_header()
             if do_section_header:
@@ -631,7 +631,22 @@ def main():
             sys.exit(1)
 
 
+def profile_main():
+    # Run 'main' redirecting its output to readelfout.txt
+    # Saves profiling information in readelf.profile
+    PROFFILE = 'readelf.profile'
+    import cProfile
+    cProfile.run('main(open("readelfout.txt", "w"))', PROFFILE)
+
+    # Dig in some profiling stats
+    import pstats
+    p = pstats.Stats(PROFFILE)
+    p.sort_stats('cumulative').print_stats(25)
+
+
 #-------------------------------------------------------------------------------
 if __name__ == '__main__':
-    main()
+    #main()
+    profile_main()
+
 
