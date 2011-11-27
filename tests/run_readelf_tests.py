@@ -105,6 +105,7 @@ def compare_output(s1, s2):
 
         # Compare ignoring whitespace
         if lines1[i].split() != lines2[i].split():
+            ok = False
             sm = SequenceMatcher()
             sm.set_seqs(lines1[i], lines2[i])
             changes = sm.get_opcodes()
@@ -113,7 +114,7 @@ def compare_output(s1, s2):
                 # symbol name.
                 if (    len(changes) == 2 and changes[1][0] == 'delete' and
                         lines1[i][changes[1][1]] == '@'):
-                    continue
+                    ok = True
             elif 'dw_op' in lines1[i] and 'reg' in lines1[i]:
                 # readelf decodes register names, we don't do that.
                 no_worries = False
@@ -122,14 +123,16 @@ def compare_output(s1, s2):
                             re.search('\(\w+', lines1[i][change[1]:change[2]])):
                         no_worries = True
                 if no_worries:
-                    continue
-
-            else:
-                print changes
-                print lines1[i][changes[3][1]:changes[3][2]]
-            errmsg = 'Mismatch on line #%s:\n>>%s<<\n>>%s<<\n' % (
+                    ok = True
+            else: 
+                for s in ('t (tls)', 'l (large)'):
+                    if s in lines1[i] or s in lines2[i]:
+                        ok = True
+                        break
+            if not ok:
+                errmsg = 'Mismatch on line #%s:\n>>%s<<\n>>%s<<\n' % (
                     i, lines1[i], lines2[i])
-            return False, errmsg
+                return False, errmsg
     return True, ''
     
 
@@ -182,6 +185,8 @@ def main():
 
 
 if __name__ == '__main__':
+    import os
+    os.chdir('..')
     main()
     #testlog.info(list(discover_testfiles('tests/testfiles'))) 
     #print run_exe('scripts/readelf.py', ['-h', 'tests/testfiles/z32.o.elf'])
