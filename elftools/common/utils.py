@@ -32,6 +32,20 @@ def struct_parse(struct, stream, stream_pos=None):
         raise ELFParseError(e.message)
     
 
+def parse_cstring_from_stream(stream, stream_pos=None):
+    """ Parse a C-string from the given stream. The string is returned without
+        the terminating \x00 byte.
+        If stream_pos is provided, the stream is seeked to this position before
+        the parsing is done. Otherwise, the current position of the stream is
+        used.
+    """
+    # I could've just used construct.CString, but this function is 4x faster.
+    # Since it's needed a lot, I created it as an optimization.
+    if stream_pos is not None:
+        stream.seek(stream_pos)
+    return ''.join(iter(lambda: stream.read(1), '\x00'))
+
+
 def elf_assert(cond, msg=''):
     """ Assert that cond is True, otherwise raise ELFError(msg)
     """

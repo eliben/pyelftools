@@ -10,7 +10,8 @@ from collections import namedtuple
 
 from ..construct import CString
 from ..common.exceptions import DWARFError
-from ..common.utils import struct_parse, dwarf_assert
+from ..common.utils import (struct_parse, dwarf_assert,
+                            parse_cstring_from_stream)
 from .structs import DWARFStructs
 from .compileunit import CompileUnit
 from .abbrevtable import AbbrevTable
@@ -115,10 +116,7 @@ class DWARFInfo(object):
         """ Obtain a string from the string table section, given an offset 
             relative to the section.
         """
-        return struct_parse(
-            CString(''),
-            self.debug_str_sec.stream,
-            stream_pos=offset)
+        return parse_cstring_from_stream(self.debug_str_sec.stream, offset)
     
     #------ PRIVATE ------#
     
