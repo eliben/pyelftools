@@ -185,8 +185,8 @@ def main():
 
 
 if __name__ == '__main__':
-    import os
-    os.chdir('..')
+    #import os
+    #os.chdir('..')
     main()
     #testlog.info(list(discover_testfiles('tests/testfiles'))) 
     #print run_exe('scripts/readelf.py', ['-h', 'tests/testfiles/z32.o.elf'])
