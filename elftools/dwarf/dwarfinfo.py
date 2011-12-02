@@ -199,18 +199,26 @@ class DWARFInfo(object):
                 dwarf_format=dwarf_format,
                 address_size=4)
 
+            # Now parse the header fully using up-to-date structs. After this,
+            # the section stream will point at the beginning of the program
+            # itself, right after the header.
             lineprog_header = struct_parse(
                 lineprog_structs.Dwarf_lineprog_header,
                 self.debug_line_sec.stream,
                 offset)
 
+            # Calculate the offset to the next line program (see DWARF 6.2.4)
+            end_offset = (  offset + lineprog_header['unit_length'] +
+                            lineprog_structs.initial_length_field_size()))
+
             lineprograms.append(LineProgram(
                 header=lineprog_header,
                 dwarfinfo=self,
-                structs=lineprog_structs))
+                structs=lineprog_structs,
+                program_start_offset=self.debug_line_sec.stream.tell()),
+                program_end_offset=end_offset)
 
-            # Calculate the offset to the next line program (see DWARF 6.2.4)
-            offset += ( lineprog_header['unit_length'] +
-                        lineprog_structs.initial_length_field_size())
+            offset = end_offset
+
         return lineprograms
 
