@@ -3,4 +3,5 @@ syntax: glob
 *.pyc
 .coverage
 htmlcov
+tags
 

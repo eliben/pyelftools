@@ -63,22 +63,30 @@ class DWARFInfo(object):
             dwarf_format=32,
             address_size=4)
         
-        # Populate the list with CUs found in debug_info. For each CU only its
-        # header is parsed immediately (the abbrev table isn't loaded before
-        # it's being referenced by one of the CU's DIEs). 
-        # Since there usually aren't many CUs in a single object, this
-        # shouldn't present a performance problem.
-        #
-        self._CU = self._parse_CUs()
+        # A list of CUs. Populated lazily when they're actually requested.
+        self._CUs = None
         
         # Cache for abbrev tables: a dict keyed by offset
         self._abbrevtable_cache = {}
+
+        # A list of parsed line programs. Populated lazily when the line
+        # programs are actually requested
+        self._lineprograms = None
     
     def iter_CUs(self):
         """ Yield all the compile units (CompileUnit objects) in the debug info
         """
-        return iter(self._CU)
-    
+        if self._CUs is None:
+            self._CUs = self._parse_CUs()
+        return iter(self._CUs)
+
+    def iter_line_programs(self):
+        """ Yield all the line programs (LineProgram ojects) in the debug info
+        """
+        if self._lineprograms is None:
+            self._lineprograms = self._parse_line_programs()
+        return iter(self._lineprograms)
+
     def get_abbrev_table(self, offset):
         """ Get an AbbrevTable from the given offset in the debug_abbrev
             section.
@@ -178,7 +186,9 @@ class DWARFInfo(object):
             # Similarly to CU parsing, peek at the initial_length field of the
             # header to figure out the DWARF format for it.
             initial_length = struct_parse(
-                self.structs.Dwarf_uint32(''), self.debug_line_sec, offset)
+                self.structs.Dwarf_uint32(''),
+                self.debug_line_sec.stream,
+                offset)
             dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
 
             # Prepare the structs for this line program, based on its format
