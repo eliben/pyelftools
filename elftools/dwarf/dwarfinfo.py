@@ -8,13 +8,13 @@
 #-------------------------------------------------------------------------------
 from collections import namedtuple
 
-from ..construct import CString
 from ..common.exceptions import DWARFError
 from ..common.utils import (struct_parse, dwarf_assert,
                             parse_cstring_from_stream)
 from .structs import DWARFStructs
 from .compileunit import CompileUnit
 from .abbrevtable import AbbrevTable
+from .lineprogram import LineProgram
 
 
 # Describes a debug section
@@ -74,21 +74,10 @@ class DWARFInfo(object):
         # Cache for abbrev tables: a dict keyed by offset
         self._abbrevtable_cache = {}
     
-    def num_CUs(self):
-        """ Number of compile units in the debug info
-        """
-        return len(self._CU)
-    
-    def get_CU(self, n):
-        """ Get the compile unit (CompileUnit object) at index #n
-        """
-        return self._CU[n]
-    
     def iter_CUs(self):
         """ Yield all the compile units (CompileUnit objects) in the debug info
         """
-        for i in range(self.num_CUs()):
-            yield self.get_CU(i)
+        return iter(self._CU)
     
     def get_abbrev_table(self, offset):
         """ Get an AbbrevTable from the given offset in the debug_abbrev
@@ -124,9 +113,8 @@ class DWARFInfo(object):
         """ Parse CU entries from debug_info.
         """
         offset = 0
-        section_boundary = self.debug_info_sec.size
         CUlist = []
-        while offset < section_boundary:
+        while offset < self.debug_info_sec.size:
             # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v3
             # states that the first 32-bit word of the CU header determines 
             # whether the CU is represented with 32-bit or 64-bit DWARF format.
@@ -180,4 +168,39 @@ class DWARFInfo(object):
         """ DWARF version supported by this parser
         """
         return 2 <= version <= 3
+
+    def _parse_line_programs(self):
+        """ Parse line programs from debug_line
+        """
+        offset = 0
+        lineprograms = []
+        while offset < self.debug_line_sec.size:
+            # Similarly to CU parsing, peek at the initial_length field of the
+            # header to figure out the DWARF format for it.
+            initial_length = struct_parse(
+                self.structs.Dwarf_uint32(''), self.debug_line_sec, offset)
+            dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
+
+            # Prepare the structs for this line program, based on its format
+            # and the default endianness. The address_size plays no role for
+            # line programs so we just give it a default value.
+            lineprog_structs = DWARFStructs(
+                little_endian=self.little_endian,
+                dwarf_format=dwarf_format,
+                address_size=4)
+
+            lineprog_header = struct_parse(
+                lineprog_structs.Dwarf_lineprog_header,
+                self.debug_line_sec.stream,
+                offset)
+
+            lineprograms.append(LineProgram(
+                header=lineprog_header,
+                dwarfinfo=self,
+                structs=lineprog_structs))
+
+            # Calculate the offset to the next line program (see DWARF 6.2.4)
+            offset += ( lineprog_header['unit_length'] +
+                        lineprog_structs.initial_length_field_size())
+        return lineprograms
 

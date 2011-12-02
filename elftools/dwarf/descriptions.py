@@ -247,7 +247,6 @@ def _import_extra(attr, die, section_offset):
     else:
         # Relative offset to the current DIE's CU
         ref_die_offset = attr.value + die.cu.cu_offset
-    #print '&&&', attr.form, attr.value, ref_die_offset, ref_die_offset - section_offset
 
     # Now find the CU this DIE belongs to (since we have to find its abbrev
     # table). This is done by linearly scanning through all CUs, looking for

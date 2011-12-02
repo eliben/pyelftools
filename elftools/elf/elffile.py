@@ -105,6 +105,8 @@ class ELFFile(object):
     
     def has_dwarf_info(self):
         """ Check whether this file appears to have debugging information. 
+            We assume that if it has the debug_info section, it has all theother
+            required sections as well.
         """
         return bool(self.get_section_by_name('.debug_info'))
     
