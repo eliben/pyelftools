@@ -11,8 +11,9 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename, Enum,
-    PrefixedArray, CString,
+    Array, PrefixedArray, CString, Embed,
     )
+from ..common.construct_utils import RepeatUntilExcluding
 
 from .enums import *
 
@@ -55,6 +56,9 @@ class DWARFStructs(object):
                 A dictionary mapping 'DW_FORM_*' keys into construct Structs
                 that parse such forms. These Structs have already been given
                 dummy names.
+
+            Dwarf_lineprog_header (+):
+                Line program header
         
         See also the documentation of public methods.
     """
@@ -112,6 +116,7 @@ class DWARFStructs(object):
         self._create_cu_header()
         self._create_abbrev_declaration()
         self._create_dw_form()
+        self._create_lineprog_header()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -180,6 +185,36 @@ class DWARFStructs(object):
             DW_FORM_indirect=self.Dwarf_uleb128(''),
         )
 
+    def _create_lineprog_header(self):
+        # A file entry is terminated by a NULL byte, so we don't want to parse
+        # past it. Therefore an If is used.
+        file_entry = Struct('file_entry',
+            CString('name'),
+            If(lambda ctx: len(ctx.name) != 0,
+                Embed(Struct('',
+                    self.Dwarf_uleb128('dir_index'),
+                    self.Dwarf_uleb128('mtime'),
+                    self.Dwarf_uleb128('length')))))
+
+        self.Dwarf_lineprog_header = Struct('Dwarf_lineprog_header',
+            self.Dwarf_initial_length('unit_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_offset('header_length'),
+            self.Dwarf_uint8('minimum_instruction_length'),
+            self.Dwarf_uint8('default_is_stmt'),
+            self.Dwarf_int8('line_base'),
+            self.Dwarf_uint8('line_range'),
+            self.Dwarf_uint8('opcode_base'),
+            Array(lambda ctx: ctx['opcode_base'] - 1, 
+                  self.Dwarf_uint8('standard_opcode_lengths')),
+            RepeatUntilExcluding(
+                lambda obj, ctx: obj == '',
+                CString('include_directory')),
+            RepeatUntilExcluding(
+                lambda obj, ctx: len(obj.name) == 0,
+                file_entry),
+            )
+        
     def _make_block_struct(self, length_field):
         """ Create a struct for DW_FORM_block<size> 
         """
