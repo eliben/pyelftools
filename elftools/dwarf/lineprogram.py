@@ -6,6 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import copy
+
 from ..common.utils import struct_parse
 from .constants import *
 
@@ -28,6 +30,13 @@ class LineState(object):
         self.epilogue_begin = False
         self.isa = 0
 
+    def __repr__(self):
+        a = ['<LineState %x:' % id(self)]
+        a.append('  address = 0x%x' % self.address)
+        for attr in ('file', 'line', 'column', 'is_stmt', 'basic_block',
+                     'end_sequence', 'prologue_end', 'epilogue_begin', 'isa'):
+            a.append('  %s = %s' % (attr, getattr(self, attr)))
+        return '\n'.join(a) + '>\n'
 
 class LineProgram(object):
     """ Builds a "line table", which is essentially the matrix described
@@ -85,7 +94,7 @@ class LineProgram(object):
             # Used by instructions that have to add the current state to the
             # line table. After adding, some state registers have to be
             # cleared.
-            linetable.append(state)
+            linetable.append(copy.copy(state))
             state.basic_block = False
             state.prologue_end = False
             state.epilogue_begin = False
@@ -93,7 +102,7 @@ class LineProgram(object):
         offset = self.program_start_offset
         while offset < self.program_end_offset:
             opcode = struct_parse(
-                self.structs.Dwarf_uint8, 
+                self.structs.Dwarf_uint8(''), 
                 self.stream,
                 offset)
 
@@ -107,42 +116,50 @@ class LineProgram(object):
                 adjusted_opcode = opcode - self['opcode_base']
                 state.address += ((adjusted_opcode / self['line_range']) *
                                   self['minimum_instruction_length'])
-                self.line += (self['line_base'] + 
+                state.line += (self['line_base'] + 
                               adjusted_opcode % self['line_range'])
                 add_state_to_table()
             elif opcode == 0:
                 # Extended opcode: start with a zero byte, followed by
                 # instruction size and the instruction itself.
-                inst_len = struct_parse(self.Dwarf_uleb128, self.stream)
-                ex_opcode = struct_parse(self.Dwarf_uint8, self.stream)
+                inst_len = struct_parse(self.structs.Dwarf_uleb128(''),
+                                        self.stream)
+                ex_opcode = struct_parse(self.structs.Dwarf_uint8(''),
+                                         self.stream)
 
                 if ex_opcode == DW_LNE_end_sequence:
                     state.end_sequence = True
-                    add_state_to_table(state)
-                    state = LineState() # reset state
+                    add_state_to_table()
+                    # reset state
+                    state = LineState(self.header['default_is_stmt']) 
                 elif ex_opcode == DW_LNE_set_address:
-                    operand = struct_parse(self.Dwarf_target_addr, self.stream)
+                    operand = struct_parse(self.structs.Dwarf_target_addr(''),
+                                           self.stream)
                     state.address = operand
                 elif ex_opcode == DW_LNE_define_file:
-                    operand = struct_parse(self.Dwarf_lineprog_file_entry,
-                                           self.stream)
+                    operand = struct_parse(
+                        self.structs.Dwarf_lineprog_file_entry, self.stream)
                     self['file_entry'].append(operand)
             else: # 0 < opcode < opcode_base
                 # Standard opcode
                 if opcode == DW_LNS_copy:
                     add_state_to_table()
                 elif opcode == DW_LNS_advance_pc:
-                    operand = struct_parse(self.Dwarf_uleb128, self.stream)
+                    operand = struct_parse(self.structs.Dwarf_uleb128(''),
+                                           self.stream)
                     state.address += (
                         operand * self.header['minimum_instruction_length'])
                 elif opcode == DW_LNS_advance_line:
-                    operand = struct_parse(self.Dwarf_sleb128, self.stream)
+                    operand = struct_parse(self.structs.Dwarf_sleb128(''),
+                                           self.stream)
                     state.line += operand
                 elif opcode == DW_LNS_set_file:
-                    operand = struct_parse(self.Dwarf_sleb128, self.stream)
+                    operand = struct_parse(self.structs.Dwarf_sleb128(''),
+                                           self.stream)
                     state.file = operand
                 elif opcode == DW_LNS_set_column:
-                    operand = struct_parse(self.Dwarf_uleb128, self.stream)
+                    operand = struct_parse(self.structs.Dwarf_uleb128(''),
+                                           self.stream)
                     state.column = operand
                 elif opcode == DW_LNS_negate_stmt:
                     state.is_stmt = not state.is_stmt
@@ -153,16 +170,20 @@ class LineProgram(object):
                     state.address += ((adjusted_opcode / self['line_range']) *
                                       self['minimum_instruction_length'])
                 elif opcode == DW_LNS_fixed_advance_pc:
-                    operand = struct_parse(self.Dwarf_uint16, self.stream)
+                    operand = struct_parse(self.structs.Dwarf_uint16,
+                                           self.stream)
                     state.address += operand
                 elif opcode == DW_LNS_set_prologue_end:
                     state.prologue_end = True
                 elif opcode == DW_LNS_set_epilogue_begin:
                     state.epilogue_begin = True
                 elif opcode == DW_LNS_set_isa:
-                    operand = struct_parse(self.Dwarf_uleb128, self.stream)
+                    operand = struct_parse(self.structs.Dwarf_uleb128(''),
+                                           self.stream)
                     state.isa = operand
                 else:
                     dwarf_assert(False, 'Invalid standard line program opcode: %s' % (
                         opcode,))
+            offset = self.stream.tell()
+        return linetable
 

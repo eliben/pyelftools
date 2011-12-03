@@ -114,7 +114,7 @@ class DWARFInfo(object):
         top_DIE = CU.get_top_DIE()
         if 'DW_AT_stmt_list' in top_DIE.attributes:
             return self._parse_line_program_at_offset(
-                    top_DIE.attributes['DW_AT_stmt_list'], CU.structs)
+                    top_DIE.attributes['DW_AT_stmt_list'].value, CU.structs)
         else:
             return None
         
@@ -188,16 +188,16 @@ class DWARFInfo(object):
         lineprog_header = struct_parse(
             structs.Dwarf_lineprog_header,
             self.debug_line_sec.stream,
-            offset)
+            debug_line_offset)
 
         # Calculate the offset to the next line program (see DWARF 6.2.4)
-        end_offset = (  offset + lineprog_header['unit_length'] +
-                        lineprog_structs.initial_length_field_size())
+        end_offset = (  debug_line_offset + lineprog_header['unit_length'] +
+                        structs.initial_length_field_size())
 
         return LineProgram(
             header=lineprog_header,
             dwarfinfo=self,
-            structs=lineprog_structs,
+            structs=structs,
             program_start_offset=self.debug_line_sec.stream.tell(),
             program_end_offset=end_offset)
 
