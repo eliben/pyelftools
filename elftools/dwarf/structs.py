@@ -59,6 +59,9 @@ class DWARFStructs(object):
 
             Dwarf_lineprog_header (+):
                 Line program header
+
+            Dwarf_lineprog_file_entry (+):
+                A single file entry in a line program header or instruction
         
         See also the documentation of public methods.
     """
@@ -188,7 +191,7 @@ class DWARFStructs(object):
     def _create_lineprog_header(self):
         # A file entry is terminated by a NULL byte, so we don't want to parse
         # past it. Therefore an If is used.
-        file_entry = Struct('file_entry',
+        self.Dwarf_lineprog_file_entry = Struct('file_entry',
             CString('name'),
             If(lambda ctx: len(ctx.name) != 0,
                 Embed(Struct('',
@@ -212,7 +215,7 @@ class DWARFStructs(object):
                 CString('include_directory')),
             RepeatUntilExcluding(
                 lambda obj, ctx: len(obj.name) == 0,
-                file_entry),
+                self.Dwarf_lineprog_file_entry),
             )
         
     def _make_block_struct(self, length_field):

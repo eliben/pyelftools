@@ -23,7 +23,7 @@ print '===> %s sections!' % efile.num_sections()
 
 dwarfinfo = efile.get_dwarf_info()
 
-for lp in dwarfinfo.iter_line_programs():
-    print lp
-    print lp.header
+#for lp in dwarfinfo.iter_line_programs():
+    #print lp
+    #print lp.header
 

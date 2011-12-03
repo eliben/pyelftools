@@ -68,10 +68,6 @@ class DWARFInfo(object):
         
         # Cache for abbrev tables: a dict keyed by offset
         self._abbrevtable_cache = {}
-
-        # A list of parsed line programs. Populated lazily when the line
-        # programs are actually requested
-        self._lineprograms = None
     
     def iter_CUs(self):
         """ Yield all the compile units (CompileUnit objects) in the debug info
@@ -79,13 +75,6 @@ class DWARFInfo(object):
         if self._CUs is None:
             self._CUs = self._parse_CUs()
         return iter(self._CUs)
-
-    def iter_line_programs(self):
-        """ Yield all the line programs (LineProgram ojects) in the debug info
-        """
-        if self._lineprograms is None:
-            self._lineprograms = self._parse_line_programs()
-        return iter(self._lineprograms)
 
     def get_abbrev_table(self, offset):
         """ Get an AbbrevTable from the given offset in the debug_abbrev
@@ -115,6 +104,20 @@ class DWARFInfo(object):
         """
         return parse_cstring_from_stream(self.debug_str_sec.stream, offset)
     
+    def line_program_for_CU(self, CU):
+        """ Given a CU object, fetch the line program it points to from the
+            .debug_line section.
+            If the CU doesn't point to a line program, return None.
+        """
+        # The line program is pointed to by the DW_AT_stmt_list attribute of
+        # the top DIE of a CU.
+        top_DIE = CU.get_top_DIE()
+        if 'DW_AT_stmt_list' in top_DIE.attributes:
+            return self._parse_line_program_at_offset(
+                    top_DIE.attributes['DW_AT_stmt_list'], CU.structs)
+        else:
+            return None
+        
     #------ PRIVATE ------#
     
     def _parse_CUs(self):
@@ -177,48 +180,24 @@ class DWARFInfo(object):
         """
         return 2 <= version <= 3
 
-    def _parse_line_programs(self):
-        """ Parse line programs from debug_line
+    def _parse_line_program_at_offset(self, debug_line_offset, structs):
+        """ Given an offset to the .debug_line section, parse the line program
+            starting at this offset in the section and return it.
+            structs is the DWARFStructs object used to do this parsing.
         """
-        offset = 0
-        lineprograms = []
-        while offset < self.debug_line_sec.size:
-            # Similarly to CU parsing, peek at the initial_length field of the
-            # header to figure out the DWARF format for it.
-            initial_length = struct_parse(
-                self.structs.Dwarf_uint32(''),
-                self.debug_line_sec.stream,
-                offset)
-            dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
+        lineprog_header = struct_parse(
+            structs.Dwarf_lineprog_header,
+            self.debug_line_sec.stream,
+            offset)
 
-            # Prepare the structs for this line program, based on its format
-            # and the default endianness. The address_size plays no role for
-            # line programs so we just give it a default value.
-            lineprog_structs = DWARFStructs(
-                little_endian=self.little_endian,
-                dwarf_format=dwarf_format,
-                address_size=4)
+        # Calculate the offset to the next line program (see DWARF 6.2.4)
+        end_offset = (  offset + lineprog_header['unit_length'] +
+                        lineprog_structs.initial_length_field_size())
 
-            # Now parse the header fully using up-to-date structs. After this,
-            # the section stream will point at the beginning of the program
-            # itself, right after the header.
-            lineprog_header = struct_parse(
-                lineprog_structs.Dwarf_lineprog_header,
-                self.debug_line_sec.stream,
-                offset)
-
-            # Calculate the offset to the next line program (see DWARF 6.2.4)
-            end_offset = (  offset + lineprog_header['unit_length'] +
-                            lineprog_structs.initial_length_field_size()))
-
-            lineprograms.append(LineProgram(
-                header=lineprog_header,
-                dwarfinfo=self,
-                structs=lineprog_structs,
-                program_start_offset=self.debug_line_sec.stream.tell()),
-                program_end_offset=end_offset)
-
-            offset = end_offset
-
-        return lineprograms
+        return LineProgram(
+            header=lineprog_header,
+            dwarfinfo=self,
+            structs=lineprog_structs,
+            program_start_offset=self.debug_line_sec.stream.tell(),
+            program_end_offset=end_offset)
 
