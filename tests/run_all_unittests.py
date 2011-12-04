@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 # tests/run_all_unittests.py
 #
-# Run all unit tests
+# Run all unit tests (alternative to running 'python -m unittest discover ...')
 #
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain

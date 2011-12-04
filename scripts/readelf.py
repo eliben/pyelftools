@@ -416,17 +416,19 @@ class ReadElf(object):
         else:
             self._emitline()
 
-    def display_debug_dump(self, section_name):
+    def display_debug_dump(self, dump_what):
         """ Dump a DWARF section
         """
         self._init_dwarfinfo()
         if self._dwarfinfo is None:
             return
         
-        if section_name == 'info':
+        if dump_what == 'info':
             self._dump_debug_info()
+        elif dump_what == 'decodedline':
+            self._dump_debug_line_programs()
         else:
-            self._emitline('debug dump not yet supported for "%s"' % section_name)
+            self._emitline('debug dump not yet supported for "%s"' % dump_what)
 
     def _format_hex(self, addr, fieldsize=None, fullhex=False, lead0x=True):
         """ Format an address into a hexadecimal string.
@@ -538,6 +540,37 @@ class ReadElf(object):
                     
         self._emitline()
 
+    def _dump_debug_line_programs(self):
+        """ Dump the (decoded) line programs from .debug_line
+            The programs are dumped in the order of the CUs they belong to.
+        """
+        self._emitline('Decoded dump of debug contents of section .debug_line:')
+
+        for cu in self._dwarfinfo.iter_CUs():
+            lineprogram = self._dwarfinfo.line_program_for_CU(cu)
+
+            cu_filename = ''
+            if len(lineprogram['include_directory']) > 0:
+                cu_filename = '%s/%s' % (
+                    lineprogram['include_directory'][0],
+                    lineprogram['file_entry'][0].name)
+            else:
+                cu_filename = lineprogram['file_entry'][0].name
+
+            self._emitline('CU: %s:' % cu_filename)
+            self._emitline('File name                            Line number    Starting address')
+
+            # readelf doesn't print the state after end_sequence instructions. 
+            # I think it's a bug but to be compatible I don't print them too.
+            for state in lineprogram.get_line_table():
+                if not state.end_sequence:
+                    self._emitline('%-35s  %11d  %18s' % (
+                        lineprogram['file_entry'][state.file - 1].name,
+                        state.line,
+                        '0' if state.address == 0 else 
+                               self._format_hex(state.address)))
+            self._emitline()
+
     def _emit(self, s=''):
         """ Emit an object to output
         """
@@ -589,7 +622,7 @@ def main(stream=None):
             action='store', dest='show_string_dump', metavar='<number|name>',
             help='Dump the contents of section <number|name> as strings')
     optparser.add_option('--debug-dump',
-            action='store', dest='debug_dump_section', metavar='<section>',
+            action='store', dest='debug_dump_what', metavar='<section>',
             help='Display the contents of DWARF debug sections')
 
     options, args = optparser.parse_args()
@@ -624,8 +657,8 @@ def main(stream=None):
                 readelf.display_hex_dump(options.show_hex_dump)
             if options.show_string_dump:
                 readelf.display_string_dump(options.show_string_dump)
-            if options.debug_dump_section:
-                readelf.display_debug_dump(options.debug_dump_section)
+            if options.debug_dump_what:
+                readelf.display_debug_dump(options.debug_dump_what)
         except ELFError as ex:
             sys.stderr.write('ELF error: %s\n' % ex)
             sys.exit(1)
