@@ -24,9 +24,9 @@ print '===> %s sections!' % efile.num_sections()
 dwarfinfo = efile.get_dwarf_info()
 CUs = list(dwarfinfo.iter_CUs())
 print 'num CUs:', len(CUs)
-print 'first CU:', CUs[0]
+print 'CU:', CUs[2]
 
-lp = dwarfinfo.line_program_for_CU(CUs[0])
+lp = dwarfinfo.line_program_for_CU(CUs[2])
 print 'lp:', lp, lp.header
 print 'linetable:', lp.get_line_table()
 #for lp in dwarfinfo.iter_line_programs():

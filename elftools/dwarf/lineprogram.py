@@ -38,13 +38,14 @@ class LineState(object):
             a.append('  %s = %s' % (attr, getattr(self, attr)))
         return '\n'.join(a) + '>\n'
 
+
 class LineProgram(object):
     """ Builds a "line table", which is essentially the matrix described
         in section 6.2 of DWARFv3. It's a list of LineState objects,
         sorted by increasing address, so it can be used to obtain the
         state information for each address.
     """
-    def __init__(self, header, dwarfinfo, structs,
+    def __init__(self, header, stream, structs,
                  program_start_offset, program_end_offset):
         """ 
             header:
@@ -52,19 +53,19 @@ class LineProgram(object):
                 its header by appending file entries if DW_LNE_define_file
                 instructions are encountered.
 
-            dwarfinfo:
-                The DWARFInfo context object which created this one
+            stream:
+                The stream this program can be read from.
 
             structs:
                 A DWARFStructs instance suitable for this line program
 
             program_{start|end}_offset:
                 Offset in the debug_line section stream where this program
-                starts, and where it ends. The actual range includes start
-                but not end: [start, end - 1]
+                starts (the actual program, after the header), and where it
+                ends.
+                The actual range includes start but not end: [start, end - 1]
         """
-        self.dwarfinfo = dwarfinfo
-        self.stream = self.dwarfinfo.debug_line_sec.stream
+        self.stream = stream
         self.header = header
         self.structs = structs
         self.program_start_offset = program_start_offset
@@ -170,7 +171,7 @@ class LineProgram(object):
                     state.address += ((adjusted_opcode / self['line_range']) *
                                       self['minimum_instruction_length'])
                 elif opcode == DW_LNS_fixed_advance_pc:
-                    operand = struct_parse(self.structs.Dwarf_uint16,
+                    operand = struct_parse(self.structs.Dwarf_uint16(''),
                                            self.stream)
                     state.address += operand
                 elif opcode == DW_LNS_set_prologue_end:

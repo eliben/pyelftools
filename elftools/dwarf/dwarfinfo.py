@@ -196,7 +196,7 @@ class DWARFInfo(object):
 
         return LineProgram(
             header=lineprog_header,
-            dwarfinfo=self,
+            stream=self.debug_line_sec.stream,
             structs=structs,
             program_start_offset=self.debug_line_sec.stream.tell(),
             program_end_offset=end_offset)
