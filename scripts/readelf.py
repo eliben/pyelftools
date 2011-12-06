@@ -36,6 +36,8 @@ from elftools.elf.descriptions import (
     )
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import describe_attr_value
+from elftools.dwarf.constants import (
+    DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
 
 
 class ReadElf(object):
@@ -544,7 +546,7 @@ class ReadElf(object):
         """ Dump the (decoded) line programs from .debug_line
             The programs are dumped in the order of the CUs they belong to.
         """
-        self._emitline('Decoded dump of debug contents of section .debug_line:')
+        self._emitline('Decoded dump of debug contents of section .debug_line:\n')
 
         for cu in self._dwarfinfo.iter_CUs():
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
@@ -560,16 +562,38 @@ class ReadElf(object):
             self._emitline('CU: %s:' % cu_filename)
             self._emitline('File name                            Line number    Starting address')
 
-            # readelf doesn't print the state after end_sequence instructions. 
-            # I think it's a bug but to be compatible I don't print them too.
-            for state in lineprogram.get_line_table():
-                if not state.end_sequence:
+            # Print each state's file, line and address information. For some
+            # instructions other output is needed to be compatible with
+            # readelf.
+            for entry in lineprogram.get_entries():
+                state = entry.state
+                if state is None:
+                    # Special handling for commands that don't set a new state
+                    if entry.command == DW_LNS_set_file:
+                        file_entry = lineprogram['file_entry'][entry.args[0] - 1]
+                        if file_entry.dir_index == 0:
+                            # current directory
+                            self._emitline('\n./%s:[++]' % (
+                                file_entry.name))
+                        else:
+                            self._emitline('\n%s/%s:' % (
+                                lineprogram['include_directory'][file_entry.dir_index - 1],
+                                file_entry.name))
+                    elif entry.command == DW_LNE_define_file:
+                        self._emitline('%s:' % (
+                            lineprogram['include_directory'][entry.args[0].dir_index]))
+                elif not state.end_sequence:
+                    # readelf doesn't print the state after end_sequence
+                    # instructions. I think it's a bug but to be compatible
+                    # I don't print them too.
                     self._emitline('%-35s  %11d  %18s' % (
                         lineprogram['file_entry'][state.file - 1].name,
                         state.line,
                         '0' if state.address == 0 else 
                                self._format_hex(state.address)))
-            self._emitline()
+                if entry.command == DW_LNS_copy:
+                    # Another readelf oddity...
+                    self._emitline()
 
     def _emit(self, s=''):
         """ Emit an object to output

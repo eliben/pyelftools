@@ -2,8 +2,9 @@ import sys, unittest
 from cStringIO import StringIO
 
 sys.path.extend(['.', '..'])
-from elftools.dwarf.lineprogram import LineProgram, LineState
+from elftools.dwarf.lineprogram import LineProgram, LineState, LineProgramEntry
 from elftools.dwarf.structs import DWARFStructs
+from elftools.dwarf.constants import *
 
 
 class TestLineProgram(unittest.TestCase):
@@ -50,13 +51,21 @@ class TestLineProgram(unittest.TestCase):
             '\x00\x01\x01')
 
         lp = self._make_program_in_stream(s)
-        linetable = lp.get_line_table()
+        linetable = lp.get_entries()
 
-        self.assertLineState(linetable[0], address=0x239, line=3)
-        self.assertLineState(linetable[1], address=0x23c, line=5)
-        self.assertLineState(linetable[2], address=0x244, line=6)
-        self.assertLineState(linetable[3], address=0x24b, line=7, end_sequence=False)
-        self.assertLineState(linetable[4], address=0x24d, line=7, end_sequence=True)
+        self.assertEqual(len(linetable), 7)
+        self.assertIs(linetable[0].state, None)  # doesn't modify state
+        self.assertEqual(linetable[0].command, DW_LNS_advance_pc)
+        self.assertEqual(linetable[0].args, [0x239])
+        self.assertLineState(linetable[1].state, address=0x239, line=3)
+        self.assertEqual(linetable[1].command, 0xb)
+        self.assertEqual(linetable[1].args, [2, 0])
+        self.assertLineState(linetable[2].state, address=0x23c, line=5)
+        self.assertLineState(linetable[3].state, address=0x244, line=6)
+        self.assertLineState(linetable[4].state, address=0x24b, line=7, end_sequence=False)
+        self.assertEqual(linetable[5].command, DW_LNS_advance_pc)
+        self.assertEqual(linetable[5].args, [2])
+        self.assertLineState(linetable[6].state, address=0x24d, line=7, end_sequence=True)
 
     def test_spec_sample_60(self):
         # Sample in figure 60 of DWARFv3
@@ -74,13 +83,17 @@ class TestLineProgram(unittest.TestCase):
             '\x00\x01\x01')
 
         lp = self._make_program_in_stream(s)
-        linetable = lp.get_line_table()
+        linetable = lp.get_entries()
 
-        self.assertLineState(linetable[0], address=0x239, line=3)
-        self.assertLineState(linetable[1], address=0x23c, line=5)
-        self.assertLineState(linetable[2], address=0x244, line=6)
-        self.assertLineState(linetable[3], address=0x24b, line=7, end_sequence=False)
-        self.assertLineState(linetable[4], address=0x24d, line=7, end_sequence=True)
+        self.assertEqual(len(linetable), 10)
+        self.assertIs(linetable[0].state, None)  # doesn't modify state
+        self.assertEqual(linetable[0].command, DW_LNS_fixed_advance_pc)
+        self.assertEqual(linetable[0].args, [0x239])
+        self.assertLineState(linetable[1].state, address=0x239, line=3)
+        self.assertLineState(linetable[3].state, address=0x23c, line=5)
+        self.assertLineState(linetable[5].state, address=0x244, line=6)
+        self.assertLineState(linetable[7].state, address=0x24b, line=7, end_sequence=False)
+        self.assertLineState(linetable[9].state, address=0x24d, line=7, end_sequence=True)
 
 
 if __name__ == '__main__':
