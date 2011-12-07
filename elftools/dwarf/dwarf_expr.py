@@ -98,19 +98,11 @@ class GenericExprVisitor(object):
         self._cur_opcode_name = None
         self._cur_args = []
 
-    def process_expr(self, loc_expr):
-        """ Process (visit) a DWARF expression. Currently two possible
-            types are supported for expr:
-
-            1. File-like stream object
-            2. List of byte values (the result of parsed DW_FORM_block*
-               attributes).
+    def process_expr(self, expr):
+        """ Process (visit) a DWARF expression. expr should be a list of
+            (integer) byte values.
         """
-        if hasattr(loc_expr, 'read') and hasattr(loc_expr, 'seek'):
-            # looks like a stream
-            self.stream = loc_expr
-        else:
-            self.stream = StringIO(bytelist2string(loc_expr))
+        self.stream = StringIO(bytelist2string(expr))
 
         while True:
             # Get the next opcode from the stream. If nothing is left in the

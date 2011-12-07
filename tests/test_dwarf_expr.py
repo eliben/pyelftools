@@ -50,11 +50,6 @@ class TestExprDumper(unittest.TestCase):
         self.assertEqual(self.visitor.get_str(),
             'DW_OP_mod; DW_OP_mul; DW_OP_mod; DW_OP_mul; DW_OP_mod; DW_OP_mul')
 
-    def test_stream_input(self):
-        self.visitor.process_expr(StringIO('\x1b'))
-        self.assertEqual(self.visitor.get_str(),
-            'DW_OP_div')
-
 
 if __name__ == '__main__':
     unittest.main()
