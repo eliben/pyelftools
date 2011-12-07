@@ -2,18 +2,18 @@ import sys, unittest
 from cStringIO import StringIO
 
 sys.path.extend(('..', '.'))
-from elftools.dwarf.location_expr import LocationExpressionDumper
+from elftools.dwarf.dwarf_expr import ExprDumper
 from elftools.dwarf.structs import DWARFStructs
 
 
-class TestLocationExpressionDumper(unittest.TestCase):
+class TestExprDumper(unittest.TestCase):
     structs32 = DWARFStructs(
             little_endian=True,
             dwarf_format=32,
             address_size=4)
 
     def setUp(self):
-        self.visitor = LocationExpressionDumper(self.structs32)
+        self.visitor = ExprDumper(self.structs32)
 
     def test_basic_single(self):
         self.visitor.process_expr([0x1b])

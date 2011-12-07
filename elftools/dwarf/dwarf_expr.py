@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
-# elftools: dwarf/location_expr.py
+# elftools: dwarf/dwarf_expr.py
 #
-# Decoding DWARF location expressions
+# Decoding DWARF expressions
 #
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
@@ -11,7 +11,7 @@ from cStringIO import StringIO
 from ..common.utils import struct_parse, bytelist2string
 
 
-# Location expression opcodes. name -> opcode mapping
+# DWARF expression opcodes. name -> opcode mapping
 DW_OP_name2opcode = dict(
     DW_OP_addr=0x03,
     DW_OP_deref=0x06,
@@ -89,7 +89,7 @@ _generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_breg', 0, 31, 0x70)
 DW_OP_opcode2name = dict((v, k) for k, v in DW_OP_name2opcode.iteritems())
 
 
-class GenericLocationExprVisitor(object):
+class GenericExprVisitor(object):
     def __init__(self, structs):
         self.structs = structs
         self._init_dispatch_table()
@@ -99,7 +99,7 @@ class GenericLocationExprVisitor(object):
         self._cur_args = []
 
     def process_expr(self, loc_expr):
-        """ Process (visit) a location expression. Currently two possible
+        """ Process (visit) a DWARF expression. Currently two possible
             types are supported for expr:
 
             1. File-like stream object
@@ -249,9 +249,9 @@ class GenericLocationExprVisitor(object):
             self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
 
 
-class LocationExpressionDumper(GenericLocationExprVisitor):
+class ExprDumper(GenericExprVisitor):
     def __init__(self, structs):
-        super(LocationExpressionDumper, self).__init__(structs)
+        super(ExprDumper, self).__init__(structs)
         self._init_lookups()
         self._str_parts = []
 

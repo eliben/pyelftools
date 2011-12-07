@@ -9,7 +9,7 @@
 from collections import defaultdict
 
 from .constants import *
-from .location_expr import LocationExpressionDumper
+from .dwarf_expr import ExprDumper
 from .die import DIE
 from ..common.utils import preserve_stream_pos
 
@@ -214,7 +214,7 @@ def _make_extra_string(s=''):
     return extra
 
 
-_LOCATION_EXPR_DUMPER_CACHE = {}
+_DWARF_EXPR_DUMPER_CACHE = {}
 
 def _location_list_extra(attr, die, section_offset):
     # According to section 2.6 of the DWARF spec v3, class loclistptr means
@@ -228,13 +228,13 @@ def _location_list_extra(attr, die, section_offset):
         # caching scheme is in place to create only one such dumper per
         # processed CU.
         cache_key = id(die.cu.structs)
-        if cache_key not in _LOCATION_EXPR_DUMPER_CACHE:
-            _LOCATION_EXPR_DUMPER_CACHE[cache_key] = \
-                LocationExpressionDumper(die.cu.structs)
-        location_expr_dumper = _LOCATION_EXPR_DUMPER_CACHE[cache_key]
-        location_expr_dumper.clear()
-        location_expr_dumper.process_expr(attr.value)
-        return '(' + location_expr_dumper.get_str() + ')'
+        if cache_key not in _DWARF_EXPR_DUMPER_CACHE:
+            _DWARF_EXPR_DUMPER_CACHE[cache_key] = \
+                ExprDumper(die.cu.structs)
+        dwarf_expr_dumper = _DWARF_EXPR_DUMPER_CACHE[cache_key]
+        dwarf_expr_dumper.clear()
+        dwarf_expr_dumper.process_expr(attr.value)
+        return '(' + dwarf_expr_dumper.get_str() + ')'
 
 
 def _import_extra(attr, die, section_offset):
