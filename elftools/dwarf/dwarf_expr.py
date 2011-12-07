@@ -90,6 +90,21 @@ DW_OP_opcode2name = dict((v, k) for k, v in DW_OP_name2opcode.iteritems())
 
 
 class GenericExprVisitor(object):
+    """ A DWARF expression is a sequence of instructions encoded in a block
+        of bytes. This class decodes the sequence into discrete instructions
+        with their arguments and allows generic "visiting" to process them.
+
+        Usage: subclass this class, and override the needed methods. The
+        easiest way would be to just override _after_visit, which gets passed
+        each decoded instruction (with its arguments) in order. Clients of
+        the visitor then just execute process_expr. The subclass can keep
+        its own internal information updated in _after_visit and provide
+        methods to extract it. For a good example of this usage, see the
+        ExprDumper class in this module.
+
+        A more complex usage could be to override visiting methods for
+        specific instructions, by placing them into the dispatch table.
+    """
     def __init__(self, structs):
         self.structs = structs
         self._init_dispatch_table()
@@ -242,6 +257,12 @@ class GenericExprVisitor(object):
 
 
 class ExprDumper(GenericExprVisitor):
+    """ A concrete visitor for DWARF expressions that dumps a textual
+        representation of the complete expression.
+        
+        Usage: after creation, call process_expr, and then get_str for a
+        semicolon-delimited string representation of the decoded expression.
+    """
     def __init__(self, structs):
         super(ExprDumper, self).__init__(structs)
         self._init_lookups()
