@@ -73,9 +73,6 @@ class AbbrevDecl(object):
             (name, form) pairs.
         """
         for attr_spec in self['attr_spec']:
-            # Ignore the terminating 'null' spec
-            if attr_spec.name == 'DW_AT_null':
-                break
             yield attr_spec.name, attr_spec.form
             
     def __getitem__(self, entry):

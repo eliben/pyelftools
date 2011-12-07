@@ -150,7 +150,7 @@ class DWARFStructs(object):
         self.Dwarf_abbrev_declaration = Struct('Dwarf_abbrev_entry',
             Enum(self.Dwarf_uleb128('tag'), **ENUM_DW_TAG),
             Enum(self.Dwarf_uint8('children_flag'), **ENUM_DW_CHILDREN),
-            RepeatUntil(
+            RepeatUntilExcluding(
                 lambda obj, ctx: 
                     obj.name == 'DW_AT_null' and obj.form == 'DW_FORM_null',
                 Struct('attr_spec',
