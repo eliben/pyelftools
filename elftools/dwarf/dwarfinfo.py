@@ -38,11 +38,13 @@ class DWARFInfo(object):
             debug_abbrev_sec,
             debug_str_sec,
             debug_line_sec):
-        """ stream: 
-                A stream (file-like object) that contains debug sections
-            
-            elffile:
-                ELFFile reference
+        """ elffile:
+                ELFFile reference. Note that the whole DWARF processing code is
+                decoupled from the container file. This ELFFile object is just
+                used to obtain some attributes of the data, such as endianness.
+                If desired, DWARFInfo can be created without an actual ELFFile,
+                by passing a "mock" object that only provides the required
+                attributes.
 
             debug_*_sec:
                 DebugSectionDescriptor for a section

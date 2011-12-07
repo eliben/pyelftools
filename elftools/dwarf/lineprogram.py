@@ -102,6 +102,10 @@ class LineProgram(object):
     def get_entries(self):
         """ Get the decoded entries for this line program. Return a list of
             LineProgramEntry objects.
+            Note that this contains more information than absolutely required
+            for the line table. The line table can be easily extracted from
+            the list of entries by looking only at entries with non-None
+            state.
         """
         if self._decoded_entries is None:
             self._decoded_entries = self._decode_line_program()
