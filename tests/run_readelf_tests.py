@@ -52,7 +52,7 @@ def run_test_on_file(filename):
     testlog.info("Running test on file '%s'" % filename)
     for option in [
             '-e', '-s', '-r', '-x.text', '-p.shstrtab',
-            '--debug-dump=info']:
+            '--debug-dump=info', '--debug-dump=decodedline']:
         testlog.info("..option='%s'" % option)
         # stdouts will be a 2-element list: output of readelf and output 
         # of scripts/readelf.py
@@ -91,8 +91,10 @@ def compare_output(s1, s2):
         readelf, which I was reluctant to replicate.
         Read the documentation for more details.
     """
-    lines1 = s1.lower().splitlines()
-    lines2 = s2.lower().splitlines()
+    def prepare_lines(s):
+        return [line for line in s.lower().splitlines() if line.strip() != '']
+    lines1 = prepare_lines(s1)
+    lines2 = prepare_lines(s2)
     if len(lines1) != len(lines2):
         return False, 'Number of lines different: %s vs %s' % (
                 len(lines1), len(lines2))
