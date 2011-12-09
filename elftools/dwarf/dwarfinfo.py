@@ -25,7 +25,21 @@ from .lineprogram import LineProgram
 # size: the size of the section's data, in bytes
 #
 DebugSectionDescriptor = namedtuple('DebugSectionDescriptor', 
-        'stream name global_offset size')
+    'stream name global_offset size')
+
+
+# Some configuration parameters for the DWARF reader. This exists to allow
+# DWARFInfo to be independent from any specific file format/container.
+#
+# little_endian:
+#   boolean flag specifying whether the data in the file is little endian.
+#
+# machine_arch:
+#   Machine architecture as a string. For example 'x86' or 'x64'
+#               
+#
+DwarfConfig = namedtuple('DwarfConfig',
+    'little_endian machine_arch')
 
 
 class DWARFInfo(object):
@@ -33,35 +47,28 @@ class DWARFInfo(object):
         various parts of the debug infromation.
     """
     def __init__(self,
-            elffile,
+            config,
             debug_info_sec,
             debug_abbrev_sec,
             debug_str_sec,
             debug_line_sec):
-        """ elffile:
-                ELFFile reference. Note that the whole DWARF processing code is
-                decoupled from the container file. This ELFFile object is just
-                used to obtain some attributes of the data, such as endianness.
-                If desired, DWARFInfo can be created without an actual ELFFile,
-                by passing a "mock" object that only provides the required
-                attributes.
+        """ config:
+                A DwarfConfig object
 
             debug_*_sec:
                 DebugSectionDescriptor for a section
         """
-        self.elffile = elffile
+        self.config = config
         self.debug_info_sec = debug_info_sec
         self.debug_abbrev_sec = debug_abbrev_sec
         self.debug_str_sec = debug_str_sec
         self.debug_line_sec = debug_line_sec
-        
-        self.little_endian = self.elffile.little_endian
 
         # This is the DWARFStructs the context uses, so it doesn't depend on 
         # DWARF format and address_size (these are determined per CU) - set them
         # to default values.
         self.structs = DWARFStructs(
-            little_endian=self.little_endian,
+            little_endian=self.config.little_endian,
             dwarf_format=32,
             address_size=4)
         
@@ -147,7 +154,7 @@ class DWARFInfo(object):
             # object for this CU.
             #
             cu_structs = DWARFStructs(
-                little_endian=self.little_endian,
+                little_endian=self.config.little_endian,
                 dwarf_format=dwarf_format,
                 address_size=4)
             
@@ -155,7 +162,7 @@ class DWARFInfo(object):
                 cu_structs.Dwarf_CU_header, self.debug_info_sec.stream, offset)
             if cu_header['address_size'] == 8:
                 cu_structs = DWARFStructs(
-                    little_endian=self.little_endian,
+                    little_endian=self.config.little_endian,
                     dwarf_format=dwarf_format,
                      address_size=8)
             

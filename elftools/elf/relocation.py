@@ -135,12 +135,12 @@ class RelocationHandler(object):
         reloc_type = reloc['r_info_type']
         recipe = None
 
-        if self.elffile.architecture_is_x86():
+        if self.elffile.get_machine_arch() == 'x86':
             if reloc.is_RELA():
                 raise ELFRelocationError(
                     'Unexpected RELA relocation for x86: %s' % reloc)
             recipe = self._RELOCATION_RECIPES_X86.get(reloc_type, None)
-        elif self.elffile.architecture_is_x64():
+        elif self.elffile.get_machine_arch() == 'x64':
             if not reloc.is_RELA():
                 raise ELFRelocationError(
                     'Unexpected REL relocation for x64: %s' % reloc)

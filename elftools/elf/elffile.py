@@ -16,7 +16,7 @@ from .sections import (
 from .relocation import RelocationSection, RelocationHandler
 from .segments import Segment, InterpSegment
 from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
-from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor
+from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 
 
 class ELFFile(object):
@@ -133,17 +133,21 @@ class ELFFile(object):
                     relocate_dwarf_sections)
         
         return DWARFInfo(
-                elffile=self,
+                config=DwarfConfig(
+                    little_endian=self.little_endian,
+                    machine_arch=self.get_machine_arch()),
                 debug_info_sec=debug_sections['.debug_info'],
                 debug_abbrev_sec=debug_sections['.debug_abbrev'],
                 debug_str_sec=debug_sections['.debug_str'],
                 debug_line_sec=debug_sections['.debug_line'])                
-            
-    def architecture_is_x86(self):
-        return self['e_machine'] in ('EM_386', 'EM_486')
 
-    def architecture_is_x64(self):
-        return self['e_machine'] == 'EM_X86_64'
+    def get_machine_arch(self):
+        if self['e_machine'] == 'EM_X86_64':
+            return 'x64'
+        elif self['e_machine'] in ('EM_386', 'EM_486'):
+            return 'x86'
+        else:
+            return '<unknown>'
         
     #-------------------------------- PRIVATE --------------------------------#
     

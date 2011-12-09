@@ -69,9 +69,10 @@ def describe_symbol_shndx(x):
     return _DESCR_ST_SHNDX.get(x, '%3s' % x)
 
 def describe_reloc_type(x, elffile):
-    if elffile.architecture_is_x86():
+    arch = elffile.get_machine_arch()
+    if arch == 'x86':
         return _DESCR_RELOC_TYPE_i386.get(x, _unknown)
-    elif elffile.architecture_is_x64():
+    elif arch == 'x64':
         return _DESCR_RELOC_TYPE_x64.get(x, _unknown)
     else:
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
