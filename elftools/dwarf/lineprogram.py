@@ -105,7 +105,8 @@ class LineProgram(object):
             Note that this contains more information than absolutely required
             for the line table. The line table can be easily extracted from
             the list of entries by looking only at entries with non-None
-            state.
+            state. The extra information is mainly for the purposes of display
+            with readelf and debugging.
         """
         if self._decoded_entries is None:
             self._decoded_entries = self._decode_line_program()

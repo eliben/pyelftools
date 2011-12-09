@@ -96,20 +96,20 @@ class ELFFile(object):
         """
         segment_header = self._get_segment_header(n)
         return self._make_segment(segment_header)
-    
+
     def iter_segments(self):
         """ Yield all the segments in the file
         """
         for i in range(self.num_segments()):
             yield self.get_segment(i)
-    
+
     def has_dwarf_info(self):
         """ Check whether this file appears to have debugging information. 
             We assume that if it has the debug_info section, it has all theother
             required sections as well.
         """
         return bool(self.get_section_by_name('.debug_info'))
-    
+
     def get_dwarf_info(self, relocate_dwarf_sections=True):
         """ Return a DWARFInfo object representing the debugging information in
             this file.
@@ -119,27 +119,28 @@ class ELFFile(object):
         """
         # Expect that has_dwarf_info was called, so at least .debug_info is 
         # present. Check also the presence of other must-have debug sections.
+        # Sections that aren't found will be passed as None to DWARFInfo.
         #
         debug_sections = {}
         for secname in ('.debug_info', '.debug_abbrev', '.debug_str', 
-                        '.debug_line'):
+                        '.debug_line', '.debug_frame'):
             section = self.get_section_by_name(secname)
-            elf_assert(
-                section is not None, 
-                "Expected to find DWARF section '%s' in the file" % (
-                    secname))
-            debug_sections[secname] = self._read_dwarf_section(
-                    section,
-                    relocate_dwarf_sections)
-        
+            if section is None:
+                debug_sections[secname] = None
+            else:
+                debug_sections[secname] = self._read_dwarf_section(
+                        section,
+                        relocate_dwarf_sections)
+
         return DWARFInfo(
                 config=DwarfConfig(
                     little_endian=self.little_endian,
                     machine_arch=self.get_machine_arch()),
                 debug_info_sec=debug_sections['.debug_info'],
                 debug_abbrev_sec=debug_sections['.debug_abbrev'],
+                debug_frame_sec=debug_sections['.debug_frame'],
                 debug_str_sec=debug_sections['.debug_str'],
-                debug_line_sec=debug_sections['.debug_line'])                
+                debug_line_sec=debug_sections['.debug_line'])
 
     def get_machine_arch(self):
         if self['e_machine'] == 'EM_X86_64':
@@ -148,14 +149,14 @@ class ELFFile(object):
             return 'x86'
         else:
             return '<unknown>'
-        
+
     #-------------------------------- PRIVATE --------------------------------#
-    
+
     def __getitem__(self, name):
         """ Implement dict-like access to header entries
         """
         return self.header[name]
-        
+
     def _identify_file(self):
         """ Verify the ELF file and identify its class and endianness.
         """
@@ -166,7 +167,7 @@ class ELFFile(object):
         self.stream.seek(0)
         magic = self.stream.read(4)
         elf_assert(magic == '\x7fELF', 'Magic number does not match')
-        
+
         ei_class = self.stream.read(1)
         if ei_class == '\x01':
             self.elfclass = 32
@@ -174,7 +175,7 @@ class ELFFile(object):
             self.elfclass = 64
         else:
             raise ELFError('Invalid EI_CLASS %s' % repr(ei_class))
-        
+
         ei_data = self.stream.read(1)
         if ei_data == '\x01':
             self.little_endian = True

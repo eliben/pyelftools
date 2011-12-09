@@ -36,7 +36,7 @@ DebugSectionDescriptor = namedtuple('DebugSectionDescriptor',
 #
 # machine_arch:
 #   Machine architecture as a string. For example 'x86' or 'x64'
-#               
+#
 #
 DwarfConfig = namedtuple('DwarfConfig',
     'little_endian machine_arch')
@@ -50,6 +50,7 @@ class DWARFInfo(object):
             config,
             debug_info_sec,
             debug_abbrev_sec,
+            debug_frame_sec,
             debug_str_sec,
             debug_line_sec):
         """ config:
@@ -61,6 +62,7 @@ class DWARFInfo(object):
         self.config = config
         self.debug_info_sec = debug_info_sec
         self.debug_abbrev_sec = debug_abbrev_sec
+        self.debug_frame_sec = debug_frame_sec
         self.debug_str_sec = debug_str_sec
         self.debug_line_sec = debug_line_sec
 
@@ -71,13 +73,13 @@ class DWARFInfo(object):
             little_endian=self.config.little_endian,
             dwarf_format=32,
             address_size=4)
-        
+
         # A list of CUs. Populated lazily when they're actually requested.
         self._CUs = None
-        
+
         # Cache for abbrev tables: a dict keyed by offset
         self._abbrevtable_cache = {}
-    
+
     def iter_CUs(self):
         """ Yield all the compile units (CompileUnit objects) in the debug info
         """
@@ -88,12 +90,12 @@ class DWARFInfo(object):
     def get_abbrev_table(self, offset):
         """ Get an AbbrevTable from the given offset in the debug_abbrev
             section.
-            
+
             The only verification done on the offset is that it's within the
             bounds of the section (if not, an exception is raised).
             It is the caller's responsibility to make sure the offset actually
             points to a valid abbreviation table.
-            
+
             AbbrevTable objects are cached internally (two calls for the same
             offset will return the same object).
         """
@@ -106,13 +108,13 @@ class DWARFInfo(object):
                 stream=self.debug_abbrev_sec.stream,
                 offset=offset)
         return self._abbrevtable_cache[offset]
-    
+
     def get_string_from_table(self, offset):
         """ Obtain a string from the string table section, given an offset 
             relative to the section.
         """
         return parse_cstring_from_stream(self.debug_str_sec.stream, offset)
-    
+
     def line_program_for_CU(self, CU):
         """ Given a CU object, fetch the line program it points to from the
             .debug_line section.
@@ -126,9 +128,9 @@ class DWARFInfo(object):
                     top_DIE.attributes['DW_AT_stmt_list'].value, CU.structs)
         else:
             return None
-        
+
     #------ PRIVATE ------#
-    
+
     def _parse_CUs(self):
         """ Parse CU entries from debug_info.
         """
@@ -146,7 +148,7 @@ class DWARFInfo(object):
             initial_length = struct_parse(
                 self.structs.Dwarf_uint32(''), self.debug_info_sec.stream, offset)
             dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
-            
+
             # At this point we still haven't read the whole header, so we don't
             # know the address_size. Therefore, we're going to create structs
             # with a default address_size=4. If, after parsing the header, we

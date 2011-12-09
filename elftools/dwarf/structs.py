@@ -63,6 +63,12 @@ class DWARFStructs(object):
             Dwarf_lineprog_file_entry (+):
                 A single file entry in a line program header or instruction
         
+            Dwarf_CIE_header (+):
+                A call-frame CIE
+
+            Dwarf_FDE_header (+):
+                A call-frame FDE
+
         See also the documentation of public methods.
     """
     def __init__(self, little_endian, dwarf_format, address_size):
@@ -217,7 +223,23 @@ class DWARFStructs(object):
                 lambda obj, ctx: len(obj.name) == 0,
                 self.Dwarf_lineprog_file_entry),
             )
-        
+
+    def _create_callframe_entry_headers(self):
+        self.Dwarf_CIE_header = Struct('Dwarf_CIE_header',
+            self.Dwarf_initial_length('length'),
+            self.Dwarf_offset('CIE_id'),
+            self.Dwarf_uint8('version'),
+            CString('augmentation'),
+            self.Dwarf_uleb128('code_alignment_factor'),
+            self.Dwarf_sleb128('data_alignment_factor'),
+            self.Dwarf_uleb128('return_address_register'))
+
+        self.Dwarf_FDE_header = Struct('Dwarf_FDE_header',
+            self.Dwarf_initial_length('length'),
+            self.Dwarf_offset('CIE_pointer'),
+            self.Dwarf_target_addr('initial_location'),
+            self.Dwarf_target_addr('address_range'))
+
     def _make_block_struct(self, length_field):
         """ Create a struct for DW_FORM_block<size> 
         """
