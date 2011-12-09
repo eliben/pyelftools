@@ -35,7 +35,8 @@ from elftools.elf.descriptions import (
     describe_symbol_shndx, describe_reloc_type,
     )
 from elftools.dwarf.dwarfinfo import DWARFInfo
-from elftools.dwarf.descriptions import describe_attr_value
+from elftools.dwarf.descriptions import (
+    describe_attr_value, set_global_machine_arch)
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
 
@@ -425,6 +426,8 @@ class ReadElf(object):
         if self._dwarfinfo is None:
             return
         
+        set_global_machine_arch(self.elffile.get_machine_arch())
+
         if dump_what == 'info':
             self._dump_debug_info()
         elif dump_what == 'decodedline':

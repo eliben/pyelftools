@@ -9,9 +9,14 @@
 from collections import defaultdict
 
 from .constants import *
-from .dwarf_expr import ExprDumper
+from .dwarf_expr import GenericExprVisitor
 from .die import DIE
 from ..common.utils import preserve_stream_pos
+
+
+def set_global_machine_arch(machine_arch):
+    global _MACHINE_ARCH
+    _MACHINE_ARCH = machine_arch
 
 
 def describe_attr_value(attr, die, section_offset):
@@ -32,7 +37,23 @@ def describe_attr_value(attr, die, section_offset):
     return str(val_description) + '\t' + extra_info    
 
 
+def describe_reg_name(regnum, machine_arch):
+    """ Provide a textual description for a register name, given its serial
+        number. The number is expected to be valid.
+    """
+    if machine_arch == 'x86':
+        return _REG_NAMES_x86[regnum]
+    elif machine_arch == 'x64':
+        return _REG_NAMES_x64[regnum]
+    else:
+        return '<none>'
+
 #-------------------------------------------------------------------------------
+
+# The machine architecture. Set globally via set_global_machine_arch
+#
+_MACHINE_ARCH = None
+
 
 def _describe_attr_ref(attr, die, section_offset):
     return '<0x%x>' % (attr.value + die.cu.cu_offset)
@@ -300,5 +321,98 @@ _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
     DW_AT_stride=_location_list_extra,
     DW_AT_import=_import_extra,
 )
+
+# 8 in a line, for easier counting
+_REG_NAMES_x86 = [
+    'eax', 'ecx', 'edx', 'ebx', 'esp', 'ebp', 'esi', 'edi',
+    'eip', 'eflags', '<none>', 'st0', 'st1', 'st2', 'st3', 'st4',
+    'st5', 'st6', 'st7', '<none>', '<none>', 'xmm0', 'xmm1', 'xmm2',
+    'xmm3', 'xmm4', 'xmm5', 'xmm6', 'xmm7', 'mm0', 'mm1', 'mm2',
+    'mm3', 'mm4', 'mm5', 'mm6', 'mm7', 'fcw', 'fsw', 'mxcsr',
+    'es', 'cs', 'ss', 'ds', 'fs', 'gs', '<none>', '<none>', 'tr', 'ldtr'
+]
+
+_REG_NAMES_x64 = [
+    'rax', 'rdx', 'rcx', 'rbx', 'rsi', 'rdi', 'rbp', 'rsp',
+    'r8',  'r9',  'r10', 'r11', 'r12', 'r13', 'r14', 'r15',
+    'rip', 'xmm0',  'xmm1',  'xmm2',  'xmm3', 'xmm4', 'xmm5', 'xmm6',
+    'xmm7', 'xmm8', 'xmm9', 'xmm10', 'xmm11', 'xmm12', 'xmm13', 'xmm14',
+    'xmm15', 'st0', 'st1', 'st2', 'st3', 'st4', 'st5', 'st6',
+    'st7', 'mm0', 'mm1', 'mm2', 'mm3', 'mm4', 'mm5', 'mm6',
+    'mm7', 'rflags', 'es', 'cs', 'ss', 'ds', 'fs', 'gs',
+    '<none>', '<none>', 'fs.base', 'gs.base', '<none>', '<none>', 'tr', 'ldtr',
+    'mxcsr', 'fcw', 'fsw'
+]
+
+
+class ExprDumper(GenericExprVisitor):
+    """ A concrete visitor for DWARF expressions that dumps a textual
+        representation of the complete expression.
+        
+        Usage: after creation, call process_expr, and then get_str for a
+        semicolon-delimited string representation of the decoded expression.
+    """
+    def __init__(self, structs):
+        super(ExprDumper, self).__init__(structs)
+        self._init_lookups()
+        self._str_parts = []
+
+    def clear(self):
+        self._str_parts = []
+
+    def get_str(self):
+        return '; '.join(self._str_parts)
+
+    def _init_lookups(self):
+        self._ops_with_decimal_arg = set([
+            'DW_OP_const1u', 'DW_OP_const1s', 'DW_OP_const2u', 'DW_OP_const2s',
+            'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_constu', 'DW_OP_consts',
+            'DW_OP_pick', 'DW_OP_plus_uconst', 'DW_OP_bra', 'DW_OP_skip',
+            'DW_OP_fbreg', 'DW_OP_piece', 'DW_OP_deref_size',
+            'DW_OP_xderef_size', 'DW_OP_regx',])
+        
+        for n in range(0, 32):
+            self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)
+        
+        self._ops_with_two_decimal_args = set([
+            'DW_OP_const8u', 'DW_OP_const8s', 'DW_OP_bregx', 'DW_OP_bit_piece'])
+
+        self._ops_with_hex_arg = set(
+            ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
+
+    def _after_visit(self, opcode, opcode_name, args):
+        self._str_parts.append(self._dump_to_string(opcode, opcode_name, args))
+
+    def _dump_to_string(self, opcode, opcode_name, args):
+        if len(args) == 0:
+            if opcode_name.startswith('DW_OP_reg'):
+                regnum = int(opcode_name[9:])
+                return '%s (%s)' % (
+                    opcode_name,
+                    describe_reg_name(regnum, _MACHINE_ARCH))
+            else:
+                return opcode_name
+        elif opcode_name in self._ops_with_decimal_arg:
+            if opcode_name.startswith('DW_OP_breg'):
+                regnum = int(opcode_name[10:])
+                return '%s (%s): %s' % (
+                    opcode_name,
+                    describe_reg_name(regnum, _MACHINE_ARCH),
+                    args[0])
+            elif opcode_name.endswith('regx'):
+                # applies to both regx and bregx
+                return '%s: %s (%s)' % (
+                    opcode_name,
+                    args[0],
+                    describe_reg_name(args[0], _MACHINE_ARCH))
+            else:
+                return '%s: %s' % (opcode_name, args[0])
+        elif opcode_name in self._ops_with_hex_arg:
+            return '%s: %x' % (opcode_name, args[0])
+        elif opcode_name in self._ops_with_two_decimal_args:
+            return '%s: %s %s' % (opcode_name, args[0], args[1])
+        else:
+            return '<unknown %s>' % opcode_name
+
 
 

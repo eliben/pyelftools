@@ -2,7 +2,7 @@ import sys, unittest
 from cStringIO import StringIO
 
 sys.path.extend(('..', '.'))
-from elftools.dwarf.dwarf_expr import ExprDumper
+from elftools.dwarf.descriptions import ExprDumper, set_global_machine_arch
 from elftools.dwarf.structs import DWARFStructs
 
 
@@ -14,6 +14,7 @@ class TestExprDumper(unittest.TestCase):
 
     def setUp(self):
         self.visitor = ExprDumper(self.structs32)
+        set_global_machine_arch('x64')
 
     def test_basic_single(self):
         self.visitor.process_expr([0x1b])
@@ -23,12 +24,22 @@ class TestExprDumper(unittest.TestCase):
         self.setUp()
         self.visitor.process_expr([0x74, 0x82, 0x01])
         self.assertEqual(self.visitor.get_str(),
-            'DW_OP_breg4: 130')
+            'DW_OP_breg4 (rsi): 130')
         
         self.setUp()
         self.visitor.process_expr([0x91, 0x82, 0x01])
         self.assertEqual(self.visitor.get_str(),
             'DW_OP_fbreg: 130')
+
+        self.setUp()
+        self.visitor.process_expr([0x51])
+        self.assertEqual(self.visitor.get_str(),
+            'DW_OP_reg1 (rdx)')
+
+        self.setUp()
+        self.visitor.process_expr([0x90, 16])
+        self.assertEqual(self.visitor.get_str(),
+            'DW_OP_regx: 16 (rip)')
 
         self.setUp()
         self.visitor.process_expr([0x9d, 0x8f, 0x0A, 0x90, 0x01])

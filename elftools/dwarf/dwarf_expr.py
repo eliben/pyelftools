@@ -100,7 +100,7 @@ class GenericExprVisitor(object):
         the visitor then just execute process_expr. The subclass can keep
         its own internal information updated in _after_visit and provide
         methods to extract it. For a good example of this usage, see the
-        ExprDumper class in this module.
+        ExprDumper class in the descriptions module.
 
         A more complex usage could be to override visiting methods for
         specific instructions, by placing them into the dispatch table.
@@ -254,57 +254,5 @@ class GenericExprVisitor(object):
             self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
         add('DW_OP_call_ref',
             self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
-
-
-class ExprDumper(GenericExprVisitor):
-    """ A concrete visitor for DWARF expressions that dumps a textual
-        representation of the complete expression.
-        
-        Usage: after creation, call process_expr, and then get_str for a
-        semicolon-delimited string representation of the decoded expression.
-    """
-    def __init__(self, structs):
-        super(ExprDumper, self).__init__(structs)
-        self._init_lookups()
-        self._str_parts = []
-
-    def clear(self):
-        self._str_parts = []
-
-    def get_str(self):
-        return '; '.join(self._str_parts)
-
-    def _init_lookups(self):
-        self._ops_with_decimal_arg = set([
-            'DW_OP_const1u', 'DW_OP_const1s', 'DW_OP_const2u', 'DW_OP_const2s',
-            'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_constu', 'DW_OP_consts',
-            'DW_OP_pick', 'DW_OP_plus_uconst', 'DW_OP_bra', 'DW_OP_skip',
-            'DW_OP_fbreg', 'DW_OP_piece', 'DW_OP_deref_size',
-            'DW_OP_xderef_size', 'DW_OP_regx',])
-        
-        for n in range(0, 32):
-            self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)
-        
-        self._ops_with_two_decimal_args = set([
-            'DW_OP_const8u', 'DW_OP_const8s', 'DW_OP_bregx', 'DW_OP_bit_piece'])
-
-        self._ops_with_hex_arg = set(
-            ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
-
-    def _after_visit(self, opcode, opcode_name, args):
-        self._str_parts.append(self._dump_to_string(opcode, opcode_name, args))
-
-    def _dump_to_string(self, opcode, opcode_name, args):
-        if len(args) == 0:
-            return opcode_name
-        elif opcode_name in self._ops_with_decimal_arg:
-            return '%s: %s' % (opcode_name, args[0])
-        elif opcode_name in self._ops_with_hex_arg:
-            return '%s: %x' % (opcode_name, args[0])
-        elif opcode_name in self._ops_with_two_decimal_args:
-            return '%s: %s %s' % (opcode_name, args[0], args[1])
-        else:
-            return '<unknown %s>' % opcode_name
-
 
 
