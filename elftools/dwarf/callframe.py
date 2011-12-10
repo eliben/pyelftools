@@ -6,15 +6,19 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple
-
 from ..common.utils import (struct_parse, dwarf_assert)
 from .structs import DWARFStructs
 from .constants import * 
 
 
-CallFrameInstruction = namedtuple(
-    'CallFrameInstruction', 'opcode args')
+class CallFrameInstruction(object):
+    def __init__(self, opcode, args):
+        self.opcode = opcode
+        self.args = args
+
+    def __repr__(self):
+        return '%s (0x%x): %s' % (
+            instruction_name(self.opcode), self.opcode, self.args)
 
 
 class CIE(object):
@@ -44,6 +48,12 @@ class CallFrameInfo(object):
         self.stream = stream
         self.size = size
         self.base_structs = base_structs
+        self.entries = None
+
+    def get_entries(self):
+        if self.entries is None:
+            self.entries = self._parse_entries()
+        return self.entries
 
     def _parse_entries(self):
         entries = []
@@ -62,16 +72,16 @@ class CallFrameInfo(object):
 
             # Read the next field to see whether this is a CIE or FDE
             CIE_id = struct_parse(
-                entry_structs.Dwarf_offset('').parse, self.stream)
+                entry_structs.Dwarf_offset(''), self.stream)
 
             is_CIE = (
-                dwarf_format == 32 and CIE_id = 0xFFFFFFFF or 
+                (dwarf_format == 32 and CIE_id == 0xFFFFFFFF) or 
                 CIE_id == 0xFFFFFFFFFFFFFFFF)
 
             if is_CIE:
-                header_struct = self.Dwarf_CIE_header
+                header_struct = entry_structs.Dwarf_CIE_header
             else:
-                header_struct = self.Dwarf_FDE_header
+                header_struct = entry_structs.Dwarf_FDE_header
 
             # Parse the header, which goes up to and including the
             # return_address_register field
@@ -80,14 +90,21 @@ class CallFrameInfo(object):
 
             # For convenience, compute the end offset for this entry
             end_offset = (
-                offset + header.length - structs.initial_length_field_size())
+                offset + header.length +
+                entry_structs.initial_length_field_size())
 
             # At this point self.stream is at the start of the instruction list
             # for this entry
             instructions = self._parse_instructions(
-                structs, self.stream.tell(), end_offset)
+                entry_structs, self.stream.tell(), end_offset)
 
+            new_entry_class = CIE if is_CIE else FDE
+            entries.append(new_entry_class(
+                header=header,
+                instructions=instructions))
             # ZZZ: for FDE's, I need some offset->CIE mapping cache stored
+            offset = self.stream.tell()
+        return entries
 
     def _parse_instructions(self, structs, offset, end_offset):
         """ Parse a list of CFI instructions from self.stream, starting with
@@ -99,8 +116,8 @@ class CallFrameInfo(object):
             opcode = struct_parse(structs.Dwarf_uint8(''), self.stream, offset)
             args = []
 
-            primary = opcode & 0b11000000
-            primary_arg = opcode & 0b00111111
+            primary = opcode & _PRIMARY_MASK
+            primary_arg = opcode & _PRIMARY_ARG_MASK
             if primary == DW_CFA_advance_loc:
                 args = [primary_arg]
             elif primary == DW_CFA_offset:
@@ -147,8 +164,37 @@ class CallFrameInfo(object):
                     struct_parse(structs.Dwarf_uleb128(''), self.stream),
                     struct_parse(structs.Dwarf_sleb128(''), self.stream)]
             else:
-                dwarf_assert(False, 'Unknown CFI opcode: %s' % opcode)
+                dwarf_assert(False, 'Unknown CFI opcode: 0x%x' % opcode)
 
             instructions.append(CallFrameInstruction(opcode=opcode, args=args))
+            print instructions[-1]
             offset = self.stream.tell()
+        return instructions
+
+
+def instruction_name(opcode):
+    """ Given an opcode, return the instruction name.
+    """
+    primary = opcode & _PRIMARY_MASK
+    if primary == 0:
+        return _OPCODE_NAME_MAP[opcode]
+    else:
+        return _OPCODE_NAME_MAP[primary]
+
+
+#---------------- PRIVATE ----------------#
+
+_PRIMARY_MASK = 0b11000000
+_PRIMARY_ARG_MASK = 0b00111111
+
+# This dictionary is filled by automatically scanning the constants module
+# for DW_CFA_* instructions, and mapping their values to names. Since all
+# names were imported from constants with `import *`, we look in globals()
+_OPCODE_NAME_MAP = {}
+for name in list(globals().iterkeys()):
+    if name.startswith('DW_CFA'):
+        _OPCODE_NAME_MAP[globals()[name]] = name
+
+
+
 

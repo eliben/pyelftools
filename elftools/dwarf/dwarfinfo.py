@@ -15,6 +15,7 @@ from .structs import DWARFStructs
 from .compileunit import CompileUnit
 from .abbrevtable import AbbrevTable
 from .lineprogram import LineProgram
+from .callframe import CallFrameInfo
 
 
 # Describes a debug section
@@ -32,14 +33,16 @@ DebugSectionDescriptor = namedtuple('DebugSectionDescriptor',
 # DWARFInfo to be independent from any specific file format/container.
 #
 # little_endian:
-#   boolean flag specifying whether the data in the file is little endian.
+#   boolean flag specifying whether the data in the file is little endian
 #
 # machine_arch:
 #   Machine architecture as a string. For example 'x86' or 'x64'
 #
+# default_address_size:
+#   The default address size for the container file (sizeof pointer, in bytes)
 #
 DwarfConfig = namedtuple('DwarfConfig',
-    'little_endian machine_arch')
+    'little_endian machine_arch default_address_size')
 
 
 class DWARFInfo(object):
@@ -72,7 +75,7 @@ class DWARFInfo(object):
         self.structs = DWARFStructs(
             little_endian=self.config.little_endian,
             dwarf_format=32,
-            address_size=4)
+            address_size=self.config.default_address_size)
 
         # A list of CUs. Populated lazily when they're actually requested.
         self._CUs = None
@@ -128,6 +131,15 @@ class DWARFInfo(object):
                     top_DIE.attributes['DW_AT_stmt_list'].value, CU.structs)
         else:
             return None
+
+    def CFI_entries(self):
+        """ Get a list of CFI entries from the .debug_frame section.
+        """
+        cfi = CallFrameInfo(
+            stream=self.debug_frame_sec.stream,
+            size=self.debug_frame_sec.size,
+            base_structs=self.structs)
+        return cfi.get_entries()
 
     #------ PRIVATE ------#
 
