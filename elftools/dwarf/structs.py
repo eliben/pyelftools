@@ -126,6 +126,7 @@ class DWARFStructs(object):
         self._create_abbrev_declaration()
         self._create_dw_form()
         self._create_lineprog_header()
+        self._create_callframe_entry_headers()
 
     def _create_initial_length(self):
         def _InitialLength(name):
