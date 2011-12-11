@@ -44,6 +44,26 @@ class FDE(object):
 
 
 class CallFrameInfo(object):
+    """ DWARF CFI (Call Frame Info)
+        
+        stream, size:
+            A stream holding the .debug_frame section, and the size of the
+            section in it.
+
+        base_structs:
+            The structs to be used as the base for parsing this section.
+            Eventually, each entry gets its own structs based on the initial
+            length field it starts with. The address_size, however, is taken
+            from base_structs. This appears to be a limitation of the DWARFv3
+            standard, fixed in v4 (where an address_size field exists for each
+            CFI. I had a discussion about this on dwarf-discuss that confirms
+            this.
+            Currently for base_structs I simply use the elfclass of the
+            containing file, but more sophisticated methods are used by
+            libdwarf and others, such as guessing which CU contains which FDEs
+            (based on their address ranges) and taking the address_size from
+            those CUs.
+    """
     def __init__(self, stream, size, base_structs):
         self.stream = stream
         self.size = size
@@ -102,7 +122,7 @@ class CallFrameInfo(object):
             entries.append(new_entry_class(
                 header=header,
                 instructions=instructions))
-            # ZZZ: for FDE's, I need some offset->CIE mapping cache stored
+             # ZZZ: for FDE's, I need some offset->CIE mapping cache stored
             offset = self.stream.tell()
         return entries
 
@@ -167,7 +187,6 @@ class CallFrameInfo(object):
                 dwarf_assert(False, 'Unknown CFI opcode: 0x%x' % opcode)
 
             instructions.append(CallFrameInstruction(opcode=opcode, args=args))
-            print instructions[-1]
             offset = self.stream.tell()
         return instructions
 

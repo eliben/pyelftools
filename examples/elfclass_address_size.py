@@ -22,12 +22,7 @@ def process_file(filename):
                 print '  CU at offset 0x%x. address_size is %s' % (
                     CU.cu_offset, CU['address_size'])
 
-
-def main():
+if __name__ == '__main__':
     for filename in sys.argv[1:]:
         process_file(filename)
-
-
-if __name__ == '__main__':
-    main()
 
