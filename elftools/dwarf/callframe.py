@@ -6,12 +6,17 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.utils import (struct_parse, dwarf_assert)
+from ..common.utils import (struct_parse, dwarf_assert, preserve_stream_pos)
 from .structs import DWARFStructs
 from .constants import * 
 
 
 class CallFrameInstruction(object):
+    """ A decoded instruction in the CFI section. opcode is the instruction
+        opcode, numeric - as it appears in the section. args is a list of
+        arguments (including arguments embedded in the low bits of some
+        instructions, when applicable).
+    """
     def __init__(self, opcode, args):
         self.opcode = opcode
         self.args = args
@@ -22,6 +27,9 @@ class CallFrameInstruction(object):
 
 
 class CIE(object):
+    """ CIE - Common Information Entry.
+        Contains a header and a list of instructions (CallFrameInstruction).
+    """
     def __init__(self, header, instructions):
         self.header = header
         self.instructions = instructions
@@ -33,9 +41,14 @@ class CIE(object):
 
 
 class FDE(object):
-    def __init__(self, header, instructions):
+    """ FDE - Frame Description Entry.
+        Contains a header, a list of instructions (CallFrameInstruction) and a
+        reference to the CIE object associated with this FDE.
+    """
+    def __init__(self, header, instructions, cie):
         self.header = header
         self.instructions = instructions
+        self.cie = cie
 
     def __getitem__(self, name):
         """ Implement dict-like access to header entries
@@ -70,6 +83,11 @@ class CallFrameInfo(object):
         self.base_structs = base_structs
         self.entries = None
 
+        # Map between an offset in the stream and the entry object found at this
+        # offset. Useful for assigning CIE to FDEs according to the CIE_pointer
+        # header field which contains a stream offset.
+        self._entry_cache = {}
+
     def get_entries(self):
         if self.entries is None:
             self.entries = self._parse_entries()
@@ -79,52 +97,64 @@ class CallFrameInfo(object):
         entries = []
         offset = 0
         while offset < self.size:
-            # Throughout the body of this loop, offset keeps pointing to the
-            # beginning of the entry
-            entry_length = struct_parse(
-                self.base_structs.Dwarf_uint32(''), self.stream, offset)
-            dwarf_format = 64 if entry_length == 0xFFFFFFFF else 32
-
-            entry_structs = DWARFStructs(
-                little_endian=self.base_structs.little_endian,
-                dwarf_format=dwarf_format,
-                address_size=self.base_structs.address_size)
-
-            # Read the next field to see whether this is a CIE or FDE
-            CIE_id = struct_parse(
-                entry_structs.Dwarf_offset(''), self.stream)
-
-            is_CIE = (
-                (dwarf_format == 32 and CIE_id == 0xFFFFFFFF) or 
-                CIE_id == 0xFFFFFFFFFFFFFFFF)
-
-            if is_CIE:
-                header_struct = entry_structs.Dwarf_CIE_header
-            else:
-                header_struct = entry_structs.Dwarf_FDE_header
-
-            # Parse the header, which goes up to and including the
-            # return_address_register field
-            header = struct_parse(
-                header_struct, self.stream, offset)
-
-            # For convenience, compute the end offset for this entry
-            end_offset = (
-                offset + header.length +
-                entry_structs.initial_length_field_size())
-
-            # At this point self.stream is at the start of the instruction list
-            # for this entry
-            instructions = self._parse_instructions(
-                entry_structs, self.stream.tell(), end_offset)
-
-            new_entry_class = CIE if is_CIE else FDE
-            entries.append(new_entry_class(
-                header=header,
-                instructions=instructions))
-             # ZZZ: for FDE's, I need some offset->CIE mapping cache stored
+            entries.append(self._parse_entry_at(offset))
             offset = self.stream.tell()
         return entries
+
+    def _parse_entry_at(self, offset):
+        """ Parse an entry from self.stream starting with the given offset.
+            Return the entry object. self.stream will point right after the
+            entry.
+        """
+        if offset in self._entry_cache:
+            return self._entry_cache[offset]
+
+        entry_length = struct_parse(
+            self.base_structs.Dwarf_uint32(''), self.stream, offset)
+        dwarf_format = 64 if entry_length == 0xFFFFFFFF else 32
+
+        entry_structs = DWARFStructs(
+            little_endian=self.base_structs.little_endian,
+            dwarf_format=dwarf_format,
+            address_size=self.base_structs.address_size)
+
+        # Read the next field to see whether this is a CIE or FDE
+        CIE_id = struct_parse(
+            entry_structs.Dwarf_offset(''), self.stream)
+
+        is_CIE = (
+            (dwarf_format == 32 and CIE_id == 0xFFFFFFFF) or 
+            CIE_id == 0xFFFFFFFFFFFFFFFF)
+
+        if is_CIE:
+            header_struct = entry_structs.Dwarf_CIE_header
+        else:
+            header_struct = entry_structs.Dwarf_FDE_header
+
+        # Parse the header, which goes up to and including the
+        # return_address_register field
+        header = struct_parse(
+            header_struct, self.stream, offset)
+
+        # For convenience, compute the end offset for this entry
+        end_offset = (
+            offset + header.length +
+            entry_structs.initial_length_field_size())
+
+        # At this point self.stream is at the start of the instruction list
+        # for this entry
+        instructions = self._parse_instructions(
+            entry_structs, self.stream.tell(), end_offset)
+
+        if is_CIE:
+            self._entry_cache[offset] = CIE(
+                header=header, instructions=instructions)
+        else: # FDE
+            with preserve_stream_pos(self.stream):
+                cie = self._parse_entry_at(header['CIE_pointer'])
+            self._entry_cache[offset] = FDE(
+                header=header, instructions=instructions, cie=cie)
+        return self._entry_cache[offset]
 
     def _parse_instructions(self, structs, offset, end_offset):
         """ Parse a list of CFI instructions from self.stream, starting with

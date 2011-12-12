@@ -75,6 +75,7 @@ class TestCallFrame(unittest.TestCase):
         self.assertEqual(entries[1]['length'], 40)
         self.assertEqual(entries[1]['CIE_pointer'], 0)
         self.assertEqual(entries[1]['address_range'], 84)
+        self.assertIs(entries[1].cie, entries[0])
         self.assertEqual(len(entries[1].instructions), 21)
         self.assertInstruction(entries[1].instructions[0],
             'DW_CFA_advance_loc', [1])
