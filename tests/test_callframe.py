@@ -63,10 +63,29 @@ class TestCallFrame(unittest.TestCase):
         self.assertEqual(entries[0]['length'], 32)
         self.assertEqual(entries[0]['data_alignment_factor'], -4)
         self.assertEqual(entries[0]['return_address_register'], 8)
+        self.assertEqual(len(entries[0].instructions), 11)
         self.assertInstruction(entries[0].instructions[0],
             'DW_CFA_def_cfa', [7, 0])
+        self.assertInstruction(entries[0].instructions[8],
+            'DW_CFA_same_value', [7])
+        self.assertInstruction(entries[0].instructions[9],
+            'DW_CFA_register', [8, 1])
 
         self.assertTrue(isinstance(entries[1], FDE))
+        self.assertEqual(entries[1]['length'], 40)
+        self.assertEqual(entries[1]['CIE_pointer'], 0)
+        self.assertEqual(entries[1]['address_range'], 84)
+        self.assertEqual(len(entries[1].instructions), 21)
+        self.assertInstruction(entries[1].instructions[0],
+            'DW_CFA_advance_loc', [1])
+        self.assertInstruction(entries[1].instructions[1],
+            'DW_CFA_def_cfa_offset', [12])
+        self.assertInstruction(entries[1].instructions[9],
+            'DW_CFA_offset', [4, 3])
+        self.assertInstruction(entries[1].instructions[18],
+            'DW_CFA_def_cfa_offset', [0])
+        self.assertInstruction(entries[1].instructions[20],
+            'DW_CFA_nop', [])
 
 if __name__ == '__main__':
     unittest.main()
