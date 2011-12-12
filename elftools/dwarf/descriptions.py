@@ -37,6 +37,15 @@ def describe_attr_value(attr, die, section_offset):
     return str(val_description) + '\t' + extra_info    
 
 
+def describe_CFI_instruction(instruction, entry, context):
+    # ZZZ: just get a list of instructions and keep the context internally!!
+    """ Given a CFI instruction, return its textual description. Also needs the
+        entry that contains this instruction.
+        context is a
+    """
+    return ''
+
+
 def describe_reg_name(regnum, machine_arch):
     """ Provide a textual description for a register name, given its serial
         number. The number is expected to be valid.

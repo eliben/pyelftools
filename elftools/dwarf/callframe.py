@@ -29,10 +29,12 @@ class CallFrameInstruction(object):
 class CIE(object):
     """ CIE - Common Information Entry.
         Contains a header and a list of instructions (CallFrameInstruction).
+        offset: the offset of this entry from the beginning of the section
     """
-    def __init__(self, header, instructions):
+    def __init__(self, header, instructions, offset):
         self.header = header
         self.instructions = instructions
+        self.offset = offset
 
     def __getitem__(self, name):
         """ Implement dict-like access to header entries
@@ -44,10 +46,12 @@ class FDE(object):
     """ FDE - Frame Description Entry.
         Contains a header, a list of instructions (CallFrameInstruction) and a
         reference to the CIE object associated with this FDE.
+        offset: the offset of this entry from the beginning of the section
     """
-    def __init__(self, header, instructions, cie):
+    def __init__(self, header, instructions, offset, cie):
         self.header = header
         self.instructions = instructions
+        self.offset = offset
         self.cie = cie
 
     def __getitem__(self, name):
@@ -148,12 +152,13 @@ class CallFrameInfo(object):
 
         if is_CIE:
             self._entry_cache[offset] = CIE(
-                header=header, instructions=instructions)
+                header=header, instructions=instructions, offset=offset)
         else: # FDE
             with preserve_stream_pos(self.stream):
                 cie = self._parse_entry_at(header['CIE_pointer'])
             self._entry_cache[offset] = FDE(
-                header=header, instructions=instructions, cie=cie)
+                header=header, instructions=instructions, offset=offset,
+                cie=cie)
         return self._entry_cache[offset]
 
     def _parse_instructions(self, structs, offset, end_offset):

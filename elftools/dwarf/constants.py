@@ -139,6 +139,14 @@ DW_LNE_define_file = 0x03
 
 # Call frame instructions
 #
+# Note that the first 3 instructions have the so-called "primary opcode"
+# (as described in DWARFv3 7.23), so only their highest 2 bits take part
+# in the opcode decoding. They are kept as constants with the low bits masked
+# out, and the callframe module knows how to handle this.
+# The other instructions use an "extended opcode" encoded just in the low 6
+# bits, with the high 2 bits, so these constants are exactly as they would
+# appear in an actual file.
+#
 DW_CFA_advance_loc = 0b01000000
 DW_CFA_offset = 0b10000000
 DW_CFA_restore = 0b11000000
