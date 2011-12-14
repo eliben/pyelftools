@@ -36,7 +36,7 @@ from elftools.elf.descriptions import (
     )
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
-    describe_attr_value, set_global_machine_arch, describe_CFI_instruction)
+    describe_attr_value, set_global_machine_arch, describe_CFI_instructions)
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
 from elftools.dwarf.callframe import CIE, FDE
@@ -604,6 +604,8 @@ class ReadElf(object):
     def _dump_debug_frames(self):
         """ Dump the raw frame information from .debug_frame
         """
+        if not self._dwarfinfo.has_CFI():
+            return
         self._emitline('Contents of the .debug_frame section:')
 
         for entry in self._dwarfinfo.CFI_entries():
@@ -615,6 +617,7 @@ class ReadElf(object):
                 self._emitline('  Code alignment factor: %u' % entry['code_alignment_factor'])
                 self._emitline('  Data alignment factor: %d' % entry['data_alignment_factor'])
                 self._emitline('  Return address column: %d' % entry['return_address_register'])
+                self._emitline()
             else: # FDE
                 self._emitline('\n%08x %08x %08x FDE cie=%08x pc=%08x..%08x' % (
                     entry.offset,
@@ -624,10 +627,8 @@ class ReadElf(object):
                     entry['initial_location'],
                     entry['initial_location'] + entry['address_range']))
 
-            if len(entry.instructions) > 0:
-                self._emitline('')
-                for instr in entry.instructions:
-                    self._emitline(describe_CFI_instruction(instr, entry))
+            self._emit(describe_CFI_instructions(entry))
+        self._emitline()
 
     def _emit(self, s=''):
         """ Emit an object to output

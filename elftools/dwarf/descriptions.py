@@ -11,7 +11,8 @@ from collections import defaultdict
 from .constants import *
 from .dwarf_expr import GenericExprVisitor
 from .die import DIE
-from ..common.utils import preserve_stream_pos
+from ..common.utils import preserve_stream_pos, dwarf_assert
+from .callframe import instruction_name, CIE, FDE
 
 
 def set_global_machine_arch(machine_arch):
@@ -37,19 +38,82 @@ def describe_attr_value(attr, die, section_offset):
     return str(val_description) + '\t' + extra_info    
 
 
-def describe_CFI_instruction(instruction, entry, context):
-    # ZZZ: just get a list of instructions and keep the context internally!!
-    """ Given a CFI instruction, return its textual description. Also needs the
-        entry that contains this instruction.
-        context is a
+def describe_CFI_instructions(entry):
+    """ Given a CFI entry (CIE or FDE), return the textual description of its
+        instructions.
     """
-    return ''
+    def _assert_FDE_instruction(instr):
+        dwarf_assert(
+            isinstance(entry, FDE), 
+            'Unexpected instruction "%s" for a CIE' % instr)
+
+    def _full_reg_name(regnum):
+        return 'r%s (%s)' % (regnum, describe_reg_name(regnum))
+
+    if isinstance(entry, CIE):
+        cie = entry
+    else: # FDE
+        cie = entry.cie
+        pc = entry['initial_location']
+
+    s = ''
+    for instr in entry.instructions:
+        name = instruction_name(instr.opcode)
+
+        if name in ('DW_CFA_offset',
+                    'DW_CFA_offset_extended', 'DW_CFA_offset_extended_sf',
+                    'DW_CFA_val_offset', 'DW_CFA_val_offset_sf'):
+            s += '  %s: %s at cfa%+d\n' % (
+                name, _full_reg_name(instr.args[0]),
+                instr.args[1] * cie['data_alignment_factor'])
+        elif name in (  'DW_CFA_restore', 'DW_CFA_restore_extended',
+                        'DW_CFA_undefined', 'DW_CFA_same_value',
+                        'DW_CFA_def_cfa_register'):
+            s += '  %s: %s\n' % (name, _full_reg_name(instr.args[0]))
+        elif name == 'DW_CFA_register':
+            s += '  %s: %s in %s' % (
+                name, _full_reg_name(instr.args[0]),
+                _full_reg_name(instr.args[1]))
+        elif name == 'DW_CFA_set_loc':
+            pc = instr.args[0]
+            s += '  %s: %08x\n' % (name, pc)
+        elif name in (  'DW_CFA_advance_loc1', 'DW_CFA_advance_loc2',
+                        'DW_CFA_advance_loc4', 'DW_CFA_advance_loc'):
+            _assert_FDE_instruction(instr)
+            factored_offset = instr.args[0] * cie['code_alignment_factor']
+            s += '  %s: %s to %08x\n' % (
+                name, factored_offset, factored_offset + pc)
+            pc += factored_offset
+        elif name in (  'DW_CFA_remember_state', 'DW_CFA_restore_state',
+                        'DW_CFA_nop'):
+            s += '  %s\n' % name
+        elif name in ( 'DW_CFA_def_cfa', 'DW_CFA_def_cfa_sf'):
+            s += '  %s: %s ofs %s\n' % (
+                name, _full_reg_name(instr.args[0]), instr.args[1])
+        elif name == 'DW_CFA_def_cfa_offset':
+            s += '  %s: %s\n' % (name, instr.args[0])
+        elif name == 'DW_CFA_def_cfa_expression':
+            expr_dumper = ExprDumper(entry.structs)
+            expr_str = dumper.process_expr(instr.args[0])
+            s += '  %s: (%s)\n' % (name, expr_str)
+        elif name == 'DW_CFA_expression':
+            expr_dumper = ExprDumper(entry.structs)
+            expr_str = dumper.process_expr(instr.args[1])
+            s += '  %s: %s (%s)\n' % (
+                name, _full_reg_name(instr.args[0]), expr_str)
+        else:
+            s += '  %s: <??>\n' % name
+
+    return s
 
 
-def describe_reg_name(regnum, machine_arch):
+def describe_reg_name(regnum, machine_arch=None):
     """ Provide a textual description for a register name, given its serial
         number. The number is expected to be valid.
     """
+    if machine_arch is None:
+        machine_arch = _MACHINE_ARCH
+
     if machine_arch == 'x86':
         return _REG_NAMES_x86[regnum]
     elif machine_arch == 'x64':

@@ -132,6 +132,11 @@ class DWARFInfo(object):
         else:
             return None
 
+    def has_CFI(self):
+        """ Does this dwarf info has a CFI section?
+        """
+        return self.debug_frame_sec is not None
+
     def CFI_entries(self):
         """ Get a list of CFI entries from the .debug_frame section.
         """

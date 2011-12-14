@@ -52,7 +52,8 @@ def run_test_on_file(filename):
     testlog.info("Running test on file '%s'" % filename)
     for option in [
             '-e', '-s', '-r', '-x.text', '-p.shstrtab',
-            '--debug-dump=info', '--debug-dump=decodedline']:
+            '--debug-dump=info', '--debug-dump=decodedline',
+            '--debug-dump=frames']:
         testlog.info("..option='%s'" % option)
         # stdouts will be a 2-element list: output of readelf and output 
         # of scripts/readelf.py
@@ -80,6 +81,7 @@ def run_test_on_file(filename):
 
 def compare_output(s1, s2):
     """ Compare stdout strings s1 and s2.
+        s1 is from readelf, s2 from elftools readelf.py
         Return pair success, errmsg. If comparison succeeds, success is True
         and errmsg is empty. Otherwise success is False and errmsg holds a
         description of the mismatch.
@@ -93,13 +95,26 @@ def compare_output(s1, s2):
     """
     def prepare_lines(s):
         return [line for line in s.lower().splitlines() if line.strip() != '']
+    def filter_readelf_lines(lines):
+        filter_out = False
+        for line in lines:
+            if 'of the .eh_frame section' in line:
+                filter_out = True
+            elif 'of the .debug_frame section' in line:
+                filter_out = False
+            if not filter_out:
+                yield line
+        
     lines1 = prepare_lines(s1)
     lines2 = prepare_lines(s2)
+
+    lines1 = list(filter_readelf_lines(lines1))
+
+    flag_after_symtable = False
+
     if len(lines1) != len(lines2):
         return False, 'Number of lines different: %s vs %s' % (
                 len(lines1), len(lines2))
-
-    flag_after_symtable = False
 
     for i in range(len(lines1)):
         if 'symbol table' in lines1[i]:
