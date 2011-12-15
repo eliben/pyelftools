@@ -115,6 +115,7 @@ class TestCallFrame(unittest.TestCase):
         self.assertEqual(decoded_FDE.table[2][8].type, RegisterRule.OFFSET)
         self.assertEqual(decoded_FDE.table[2][8].arg, -4)
         self.assertEqual(decoded_FDE.table[2][4].type, RegisterRule.SAME_VALUE)
+        self.assertEqual(decoded_FDE.table[5]['pc'], 0x11223344 + 20)
         self.assertEqual(decoded_FDE.table[5][4].type, RegisterRule.OFFSET)
         self.assertEqual(decoded_FDE.table[5][4].arg, -12)
 
