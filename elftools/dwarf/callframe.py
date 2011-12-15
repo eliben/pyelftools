@@ -212,7 +212,7 @@ class CallFrameInfo(object):
                 args = [struct_parse(
                     structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
             elif opcode in (DW_CFA_expression, DW_CFA_val_expression):
-                arsg = [
+                args = [
                     struct_parse(structs.Dwarf_uleb128(''), self.stream),
                     struct_parse(
                         structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]

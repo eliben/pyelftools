@@ -5,6 +5,8 @@ sys.path.extend(['.', '..'])
 from elftools.dwarf.callframe import (
     CallFrameInfo, CIE, FDE, instruction_name, CallFrameInstruction)
 from elftools.dwarf.structs import DWARFStructs
+from elftools.dwarf.descriptions import (describe_CFI_instructions,
+    set_global_machine_arch)
 
 
 class TestCallFrame(unittest.TestCase):
@@ -12,7 +14,7 @@ class TestCallFrame(unittest.TestCase):
         self.assertIsInstance(instr, CallFrameInstruction)
         self.assertEqual(instruction_name(instr.opcode), name)
         self.assertEqual(instr.args, args)
-        
+       
     def test_spec_sample_d6(self):
         # D.6 sample in DWARFv3
         s = StringIO()
@@ -87,6 +89,27 @@ class TestCallFrame(unittest.TestCase):
             'DW_CFA_def_cfa_offset', [0])
         self.assertInstruction(entries[1].instructions[20],
             'DW_CFA_nop', [])
+
+    def test_describe_CFI_instructions(self):
+        # The data here represents a single CIE 
+        data = ('' +
+            '\x16\x00\x00\x00' +        # length
+            '\xff\xff\xff\xff' +        # CIE_id
+            '\x03\x00\x04\x7c' +        # version, augmentation, caf, daf
+            '\x08' +                    # return address
+            '\x0c\x07\x02' +
+            '\x10\x02\x07\x03\x01\x02\x00\x00\x06\x06')
+        s = StringIO(data)
+
+        structs = DWARFStructs(little_endian=True, dwarf_format=32, address_size=4)
+        cfi = CallFrameInfo(s, len(data), structs)
+        entries = cfi.get_entries()
+
+        set_global_machine_arch('x86')
+        self.assertEqual(describe_CFI_instructions(entries[0]),
+            (   '  DW_CFA_def_cfa: r7 (edi) ofs 2\n' + 
+                '  DW_CFA_expression: r2 (edx) (DW_OP_addr: 201; DW_OP_deref; DW_OP_deref)\n'))
+
 
 if __name__ == '__main__':
     unittest.main()

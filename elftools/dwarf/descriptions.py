@@ -94,13 +94,13 @@ def describe_CFI_instructions(entry):
             s += '  %s: %s\n' % (name, instr.args[0])
         elif name == 'DW_CFA_def_cfa_expression':
             expr_dumper = ExprDumper(entry.structs)
-            expr_str = dumper.process_expr(instr.args[0])
-            s += '  %s: (%s)\n' % (name, expr_str)
+            expr_dumper.process_expr(instr.args[0])
+            s += '  %s: (%s)\n' % (name, expr_dumper.get_str())
         elif name == 'DW_CFA_expression':
             expr_dumper = ExprDumper(entry.structs)
-            expr_str = dumper.process_expr(instr.args[1])
+            expr_dumper.process_expr(instr.args[1])
             s += '  %s: %s (%s)\n' % (
-                name, _full_reg_name(instr.args[0]), expr_str)
+                name, _full_reg_name(instr.args[0]), expr_dumper.get_str())
         else:
             s += '  %s: <??>\n' % name
 
