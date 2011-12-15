@@ -36,6 +36,7 @@ from elftools.elf.descriptions import (
     )
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
+    describe_reg_name,
     describe_attr_value, set_global_machine_arch, describe_CFI_instructions)
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
@@ -435,6 +436,8 @@ class ReadElf(object):
             self._dump_debug_line_programs()
         elif dump_what == 'frames':
             self._dump_debug_frames()
+        elif dump_what == 'frames-interp':
+            self._dump_debug_frames_interp()
         else:
             self._emitline('debug dump not yet supported for "%s"' % dump_what)
 
@@ -629,6 +632,46 @@ class ReadElf(object):
 
             self._emit(describe_CFI_instructions(entry))
         self._emitline()
+
+    def _dump_debug_frames_interp(self):
+        """ Dump the interpreted (decoded) frame information from .debug_frame
+        """
+        if not self._dwarfinfo.has_CFI():
+            return
+
+        self._emitline('Contents of the .debug_frame section:')
+
+        for entry in self._dwarfinfo.CFI_entries():
+            if isinstance(entry, CIE):
+                self._emitline('\n%08x %08x %08x CIE "%s" cf=%d df=%d ra=%d' % (
+                    entry.offset,
+                    entry['length'],
+                    entry['CIE_id'],
+                    entry['augmentation'],
+                    entry['code_alignment_factor'],
+                    entry['data_alignment_factor'],
+                    entry['return_address_register']))
+            else: # FDE
+                self._emitline('\n%08x %08x %08x FDE cie=%08x pc=%08x..%08x' % (
+                    entry.offset,
+                    entry['length'],
+                    entry['CIE_pointer'],
+                    entry.cie.offset,
+                    entry['initial_location'],
+                    entry['initial_location'] + entry['address_range']))
+
+            # Print the heading row for the decoded table
+            self._emit('   LOC')
+            self._emit('  ' if entry.structs.address_size == 4 else '          ')
+            self._emit('CFA      ')
+
+            decoded_table = entry.get_decoded()
+            for regnum in decoded_table.reg_order:
+                self._emit('%-6s' % describe_reg_name(regnum))
+            self._emitline('ra      ')
+
+
+
 
     def _emit(self, s=''):
         """ Emit an object to output

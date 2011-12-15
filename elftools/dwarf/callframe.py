@@ -240,7 +240,8 @@ class CFIEntry(object):
         else: # FDE
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
-            cur_line = cie_decoded_table.table[-1]
+            last_line_in_CIE = cie_decoded_table.table[-1]
+            cur_line = last_line_in_CIE
             cur_line['pc'] = self['initial_location']
             reg_order = cie_decoded_table.reg_order
         
@@ -316,11 +317,10 @@ class CFIEntry(object):
                 dwarf_assert(
                     isinstance(self, FDE),
                     '%s instruction must be in a FDE' % name)
-                last_line_in_CIE = self.cie.get_decoded().table[-1]
                 dwarf_assert(
                     instr.args[0] in last_line_in_CIE,
                     '%s: can not find register in CIE')
-                cur_line[instr.args[0]] = last_line_in_CIE
+                cur_line[instr.args[0]] = last_line_in_CIE[instr.args[0]]
             elif name == 'DW_CFA_remember_state':
                 line_stack.append(cur_line)
             elif name == 'DW_CFA_restore_state':
