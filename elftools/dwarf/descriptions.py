@@ -87,9 +87,13 @@ def describe_CFI_instructions(entry):
         elif name in (  'DW_CFA_remember_state', 'DW_CFA_restore_state',
                         'DW_CFA_nop'):
             s += '  %s\n' % name
-        elif name in ( 'DW_CFA_def_cfa', 'DW_CFA_def_cfa_sf'):
+        elif name == 'DW_CFA_def_cfa':
             s += '  %s: %s ofs %s\n' % (
                 name, _full_reg_name(instr.args[0]), instr.args[1])
+        elif name == 'DW_CFA_def_cfa_sf':
+            s += '  %s: %s ofs %s\n' % (
+                name, _full_reg_name(instr.args[0]),
+                instr.args[1] * cie['data_alignment_factor'])
         elif name == 'DW_CFA_def_cfa_offset':
             s += '  %s: %s\n' % (name, instr.args[0])
         elif name == 'DW_CFA_def_cfa_expression':

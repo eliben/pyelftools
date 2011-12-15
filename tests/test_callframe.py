@@ -3,7 +3,8 @@ from cStringIO import StringIO
 
 sys.path.extend(['.', '..'])
 from elftools.dwarf.callframe import (
-    CallFrameInfo, CIE, FDE, instruction_name, CallFrameInstruction)
+    CallFrameInfo, CIE, FDE, instruction_name, CallFrameInstruction,
+    RegisterRule)
 from elftools.dwarf.structs import DWARFStructs
 from elftools.dwarf.descriptions import (describe_CFI_instructions,
     set_global_machine_arch)
@@ -89,6 +90,33 @@ class TestCallFrame(unittest.TestCase):
             'DW_CFA_def_cfa_offset', [0])
         self.assertInstruction(entries[1].instructions[20],
             'DW_CFA_nop', [])
+
+        # Now let's decode it...
+        decoded_CIE = entries[0].get_decoded()
+        self.assertEqual(decoded_CIE.reg_order, list(range(9)))
+        self.assertEqual(len(decoded_CIE.table), 1)
+        self.assertEqual(decoded_CIE.table[0]['cfa'].reg, 7)
+        self.assertEqual(decoded_CIE.table[0]['pc'], 0)
+        self.assertEqual(decoded_CIE.table[0]['cfa'].offset, 0)
+        self.assertEqual(decoded_CIE.table[0][4].type, RegisterRule.SAME_VALUE)
+        self.assertEqual(decoded_CIE.table[0][8].type, RegisterRule.REGISTER)
+        self.assertEqual(decoded_CIE.table[0][8].arg, 1)
+
+        decoded_FDE = entries[1].get_decoded()
+        self.assertEqual(decoded_FDE.reg_order, list(range(9)))
+        #self.assertEqual(len(decoded_FDE.table), 1)
+        self.assertEqual(decoded_FDE.table[0]['cfa'].reg, 7)
+        self.assertEqual(decoded_FDE.table[0]['cfa'].offset, 0)
+        self.assertEqual(decoded_FDE.table[0]['pc'], 0x11223344)
+        self.assertEqual(decoded_FDE.table[0][8].type, RegisterRule.REGISTER)
+        self.assertEqual(decoded_FDE.table[0][8].arg, 1)
+        self.assertEqual(decoded_FDE.table[1]['cfa'].reg, 7)
+        self.assertEqual(decoded_FDE.table[1]['cfa'].offset, 12)
+        self.assertEqual(decoded_FDE.table[2][8].type, RegisterRule.OFFSET)
+        self.assertEqual(decoded_FDE.table[2][8].arg, -4)
+        self.assertEqual(decoded_FDE.table[2][4].type, RegisterRule.SAME_VALUE)
+        self.assertEqual(decoded_FDE.table[5][4].type, RegisterRule.OFFSET)
+        self.assertEqual(decoded_FDE.table[5][4].arg, -12)
 
     def test_describe_CFI_instructions(self):
         # The data here represents a single CIE 
