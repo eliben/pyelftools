@@ -9,6 +9,7 @@
 #-------------------------------------------------------------------------------
 import os, sys
 from optparse import OptionParser
+from itertools import ifilter
 import string
 
 
@@ -36,8 +37,10 @@ from elftools.elf.descriptions import (
     )
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
-    describe_reg_name,
-    describe_attr_value, set_global_machine_arch, describe_CFI_instructions)
+    describe_reg_name, describe_attr_value, set_global_machine_arch,
+    describe_CFI_instructions, describe_CFI_register_rule,
+    describe_CFI_CFA_rule,
+    )
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
 from elftools.dwarf.callframe import CIE, FDE
@@ -651,6 +654,7 @@ class ReadElf(object):
                     entry['code_alignment_factor'],
                     entry['data_alignment_factor'],
                     entry['return_address_register']))
+                ra_regnum = entry['return_address_register']
             else: # FDE
                 self._emitline('\n%08x %08x %08x FDE cie=%08x pc=%08x..%08x' % (
                     entry.offset,
@@ -659,19 +663,43 @@ class ReadElf(object):
                     entry.cie.offset,
                     entry['initial_location'],
                     entry['initial_location'] + entry['address_range']))
+                ra_regnum = entry.cie['return_address_register']
 
             # Print the heading row for the decoded table
             self._emit('   LOC')
             self._emit('  ' if entry.structs.address_size == 4 else '          ')
-            self._emit('CFA      ')
+            self._emit(' CFA      ')
 
+            # Decode the table nad look at the registers it describes.
+            # We build reg_order here to match readelf's order. In particular,
+            # registers are sorted by their number, and the register matching
+            # ra_regnum is always listed last with a special heading.
             decoded_table = entry.get_decoded()
-            for regnum in decoded_table.reg_order:
+            reg_order = sorted(ifilter(
+                lambda r: r != ra_regnum, 
+                decoded_table.reg_order))
+
+            # Headings for the registers
+            for regnum in reg_order:
                 self._emit('%-6s' % describe_reg_name(regnum))
             self._emitline('ra      ')
+            
+            # Now include ra_regnum in reg_order to print its values similarly
+            # to the other registers.
+            reg_order.append(ra_regnum)
+            for line in decoded_table.table:
+                self._emit(self._format_hex(
+                    line['pc'], fullhex=True, lead0x=False))
+                self._emit(' %-9s' % describe_CFI_CFA_rule(line['cfa']))
 
-
-
+                for regnum in reg_order:
+                    if regnum in line:
+                        s = describe_CFI_register_rule(line[regnum])
+                    else:
+                        s = 'u'
+                    self._emit('%-6s' % s)
+                self._emitline()
+        self._emitline()
 
     def _emit(self, s=''):
         """ Emit an object to output

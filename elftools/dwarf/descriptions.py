@@ -111,6 +111,22 @@ def describe_CFI_instructions(entry):
     return s
 
 
+def describe_CFI_register_rule(rule):
+    s = _DESCR_CFI_REGISTER_RULE_TYPE[rule.type]
+    if rule.type in ('OFFSET', 'VAL_OFFSET'):
+        s += '%+d' % rule.arg
+    elif rule.type == 'REGISTER':
+        s += describe_reg_name(rule.arg)
+    return s
+
+
+def describe_CFI_CFA_rule(rule):
+    if rule.expr:
+        return 'exp'
+    else:
+        return '%s%+d' % (describe_reg_name(rule.reg), rule.offset)
+    
+
 def describe_reg_name(regnum, machine_arch=None):
     """ Provide a textual description for a register name, given its serial
         number. The number is expected to be valid.
@@ -290,6 +306,16 @@ _DESCR_DW_ORD = {
     DW_ORD_col_major: '(column major)',
 }
 
+_DESCR_CFI_REGISTER_RULE_TYPE = dict(
+    UNDEFINED='u',
+    SAME_VALUE='s',
+    OFFSET='c',
+    VAL_OFFSET='v',
+    REGISTER='',
+    EXPRESSION='exp',
+    VAL_EXPRESSION='vexp',
+    ARCHITECTURAL='a',
+)
 
 def _make_extra_mapper(mapping, default, default_interpolate_value=False):
     """ Create a mapping function from attribute parameters to an extra

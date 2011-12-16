@@ -326,8 +326,7 @@ class CFIEntry(object):
             elif name == 'DW_CFA_restore_state':
                 cur_line = line_stack.pop()
 
-        if len(self.instructions) > 0:
-            table.append(cur_line)
+        table.append(cur_line)
         return DecodedCallFrameTable(table=table, reg_order=reg_order)
 
 

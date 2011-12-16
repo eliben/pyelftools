@@ -53,7 +53,7 @@ def run_test_on_file(filename):
     for option in [
             '-e', '-s', '-r', '-x.text', '-p.shstrtab',
             '--debug-dump=info', '--debug-dump=decodedline',
-            '--debug-dump=frames']:
+            '--debug-dump=frames', '--debug-dump=frames-interp']:
         testlog.info("..option='%s'" % option)
         # stdouts will be a 2-element list: output of readelf and output 
         # of scripts/readelf.py

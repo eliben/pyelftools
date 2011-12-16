@@ -104,7 +104,6 @@ class TestCallFrame(unittest.TestCase):
 
         decoded_FDE = entries[1].get_decoded()
         self.assertEqual(decoded_FDE.reg_order, list(range(9)))
-        #self.assertEqual(len(decoded_FDE.table), 1)
         self.assertEqual(decoded_FDE.table[0]['cfa'].reg, 7)
         self.assertEqual(decoded_FDE.table[0]['cfa'].offset, 0)
         self.assertEqual(decoded_FDE.table[0]['pc'], 0x11223344)
@@ -120,8 +119,6 @@ class TestCallFrame(unittest.TestCase):
         self.assertEqual(decoded_FDE.table[5][4].arg, -12)
         self.assertEqual(decoded_FDE.table[6]['pc'], 0x11223344 + 64)
         self.assertEqual(decoded_FDE.table[9]['pc'], 0x11223344 + 76)
-        self.assertEqual(decoded_FDE.table[9][6].type, RegisterRule.SAME_VALUE)
-        self.assertEqual(decoded_FDE.table[10]['pc'], 0x11223344 + 80)
 
     def test_describe_CFI_instructions(self):
         # The data here represents a single CIE 
