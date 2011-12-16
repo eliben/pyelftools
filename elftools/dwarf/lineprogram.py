@@ -184,8 +184,10 @@ class LineProgram(object):
                     add_entry_old_state(ex_opcode, [operand], is_extended=True)
                 else:
                     # Unknown, but need to roll forward the stream because the
-                    # length is specified
-                    self.stream.seek(inst_len, os.SEEK_CUR)
+                    # length is specified. Seek forward inst_len - 1 because
+                    # we've already read the extended opcode, which takes part
+                    # in the length.
+                    self.stream.seek(inst_len - 1, os.SEEK_CUR)
             else: # 0 < opcode < opcode_base
                 # Standard opcode
                 if opcode == DW_LNS_copy:
