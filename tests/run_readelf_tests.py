@@ -13,6 +13,7 @@ from difflib import SequenceMatcher
 import logging
 import subprocess
 import tempfile
+import platform
 
 
 # Create a global logger object
@@ -121,7 +122,9 @@ def compare_output(s1, s2):
             flag_after_symtable = True
 
         # Compare ignoring whitespace
-        if lines1[i].split() != lines2[i].split():
+        lines1_parts = lines1[i].split()
+        lines2_parts = lines2[i].split()
+        if ''.join(lines1_parts) != ''.join(lines2_parts):
             ok = False
             sm = SequenceMatcher()
             sm.set_seqs(lines1[i], lines2[i])
@@ -131,6 +134,15 @@ def compare_output(s1, s2):
                 # symbol name.
                 if (    len(changes) == 2 and changes[1][0] == 'delete' and
                         lines1[i][changes[1][1]] == '@'):
+                    ok = True
+            elif 'at_const_value' in lines1[i]:
+                # On 32-bit machines, readelf doesn't correctly represent
+                # some boundary LEB128 numbers
+                num2 = int(lines2_parts[-1])
+                if num2 <= -2**31 and '32' in platform.architecture()[0]:
+                    ok = True
+            elif 'os/abi' in lines1[i]:
+                if 'unix - gnu' in lines1[i] and 'unix - linux' in lines2[i]:
                     ok = True
             else: 
                 for s in ('t (tls)', 'l (large)'):
