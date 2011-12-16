@@ -6,6 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import os
 import copy
 from collections import namedtuple
 
@@ -181,6 +182,10 @@ class LineProgram(object):
                         self.structs.Dwarf_lineprog_file_entry, self.stream)
                     self['file_entry'].append(operand)
                     add_entry_old_state(ex_opcode, [operand], is_extended=True)
+                else:
+                    # Unknown, but need to roll forward the stream because the
+                    # length is specified
+                    self.stream.seek(inst_len, os.SEEK_CUR)
             else: # 0 < opcode < opcode_base
                 # Standard opcode
                 if opcode == DW_LNS_copy:
@@ -197,7 +202,7 @@ class LineProgram(object):
                                            self.stream)
                     state.line += operand
                 elif opcode == DW_LNS_set_file:
-                    operand = struct_parse(self.structs.Dwarf_sleb128(''),
+                    operand = struct_parse(self.structs.Dwarf_uleb128(''),
                                            self.stream)
                     state.file = operand
                     add_entry_old_state(opcode, [operand])

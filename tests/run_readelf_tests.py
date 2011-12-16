@@ -104,7 +104,8 @@ def compare_output(s1, s2):
             elif 'of the .debug_frame section' in line:
                 filter_out = False
             if not filter_out:
-                yield line
+                if not line.startswith('unknown: length'):
+                    yield line
         
     lines1 = prepare_lines(s1)
     lines2 = prepare_lines(s2)
