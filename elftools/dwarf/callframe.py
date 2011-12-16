@@ -240,10 +240,10 @@ class CFIEntry(object):
         else: # FDE
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
-            last_line_in_CIE = cie_decoded_table.table[-1]
+            last_line_in_CIE = copy.copy(cie_decoded_table.table[-1])
             cur_line = last_line_in_CIE
             cur_line['pc'] = self['initial_location']
-            reg_order = cie_decoded_table.reg_order
+            reg_order = copy.copy(cie_decoded_table.reg_order)
         
         table = []
         line_stack = []
