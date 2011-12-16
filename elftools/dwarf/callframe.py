@@ -46,9 +46,15 @@ class CallFrameInfo(object):
         self._entry_cache = {}
 
     def get_entries(self):
+        """ Get a list of entries that constitute this CFI. The list consists
+            of CIE or FDE objects, in the order of their appearance in the
+            section.
+        """
         if self.entries is None:
             self.entries = self._parse_entries()
         return self.entries
+
+    #-------------------------
 
     def _parse_entries(self):
         entries = []
@@ -220,6 +226,10 @@ class CFIEntry(object):
         self._decoded_table = None
 
     def get_decoded(self):
+        """ Decode the CFI contained in this entry and return a
+            DecodedCallFrameTable object representing it. See the documentation
+            of that class to understand how to interpret the decoded table.
+        """
         if self._decoded_table is None:
             self._decoded_table = self._decode_CFI_table()
         return self._decoded_table
@@ -234,10 +244,14 @@ class CFIEntry(object):
             a DecodedCallFrameTable.
         """
         if isinstance(self, CIE):
+            # For a CIE, initialize cur_line to an "empty" line
             cie = self
             cur_line = dict(pc=0, cfa=None)
             reg_order = []
         else: # FDE
+            # For a FDE, we need to decode the attached CIE first, because its
+            # decoded table is needed. Its "initial instructions" describe a 
+            # line that serves as the base (first) line in the FDE's table.
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
             last_line_in_CIE = copy.copy(cie_decoded_table.table[-1])
@@ -246,6 +260,9 @@ class CFIEntry(object):
             reg_order = copy.copy(cie_decoded_table.reg_order)
         
         table = []
+
+        # Keeps a stack for the use of DW_CFA_{remember|restore}_state
+        # instructions.
         line_stack = []
 
         def _add_to_order(regnum):
@@ -253,6 +270,10 @@ class CFIEntry(object):
                 reg_order.append(regnum)
 
         for instr in self.instructions:
+            # Throughout this loop, cur_line is the current line. Some
+            # instructions add it to the table, but most instructions just
+            # update it without adding it to the table.
+
             name = instruction_name(instr.opcode)
 
             if name == 'DW_CFA_set_loc':
@@ -326,10 +347,17 @@ class CFIEntry(object):
             elif name == 'DW_CFA_restore_state':
                 cur_line = line_stack.pop()
 
+        # The current line is appended to the table after all instructions
+        # have ended, in any case (even if there were no instructions).
         table.append(cur_line)
         return DecodedCallFrameTable(table=table, reg_order=reg_order)
 
 
+# A CIE and FDE have exactly the same functionality, except that a FDE has
+# a pointer to its CIE. The functionality was wholly encapsulated in CFIEntry,
+# so the CIE and FDE classes exists separately for identification (instead
+# of having an explicit "entry_type" field in CFIEntry).
+#
 class CIE(CFIEntry):
     pass
 
@@ -339,7 +367,9 @@ class FDE(CFIEntry):
 
 
 class RegisterRule(object):
-    """ An enumeration of register rules (DWARFv3 section 6.4.1)
+    """ Register rules are used to find registers in call frames. Each rule
+        consists of a type (enumeration following DWARFv3 section 6.4.1)
+        and an optional argument to augment the type.
     """
     UNDEFINED = 'UNDEFINED'
     SAME_VALUE = 'SAME_VALUE'
@@ -359,6 +389,9 @@ class RegisterRule(object):
 
 
 class CFARule(object):
+    """ A CFA rule is used to compute the CFA for each location. It either
+        consists of a register+offset, or a DWARF expression.
+    """
     def __init__(self, reg=None, offset=None, expr=None):
         self.reg = reg
         self.offset = offset
@@ -369,6 +402,25 @@ class CFARule(object):
             self.reg, self.offset, self.expr)
 
 
+# Represents the decoded CFI for an entry, which is just a large table,
+# according to DWARFv3 section 6.4.1
+#
+# DecodedCallFrameTable is a simple named tuple to group together the table
+# and the register appearance order.
+#
+# table:
+#
+# A list of dicts that represent "lines" in the decoded table. Each line has
+# some special dict entries: 'pc' for the location/program counter (LOC),
+# and 'cfa' for the CFARule to locate the CFA on that line.
+# The other entries are keyed by register numbers with RegisterRule values,
+# and describe the rules for these registers.
+#
+# reg_order:
+#
+# A list of register numbers that are described in the table by the order of
+# their appearance.
+#
 DecodedCallFrameTable = namedtuple(
     'DecodedCallFrameTable', 'table reg_order')
 
