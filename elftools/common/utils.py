@@ -6,6 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from contextlib import contextmanager
 from .exceptions import ELFParseError, ELFError, DWARFError
 from ..construct import ConstructError
 
@@ -71,13 +72,6 @@ def dwarf_assert(cond, msg=''):
     _assert_with_exception(cond, msg, DWARFError)
 
 
-def _assert_with_exception(cond, msg, exception_type):
-    if not cond:
-        raise exception_type(msg)
-
-
-from contextlib import contextmanager
-
 @contextmanager
 def preserve_stream_pos(stream):
     """ Usage:
@@ -90,4 +84,11 @@ def preserve_stream_pos(stream):
     saved_pos = stream.tell()
     yield
     stream.seek(saved_pos)
+
+
+#------------------------- PRIVATE -------------------------
+
+def _assert_with_exception(cond, msg, exception_type):
+    if not cond:
+        raise exception_type(msg)
 
