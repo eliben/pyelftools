@@ -12,9 +12,9 @@ from unittest import TestLoader, TextTestRunner
 
 if __name__ == '__main__':
     try:
-        tests = TestLoader().discover('tests', 'test*.py', 'tests')
+        tests = TestLoader().discover('test', 'test*.py', 'test')
         TextTestRunner().run(tests)
     except ImportError as err:
         print err
-        print '!! Please execute from the root directory of pyelfutils'
+        print '!! Please execute from the root directory of pyelftools'
 
