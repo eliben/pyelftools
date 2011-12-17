@@ -180,7 +180,7 @@ def is_in_rootdir():
     """ Check whether the current dir is the root dir of pyelftools
     """
     dirstuff = os.listdir('.')
-    return 'tests' in dirstuff and 'elftools' in dirstuff
+    return 'test' in dirstuff and 'elftools' in dirstuff
     
 
 def main():
@@ -193,7 +193,7 @@ def main():
     if len(sys.argv) > 1:
         filenames = sys.argv[1:]
     else:
-        filenames = list(discover_testfiles('tests/testfiles'))
+        filenames = list(discover_testfiles('test/testfiles'))
 
     success = True
     for filename in filenames:
@@ -206,11 +206,7 @@ def main():
 
 
 if __name__ == '__main__':
-    #import os
-    #os.chdir('..')
     main()
-    #testlog.info(list(discover_testfiles('tests/testfiles'))) 
-    #print run_exe('scripts/readelf.py', ['-h', 'tests/testfiles/z32.o.elf'])
 
 
 
