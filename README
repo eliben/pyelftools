@@ -1,6 +1,18 @@
-pyelftools
-----------
+Introduction: what is pyelftools?
+---------------------------------
 
-Nice project, heh?
+**pyelftools** is a pure-Python library for parsing and analyzing ELF files
+and DWARF debugging information.
+
+Pre-requisites
+--------------
+
+**pyelftools** needs only Python to run. It works with Python versions 2.6 and
+2.7 (Python 3 support is planned but not yet implemented). For hacking on 
+**pyelftools** the requirements are a bit more strict, please see the
+user's guide (ZZZ: link?)
+
+
+
 
 

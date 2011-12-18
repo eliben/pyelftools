@@ -159,10 +159,6 @@ class DIE(object):
                 self.abbrev_code)
         self.tag = abbrev_decl['tag']
         self.has_children = abbrev_decl.has_children()
-        
-        # The offset of the .debug_info section in the stream. Used to compute
-        # relative offset of attribute values to the beginning of the section.
-        section_offset = self.dwarfinfo.debug_info_sec.global_offset
 
         # Guided by the attributes listed in the abbreviation declaration, parse
         # values from the stream.

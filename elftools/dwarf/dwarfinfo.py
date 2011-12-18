@@ -25,6 +25,9 @@ from .callframe import CallFrameInfo
 # global_offset: the global offset of the section in its container file
 # size: the size of the section's data, in bytes
 #
+# 'name' and 'global_offset' are for descriptional purposes only and
+# aren't strictly required for the DWARF parsing to work.
+#
 DebugSectionDescriptor = namedtuple('DebugSectionDescriptor', 
     'stream name global_offset size')
 
