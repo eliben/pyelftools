@@ -44,6 +44,8 @@ class Relocation(object):
 
 
 class RelocationSection(Section):
+    """ ELF relocation section. Serves as a collection of Relocation entries.
+    """
     def __init__(self, header, name, stream, elffile):
         super(RelocationSection, self).__init__(header, name, stream)
         self.elffile = elffile

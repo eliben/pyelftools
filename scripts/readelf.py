@@ -756,8 +756,10 @@ def main(stream=None):
             action='store', dest='show_string_dump', metavar='<number|name>',
             help='Dump the contents of section <number|name> as strings')
     optparser.add_option('--debug-dump',
-            action='store', dest='debug_dump_what', metavar='<section>',
-            help='Display the contents of DWARF debug sections')
+            action='store', dest='debug_dump_what', metavar='<what>',
+            help=(
+                'Display the contents of DWARF debug sections. <what> can ' +
+                'one of {info,decodedline,frames,frames-interp}'))
 
     options, args = optparser.parse_args()
 
