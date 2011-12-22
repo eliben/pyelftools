@@ -12,10 +12,8 @@ from optparse import OptionParser
 from itertools import ifilter
 import string
 
-
 # If elftools is not installed, maybe we're running from the root or scripts
 # dir of the source distribution
-#
 try:
     import elftools
 except ImportError:

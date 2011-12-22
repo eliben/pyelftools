@@ -8,6 +8,14 @@
 #-------------------------------------------------------------------------------
 from __future__ import print_function
 import sys
+
+# If elftools is not installed, maybe we're running from the root or examples
+# dir of the source distribution
+try:
+    import elftools
+except ImportError:
+    sys.path.extend(['.', '..'])
+
 from elftools.elf.elffile import ELFFile
 
 

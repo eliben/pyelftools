@@ -4,4 +4,8 @@ syntax: glob
 .coverage
 htmlcov
 tags
+build
+dist
+MANIFEST
+
 

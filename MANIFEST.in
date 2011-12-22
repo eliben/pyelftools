@@ -1,7 +1,7 @@
 recursive-include elftools *.py 
 recursive-include scripts *.py
 recursive-include examples *.py *.elf
-prune test
+recursive-include test *.py *.elf
 include README
 include LICENSE
 include CHANGES
