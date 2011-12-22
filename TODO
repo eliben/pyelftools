@@ -1,0 +1,30 @@
+New version
+-----------
+
+* Update elftools/__init__.py
+* Update setup.py
+* Update CHANGES
+* Tag in hg
+
+Distribution
+------------
+
+python setup.py build sdist upload
+
+Preparing a new release
+-----------------------
+
+* Run all tests with Python 2.7 before packaging, on Linux
+* Make sure new version was updated everywhere appropriate
+* Packaging done on Linux
+* Run ``python setup.py build sdist`` (no 'upload' yet)
+* Untar the created ``dist/pyelftools-x.y.tar.gz`` and make sure everything looks ok
+* Create a virtual env for Python 2: 
+  (``virtualenv -p /usr/bin/python2 ~/test/venv/ZZZ``)
+* Use that virtual env executable to install the source tarball
+* Run some examples and see they work
+* Now build with upload to send it to PyPi
+* Test with pip install from some new virtualenv
+* If everything is OK, upload the distribution to BitBucket as well
+* The older download can be kept alive for a couple of days
+
