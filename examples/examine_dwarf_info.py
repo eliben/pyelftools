@@ -41,7 +41,7 @@ def process_file(filename):
             # values. Values are represented by AttributeValue objects in
             # elftools/dwarf/die.py
             # We're interested in the DW_AT_name attribute. Note that its value
-            # is usually a string taken from the .debug_string section. This
+            # is usually a string taken from the .debug_str section. This
             # is done transparently by the library, and such a value will be
             # simply given as a string.
             name_attr = top_DIE.attributes['DW_AT_name']
