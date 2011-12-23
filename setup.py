@@ -33,7 +33,13 @@ setup(
     classifiers = [
         'Programming Language :: Python :: 2',],
 
-    packages=['elftools'],
+    packages=[
+        'elftools',
+        'elftools.elf',
+        'elftools.common',
+        'elftools.dwarf',
+        'elftools.construct', 'elftools.construct.lib',
+        ],
 
     scripts=['scripts/readelf.py'],
 )
