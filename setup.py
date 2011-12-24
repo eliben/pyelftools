@@ -33,6 +33,7 @@ setup(
     classifiers = [
         'Programming Language :: Python :: 2',],
 
+    # All packages and sub-packages must be listed here
     packages=[
         'elftools',
         'elftools.elf',

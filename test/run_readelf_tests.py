@@ -10,6 +10,7 @@
 import os, sys
 import re
 from difflib import SequenceMatcher
+from optparse import OptionParser
 import logging
 import subprocess
 import tempfile
@@ -45,36 +46,37 @@ def run_exe(exe_path, args):
     return proc.returncode, proc_stdout
     
 
-def run_test_on_file(filename):
+def run_test_on_file(filename, verbose=False):
     """ Runs a test on the given input filename. Return True if all test
         runs succeeded.
     """
     success = True
-    testlog.info("Running test on file '%s'" % filename)
+    testlog.info("Test file '%s'" % filename)
     for option in [
             '-e', '-s', '-r', '-x.text', '-p.shstrtab',
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp']:
-        testlog.info("..option='%s'" % option)
+        if verbose: testlog.info("..option='%s'" % option)
         # stdouts will be a 2-element list: output of readelf and output 
         # of scripts/readelf.py
         stdouts = []
         for exe_path in ['readelf', 'scripts/readelf.py']:
             args = [option, filename]
-            testlog.info("....executing: '%s %s'" % (
+            if verbose: testlog.info("....executing: '%s %s'" % (
                 exe_path, ' '.join(args)))
             rc, stdout = run_exe(exe_path, args)
             if rc != 0:
                 testlog.error("@@ aborting - '%s' returned '%s'" % (exe_path, rc))
                 return False
             stdouts.append(stdout)
-        testlog.info('....comparing output...')
+        if verbose: testlog.info('....comparing output...')
         rc, errmsg = compare_output(*stdouts)
         if rc:
-            testlog.info('.......................SUCCESS')
+            if verbose: testlog.info('.......................SUCCESS')
         else:
             success = False
             testlog.info('.......................FAIL')
+            testlog.info('....for option "%s"' % option)
             testlog.info('@@ ' + errmsg)
             dump_output_to_temp_files(*stdouts)
     return success
@@ -187,26 +189,42 @@ def main():
     if not is_in_rootdir():
         die('Please run me from the root dir of pyelftools!')
 
+    optparser = OptionParser(
+        usage='usage: %prog [options] [file] [file] ...',
+        prog='run_readelf_tests.py')
+    optparser.add_option('-V', '--verbose',
+        action='store_true', dest='verbose',
+        help='Verbose output')
+    options, args = optparser.parse_args()
+
+    if options.verbose:
+        testlog.info('Running in verbose mode')
+        testlog.info('Given list of files: %s' % args)
+
     # If file names are given as command-line arguments, only these files
     # are taken as inputs. Otherwise, autodiscovery is performed.
     #
-    if len(sys.argv) > 1:
-        filenames = sys.argv[1:]
+    if len(args) > 0:
+        filenames = args
     else:
         filenames = list(discover_testfiles('test/testfiles'))
 
     success = True
     for filename in filenames:
-        success = success and run_test_on_file(filename)
+        success = success and run_test_on_file(
+                                    filename, 
+                                    verbose=options.verbose)
 
     if success:
         testlog.info('\nConclusion: SUCCESS')
+        return 0
     else:
         testlog.info('\nConclusion: FAIL')
+        return 1
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
 
 
 
