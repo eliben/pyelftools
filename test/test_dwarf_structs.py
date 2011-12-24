@@ -1,4 +1,8 @@
-import sys, unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+import sys
 
 sys.path.extend(['.', '..'])
 from elftools.dwarf.structs import DWARFStructs

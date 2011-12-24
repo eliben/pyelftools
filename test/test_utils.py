@@ -1,4 +1,8 @@
-import sys, unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+import sys
 from cStringIO import StringIO
 from random import randint
 
