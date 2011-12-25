@@ -5,6 +5,7 @@ recursive-include test *.py *.elf
 include README
 include LICENSE
 include CHANGES
+include tox.ini
 
 
 
