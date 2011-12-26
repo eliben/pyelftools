@@ -80,18 +80,13 @@ class DWARFInfo(object):
             dwarf_format=32,
             address_size=self.config.default_address_size)
 
-        # A list of CUs. Populated lazily when they're actually requested.
-        self._CUs = None
-
         # Cache for abbrev tables: a dict keyed by offset
         self._abbrevtable_cache = {}
 
     def iter_CUs(self):
         """ Yield all the compile units (CompileUnit objects) in the debug info
         """
-        if self._CUs is None:
-            self._CUs = self._parse_CUs()
-        return iter(self._CUs)
+        return self._parse_CUs_iter()
 
     def get_abbrev_table(self, offset):
         """ Get an AbbrevTable from the given offset in the debug_abbrev
@@ -151,60 +146,64 @@ class DWARFInfo(object):
 
     #------ PRIVATE ------#
 
-    def _parse_CUs(self):
-        """ Parse CU entries from debug_info.
+    def _parse_CUs_iter(self):
+        """ Parse CU entries from debug_info. Yield CUs in order of appearance.
         """
         offset = 0
-        CUlist = []
         while offset < self.debug_info_sec.size:
-            # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v3
-            # states that the first 32-bit word of the CU header determines 
-            # whether the CU is represented with 32-bit or 64-bit DWARF format.
-            # 
-            # So we peek at the first word in the CU header to determine its
-            # dwarf format. Based on it, we then create a new DWARFStructs
-            # instance suitable for this CU and use it to parse the rest.
-            #
-            initial_length = struct_parse(
-                self.structs.Dwarf_uint32(''), self.debug_info_sec.stream, offset)
-            dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
-
-            # At this point we still haven't read the whole header, so we don't
-            # know the address_size. Therefore, we're going to create structs
-            # with a default address_size=4. If, after parsing the header, we
-            # find out address_size is actually 8, we just create a new structs
-            # object for this CU.
-            #
-            cu_structs = DWARFStructs(
-                little_endian=self.config.little_endian,
-                dwarf_format=dwarf_format,
-                address_size=4)
-            
-            cu_header = struct_parse(
-                cu_structs.Dwarf_CU_header, self.debug_info_sec.stream, offset)
-            if cu_header['address_size'] == 8:
-                cu_structs = DWARFStructs(
-                    little_endian=self.config.little_endian,
-                    dwarf_format=dwarf_format,
-                     address_size=8)
-            
-            cu_die_offset = self.debug_info_sec.stream.tell()
-            dwarf_assert(
-                self._is_supported_version(cu_header['version']),
-                "Expected supported DWARF version. Got '%s'" % cu_header['version'])
-            CUlist.append(CompileUnit(
-                header=cu_header,
-                dwarfinfo=self,
-                structs=cu_structs,
-                cu_offset=offset,
-                cu_die_offset=cu_die_offset))
+            cu = self._parse_CU_at_offset(offset)
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.
             offset = (  offset + 
-                        cu_header['unit_length'] + 
-                        cu_structs.initial_length_field_size())
-        return CUlist
+                        cu['unit_length'] + 
+                        cu.structs.initial_length_field_size())
+            yield cu
+        
+    def _parse_CU_at_offset(self, offset):
+        """ Parse and return a CU at the given offset in the debug_info stream.
+        """
+        # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v3
+        # states that the first 32-bit word of the CU header determines 
+        # whether the CU is represented with 32-bit or 64-bit DWARF format.
+        # 
+        # So we peek at the first word in the CU header to determine its
+        # dwarf format. Based on it, we then create a new DWARFStructs
+        # instance suitable for this CU and use it to parse the rest.
+        #
+        initial_length = struct_parse(
+            self.structs.Dwarf_uint32(''), self.debug_info_sec.stream, offset)
+        dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
+
+        # At this point we still haven't read the whole header, so we don't
+        # know the address_size. Therefore, we're going to create structs
+        # with a default address_size=4. If, after parsing the header, we
+        # find out address_size is actually 8, we just create a new structs
+        # object for this CU.
+        #
+        cu_structs = DWARFStructs(
+            little_endian=self.config.little_endian,
+            dwarf_format=dwarf_format,
+            address_size=4)
+        
+        cu_header = struct_parse(
+            cu_structs.Dwarf_CU_header, self.debug_info_sec.stream, offset)
+        if cu_header['address_size'] == 8:
+            cu_structs = DWARFStructs(
+                little_endian=self.config.little_endian,
+                dwarf_format=dwarf_format,
+                 address_size=8)
+        
+        cu_die_offset = self.debug_info_sec.stream.tell()
+        dwarf_assert(
+            self._is_supported_version(cu_header['version']),
+            "Expected supported DWARF version. Got '%s'" % cu_header['version'])
+        return CompileUnit(
+                header=cu_header,
+                dwarfinfo=self,
+                structs=cu_structs,
+                cu_offset=offset,
+                cu_die_offset=cu_die_offset)
         
     def _is_supported_version(self, version):
         """ DWARF version supported by this parser
