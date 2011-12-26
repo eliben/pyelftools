@@ -127,6 +127,24 @@ def describe_CFI_CFA_rule(rule):
         return '%s%+d' % (describe_reg_name(rule.reg), rule.offset)
     
 
+def describe_DWARF_expr(expr, structs):
+    """ Textual description of a DWARF expression encoded in 'expr'.
+        structs should come from the entity encompassing the expression - it's
+        needed to be able to parse it correctly.
+    """
+    # Since this function can be called a lot, initializing a fresh new
+    # ExprDumper per call is expensive. So a rudimentary caching scheme is in
+    # place to create only one such dumper per instance of structs.
+    cache_key = id(structs)
+    if cache_key not in _DWARF_EXPR_DUMPER_CACHE:
+        _DWARF_EXPR_DUMPER_CACHE[cache_key] = \
+            ExprDumper(structs)
+    dwarf_expr_dumper = _DWARF_EXPR_DUMPER_CACHE[cache_key]
+    dwarf_expr_dumper.clear()
+    dwarf_expr_dumper.process_expr(expr)
+    return '(' + dwarf_expr_dumper.get_str() + ')'
+
+
 def describe_reg_name(regnum, machine_arch=None):
     """ Provide a textual description for a register name, given its serial
         number. The number is expected to be valid.
@@ -347,18 +365,7 @@ def _location_list_extra(attr, die, section_offset):
     if attr.form in ('DW_FORM_data4', 'DW_FORM_data8'):
         return '(location list)'
     else:
-        # Since this function can be called a lot, initializing a fresh new
-        # LocationExpressionDumper per call is expensive. So a rudimentary
-        # caching scheme is in place to create only one such dumper per
-        # processed CU.
-        cache_key = id(die.cu.structs)
-        if cache_key not in _DWARF_EXPR_DUMPER_CACHE:
-            _DWARF_EXPR_DUMPER_CACHE[cache_key] = \
-                ExprDumper(die.cu.structs)
-        dwarf_expr_dumper = _DWARF_EXPR_DUMPER_CACHE[cache_key]
-        dwarf_expr_dumper.clear()
-        dwarf_expr_dumper.process_expr(attr.value)
-        return '(' + dwarf_expr_dumper.get_str() + ')'
+        return describe_DWARF_expr(attr.value, die.cu.structs)
 
 
 def _import_extra(attr, die, section_offset):
