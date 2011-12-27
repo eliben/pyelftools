@@ -58,18 +58,22 @@ class DWARFInfo(object):
             debug_abbrev_sec,
             debug_frame_sec,
             debug_str_sec,
+            debug_loc_sec,
             debug_line_sec):
         """ config:
                 A DwarfConfig object
 
             debug_*_sec:
-                DebugSectionDescriptor for a section
+                DebugSectionDescriptor for a section. Pass None for sections
+                that don't exist. These arguments are best given with 
+                keyword syntax.
         """
         self.config = config
         self.debug_info_sec = debug_info_sec
         self.debug_abbrev_sec = debug_abbrev_sec
         self.debug_frame_sec = debug_frame_sec
         self.debug_str_sec = debug_str_sec
+        self.debug_loc_sec = debug_loc_sec
         self.debug_line_sec = debug_line_sec
 
         # This is the DWARFStructs the context uses, so it doesn't depend on 

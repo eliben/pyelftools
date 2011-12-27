@@ -118,12 +118,12 @@ class ELFFile(object):
             are looked up and applied.
         """
         # Expect that has_dwarf_info was called, so at least .debug_info is 
-        # present. Check also the presence of other must-have debug sections.
+        # present. 
         # Sections that aren't found will be passed as None to DWARFInfo.
         #
         debug_sections = {}
         for secname in ('.debug_info', '.debug_abbrev', '.debug_str', 
-                        '.debug_line', '.debug_frame'):
+                        '.debug_line', '.debug_frame', '.debug_loc'):
             section = self.get_section_by_name(secname)
             if section is None:
                 debug_sections[secname] = None
@@ -141,6 +141,7 @@ class ELFFile(object):
                 debug_abbrev_sec=debug_sections['.debug_abbrev'],
                 debug_frame_sec=debug_sections['.debug_frame'],
                 debug_str_sec=debug_sections['.debug_str'],
+                debug_loc_sec=debug_sections['.debug_loc'],
                 debug_line_sec=debug_sections['.debug_line'])
 
     def get_machine_arch(self):
