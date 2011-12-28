@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
-# tests/run_all_unittests.py
+# test/run_all_unittests.py
 #
 # Run all unit tests (alternative to running 'python -m unittest discover ...')
 #

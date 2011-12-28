@@ -1,4 +1,12 @@
-import os, subprocess
+#-------------------------------------------------------------------------------
+# test/utils.py
+#
+# Some common utils for tests
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
+import os, subprocess, tempfile
 
 
 def run_exe(exe_path, args):
@@ -19,4 +27,18 @@ def is_in_rootdir():
     """
     dirstuff = os.listdir('.')
     return 'test' in dirstuff and 'elftools' in dirstuff
+    
+
+def dump_output_to_temp_files(testlog, *args):
+    """ Dumps the output strings given in 'args' to temp files: one for each
+        arg.
+    """
+    for i, s in enumerate(args):
+        fd, path = tempfile.mkstemp(
+                prefix='out' + str(i + 1) + '_',
+                suffix='.stdout')
+        file = os.fdopen(fd, 'w')
+        file.write(s)
+        file.close()
+        testlog.info('@@ Output #%s dumped to file: %s' % (i + 1, path))
     

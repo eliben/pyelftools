@@ -1,0 +1,9 @@
+Processing file: ./examples/sample_exe64.elf
+  .rela.dyn section with 1 relocations
+     <Relocation (RELA): Container:
+    r_offset = 6295520
+    r_info = 4294967302
+    r_info_sym = 1
+    r_info_type = 6
+    r_addend = 0>
+    offset = 6295520

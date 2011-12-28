@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
-# tests/run_readelf_tests.py
+# test/run_readelf_tests.py
 #
 # Automatic test runner for elftools & readelf
 #
@@ -12,9 +12,9 @@ import re
 from difflib import SequenceMatcher
 from optparse import OptionParser
 import logging
-import tempfile
 import platform
-from test.utils import run_exe, is_in_rootdir
+sys.path.insert(0, '.') # to load *our* test, not Python's test
+from test.utils import run_exe, is_in_rootdir, dump_output_to_temp_files
 
 
 # Create a global logger object
@@ -65,7 +65,7 @@ def run_test_on_file(filename, verbose=False):
             testlog.info('.......................FAIL')
             testlog.info('....for option "%s"' % option)
             testlog.info('@@ ' + errmsg)
-            dump_output_to_temp_files(*stdouts)
+            dump_output_to_temp_files(testlog, *stdouts)
     return success
 
 
@@ -144,21 +144,7 @@ def compare_output(s1, s2):
                     i, lines1[i], lines2[i])
                 return False, errmsg
     return True, ''
-    
 
-def dump_output_to_temp_files(*args):
-    """ Dumps the output strings given in 'args' to temp files: one for each
-        arg.
-    """
-    for i, s in enumerate(args):
-        fd, path = tempfile.mkstemp(
-                prefix='out' + str(i + 1) + '_',
-                suffix='.stdout')
-        file = os.fdopen(fd, 'w')
-        file.write(s)
-        file.close()
-        testlog.info('@@ Output #%s dumped to file: %s' % (i + 1, path))
-    
 
 def main():
     if not is_in_rootdir():
@@ -187,7 +173,8 @@ def main():
 
     success = True
     for filename in filenames:
-        success = success and run_test_on_file(
+        if success:
+            success = success and run_test_on_file(
                                     filename, 
                                     verbose=options.verbose)
 
