@@ -16,6 +16,7 @@ from .compileunit import CompileUnit
 from .abbrevtable import AbbrevTable
 from .lineprogram import LineProgram
 from .callframe import CallFrameInfo
+from .locationlists import LocationLists
 
 
 # Describes a debug section
@@ -147,6 +148,12 @@ class DWARFInfo(object):
             size=self.debug_frame_sec.size,
             base_structs=self.structs)
         return cfi.get_entries()
+
+    def location_lists(self):
+        """ Get a LocationLists object representing the .debug_loc section of
+            the DWARF data, or None if this section doesn't exist.
+        """
+        return LocationLists(self.debug_loc_sec.stream, self.structs)
 
     #------ PRIVATE ------#
 
