@@ -12,9 +12,9 @@ import re
 from difflib import SequenceMatcher
 from optparse import OptionParser
 import logging
-import subprocess
 import tempfile
 import platform
+from test.utils import run_exe, is_in_rootdir
 
 
 # Create a global logger object
@@ -32,19 +32,6 @@ def discover_testfiles(rootdir):
         if ext == '.elf':
             yield os.path.join(rootdir, filename)
 
-
-def run_exe(exe_path, args):
-    """ Runs the given executable as a subprocess, given the
-        list of arguments. Captures its return code (rc) and stdout and
-        returns a pair: rc, stdout_str
-    """
-    popen_cmd = [exe_path] + args
-    if os.path.splitext(exe_path)[1] == '.py':
-        popen_cmd.insert(0, 'python')
-    proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE)
-    proc_stdout = proc.communicate()[0]
-    return proc.returncode, proc_stdout
-    
 
 def run_test_on_file(filename, verbose=False):
     """ Runs a test on the given input filename. Return True if all test
@@ -173,21 +160,10 @@ def dump_output_to_temp_files(*args):
         testlog.info('@@ Output #%s dumped to file: %s' % (i + 1, path))
     
 
-def die(msg):
-    testlog.error('Error: %s' % msg)
-    sys.exit(1)
-
-
-def is_in_rootdir():
-    """ Check whether the current dir is the root dir of pyelftools
-    """
-    dirstuff = os.listdir('.')
-    return 'test' in dirstuff and 'elftools' in dirstuff
-    
-
 def main():
     if not is_in_rootdir():
-        die('Please run me from the root dir of pyelftools!')
+        testlog.error('Error: Please run me from the root dir of pyelftools!')
+        return 1
 
     optparser = OptionParser(
         usage='usage: %prog [options] [file] [file] ...',

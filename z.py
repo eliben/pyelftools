@@ -21,8 +21,10 @@ dinfo = efile.get_dwarf_info()
 from elftools.dwarf.locationlists import LocationLists
 from elftools.dwarf.descriptions import describe_DWARF_expr
 llists = LocationLists(dinfo.debug_loc_sec.stream, dinfo.structs)
-for li in  llists.get_location_list_at_offset(0):
-    print li
-    print describe_DWARF_expr(li.loc_expr, dinfo.structs)
+for loclist in llists.iter_location_lists():
+    print '----> loclist!'
+    for li in loclist:
+        print li
+        print describe_DWARF_expr(li.loc_expr, dinfo.structs)
 
 

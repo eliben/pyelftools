@@ -18,6 +18,9 @@ except ImportError:
     sys.path.extend(['.', '..'])
 
 from elftools.elf.elffile import ELFFile
+from elftools.dwarf.descriptions import (
+    describe_DWARF_expr, set_global_machine_arch)
+from elftools.dwarf.locationlists import LocationEntry
 
 
 def process_file(filename):
@@ -37,6 +40,10 @@ def process_file(filename):
         # section, and returned here as a LocationLists object.
         location_lists = dwarfinfo.location_lists()
 
+        # This is required for the descriptions module to correctly decode
+        # register names contained in DWARF expressions.
+        set_global_machine_arch(elffile.get_machine_arch())
+
         for CU in dwarfinfo.iter_CUs():
             # DWARFInfo allows to iterate over the compile units contained in
             # the .debug_info section. CU is a CompileUnit object, with some
@@ -52,17 +59,45 @@ def process_file(filename):
                 # AttributeValue object (from elftools.dwarf.die), which we
                 # can examine.
                 for attr in DIE.attributes.itervalues():
-                    if (    attr.name == 'DW_AT_location' and
-                            attr.form in ('DW_FORM_data4', 'DW_FORM_data8')):
+                    if attribute_has_location_list(attr):
                         # This is a location list. Its value is an offset into
                         # the .debug_loc section, so we can use the location
                         # lists object to decode it.
                         loclist = location_lists.get_location_list_at_offset(
                             attr.value)
-                        print('   DIE %s. attr %s.\n      %s' % (
+
+                        print('   DIE %s. attr %s.\n%s' % (
                             DIE.tag,
                             attr.name,
-                            loclist))
+                            show_loclist(loclist, dwarfinfo, indent='      ')))
+
+def show_loclist(loclist, dwarfinfo, indent):
+    """ Display a location list nicely, decoding the DWARF expressions
+        contained within.
+    """
+    d = []
+    for loc_entity in loclist:
+        if isinstance(loc_entity, LocationEntry):
+            d.append('%s <<%s>>' % (
+                loc_entity,
+                describe_DWARF_expr(loc_entity.loc_expr, dwarfinfo.structs)))
+        else:
+            d.append(str(loc_entity))
+    return '\n'.join(indent + s for s in d)
+    
+
+def attribute_has_location_list(attr):
+    """ Only some attributes can have location list values, if they have the
+        required DW_FORM (loclistptr "class" in DWARF spec v3)
+    """
+    if (attr.name in (  'DW_AT_location', 'DW_AT_string_length',
+                        'DW_AT_const_value', 'DW_AT_return_addr',
+                        'DW_AT_data_member_location', 'DW_AT_frame_base',
+                        'DW_AT_segment', 'DW_AT_static_link',
+                        'DW_AT_use_location', 'DW_AT_vtable_elem_location')):
+        if attr.form in ('DW_FORM_data4', 'DW_FORM_data8'):
+            return True
+    return False
 
 
 if __name__ == '__main__':
