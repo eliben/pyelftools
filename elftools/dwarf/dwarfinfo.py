@@ -17,6 +17,7 @@ from .abbrevtable import AbbrevTable
 from .lineprogram import LineProgram
 from .callframe import CallFrameInfo
 from .locationlists import LocationLists
+from .ranges import RangeLists
 
 
 # Describes a debug section
@@ -60,6 +61,7 @@ class DWARFInfo(object):
             debug_frame_sec,
             debug_str_sec,
             debug_loc_sec,
+            debug_ranges_sec,
             debug_line_sec):
         """ config:
                 A DwarfConfig object
@@ -75,6 +77,7 @@ class DWARFInfo(object):
         self.debug_frame_sec = debug_frame_sec
         self.debug_str_sec = debug_str_sec
         self.debug_loc_sec = debug_loc_sec
+        self.debug_ranges_sec = debug_ranges_sec
         self.debug_line_sec = debug_line_sec
 
         # This is the DWARFStructs the context uses, so it doesn't depend on 
@@ -154,6 +157,12 @@ class DWARFInfo(object):
             the DWARF data, or None if this section doesn't exist.
         """
         return LocationLists(self.debug_loc_sec.stream, self.structs)
+
+    def range_lists(self):
+        """ Get a RangeLists object representing the .debug_ranges section of
+            the DWARF data, or None if this section doesn't exist.
+        """
+        return RangeLists(self.debug_ranges_sec.stream, self.structs)
 
     #------ PRIVATE ------#
 

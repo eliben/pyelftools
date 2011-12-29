@@ -123,7 +123,8 @@ class ELFFile(object):
         #
         debug_sections = {}
         for secname in ('.debug_info', '.debug_abbrev', '.debug_str', 
-                        '.debug_line', '.debug_frame', '.debug_loc'):
+                        '.debug_line', '.debug_frame', '.debug_loc',
+                        '.debug_ranges'):
             section = self.get_section_by_name(secname)
             if section is None:
                 debug_sections[secname] = None
@@ -142,6 +143,7 @@ class ELFFile(object):
                 debug_frame_sec=debug_sections['.debug_frame'],
                 debug_str_sec=debug_sections['.debug_str'],
                 debug_loc_sec=debug_sections['.debug_loc'],
+                debug_ranges_sec=debug_sections['.debug_ranges'],
                 debug_line_sec=debug_sections['.debug_line'])
 
     def get_machine_arch(self):
