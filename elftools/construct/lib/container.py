@@ -73,7 +73,7 @@ class Container(object):
                 if hasattr(v, "__pretty_str__"):
                     text.append(v.__pretty_str__(nesting + 1, indentation))
                 else:
-                    text.append(repr(v))
+                    text.append(str(v))
                 attrs.append("".join(text))
         if not attrs:
             return "%s()" % (self.__class__.__name__,)
