@@ -23,7 +23,7 @@ from elftools.elf.relocation import RelocationSection
 
 def process_file(filename):
     print('Processing file:', filename)
-    with open(filename) as f:
+    with open(filename, 'rb') as f:
         elffile = ELFFile(f)
 
         # Read the .rela.dyn section from the file, by explicitly asking

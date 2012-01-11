@@ -25,7 +25,7 @@ from elftools.dwarf.locationlists import LocationEntry
 
 def process_file(filename):
     print('Processing file:', filename)
-    with open(filename) as f:
+    with open(filename, 'rb') as f:
         elffile = ELFFile(f)
 
         if not elffile.has_dwarf_info():

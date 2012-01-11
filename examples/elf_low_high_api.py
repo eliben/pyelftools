@@ -23,7 +23,7 @@ from elftools.elf.sections import SymbolTableSection
 
 def process_file(filename):
     print('Processing file:', filename)
-    with open(filename) as f:
+    with open(filename, 'rb') as f:
         section_info_lowlevel(f)
         f.seek(0)
         section_info_highlevel(f)

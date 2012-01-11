@@ -21,7 +21,7 @@ from elftools.elf.elffile import ELFFile
 
 def process_file(filename):
     print('In file:', filename)
-    with open(filename) as f:
+    with open(filename, 'rb') as f:
         elffile = ELFFile(f)
 
         for section in elffile.iter_sections():

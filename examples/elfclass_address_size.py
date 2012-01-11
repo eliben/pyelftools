@@ -21,7 +21,7 @@ from elftools.elf.elffile import ELFFile
 
 
 def process_file(filename):
-    with open(filename) as f:
+    with open(filename, 'rb') as f:
         elffile = ELFFile(f)
         # elfclass is a public attribute of ELFFile, read from its header
         print('%s: elfclass is %s' % (filename, elffile.elfclass))

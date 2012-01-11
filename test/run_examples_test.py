@@ -55,7 +55,8 @@ def run_example_and_compare(example_path):
         testlog.info('.......ERROR - example returned error code %s' % rc)
         return False
     
-    if example_out == ref_str:
+    # Comparison is done as lists of lines, to avoid EOL problems
+    if example_out.split() == ref_str.split():
         return True
     else:
         testlog.info('.......FAIL comparison')
