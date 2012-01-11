@@ -6,4 +6,4 @@ High level API...
   42 sections
   Section name: .symtab, type: SHT_SYMTAB
   It's a symbol section with 80 symbols
-  The name of symbol #60 is: __init_array_start
+  The name of the last symbol in the section is: _init

@@ -2,7 +2,8 @@
 # elftools example: elf_low_high_api.py
 #
 # A simple example that shows some usage of the low-level API pyelftools
-# provides versus the high-level API.
+# provides versus the high-level API while inspecting an ELF file's symbol
+# table.
 #
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
@@ -38,20 +39,24 @@ def section_info_lowlevel(stream):
     # The e_shnum ELF header field says how many sections there are in a file
     print('  %s sections' % elffile['e_shnum'])
 
-    # We need section #40
-    section_offset = elffile['e_shoff'] + 40 * elffile['e_shentsize']
+    # Try to find the symbol table
+    for i in range(elffile['e_shnum']):
+        section_offset = elffile['e_shoff'] + i * elffile['e_shentsize']
+        # Parse the section header using structs.Elf_Shdr
+        stream.seek(section_offset)
+        section_header = elffile.structs.Elf_Shdr.parse_stream(stream)
+        if section_header['sh_type'] == 'SHT_SYMTAB':
+            # Some details about the section. Note that the section name is a
+            # pointer to the object's string table, so it's only a number
+            # here. To get to the actual name one would need to parse the string
+            # table section and extract the name from there (or use the
+            # high-level API!)
+            print('  Section name: %s, type: %s' % (
+                    section_header['sh_name'], section_header['sh_type']))
+            break
+    else:
+        print('  No symbol table found. Perhaps this ELF has been stripped?')
 
-    # Parse the section header using structs.Elf_Shdr
-    stream.seek(section_offset)
-    section_header = elffile.structs.Elf_Shdr.parse_stream(stream)
-
-    # Some details about the section. Note that the section name is a pointer
-    # to the object's string table, so it's only a number here. To get to the
-    # actual name one would need to parse the string table section and extract
-    # the name from there (or use the high-level API!)
-    print('  Section name: %s, type: %s' % (
-        section_header['sh_name'], section_header['sh_type']))
-    
 
 def section_info_highlevel(stream):
     print('High level API...')
@@ -59,7 +64,11 @@ def section_info_highlevel(stream):
 
     # Just use the public methods of ELFFile to get what we need
     print('  %s sections' % elffile.num_sections())
-    section = elffile.get_section(40)
+    section = elffile.get_section_by_name('.symtab')
+
+    if not section:
+        print('  No symbol table found. Perhaps this ELF has been stripped?')
+        return
 
     # A section type is in its header, but the name was decoded and placed in
     # a public attribute.
@@ -70,9 +79,10 @@ def section_info_highlevel(stream):
     # the case in the sample ELF file that comes with the examples), we can
     # get some more information about it.
     if isinstance(section, SymbolTableSection):
-        print("  It's a symbol section with %s symbols" % section.num_symbols())
-        print("  The name of symbol #60 is: %s" % (
-            section.get_symbol(60).name))
+        num_symbols = section.num_symbols()
+        print("  It's a symbol section with %s symbols" % num_symbols)
+        print("  The name of the last symbol in the section is: %s" % (
+            section.get_symbol(num_symbols - 1).name))
 
 
 if __name__ == '__main__':
