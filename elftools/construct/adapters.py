@@ -1,6 +1,7 @@
-from core import Adapter, AdaptationError, Pass
-from lib import int_to_bin, bin_to_int, swap_bytes, StringIO
-from lib import FlagsContainer, HexString
+from .core import Adapter, AdaptationError, Pass
+from .lib import int_to_bin, bin_to_int, swap_bytes
+from .lib import FlagsContainer, HexString
+from .lib.py3compat import BytesIO, decodebytes
 
 
 #===============================================================================
@@ -95,7 +96,7 @@ class MappingAdapter(Adapter):
             return self.decoding[obj]
         except (KeyError, TypeError):
             if self.decdefault is NotImplemented:
-                raise MappingError("no decoding mapping for %r [%s]"  % (
+                raise MappingError("no decoding mapping for %r [%s]" % (
                     obj, self.subcon.name))
             if self.decdefault is Pass:
                 return obj
@@ -117,13 +118,13 @@ class FlagsAdapter(Adapter):
         self.flags = flags
     def _encode(self, obj, context):
         flags = 0
-        for name, value in self.flags.iteritems():
+        for name, value in self.flags.items():
             if getattr(obj, name, False):
                 flags |= value
         return flags
     def _decode(self, obj, context):
         obj2 = FlagsContainer()
-        for name, value in self.flags.iteritems():
+        for name, value in self.flags.items():
             setattr(obj2, name, bool(obj & value))
         return obj2
 
@@ -147,7 +148,6 @@ class StringAdapter(Adapter):
             obj = obj.encode(self.encoding)
         return obj
     def _decode(self, obj, context):
-        obj = "".join(obj)
         if self.encoding:
             obj = obj.decode(self.encoding)
         return obj
@@ -228,13 +228,13 @@ class CStringAdapter(StringAdapter):
       encoding.
     """
     __slots__ = ["terminators"]
-    def __init__(self, subcon, terminators = "\x00", encoding = None):
+    def __init__(self, subcon, terminators = b"\x00", encoding = None):
         StringAdapter.__init__(self, subcon, encoding = encoding)
         self.terminators = terminators
     def _encode(self, obj, context):
-        return StringAdapter._encode(self, obj, context) + self.terminators[0]
+        return StringAdapter._encode(self, obj, context) + self.terminators[0:1]
     def _decode(self, obj, context):
-        return StringAdapter._decode(self, obj[:-1], context)
+        return StringAdapter._decode(self, b''.join(obj[:-1]), context)
 
 class TunnelAdapter(Adapter):
     """
@@ -263,9 +263,9 @@ class TunnelAdapter(Adapter):
         Adapter.__init__(self, subcon)
         self.inner_subcon = inner_subcon
     def _decode(self, obj, context):
-        return self.inner_subcon._parse(StringIO(obj), context)
+        return self.inner_subcon._parse(BytesIO(obj), context)
     def _encode(self, obj, context):
-        stream = StringIO()
+        stream = BytesIO()
         self.inner_subcon._build(obj, stream, context)
         return stream.getvalue()
 
@@ -380,7 +380,7 @@ class PaddingAdapter(Adapter):
     
     Parameters:
     * subcon - the subcon to pad
-    * pattern - the padding pattern (character). default is "\x00")
+    * pattern - the padding pattern (character). default is "\x00"
     * strict - whether or not to verify, during parsing, that the given 
       padding matches the padding pattern. default is False (unstrict)
     """
@@ -422,11 +422,24 @@ class Validator(Adapter):
 
 class OneOf(Validator):
     """
-    Validates that the value is one of the listed values
-    
-    Parameters:
-    * subcon - the subcon to validate
-    * valids - a set of valid values
+    Validates that the object is one of the listed values.
+
+    :param ``Construct`` subcon: object to validate
+    :param iterable valids: a set of valid values
+
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x05")
+    5
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
+    Traceback (most recent call last):
+        ...
+    construct.core.ValidationError: ('invalid object', 8)
+    >>>
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(5)
+    '\\x05'
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(9)
+    Traceback (most recent call last):
+        ...
+    construct.core.ValidationError: ('invalid object', 9)
     """
     __slots__ = ["valids"]
     def __init__(self, subcon, valids):
@@ -437,11 +450,17 @@ class OneOf(Validator):
 
 class NoneOf(Validator):
     """
-    Validates that the value is none of the listed values
-    
-    Parameters:
-    * subcon - the subcon to validate
-    * invalids - a set of invalid values
+    Validates that the object is none of the listed values.
+
+    :param ``Construct`` subcon: object to validate
+    :param iterable invalids: a set of invalid values
+
+    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
+    8
+    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x06")
+    Traceback (most recent call last):
+        ...
+    construct.core.ValidationError: ('invalid object', 6)
     """
     __slots__ = ["invalids"]
     def __init__(self, subcon, invalids):
@@ -449,36 +468,3 @@ class NoneOf(Validator):
         self.invalids = invalids
     def _validate(self, obj, context):
         return obj not in self.invalids
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

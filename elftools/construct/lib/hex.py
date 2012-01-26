@@ -1,34 +1,44 @@
-_printable = dict((chr(i), ".") for i in range(256))
-_printable.update((chr(i), chr(i)) for i in range(32, 128))
+from .py3compat import byte2int, int2byte, bytes2str
 
-def hexdump(data, linesize = 16):
+
+# Map an integer in the inclusive range 0-255 to its string byte representation
+_printable = dict((i, ".") for i in range(256))
+_printable.update((i, bytes2str(int2byte(i))) for i in range(32, 128))
+
+
+def hexdump(data, linesize):
+    """
+    data is a bytes object. The returned result is a string.
+    """
     prettylines = []
     if len(data) < 65536:
         fmt = "%%04X   %%-%ds   %%s"
     else:
         fmt = "%%08X   %%-%ds   %%s"
     fmt = fmt % (3 * linesize - 1,)
-    for i in xrange(0, len(data), linesize):
+    for i in range(0, len(data), linesize):
         line = data[i : i + linesize]
-        hextext = " ".join(b.encode("hex") for b in line)
-        rawtext = "".join(_printable[b] for b in line)
-        prettylines.append(fmt % (i, hextext, rawtext))
+        hextext = " ".join('%02x' % byte2int(b) for b in line)
+        rawtext = "".join(_printable[byte2int(b)] for b in line)
+        prettylines.append(fmt % (i, str(hextext), str(rawtext)))
     return prettylines
 
-class HexString(str):
+
+class HexString(bytes):
     """
-    represents a string that will be hex-dumped (only via __pretty_str__).
-    this class derives of str, and behaves just like a normal string in all
-    other contexts.
+    Represents bytes that will be hex-dumped to a string when its string
+    representation is requested.
     """
     def __init__(self, data, linesize = 16):
-        str.__init__(self, data)
         self.linesize = linesize
+
     def __new__(cls, data, *args, **kwargs):
-        return str.__new__(cls, data)
-    def __pretty_str__(self, nesting = 1, indentation = "    "):
-        sep = "\n" + indentation * nesting
-        return sep + sep.join(hexdump(self))
-
-
+        return bytes.__new__(cls, data)
+        
+    def __str__(self):
+        if not self:
+            return "''"
+        sep = "\n"
+        return sep + sep.join(
+            hexdump(self, self.linesize))
 
