@@ -1,5 +1,8 @@
-'construct' is the actual library (version 2, downloaded on 15.09.2010)
-Taken from http://construct.wikispaces.com/
-The code for version 2.00 has been released by the author into the public domain
+'construct' is the actual library, with my modifications for Python 3
+compatibility and various bug fixes.
+
+Taken from my fork: https://github.com/eliben/construct
+
+Take a look at LICENSE for the original license
 
 
