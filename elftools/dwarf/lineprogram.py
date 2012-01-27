@@ -152,7 +152,7 @@ class LineProgram(object):
             if opcode >= self.header['opcode_base']:
                 # Special opcode (follow the recipe in 6.2.5.1)
                 adjusted_opcode = opcode - self['opcode_base']
-                address_addend = ((adjusted_opcode / self['line_range']) *
+                address_addend = ((adjusted_opcode // self['line_range']) *
                                   self['minimum_instruction_length'])
                 state.address += address_addend
                 line_addend = (self['line_base'] + 
@@ -221,7 +221,7 @@ class LineProgram(object):
                     add_entry_old_state(opcode, [operand])
                 elif opcode == DW_LNS_const_add_pc:
                     adjusted_opcode = 255 - self['opcode_base']
-                    address_addend = ((adjusted_opcode / self['line_range']) *
+                    address_addend = ((adjusted_opcode // self['line_range']) *
                                       self['minimum_instruction_length'])
                     state.address += address_addend
                     add_entry_old_state(opcode, [address_addend])

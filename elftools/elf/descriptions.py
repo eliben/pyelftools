@@ -8,6 +8,7 @@
 #-------------------------------------------------------------------------------
 from .enums import ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
 from .constants import P_FLAGS, SH_FLAGS
+from ..common.py3compat import iteritems
 
 
 def describe_ei_class(x):
@@ -231,9 +232,9 @@ _DESCR_ST_SHNDX = dict(
 )
 
 _DESCR_RELOC_TYPE_i386 = dict(
-        (v, k) for k, v in ENUM_RELOC_TYPE_i386.iteritems())
+        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_i386))
 
 _DESCR_RELOC_TYPE_x64 = dict(
-        (v, k) for k, v in ENUM_RELOC_TYPE_x64.iteritems())
+        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_x64))
 
 

@@ -16,6 +16,7 @@ try:
 except ImportError:
     sys.path.extend(['.', '..'])
 
+from elftools.common.py3compat import bytes2str
 from elftools.elf.elffile import ELFFile
 
 
@@ -53,7 +54,7 @@ def process_file(filename):
             # is done transparently by the library, and such a value will be
             # simply given as a string.
             name_attr = top_DIE.attributes['DW_AT_name']
-            print('    name=%s' % name_attr.value)
+            print('    name=%s' % bytes2str(name_attr.value))
 
 if __name__ == '__main__':
     for filename in sys.argv[1:]:

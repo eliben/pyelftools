@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os, subprocess, tempfile
+from elftools.common.py3compat import bytes2str
 
 
 def run_exe(exe_path, args):
@@ -19,7 +20,7 @@ def run_exe(exe_path, args):
         popen_cmd.insert(0, 'python')
     proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE)
     proc_stdout = proc.communicate()[0]
-    return proc.returncode, proc_stdout
+    return proc.returncode, bytes2str(proc_stdout)
     
 
 def is_in_rootdir():

@@ -218,7 +218,7 @@ class DWARFStructs(object):
             Array(lambda ctx: ctx['opcode_base'] - 1, 
                   self.Dwarf_uint8('standard_opcode_lengths')),
             RepeatUntilExcluding(
-                lambda obj, ctx: obj == '',
+                lambda obj, ctx: obj == b'',
                 CString('include_directory')),
             RepeatUntilExcluding(
                 lambda obj, ctx: len(obj.name) == 0,

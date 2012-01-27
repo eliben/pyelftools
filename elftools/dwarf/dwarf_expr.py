@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.py3compat import StringIO, iteritems
+from ..common.py3compat import BytesIO, iteritems
 from ..common.utils import struct_parse, bytelist2string
 
 
@@ -116,7 +116,7 @@ class GenericExprVisitor(object):
         """ Process (visit) a DWARF expression. expr should be a list of
             (integer) byte values.
         """
-        self.stream = StringIO(bytelist2string(expr))
+        self.stream = BytesIO(bytelist2string(expr))
 
         while True:
             # Get the next opcode from the stream. If nothing is left in the

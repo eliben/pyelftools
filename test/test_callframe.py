@@ -3,9 +3,9 @@ try:
 except ImportError:
     import unittest
 import sys
-from cStringIO import StringIO
 
 sys.path.extend(['.', '..'])
+from elftools.common.py3compat import BytesIO
 from elftools.dwarf.callframe import (
     CallFrameInfo, CIE, FDE, instruction_name, CallFrameInstruction,
     RegisterRule)
@@ -22,42 +22,42 @@ class TestCallFrame(unittest.TestCase):
        
     def test_spec_sample_d6(self):
         # D.6 sample in DWARFv3
-        s = StringIO()
-        data = ('' +
+        s = BytesIO()
+        data = (b'' +
             # first comes the CIE
-            '\x20\x00\x00\x00' +        # length
-            '\xff\xff\xff\xff' +        # CIE_id
-            '\x03\x00\x04\x7c' +        # version, augmentation, caf, daf
-            '\x08' +                    # return address
-            '\x0c\x07\x00' +
-            '\x08\x00' +
-            '\x07\x01' +
-            '\x07\x02' +
-            '\x07\x03' +
-            '\x08\x04' +
-            '\x08\x05' +
-            '\x08\x06' +
-            '\x08\x07' +
-            '\x09\x08\x01' +
-            '\x00' +
+            b'\x20\x00\x00\x00' +        # length
+            b'\xff\xff\xff\xff' +        # CIE_id
+            b'\x03\x00\x04\x7c' +        # version, augmentation, caf, daf
+            b'\x08' +                    # return address
+            b'\x0c\x07\x00' +
+            b'\x08\x00' +
+            b'\x07\x01' +
+            b'\x07\x02' +
+            b'\x07\x03' +
+            b'\x08\x04' +
+            b'\x08\x05' +
+            b'\x08\x06' +
+            b'\x08\x07' +
+            b'\x09\x08\x01' +
+            b'\x00' +
             
             # then comes the FDE
-            '\x28\x00\x00\x00' +        # length
-            '\x00\x00\x00\x00' +        # CIE_pointer (to CIE at 0)
-            '\x44\x33\x22\x11' +        # initial_location
-            '\x54\x00\x00\x00' +        # address range
-            '\x41' +
-            '\x0e\x0c' + '\x41' +
-            '\x88\x01' + '\x41' +
-            '\x86\x02' + '\x41' +
-            '\x0d\x06' + '\x41' +
-            '\x84\x03' + '\x4b' +
-            '\xc4' + '\x41' +
-            '\xc6' +
-            '\x0d\x07' + '\x41' +
-            '\xc8' + '\x41' +
-            '\x0e\x00' +
-            '\x00\x00'
+            b'\x28\x00\x00\x00' +        # length
+            b'\x00\x00\x00\x00' +        # CIE_pointer (to CIE at 0)
+            b'\x44\x33\x22\x11' +        # initial_location
+            b'\x54\x00\x00\x00' +        # address range
+            b'\x41' +
+            b'\x0e\x0c' + b'\x41' +
+            b'\x88\x01' + b'\x41' +
+            b'\x86\x02' + b'\x41' +
+            b'\x0d\x06' + b'\x41' +
+            b'\x84\x03' + b'\x4b' +
+            b'\xc4' + b'\x41' +
+            b'\xc6' +
+            b'\x0d\x07' + b'\x41' +
+            b'\xc8' + b'\x41' +
+            b'\x0e\x00' +
+            b'\x00\x00'
             )
         s.write(data)
 
@@ -126,14 +126,14 @@ class TestCallFrame(unittest.TestCase):
 
     def test_describe_CFI_instructions(self):
         # The data here represents a single CIE 
-        data = ('' +
-            '\x16\x00\x00\x00' +        # length
-            '\xff\xff\xff\xff' +        # CIE_id
-            '\x03\x00\x04\x7c' +        # version, augmentation, caf, daf
-            '\x08' +                    # return address
-            '\x0c\x07\x02' +
-            '\x10\x02\x07\x03\x01\x02\x00\x00\x06\x06')
-        s = StringIO(data)
+        data = (b'' +
+            b'\x16\x00\x00\x00' +        # length
+            b'\xff\xff\xff\xff' +        # CIE_id
+            b'\x03\x00\x04\x7c' +        # version, augmentation, caf, daf
+            b'\x08' +                    # return address
+            b'\x0c\x07\x02' +
+            b'\x10\x02\x07\x03\x01\x02\x00\x00\x06\x06')
+        s = BytesIO(data)
 
         structs = DWARFStructs(little_endian=True, dwarf_format=32, address_size=4)
         cfi = CallFrameInfo(s, len(data), structs)

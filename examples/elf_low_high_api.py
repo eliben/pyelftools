@@ -18,6 +18,7 @@ try:
 except ImportError:
     sys.path.extend(['.', '..'])
 
+from elftools.common.py3compat import bytes2str
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -63,8 +64,10 @@ def section_info_highlevel(stream):
     elffile = ELFFile(stream)
 
     # Just use the public methods of ELFFile to get what we need
+    # Note that section names, like everything read from the file, are bytes
+    # objects.
     print('  %s sections' % elffile.num_sections())
-    section = elffile.get_section_by_name('.symtab')
+    section = elffile.get_section_by_name(b'.symtab')
 
     if not section:
         print('  No symbol table found. Perhaps this ELF has been stripped?')
@@ -72,8 +75,10 @@ def section_info_highlevel(stream):
 
     # A section type is in its header, but the name was decoded and placed in
     # a public attribute.
+    # bytes2str is used to print the name of the section for consistency of
+    # output between Python 2 and 3. The section name is a bytes object.
     print('  Section name: %s, type: %s' %(
-        section.name, section['sh_type']))
+        bytes2str(section.name), section['sh_type']))
 
     # But there's more... If this section is a symbol table section (which is
     # the case in the sample ELF file that comes with the examples), we can
@@ -82,7 +87,7 @@ def section_info_highlevel(stream):
         num_symbols = section.num_symbols()
         print("  It's a symbol section with %s symbols" % num_symbols)
         print("  The name of the last symbol in the section is: %s" % (
-            section.get_symbol(num_symbols - 1).name))
+            bytes2str(section.get_symbol(num_symbols - 1).name)))
 
 
 if __name__ == '__main__':

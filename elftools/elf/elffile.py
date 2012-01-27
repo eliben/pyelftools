@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.py3compat import StringIO
+from ..common.py3compat import BytesIO
 from ..common.exceptions import ELFError
 from ..common.utils import struct_parse, elf_assert
 from ..construct import ConstructError
@@ -109,7 +109,7 @@ class ELFFile(object):
             We assume that if it has the debug_info section, it has all theother
             required sections as well.
         """
-        return bool(self.get_section_by_name('.debug_info'))
+        return bool(self.get_section_by_name(b'.debug_info'))
 
     def get_dwarf_info(self, relocate_dwarf_sections=True):
         """ Return a DWARFInfo object representing the debugging information in
@@ -123,9 +123,9 @@ class ELFFile(object):
         # Sections that aren't found will be passed as None to DWARFInfo.
         #
         debug_sections = {}
-        for secname in ('.debug_info', '.debug_abbrev', '.debug_str', 
-                        '.debug_line', '.debug_frame', '.debug_loc',
-                        '.debug_ranges'):
+        for secname in (b'.debug_info', b'.debug_abbrev', b'.debug_str', 
+                        b'.debug_line', b'.debug_frame', b'.debug_loc',
+                        b'.debug_ranges'):
             section = self.get_section_by_name(secname)
             if section is None:
                 debug_sections[secname] = None
@@ -139,13 +139,13 @@ class ELFFile(object):
                     little_endian=self.little_endian,
                     default_address_size=self.elfclass / 8,
                     machine_arch=self.get_machine_arch()),
-                debug_info_sec=debug_sections['.debug_info'],
-                debug_abbrev_sec=debug_sections['.debug_abbrev'],
-                debug_frame_sec=debug_sections['.debug_frame'],
-                debug_str_sec=debug_sections['.debug_str'],
-                debug_loc_sec=debug_sections['.debug_loc'],
-                debug_ranges_sec=debug_sections['.debug_ranges'],
-                debug_line_sec=debug_sections['.debug_line'])
+                debug_info_sec=debug_sections[b'.debug_info'],
+                debug_abbrev_sec=debug_sections[b'.debug_abbrev'],
+                debug_frame_sec=debug_sections[b'.debug_frame'],
+                debug_str_sec=debug_sections[b'.debug_str'],
+                debug_loc_sec=debug_sections[b'.debug_loc'],
+                debug_ranges_sec=debug_sections[b'.debug_ranges'],
+                debug_line_sec=debug_sections[b'.debug_line'])
 
     def get_machine_arch(self):
         """ Return the machine architecture, as detected from the ELF header.
@@ -283,9 +283,7 @@ class ELFFile(object):
         """
         self.stream.seek(section['sh_offset'])
         # The section data is read into a new stream, for processing
-        section_stream = StringIO()
-        # Using .write instead of initializing StringIO with the string because
-        # such a StringIO from cStringIO is read-only.
+        section_stream = BytesIO()
         section_stream.write(self.stream.read(section['sh_size']))
 
         if relocate_dwarf_sections:

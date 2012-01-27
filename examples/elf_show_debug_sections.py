@@ -16,6 +16,7 @@ try:
 except ImportError:
     sys.path.extend(['.', '..'])
 
+from elftools.common.py3compat import bytes2str
 from elftools.elf.elffile import ELFFile
 
 
@@ -25,8 +26,9 @@ def process_file(filename):
         elffile = ELFFile(f)
 
         for section in elffile.iter_sections():
-            if section.name.startswith('.debug'):
-                print('  ' + section.name)
+            # Section names are bytes objects
+            if section.name.startswith(b'.debug'):
+                print('  ' + bytes2str(section.name))
 
 
 if __name__ == '__main__':

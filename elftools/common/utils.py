@@ -8,14 +8,15 @@
 #-------------------------------------------------------------------------------
 from contextlib import contextmanager
 from .exceptions import ELFParseError, ELFError, DWARFError
+from .py3compat import int2byte
 from ..construct import ConstructError
 
 
 def bytelist2string(bytelist):
-    """ Convert a list of byte values (e.g. [0x10 0x20 0x00]) to a string
-        (e.g. '\x10\x20\x00').
+    """ Convert a list of byte values (e.g. [0x10 0x20 0x00]) to a bytes object
+        (e.g. b'\x10\x20\x00').
     """
-    return ''.join(chr(b) for b in bytelist)
+    return b''.join(int2byte(b) for b in bytelist)
 
 
 def struct_parse(struct, stream, stream_pos=None):
@@ -48,7 +49,7 @@ def parse_cstring_from_stream(stream, stream_pos=None):
     found = False
     while True:
         chunk = stream.read(CHUNKSIZE)
-        end_index = chunk.find('\x00')
+        end_index = chunk.find(b'\x00')
         if end_index >= 0:
             chunks.append(chunk[:end_index])
             found = True
@@ -57,7 +58,7 @@ def parse_cstring_from_stream(stream, stream_pos=None):
             chunks.append(chunk)
         if len(chunk) < CHUNKSIZE:
             break
-    return ''.join(chunks) if found else None
+    return b''.join(chunks) if found else None
 
 
 def elf_assert(cond, msg=''):

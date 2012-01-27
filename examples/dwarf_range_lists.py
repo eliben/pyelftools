@@ -17,6 +17,7 @@ try:
 except ImportError:
     sys.path.extend(['.', '..'])
 
+from elftools.common.py3compat import itervalues
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf.descriptions import (
     describe_DWARF_expr, set_global_machine_arch)
@@ -54,7 +55,7 @@ def process_file(filename):
                 # Go over all attributes of the DIE. Each attribute is an
                 # AttributeValue object (from elftools.dwarf.die), which we
                 # can examine.
-                for attr in DIE.attributes.itervalues():
+                for attr in itervalues(DIE.attributes):
                     if attribute_has_range_list(attr):
                         # This is a range list. Its value is an offset into
                         # the .debug_ranges section, so we can use the range

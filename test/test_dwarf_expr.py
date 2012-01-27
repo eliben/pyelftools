@@ -3,7 +3,6 @@ try:
 except ImportError:
     import unittest
 import sys
-from cStringIO import StringIO
 
 sys.path.extend(('..', '.'))
 from elftools.dwarf.descriptions import ExprDumper, set_global_machine_arch

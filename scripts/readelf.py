@@ -9,7 +9,6 @@
 #-------------------------------------------------------------------------------
 import os, sys
 from optparse import OptionParser
-from itertools import ifilter
 import string
 
 # If elftools is not installed, maybe we're running from the root or scripts
@@ -21,6 +20,8 @@ except ImportError:
 
 from elftools import __version__
 from elftools.common.exceptions import ELFError
+from elftools.common.py3compat import (
+        ifilter, byte2int, bytes2str, itervalues, str2bytes)
 from elftools.elf.elffile import ELFFile
 from elftools.elf.segments import InterpSegment
 from elftools.elf.sections import SymbolTableSection
@@ -65,7 +66,7 @@ class ReadElf(object):
         """
         self._emitline('ELF Header:')
         self._emit('  Magic:   ')
-        self._emitline(' '.join('%2.2x' % ord(b) 
+        self._emitline(' '.join('%2.2x' % byte2int(b)
                                     for b in self.elffile.e_ident_raw))
         header = self.elffile.header
         e_ident = header['e_ident']
@@ -173,7 +174,7 @@ class ReadElf(object):
 
             if isinstance(segment, InterpSegment):
                 self._emitline('      [Requesting program interpreter: %s]' % 
-                    segment.get_interp_name())
+                    bytes2str(segment.get_interp_name()))
 
         # Sections to segments mapping
         #
@@ -190,7 +191,7 @@ class ReadElf(object):
             for section in self.elffile.iter_sections():
                 if (    not section.is_null() and 
                         segment.section_in_segment(section)):
-                    self._emit('%s ' % section.name)
+                    self._emit('%s ' % bytes2str(section.name))
 
             self._emitline('')
 
@@ -217,7 +218,7 @@ class ReadElf(object):
         #
         for nsec, section in enumerate(self.elffile.iter_sections()):
             self._emit('  [%2u] %-17.17s %-15.15s ' % (
-                nsec, section.name, describe_sh_type(section['sh_type'])))
+                nsec, bytes2str(section.name), describe_sh_type(section['sh_type'])))
 
             if self.elffile.elfclass == 32:
                 self._emitline('%s %s %s %s %3s %2s %3s %2s' % (
@@ -259,11 +260,11 @@ class ReadElf(object):
 
             if section['sh_entsize'] == 0:
                 self._emitline("\nSymbol table '%s' has a sh_entsize of zero!" % (
-                    section.name))
+                    bytes2str(section.name)))
                 continue
 
             self._emitline("\nSymbol table '%s' contains %s entries:" % (
-                section.name, section.num_symbols()))
+                bytes2str(section.name), section.num_symbols()))
 
             if self.elffile.elfclass == 32:
                 self._emitline('   Num:    Value  Size Type    Bind   Vis      Ndx Name')
@@ -280,7 +281,7 @@ class ReadElf(object):
                     describe_symbol_bind(symbol['st_info']['bind']),
                     describe_symbol_visibility(symbol['st_other']['visibility']),
                     describe_symbol_shndx(symbol['st_shndx']),
-                    symbol.name))
+                    bytes2str(symbol.name)))
         
     def display_relocations(self):
         """ Display the relocations contained in the file
@@ -292,7 +293,7 @@ class ReadElf(object):
 
             has_relocation_sections = True
             self._emitline("\nRelocation section '%s' at offset %s contains %s entries:" % (
-                section.name,
+                bytes2str(section.name),
                 self._format_hex(section['sh_offset']),
                 section.num_relocations()))
             if section.is_RELA():
@@ -330,7 +331,7 @@ class ReadElf(object):
                         symbol['st_value'],
                         fullhex=True, lead0x=False),
                     '  ' if self.elffile.elfclass == 32 else '',
-                    symbol_name))
+                    bytes2str(symbol_name)))
                 if section.is_RELA():
                     self._emit(' %s %x' % (
                         '+' if rel['r_addend'] >= 0 else '-',
@@ -350,7 +351,7 @@ class ReadElf(object):
                 section_spec))
             return
 
-        self._emitline("\nHex dump of section '%s':" % section.name)
+        self._emitline("\nHex dump of section '%s':" % bytes2str(section.name))
         self._note_relocs_for_section(section)
         addr = section['sh_addr']
         data = section.data()
@@ -364,18 +365,18 @@ class ReadElf(object):
             self._emit('  %s ' % self._format_hex(addr, fieldsize=8))
             for i in range(16):
                 if i < linebytes:
-                    self._emit('%2.2x' % ord(data[dataptr + i]))
+                    self._emit('%2.2x' % byte2int(data[dataptr + i]))
                 else:
                     self._emit('  ')
                 if i % 4 == 3:
                     self._emit(' ')
 
             for i in range(linebytes):
-                c = data[dataptr + i]
-                if c >= ' ' and ord(c) < 0x7f:
-                    self._emit(c)
+                c = data[dataptr + i : dataptr + i + 1]
+                if byte2int(c[0]) >= 32 and byte2int(c[0]) < 0x7f:
+                    self._emit(bytes2str(c))
                 else:
-                    self._emit('.')
+                    self._emit(bytes2str(b'.'))
 
             self._emitline()
             addr += linebytes
@@ -393,27 +394,27 @@ class ReadElf(object):
                 section_spec))
             return
 
-        printables = set(string.printable)
-        self._emitline("\nString dump of section '%s':" % section.name)
+        self._emitline("\nString dump of section '%s':" % bytes2str(section.name))
 
         found = False
         data = section.data()
         dataptr = 0
 
         while dataptr < len(data):
-            while dataptr < len(data) and data[dataptr] not in printables:
+            while ( dataptr < len(data) and 
+                    not (32 <= byte2int(data[dataptr]) <= 127)):
                 dataptr += 1
 
             if dataptr >= len(data):
                 break
 
             endptr = dataptr
-            while endptr < len(data) and data[endptr] != '\x00':
+            while endptr < len(data) and byte2int(data[endptr]) != 0:
                 endptr += 1
 
             found = True
             self._emitline('  [%6x]  %s' % (
-                dataptr, data[dataptr:endptr]))
+                dataptr, bytes2str(data[dataptr:endptr])))
 
             dataptr = endptr
 
@@ -479,7 +480,7 @@ class ReadElf(object):
                 return None
         except ValueError:
             # Not a number. Must be a name then
-            return self.elffile.get_section_by_name(spec)
+            return self.elffile.get_section_by_name(str2bytes(spec))
 
     def _note_relocs_for_section(self, section):
         """ If there are relocation sections pointing to the givne section,
@@ -540,7 +541,7 @@ class ReadElf(object):
                     die.abbrev_code,
                     die.tag))
                 
-                for attr in die.attributes.itervalues():
+                for attr in itervalues(die.attributes):
                     name = attr.name
                     # Unknown attribute values are passed-through as integers
                     if isinstance(name, int):
@@ -568,10 +569,10 @@ class ReadElf(object):
             cu_filename = ''
             if len(lineprogram['include_directory']) > 0:
                 cu_filename = '%s/%s' % (
-                    lineprogram['include_directory'][0],
-                    lineprogram['file_entry'][0].name)
+                    bytes2str(lineprogram['include_directory'][0]),
+                    bytes2str(lineprogram['file_entry'][0].name))
             else:
-                cu_filename = lineprogram['file_entry'][0].name
+                cu_filename = bytes2str(lineprogram['file_entry'][0].name)
 
             self._emitline('CU: %s:' % cu_filename)
             self._emitline('File name                            Line number    Starting address')
@@ -588,20 +589,20 @@ class ReadElf(object):
                         if file_entry.dir_index == 0:
                             # current directory
                             self._emitline('\n./%s:[++]' % (
-                                file_entry.name))
+                                bytes2str(file_entry.name)))
                         else:
                             self._emitline('\n%s/%s:' % (
-                                lineprogram['include_directory'][file_entry.dir_index - 1],
-                                file_entry.name))
+                                bytes2str(lineprogram['include_directory'][file_entry.dir_index - 1]),
+                                bytes2str(file_entry.name)))
                     elif entry.command == DW_LNE_define_file:
                         self._emitline('%s:' % (
-                            lineprogram['include_directory'][entry.args[0].dir_index]))
+                            bytes2str(lineprogram['include_directory'][entry.args[0].dir_index])))
                 elif not state.end_sequence:
                     # readelf doesn't print the state after end_sequence
                     # instructions. I think it's a bug but to be compatible
                     # I don't print them too.
                     self._emitline('%-35s  %11d  %18s' % (
-                        lineprogram['file_entry'][state.file - 1].name,
+                        bytes2str(lineprogram['file_entry'][state.file - 1].name),
                         state.line,
                         '0' if state.address == 0 else 
                                self._format_hex(state.address)))
@@ -621,7 +622,7 @@ class ReadElf(object):
                 self._emitline('\n%08x %08x %08x CIE' % (
                     entry.offset, entry['length'], entry['CIE_id']))
                 self._emitline('  Version:               %d' % entry['version'])
-                self._emitline('  Augmentation:          "%s"' % entry['augmentation'])
+                self._emitline('  Augmentation:          "%s"' % bytes2str(entry['augmentation']))
                 self._emitline('  Code alignment factor: %u' % entry['code_alignment_factor'])
                 self._emitline('  Data alignment factor: %d' % entry['data_alignment_factor'])
                 self._emitline('  Return address column: %d' % entry['return_address_register'])
@@ -652,7 +653,7 @@ class ReadElf(object):
                     entry.offset,
                     entry['length'],
                     entry['CIE_id'],
-                    entry['augmentation'],
+                    bytes2str(entry['augmentation']),
                     entry['code_alignment_factor'],
                     entry['data_alignment_factor'],
                     entry['return_address_register']))

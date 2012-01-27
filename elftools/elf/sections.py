@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..construct import CString
-from ..common.utils import struct_parse, elf_assert
+from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
 
 
 class Section(object):
@@ -63,10 +63,8 @@ class StringTableSection(Section):
         """ Get the string stored at the given offset in this string table.
         """
         table_offset = self['sh_offset']
-        return struct_parse(
-            CString(''),
-            self.stream,
-            stream_pos=table_offset + offset)
+        s = parse_cstring_from_stream(self.stream, table_offset + offset)
+        return s
 
 
 class SymbolTableSection(Section):

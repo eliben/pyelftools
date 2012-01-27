@@ -12,6 +12,7 @@ from .constants import *
 from .dwarf_expr import GenericExprVisitor
 from .die import DIE
 from ..common.utils import preserve_stream_pos, dwarf_assert
+from ..common.py3compat import bytes2str
 from .callframe import instruction_name, CIE, FDE
 
 
@@ -184,7 +185,11 @@ def _describe_attr_split_64bit(attr, die, section_offset):
     return '0x%x 0x%x' % (low_word, high_word)
 
 def _describe_attr_strp(attr, die, section_offset):
-    return '(indirect string, offset: 0x%x): %s' % (attr.raw_value, attr.value)
+    return '(indirect string, offset: 0x%x): %s' % (
+        attr.raw_value, bytes2str(attr.value))
+
+def _describe_attr_string(attr, die, section_offset):
+    return bytes2str(attr.value)
 
 def _describe_attr_debool(attr, die, section_offset):
     """ To be consistent with readelf, generate 1 for True flags, 0 for False
@@ -216,7 +221,7 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_data2=_describe_attr_value_passthrough,
     DW_FORM_sdata=_describe_attr_value_passthrough,
     DW_FORM_udata=_describe_attr_value_passthrough,
-    DW_FORM_string=_describe_attr_value_passthrough,
+    DW_FORM_string=_describe_attr_string,
     DW_FORM_strp=_describe_attr_strp,
     DW_FORM_block1=_describe_attr_block,
     DW_FORM_block2=_describe_attr_block,
