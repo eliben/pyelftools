@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from cStringIO import StringIO
+from ..common.py3compat import StringIO
 from ..common.exceptions import ELFError
 from ..common.utils import struct_parse, elf_assert
 from ..construct import ConstructError
@@ -26,7 +26,8 @@ class ELFFile(object):
         Accessible attributes:
 
             stream:
-                The stream holding the data of the file
+                The stream holding the data of the file - must be a binary
+                stream (bytes, not string).
 
             elfclass: 
                 32 or 64 - specifies the word size of the target machine
@@ -173,20 +174,20 @@ class ELFFile(object):
         #
         self.stream.seek(0)
         magic = self.stream.read(4)
-        elf_assert(magic == '\x7fELF', 'Magic number does not match')
+        elf_assert(magic == b'\x7fELF', 'Magic number does not match')
 
         ei_class = self.stream.read(1)
-        if ei_class == '\x01':
+        if ei_class == b'\x01':
             self.elfclass = 32
-        elif ei_class == '\x02':
+        elif ei_class == b'\x02':
             self.elfclass = 64
         else:
             raise ELFError('Invalid EI_CLASS %s' % repr(ei_class))
 
         ei_data = self.stream.read(1)
-        if ei_data == '\x01':
+        if ei_data == b'\x01':
             self.little_endian = True
-        elif ei_data == '\x02':
+        elif ei_data == b'\x02':
             self.little_endian = False
         else:
             raise ELFError('Invalid EI_DATA %s' % repr(ei_data))

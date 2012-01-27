@@ -9,6 +9,7 @@
 import copy
 from collections import namedtuple
 from ..common.utils import (struct_parse, dwarf_assert, preserve_stream_pos)
+from ..common.py3compat import iterkeys
 from .structs import DWARFStructs
 from .constants import * 
 
@@ -434,7 +435,7 @@ _PRIMARY_ARG_MASK = 0b00111111
 # for DW_CFA_* instructions, and mapping their values to names. Since all
 # names were imported from constants with `import *`, we look in globals()
 _OPCODE_NAME_MAP = {}
-for name in list(globals().iterkeys()):
+for name in list(iterkeys(globals())):
     if name.startswith('DW_CFA'):
         _OPCODE_NAME_MAP[globals()[name]] = name
 

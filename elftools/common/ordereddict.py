@@ -262,21 +262,3 @@ class OrderedDict(dict):
         "od.viewitems() -> a set-like object providing a view on od's items"
         return ItemsView(self)
 
-
-
-
-#-------------------------------------------------------------------------------
-if __name__ == "__main__":
-    od = OrderedDict()
-    d = dict()
-    
-    for key in ['joe', 'more', 'tem', 'opsdf', 'dsf']:
-        od[key] = d[key] = key + '1'
-    
-    for k in d:
-        print k, d[k]
-    
-    print '-------- ordered ----------'
-    
-    for k in od:
-        print k, od[k]

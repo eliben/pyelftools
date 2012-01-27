@@ -35,7 +35,7 @@ class RepeatUntilExcluding(Subconstruct):
                 if self.predicate(subobj, context):
                     break
                 obj.append(subobj)
-        except ConstructError, ex:
+        except ConstructError as ex:
             raise ArrayError("missing terminator", ex)
         return obj
     def _build(self, obj, stream, context):

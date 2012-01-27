@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 from collections import namedtuple
 
-from ..common.ordereddict import OrderedDict
+from ..common.py3compat import OrderedDict
 from ..common.utils import struct_parse, preserve_stream_pos
 
 
