@@ -24,14 +24,16 @@ setup(
     description='Library for analyzing ELF files and DWARF debugging information',
     long_description=description,
     license='Public domain',
-    version='0.10',
+    version='0.20',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
     url='https://bitbucket.org/eliben/pyelftools',
     platforms='Cross Platform',
     classifiers = [
-        'Programming Language :: Python :: 2',],
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3',
+        ],
 
     # All packages and sub-packages must be listed here
     packages=[
