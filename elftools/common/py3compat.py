@@ -28,6 +28,8 @@ if PY3:
     def byte2int(b): return b
 
     ifilter = filter
+
+    maxint = sys.maxsize
 else:
     import cStringIO
     StringIO = BytesIO = cStringIO.StringIO
@@ -44,6 +46,8 @@ else:
     byte2int = ord
 
     from itertools import ifilter
+
+    maxint = sys.maxint
 
 
 def iterkeys(d):

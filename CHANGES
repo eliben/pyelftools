@@ -1,6 +1,11 @@
 Changelog
 =========
 
++ Version 0.21 (??)
+
+  - Added new example: dwarf_decode_address - decode function name and
+    file & line information from an address.
+
 + Version 0.20 (27.01.2012)
 
   - Python 3 support
