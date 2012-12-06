@@ -31,7 +31,7 @@ def struct_parse(struct, stream, stream_pos=None):
             stream.seek(stream_pos)
         return struct.parse_stream(stream)
     except ConstructError as e:
-        raise ELFParseError(e.message)
+        raise ELFParseError(str(e))
 
 
 def parse_cstring_from_stream(stream, stream_pos=None):
