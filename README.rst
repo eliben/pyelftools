@@ -16,14 +16,16 @@ requirements are a bit more strict, please see the
 Installing
 ----------
 
-When you unzip the source distribution, run::
-
-    > python setup.py install
-
-Alternatively, **pyelftools** can be installed from PyPI (Python package
-index)::
+**pyelftools** can be installed from PyPI (Python package index)::
 
     > pip install pyelftools
+
+Alternatively, you can download the source distribution for the most recent and
+historic versions from the *Downloads* tab on the `pyelftools project page
+<https://bitbucket.org/eliben/pyelftools>`_ (by going to *Tags*). Then, you can
+install from source, as usual::
+
+    > python setup.py install
 
 How to use it?
 --------------
