@@ -143,6 +143,11 @@ class CompileUnit(object):
                 if die.has_children:
                     parentstack.append(die)
             else:
-                # end of children for the current parent
-                parentstack.pop()
+                # parentstack should not be really empty here. However, some
+                # compilers generate DWARF that has extra NULLs in the end and
+                # we don't want pyelftools to fail parsing them just because of
+                # this.
+                if len(parentstack) > 0:
+                    # end of children for the current parent
+                    parentstack.pop()
 
