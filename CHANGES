@@ -5,6 +5,8 @@ Changelog
 
   - Added new example: dwarf_decode_address - decode function name and
     file & line information from an address.
+  - Issue #7: parsing incorrect DWARF was made a bit more forgiving for cases
+    where serialized DIE trees have extra NULLs at the end.
 
 + Version 0.20 (27.01.2012)
 
