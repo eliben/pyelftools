@@ -3,7 +3,8 @@ Introduction: what is pyelftools?
 
 **pyelftools** is a pure-Python library for parsing and analyzing ELF files
 and DWARF debugging information. See the
-`User's guide <https://bitbucket.org/eliben/pyelftools/wiki/Userguide>`_ for more details.
+`User's guide <https://bitbucket.org/eliben/pyelftools/wiki/Userguide>`_
+for more details.
 
 Pre-requisites
 --------------
