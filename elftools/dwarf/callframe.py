@@ -11,12 +11,12 @@ from collections import namedtuple
 from ..common.utils import (struct_parse, dwarf_assert, preserve_stream_pos)
 from ..common.py3compat import iterkeys
 from .structs import DWARFStructs
-from .constants import * 
+from .constants import *
 
 
 class CallFrameInfo(object):
     """ DWARF CFI (Call Frame Info)
-        
+
         stream, size:
             A stream holding the .debug_frame section, and the size of the
             section in it.
@@ -87,7 +87,7 @@ class CallFrameInfo(object):
             entry_structs.Dwarf_offset(''), self.stream)
 
         is_CIE = (
-            (dwarf_format == 32 and CIE_id == 0xFFFFFFFF) or 
+            (dwarf_format == 32 and CIE_id == 0xFFFFFFFF) or
             CIE_id == 0xFFFFFFFFFFFFFFFF)
 
         if is_CIE:
@@ -251,7 +251,7 @@ class CFIEntry(object):
             reg_order = []
         else: # FDE
             # For a FDE, we need to decode the attached CIE first, because its
-            # decoded table is needed. Its "initial instructions" describe a 
+            # decoded table is needed. Its "initial instructions" describe a
             # line that serves as the base (first) line in the FDE's table.
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
@@ -259,7 +259,7 @@ class CFIEntry(object):
             cur_line = last_line_in_CIE
             cur_line['pc'] = self['initial_location']
             reg_order = copy.copy(cie_decoded_table.reg_order)
-        
+
         table = []
 
         # Keeps a stack for the use of DW_CFA_{remember|restore}_state
