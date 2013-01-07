@@ -27,8 +27,7 @@ class CallFrameInfo(object):
             length field it starts with. The address_size, however, is taken
             from base_structs. This appears to be a limitation of the DWARFv3
             standard, fixed in v4 (where an address_size field exists for each
-            CFI. I had a discussion about this on dwarf-discuss that confirms
-            this.
+            CFI. A discussion I had on dwarf-discuss confirms this.
             Currently for base_structs I simply use the elfclass of the
             containing file, but more sophisticated methods are used by
             libdwarf and others, such as guessing which CU contains which FDEs

@@ -49,15 +49,15 @@ class ReadElf(object):
     """ display_* methods are used to emit output into the output stream
     """
     def __init__(self, file, output):
-        """ file: 
+        """ file:
                 stream object with the ELF file to read
-            
+
             output:
                 output stream to write to
         """
         self.elffile = ELFFile(file)
         self.output = output
-        
+
         # Lazily initialized if a debug dump is requested
         self._dwarfinfo = None
 
@@ -70,31 +70,31 @@ class ReadElf(object):
                                     for b in self.elffile.e_ident_raw))
         header = self.elffile.header
         e_ident = header['e_ident']
-        self._emitline('  Class:                             %s' % 
+        self._emitline('  Class:                             %s' %
                 describe_ei_class(e_ident['EI_CLASS']))
-        self._emitline('  Data:                              %s' % 
+        self._emitline('  Data:                              %s' %
                 describe_ei_data(e_ident['EI_DATA']))
-        self._emitline('  Version:                           %s' % 
+        self._emitline('  Version:                           %s' %
                 describe_ei_version(e_ident['EI_VERSION']))
         self._emitline('  OS/ABI:                            %s' %
                 describe_ei_osabi(e_ident['EI_OSABI']))
-        self._emitline('  ABI Version:                       %d' % 
+        self._emitline('  ABI Version:                       %d' %
                 e_ident['EI_ABIVERSION'])
         self._emitline('  Type:                              %s' %
                 describe_e_type(header['e_type']))
-        self._emitline('  Machine:                           %s' % 
+        self._emitline('  Machine:                           %s' %
                 describe_e_machine(header['e_machine']))
         self._emitline('  Version:                           %s' %
                 describe_e_version_numeric(header['e_version']))
-        self._emitline('  Entry point address:               %s' % 
+        self._emitline('  Entry point address:               %s' %
                 self._format_hex(header['e_entry']))
-        self._emit('  Start of program headers:          %s' % 
+        self._emit('  Start of program headers:          %s' %
                 header['e_phoff'])
         self._emitline(' (bytes into file)')
-        self._emit('  Start of section headers:          %s' % 
+        self._emit('  Start of section headers:          %s' %
                 header['e_shoff'])
         self._emitline(' (bytes into file)')
-        self._emitline('  Flags:                             %s' % 
+        self._emitline('  Flags:                             %s' %
                 self._format_hex(header['e_flags']))
         self._emitline('  Size of this header:               %s (bytes)' %
                 header['e_ehsize'])
@@ -173,14 +173,14 @@ class ReadElf(object):
                     self._format_hex(segment['p_align'], lead0x=False)))
 
             if isinstance(segment, InterpSegment):
-                self._emitline('      [Requesting program interpreter: %s]' % 
+                self._emitline('      [Requesting program interpreter: %s]' %
                     bytes2str(segment.get_interp_name()))
 
         # Sections to segments mapping
         #
         if self.elffile.num_sections() == 0:
             # No sections? We're done
-            return 
+            return
 
         self._emitline('\n Section to Segment mapping:')
         self._emitline('  Segment Sections...')
@@ -189,7 +189,7 @@ class ReadElf(object):
             self._emit('   %2.2d     ' % nseg)
 
             for section in self.elffile.iter_sections():
-                if (    not section.is_null() and 
+                if (    not section.is_null() and
                         segment.section_in_segment(section)):
                     self._emit('%s ' % bytes2str(section.name))
 
@@ -282,7 +282,7 @@ class ReadElf(object):
                     describe_symbol_visibility(symbol['st_other']['visibility']),
                     describe_symbol_shndx(symbol['st_shndx']),
                     bytes2str(symbol.name)))
-        
+
     def display_relocations(self):
         """ Display the relocations contained in the file
         """
@@ -307,9 +307,9 @@ class ReadElf(object):
             for rel in section.iter_relocations():
                 hexwidth = 8 if self.elffile.elfclass == 32 else 12
                 self._emit('%s  %s %-17.17s' % (
-                    self._format_hex(rel['r_offset'], 
+                    self._format_hex(rel['r_offset'],
                         fieldsize=hexwidth, lead0x=False),
-                    self._format_hex(rel['r_info'], 
+                    self._format_hex(rel['r_info'],
                         fieldsize=hexwidth, lead0x=False),
                     describe_reloc_type(
                         rel['r_info_type'], self.elffile)))
@@ -340,7 +340,7 @@ class ReadElf(object):
 
         if not has_relocation_sections:
             self._emitline('\nThere are no relocations in this file.')
-        
+
     def display_hex_dump(self, section_spec):
         """ Display a hex dump of a section. section_spec is either a section
             number or a name.
@@ -401,7 +401,7 @@ class ReadElf(object):
         dataptr = 0
 
         while dataptr < len(data):
-            while ( dataptr < len(data) and 
+            while ( dataptr < len(data) and
                     not (32 <= byte2int(data[dataptr]) <= 127)):
                 dataptr += 1
 
@@ -429,7 +429,7 @@ class ReadElf(object):
         self._init_dwarfinfo()
         if self._dwarfinfo is None:
             return
-        
+
         set_global_machine_arch(self.elffile.get_machine_arch())
 
         if dump_what == 'info':
@@ -453,7 +453,7 @@ class ReadElf(object):
                 If None, the minimal required field size will be used.
 
             fullhex:
-                If True, override fieldsize to set it to the maximal size 
+                If True, override fieldsize to set it to the maximal size
                 needed for the elfclass
 
             lead0x:
@@ -467,7 +467,7 @@ class ReadElf(object):
         else:
             field = '%' + '0%sx' % fieldsize
         return s + field % addr
-        
+
     def _section_from_spec(self, spec):
         """ Retrieve a section given a "spec" (either number or name).
             Return None if no such section exists in the file.
@@ -475,7 +475,7 @@ class ReadElf(object):
         try:
             num = int(spec)
             if num < self.elffile.num_sections():
-                return self.elffile.get_section(num) 
+                return self.elffile.get_section(num)
             else:
                 return None
         except ValueError:
@@ -500,7 +500,7 @@ class ReadElf(object):
         """
         if self._dwarfinfo is not None:
             return
-        
+
         if self.elffile.has_dwarf_info():
             self._dwarfinfo = self.elffile.get_dwarf_info()
         else:
@@ -510,7 +510,7 @@ class ReadElf(object):
         """ Dump the debugging info section.
         """
         self._emitline('Contents of the .debug_info section:\n')
-        
+
         # Offset of the .debug_info section in the stream
         section_offset = self._dwarfinfo.debug_info_sec.global_offset
 
@@ -523,8 +523,8 @@ class ReadElf(object):
             self._emitline('   Version:       %s' % cu['version']),
             self._emitline('   Abbrev Offset: %s' % cu['debug_abbrev_offset']),
             self._emitline('   Pointer Size:  %s' % cu['address_size'])
-            
-            # The nesting depth of each DIE within the tree of DIEs must be 
+
+            # The nesting depth of each DIE within the tree of DIEs must be
             # displayed. To implement this, a counter is incremented each time
             # the current DIE has children, and decremented when a null die is
             # encountered. Due to the way the DIE tree is serialized, this will
@@ -540,7 +540,7 @@ class ReadElf(object):
                     die.offset,
                     die.abbrev_code,
                     die.tag))
-                
+
                 for attr in itervalues(die.attributes):
                     name = attr.name
                     # Unknown attribute values are passed-through as integers
@@ -551,10 +551,10 @@ class ReadElf(object):
                         name,
                         describe_attr_value(
                             attr, die, section_offset)))
-                
+
                 if die.has_children:
                     die_depth += 1
-                    
+
         self._emitline()
 
     def _dump_debug_line_programs(self):
@@ -604,7 +604,7 @@ class ReadElf(object):
                     self._emitline('%-35s  %11d  %18s' % (
                         bytes2str(lineprogram['file_entry'][state.file - 1].name),
                         state.line,
-                        '0' if state.address == 0 else 
+                        '0' if state.address == 0 else
                                self._format_hex(state.address)))
                 if entry.command == DW_LNS_copy:
                     # Another readelf oddity...
@@ -679,14 +679,14 @@ class ReadElf(object):
             # ra_regnum is always listed last with a special heading.
             decoded_table = entry.get_decoded()
             reg_order = sorted(ifilter(
-                lambda r: r != ra_regnum, 
+                lambda r: r != ra_regnum,
                 decoded_table.reg_order))
 
             # Headings for the registers
             for regnum in reg_order:
                 self._emit('%-6s' % describe_reg_name(regnum))
             self._emitline('ra      ')
-            
+
             # Now include ra_regnum in reg_order to print its values similarly
             # to the other registers.
             reg_order.append(ra_regnum)
