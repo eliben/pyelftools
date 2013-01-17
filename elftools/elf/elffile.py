@@ -149,7 +149,7 @@ class ELFFile(object):
 
     def get_machine_arch(self):
         """ Return the machine architecture, as detected from the ELF header.
-            At the moment the only supported architectures are x86 and x64.
+            Not all architectures are supported at the moment.
         """
         if self['e_machine'] == 'EM_X86_64':
             return 'x64'
