@@ -78,6 +78,7 @@ ENUM_E_MACHINE = dict(
     EM_MIPS=8,
     EM_S370=9,
     EM_MIPS_RS4_BE=10,
+    EM_ARM=40,
     EM_IA_64=50,
     EM_X86_64=62,
     EM_AVR=83,
