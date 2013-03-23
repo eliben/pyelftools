@@ -25,9 +25,9 @@ testlog.addHandler(logging.StreamHandler(sys.stdout))
 
 # Set the path for calling readelf. By default this is the system readelf.
 #
-READELF_PATH = 'readelf'
 READELF_PATH = '/home/eliben/test/binutils-2.23.52/binutils/readelf'
-
+if not os.path.exists(READELF_PATH):
+    READELF_PATH = 'readelf'
 
 def discover_testfiles(rootdir):
     """ Discover test files in the given directory. Yield them one by one.
@@ -167,6 +167,7 @@ def main():
 
     if options.verbose:
         testlog.info('Running in verbose mode')
+        testlog.info('readelf path = %s' % READELF_PATH)
         testlog.info('Given list of files: %s' % args)
 
     # If file names are given as command-line arguments, only these files
