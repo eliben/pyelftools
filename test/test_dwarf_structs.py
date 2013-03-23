@@ -1,3 +1,9 @@
+#-------------------------------------------------------------------------------
+# elftools tests
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
 try:
     import unittest2 as unittest
 except ImportError:
@@ -20,9 +26,9 @@ class TestDWARFStructs(unittest.TestCase):
             b'\x06' +                # opcode_base
             b'\x00\x01\x04\x08\x0C' + # standard_opcode_lengths
             # 2 dir names followed by a NULL
-            b'\x61\x62\x00\x70\x00\x00' + 
+            b'\x61\x62\x00\x70\x00\x00' +
             # a file entry
-            b'\x61\x72\x00\x0C\x0D\x0F' + 
+            b'\x61\x72\x00\x0C\x0D\x0F' +
             # and another entry
             b'\x45\x50\x51\x00\x86\x12\x07\x08' +
             # followed by NULL

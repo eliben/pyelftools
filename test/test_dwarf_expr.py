@@ -1,3 +1,9 @@
+#-------------------------------------------------------------------------------
+# elftools tests
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
 try:
     import unittest2 as unittest
 except ImportError:
@@ -23,12 +29,12 @@ class TestExprDumper(unittest.TestCase):
         self.visitor.process_expr([0x1b])
         self.assertEqual(self.visitor.get_str(),
             'DW_OP_div')
-        
+
         self.setUp()
         self.visitor.process_expr([0x74, 0x82, 0x01])
         self.assertEqual(self.visitor.get_str(),
             'DW_OP_breg4 (rsi): 130')
-        
+
         self.setUp()
         self.visitor.process_expr([0x91, 0x82, 0x01])
         self.assertEqual(self.visitor.get_str(),

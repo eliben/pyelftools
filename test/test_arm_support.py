@@ -1,3 +1,9 @@
+#-------------------------------------------------------------------------------
+# elftools tests
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
 try:
     import unittest2 as unittest
 except ImportError:

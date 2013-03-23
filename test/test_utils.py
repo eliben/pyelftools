@@ -1,3 +1,9 @@
+#-------------------------------------------------------------------------------
+# elftools tests
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
 try:
     import unittest2 as unittest
 except ImportError:
@@ -14,7 +20,7 @@ from elftools.common.utils import (parse_cstring_from_stream,
 class Test_parse_cstring_from_stream(unittest.TestCase):
     def _make_random_bytes(self, n):
         return b''.join(int2byte(randint(32, 127)) for i in range(n))
-        
+
     def test_small1(self):
         sio = BytesIO(b'abcdefgh\x0012345')
         self.assertEqual(parse_cstring_from_stream(sio), b'abcdefgh')

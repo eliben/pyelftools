@@ -1,3 +1,9 @@
+#-------------------------------------------------------------------------------
+# elftools tests
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
 try:
     import unittest2 as unittest
 except ImportError:
@@ -19,7 +25,7 @@ class TestCallFrame(unittest.TestCase):
         self.assertIsInstance(instr, CallFrameInstruction)
         self.assertEqual(instruction_name(instr.opcode), name)
         self.assertEqual(instr.args, args)
-       
+
     def test_spec_sample_d6(self):
         # D.6 sample in DWARFv3
         s = BytesIO()
@@ -40,7 +46,7 @@ class TestCallFrame(unittest.TestCase):
             b'\x08\x07' +
             b'\x09\x08\x01' +
             b'\x00' +
-            
+
             # then comes the FDE
             b'\x28\x00\x00\x00' +        # length
             b'\x00\x00\x00\x00' +        # CIE_pointer (to CIE at 0)
@@ -125,7 +131,7 @@ class TestCallFrame(unittest.TestCase):
         self.assertEqual(decoded_FDE.table[9]['pc'], 0x11223344 + 76)
 
     def test_describe_CFI_instructions(self):
-        # The data here represents a single CIE 
+        # The data here represents a single CIE
         data = (b'' +
             b'\x16\x00\x00\x00' +        # length
             b'\xff\xff\xff\xff' +        # CIE_id
@@ -141,7 +147,7 @@ class TestCallFrame(unittest.TestCase):
 
         set_global_machine_arch('x86')
         self.assertEqual(describe_CFI_instructions(entries[0]),
-            (   '  DW_CFA_def_cfa: r7 (edi) ofs 2\n' + 
+            (   '  DW_CFA_def_cfa: r7 (edi) ofs 2\n' +
                 '  DW_CFA_expression: r2 (edx) (DW_OP_addr: 201; DW_OP_deref; DW_OP_deref)\n'))
 
 
