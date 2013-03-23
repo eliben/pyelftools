@@ -14,6 +14,7 @@ python setup.py build sdist upload
 Preparing a new release
 -----------------------
 
+* Run readelf tests with up-to-date readelf (from the new binutils)
 * Run all tests with Python 2.7 before packaging, on Linux
 * Make sure new version was updated everywhere appropriate
 * Packaging done on Linux
