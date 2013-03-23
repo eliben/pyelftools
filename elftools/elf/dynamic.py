@@ -29,7 +29,8 @@ class DynamicTag(object):
         self.entry = entry
         if entry.d_tag in self._HANDLED_TAGS:
             dynstr = elffile.get_section_by_name(b'.dynstr')
-            setattr(self, entry.d_tag[3:].lower(), dynstr.get_string(self.entry.d_val))
+            setattr(self, entry.d_tag[3:].lower(),
+                    dynstr.get_string(self.entry.d_val))
 
     def __getitem__(self, name):
         """ Implement dict-like access to entries

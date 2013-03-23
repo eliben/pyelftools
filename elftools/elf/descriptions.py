@@ -24,7 +24,7 @@ def describe_ei_version(x):
     if x == 'EV_CURRENT':
         s += ' (current)'
     return s
-    
+
 def describe_ei_osabi(x):
     return _DESCR_EI_OSABI.get(x, _unknown)
 
@@ -43,7 +43,7 @@ def describe_p_type(x):
 def describe_p_flags(x):
     s = ''
     for flag in (P_FLAGS.PF_R, P_FLAGS.PF_W, P_FLAGS.PF_X):
-        s += _DESCR_P_FLAGS[flag] if (x & flag) else ' ' 
+        s += _DESCR_P_FLAGS[flag] if (x & flag) else ' '
     return s
 
 def describe_sh_type(x):
@@ -87,7 +87,7 @@ def describe_dyn_tag(x):
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
 
-    
+
 _DESCR_EI_CLASS = dict(
     ELFCLASSNONE='none',
     ELFCLASS32='ELF32',
