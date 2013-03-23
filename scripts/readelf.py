@@ -23,6 +23,8 @@ from elftools.common.exceptions import ELFError
 from elftools.common.py3compat import (
         ifilter, byte2int, bytes2str, itervalues, str2bytes)
 from elftools.elf.elffile import ELFFile
+from elftools.elf.dynamic import DynamicSection, DynamicSegment
+from elftools.elf.enums import ENUM_D_TAG
 from elftools.elf.segments import InterpSegment
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.relocation import RelocationSection
@@ -32,7 +34,7 @@ from elftools.elf.descriptions import (
     describe_e_version_numeric, describe_p_type, describe_p_flags,
     describe_sh_type, describe_sh_flags,
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
-    describe_symbol_shndx, describe_reloc_type,
+    describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
     )
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
@@ -282,6 +284,49 @@ class ReadElf(object):
                     describe_symbol_visibility(symbol['st_other']['visibility']),
                     describe_symbol_shndx(symbol['st_shndx']),
                     bytes2str(symbol.name)))
+
+    def display_dynamic_tags(self):
+        """ Display the dynamic tags contained in the file
+        """
+        has_dynamic_section = False
+        for section in self.elffile.iter_sections():
+            if not isinstance(section, DynamicSection):
+                continue
+
+            has_relocation_sections = True
+            self._emitline("\nDynamic section at offset %s contains %s entries:" % (
+                self._format_hex(section['sh_offset']),
+                section.num_tags()))
+            self._emitline("  Tag        Type                         Name/Value")
+
+            hexwidth = 8 if self.elffile.elfclass == 32 else 16
+            padding = 20 + (8 if self.elffile.elfclass == 32 else 0)
+            for tag in section.iter_tags():
+                if tag.entry.d_tag == 'DT_NEEDED':
+                    parsed = 'Shared library: [%s]' % tag.needed
+                elif tag.entry.d_tag == 'DT_RPATH':
+                    parsed = 'Library rpath: [%s]' % tag.rpath
+                elif tag.entry.d_tag == 'DT_RUNPATH':
+                    parsed = 'Library runpath: [%s]' % tag.runpath
+                elif (tag.entry.d_tag.endswith('SZ') or
+                      tag.entry.d_tag.endswith('ENT')):
+                    parsed = '%i (bytes)' % tag['d_val']
+                elif tag.entry.d_tag.endswith('NUM'):
+                    parsed = '%i' % tag['d_val']
+                elif tag.entry.d_tag == 'DT_PLTREL':
+                    s = describe_dyn_tag(tag.entry.d_val)
+                    if s.startswith('DT_'):
+                        s = s[3:]
+                    parsed = '%s' % s
+                else:
+                    parsed = '%#x' % tag['d_val']
+
+                self._emitline(" %s %-*s %s" % (
+                    self._format_hex(ENUM_D_TAG.get(tag.entry.d_tag, tag.entry.d_tag),
+                        fieldsize=hexwidth, lead0x=True),
+                    padding,
+                    '(%s)' % (tag.entry.d_tag[3:],),
+                    parsed))
 
     def display_relocations(self):
         """ Display the relocations contained in the file
@@ -727,6 +772,9 @@ def main(stream=None):
             add_help_option=False, # -h is a real option of readelf
             prog='readelf.py',
             version=VERSION_STRING)
+    optparser.add_option('-d', '--dynamic',
+            action='store_true', dest='show_dynamic_tags',
+            help='Display the dynamic section')
     optparser.add_option('-H', '--help',
             action='store_true', dest='help',
             help='Display this information')
@@ -784,6 +832,8 @@ def main(stream=None):
             if do_program_header:
                 readelf.display_program_headers(
                         show_heading=not do_file_header)
+            if options.show_dynamic_tags:
+                readelf.display_dynamic_tags()
             if options.show_symbols:
                 readelf.display_symbol_tables()
             if options.show_relocs:

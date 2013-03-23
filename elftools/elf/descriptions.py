@@ -6,7 +6,9 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from .enums import ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
+from .enums import (
+    ENUM_D_TAG, ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
+    )
 from .constants import P_FLAGS, SH_FLAGS
 from ..common.py3compat import iteritems
 
@@ -77,6 +79,9 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_x64.get(x, _unknown)
     else:
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
+
+def describe_dyn_tag(x):
+    return _DESCR_D_TAG.get(x, _unknown)
 
 
 #-------------------------------------------------------------------------------
@@ -237,4 +242,5 @@ _DESCR_RELOC_TYPE_i386 = dict(
 _DESCR_RELOC_TYPE_x64 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_x64))
 
-
+_DESCR_D_TAG = dict(
+        (v, k) for k, v in iteritems(ENUM_D_TAG))

@@ -13,6 +13,7 @@ from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection, NullSection)
+from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
 from .segments import Segment, InterpSegment
 from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
@@ -210,6 +211,8 @@ class ELFFile(object):
         segtype = segment_header['p_type']
         if segtype == 'PT_INTERP':
             return InterpSegment(segment_header, self.stream)
+        elif segtype == 'PT_DYNAMIC':
+            return DynamicSegment(segment_header, self.stream, self)
         else:
             return Segment(segment_header, self.stream)
 
@@ -243,6 +246,8 @@ class ELFFile(object):
         elif sectype in ('SHT_REL', 'SHT_RELA'):
             return RelocationSection(
                 section_header, name, self.stream, self)
+        elif sectype == 'SHT_DYNAMIC':
+            return DynamicSection(section_header, name, self.stream, self)
         else:
             return Section(section_header, name, self.stream)
 

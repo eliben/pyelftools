@@ -72,6 +72,7 @@ class ELFStructs(object):
         self._create_shdr()
         self._create_sym()
         self._create_rel()
+        self._create_dyn()
     
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
@@ -163,6 +164,13 @@ class ELFStructs(object):
             r_info_sym,
             r_info_type,
             self.Elf_sxword('r_addend'),
+        )
+
+    def _create_dyn(self):
+        self.Elf_Dyn = Struct('Elf_Dyn',
+            Enum(self.Elf_sxword('d_tag'), **ENUM_D_TAG),
+            self.Elf_xword('d_val'),
+            Value('d_ptr', lambda ctx: ctx['d_val']),
         )
 
     def _create_sym(self):

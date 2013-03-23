@@ -40,7 +40,7 @@ def run_test_on_file(filename, verbose=False):
     success = True
     testlog.info("Test file '%s'" % filename)
     for option in [
-            '-e', '-s', '-r', '-x.text', '-p.shstrtab',
+            '-e', '-d', '-s', '-r', '-x.text', '-p.shstrtab',
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp']:
         if verbose: testlog.info("..option='%s'" % option)
