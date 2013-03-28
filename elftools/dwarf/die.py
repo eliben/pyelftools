@@ -195,5 +195,3 @@ class DIE(object):
         else:
             value = raw_value
         return value
-
-
