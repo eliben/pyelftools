@@ -577,14 +577,14 @@ class ReadElf(object):
             #
             die_depth = 0
             for die in cu.iter_DIEs():
-                if die.is_null():
-                    die_depth -= 1
-                    continue
-                self._emitline(' <%s><%x>: Abbrev Number: %s (%s)' % (
+                self._emitline(' <%s><%x>: Abbrev Number: %s%s' % (
                     die_depth,
                     die.offset,
                     die.abbrev_code,
-                    die.tag))
+                    (' (%s)' % die.tag) if not die.is_null() else ''))
+                if die.is_null():
+                    die_depth -= 1
+                    continue
 
                 for attr in itervalues(die.attributes):
                     name = attr.name

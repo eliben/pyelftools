@@ -7,8 +7,10 @@ Changelog
     file & line information from an address.
   - Issue #7: parsing incorrect DWARF was made a bit more forgiving for cases
     where serialized DIE trees have extra NULLs at the end.
-  - Pull request 6: very initial support for ARM ELF files (Matthew Fernandez).
-  - Pull request 7: support for dumping the dynamic section (Mike Frysinger).
+  - Very initial support for ARM ELF files (Matthew Fernandez - pull
+    request #6).
+  - Support support for dumping the dynamic section (Mike Frysinger - pull
+    request #7).
 
 + Version 0.20 (27.01.2012)
 

@@ -59,7 +59,7 @@ class DIE(object):
                 Specifies whether this DIE has children
 
             abbrev_code:
-                The abbreviation code pointing to an abbreviation entry (not
+                The abbreviation code pointing to an abbreviation entry (note
                 that this is for informational pusposes only - this object
                 interacts with its abbreviation table transparently).
 
