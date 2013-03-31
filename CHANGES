@@ -11,6 +11,7 @@ Changelog
     request #6).
   - Support support for dumping the dynamic section (Mike Frysinger - pull
     request #7).
+  - Output of scripts/readelf.py now matches that of binutils 2.23.52
 
 + Version 0.20 (27.01.2012)
 
