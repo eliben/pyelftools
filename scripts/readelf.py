@@ -566,7 +566,8 @@ class ReadElf(object):
                 self._format_hex(cu['unit_length']),
                 '%s-bit' % cu.dwarf_format()))
             self._emitline('   Version:       %s' % cu['version']),
-            self._emitline('   Abbrev Offset: %s' % cu['debug_abbrev_offset']),
+            self._emitline('   Abbrev Offset: %s' % (
+                self._format_hex(cu['debug_abbrev_offset']))),
             self._emitline('   Pointer Size:  %s' % cu['address_size'])
 
             # The nesting depth of each DIE within the tree of DIEs must be
@@ -611,13 +612,14 @@ class ReadElf(object):
         for cu in self._dwarfinfo.iter_CUs():
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
 
-            cu_filename = ''
+            cu_filename = bytes2str(lineprogram['file_entry'][0].name)
             if len(lineprogram['include_directory']) > 0:
-                cu_filename = '%s/%s' % (
-                    bytes2str(lineprogram['include_directory'][0]),
-                    bytes2str(lineprogram['file_entry'][0].name))
-            else:
-                cu_filename = bytes2str(lineprogram['file_entry'][0].name)
+                dir_index = lineprogram['file_entry'][0].dir_index
+                if dir_index > 0:
+                    dir = lineprogram['include_directory'][dir_index - 1]
+                else:
+                    dir = '.'
+                cu_filename = '%s/%s' % (bytes2str(dir), cu_filename)
 
             self._emitline('CU: %s:' % cu_filename)
             self._emitline('File name                            Line number    Starting address')
