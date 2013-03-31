@@ -288,12 +288,10 @@ class ReadElf(object):
     def display_dynamic_tags(self):
         """ Display the dynamic tags contained in the file
         """
-        has_dynamic_section = False
         for section in self.elffile.iter_sections():
             if not isinstance(section, DynamicSection):
                 continue
 
-            has_relocation_sections = True
             self._emitline("\nDynamic section at offset %s contains %s entries:" % (
                 self._format_hex(section['sh_offset']),
                 section.num_tags()))
