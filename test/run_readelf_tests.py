@@ -134,7 +134,8 @@ def compare_output(s1, s2):
             elif 'at_const_value' in lines1[i]:
                 # On 32-bit machines, readelf doesn't correctly represent
                 # some boundary LEB128 numbers
-                num2 = int(lines2_parts[-1])
+                val = lines2_parts[-1]
+                num2 = int(val, 16 if val.startswith('0x') else 10)
                 if num2 <= -2**31 and '32' in platform.architecture()[0]:
                     ok = True
             elif 'os/abi' in lines1[i]:

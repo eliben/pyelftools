@@ -199,7 +199,7 @@ def _describe_attr_debool(attr, die, section_offset):
 
 def _describe_attr_block(attr, die, section_offset):
     s = '%s byte block: ' % len(attr.value)
-    s += ' '.join('%x' % item for item in attr.value)
+    s += ' '.join('%x' % item for item in attr.value) + ' '
     return s
 
 
@@ -213,7 +213,7 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_ref_udata=_describe_attr_ref,
     DW_FORM_ref_addr=_describe_attr_hex_addr,
     DW_FORM_data4=_describe_attr_hex,
-    DW_FORM_data8=_describe_attr_split_64bit,
+    DW_FORM_data8=_describe_attr_hex,
     DW_FORM_addr=_describe_attr_hex,
     DW_FORM_sec_offset=_describe_attr_hex,
     DW_FORM_flag=_describe_attr_debool,
