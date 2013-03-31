@@ -300,13 +300,13 @@ class ReadElf(object):
             padding = 20 + (8 if self.elffile.elfclass == 32 else 0)
             for tag in section.iter_tags():
                 if tag.entry.d_tag == 'DT_NEEDED':
-                    parsed = 'Shared library: [%s]' % tag.needed
+                    parsed = 'Shared library: [%s]' % bytes2str(tag.needed)
                 elif tag.entry.d_tag == 'DT_RPATH':
-                    parsed = 'Library rpath: [%s]' % tag.rpath
+                    parsed = 'Library rpath: [%s]' % bytes2str(tag.rpath)
                 elif tag.entry.d_tag == 'DT_RUNPATH':
-                    parsed = 'Library runpath: [%s]' % tag.runpath
+                    parsed = 'Library runpath: [%s]' % bytes2str(tag.runpath)
                 elif tag.entry.d_tag == 'DT_SONAME':
-                    parsed = 'Library soname: [%s]' % tag.soname
+                    parsed = 'Library soname: [%s]' % bytes2str(tag.soname)
                 elif (tag.entry.d_tag.endswith('SZ') or
                       tag.entry.d_tag.endswith('ENT')):
                     parsed = '%i (bytes)' % tag['d_val']
@@ -618,7 +618,7 @@ class ReadElf(object):
                 if dir_index > 0:
                     dir = lineprogram['include_directory'][dir_index - 1]
                 else:
-                    dir = '.'
+                    dir = b'.'
                 cu_filename = '%s/%s' % (bytes2str(dir), cu_filename)
 
             self._emitline('CU: %s:' % cu_filename)

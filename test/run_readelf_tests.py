@@ -168,6 +168,7 @@ def main():
 
     if options.verbose:
         testlog.info('Running in verbose mode')
+        testlog.info('Python executable = %s' % sys.executable)
         testlog.info('readelf path = %s' % READELF_PATH)
         testlog.info('Given list of files: %s' % args)
 

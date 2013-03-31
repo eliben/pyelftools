@@ -28,6 +28,10 @@ install from source, as usual::
 
     > python setup.py install
 
+Since **pyelftools** is a work in progress, it's recommended to get the ``tip``
+tag ("trunk") from *Downloads* or just clone the Mercurial repository, to get
+the latest code.
+
 How to use it?
 --------------
 

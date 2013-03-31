@@ -41,6 +41,8 @@ def parse_cstring_from_stream(stream, stream_pos=None):
         If stream_pos is provided, the stream is seeked to this position before
         the parsing is done. Otherwise, the current position of the stream is
         used.
+        Note: a bytes object is returned here, because this is what's read from
+        the binary file.
     """
     if stream_pos is not None:
         stream.seek(stream_pos)

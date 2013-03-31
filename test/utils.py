@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import os, subprocess, tempfile
+import os, sys, subprocess, tempfile
 from elftools.common.py3compat import bytes2str
 
 
@@ -17,7 +17,7 @@ def run_exe(exe_path, args):
     """
     popen_cmd = [exe_path] + args
     if os.path.splitext(exe_path)[1] == '.py':
-        popen_cmd.insert(0, 'python')
+        popen_cmd.insert(0, sys.executable)
     proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE)
     proc_stdout = proc.communicate()[0]
     return proc.returncode, bytes2str(proc_stdout)
