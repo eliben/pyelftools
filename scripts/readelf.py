@@ -297,7 +297,6 @@ class ReadElf(object):
                 section.num_tags()))
             self._emitline("  Tag        Type                         Name/Value")
 
-            hexwidth = 8 if self.elffile.elfclass == 32 else 16
             padding = 20 + (8 if self.elffile.elfclass == 32 else 0)
             for tag in section.iter_tags():
                 if tag.entry.d_tag == 'DT_NEEDED':
@@ -306,6 +305,8 @@ class ReadElf(object):
                     parsed = 'Library rpath: [%s]' % tag.rpath
                 elif tag.entry.d_tag == 'DT_RUNPATH':
                     parsed = 'Library runpath: [%s]' % tag.runpath
+                elif tag.entry.d_tag == 'DT_SONAME':
+                    parsed = 'Library soname: [%s]' % tag.soname
                 elif (tag.entry.d_tag.endswith('SZ') or
                       tag.entry.d_tag.endswith('ENT')):
                     parsed = '%i (bytes)' % tag['d_val']
@@ -321,7 +322,7 @@ class ReadElf(object):
 
                 self._emitline(" %s %-*s %s" % (
                     self._format_hex(ENUM_D_TAG.get(tag.entry.d_tag, tag.entry.d_tag),
-                        fieldsize=hexwidth, lead0x=True),
+                        fullhex=True, lead0x=True),
                     padding,
                     '(%s)' % (tag.entry.d_tag[3:],),
                     parsed))

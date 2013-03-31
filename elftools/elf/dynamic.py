@@ -19,11 +19,13 @@ class DynamicTag(object):
     """ Dynamic Tag object - representing a single dynamic tag entry from a
         dynamic section.
 
-        Similarly to Section objects, allows dictionary-like access to the
-        dynamic tag.
+        Allows dictionary-like access to the dynamic structure. For special
+        tags (those listed in the _HANDLED_TAGS set below), creates additional
+        attributes for convenience. For example, .soname will contain the actual
+        value of DT_SONAME (fetched from the dynamic symbol table).
     """
-
-    _HANDLED_TAGS = frozenset(['DT_NEEDED', 'DT_RPATH', 'DT_RUNPATH'])
+    _HANDLED_TAGS = frozenset(
+        ['DT_NEEDED', 'DT_RPATH', 'DT_RUNPATH', 'DT_SONAME'])
 
     def __init__(self, entry, elffile):
         self.entry = entry
@@ -49,11 +51,13 @@ class DynamicTag(object):
 
 
 class Dynamic(object):
+    """ Shared functionality between dynamic sections and segments.
+    """
     def __init__(self, stream, elffile, position):
         self._stream = stream
         self._elffile = elffile
         self._elfstructs = elffile.structs
-        self._num_tags = -1;
+        self._num_tags = -1
         self._offset = position
         self._tagsize = self._elfstructs.Elf_Dyn.sizeof()
 
