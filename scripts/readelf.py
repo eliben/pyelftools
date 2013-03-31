@@ -310,7 +310,8 @@ class ReadElf(object):
                 elif (tag.entry.d_tag.endswith('SZ') or
                       tag.entry.d_tag.endswith('ENT')):
                     parsed = '%i (bytes)' % tag['d_val']
-                elif tag.entry.d_tag.endswith('NUM'):
+                elif (tag.entry.d_tag.endswith('NUM') or
+                      tag.entry.d_tag.endswith('COUNT')):
                     parsed = '%i' % tag['d_val']
                 elif tag.entry.d_tag == 'DT_PLTREL':
                     s = describe_dyn_tag(tag.entry.d_val)
