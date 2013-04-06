@@ -24,6 +24,11 @@ testlog.setLevel(logging.DEBUG)
 testlog.addHandler(logging.StreamHandler(sys.stdout))
 
 # Set the path for calling readelf. By default this is the system readelf.
+# The first assignment to READELF_PATH reflects the binutils version I used
+# to test the current pyelftools with.
+# Alas, binutils's readelf changes its output slightly even between minor
+# releases so a lot of bogus differences can occur; this is why an exact version
+# is specified to reproduce the tests.
 #
 READELF_PATH = '/home/eliben/test/binutils-2.23.52/binutils/readelf'
 if not os.path.exists(READELF_PATH):
