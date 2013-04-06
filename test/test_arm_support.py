@@ -8,15 +8,15 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
-import sys
 import os
 
-sys.path.extend(['.', '..'])
+from test.utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
 
 class TestARMSupport(unittest.TestCase):
     def test_hello(self):
-        with open(os.path.join('test', 'testfiles', 'simple_gcc.elf.arm'), 'rb') as f:
+        with open(os.path.join('test', 'testfiles',
+                               'simple_gcc.elf.arm'), 'rb') as f:
             elf = ELFFile(f)
             self.assertEqual(elf.get_machine_arch(), 'ARM')
 
@@ -26,5 +26,5 @@ class TestARMSupport(unittest.TestCase):
             self.assertEqual(elf.num_segments(), 2)
 
 if __name__ == '__main__':
-    sys.exit(unittest.main())
+    unittest.main()
 

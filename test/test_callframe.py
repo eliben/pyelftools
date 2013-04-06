@@ -8,9 +8,8 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
-import sys
 
-sys.path.extend(['.', '..'])
+from test.utils import setup_syspath; setup_syspath()
 from elftools.common.py3compat import BytesIO
 from elftools.dwarf.callframe import (
     CallFrameInfo, CIE, FDE, instruction_name, CallFrameInstruction,

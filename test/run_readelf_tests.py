@@ -13,7 +13,6 @@ from difflib import SequenceMatcher
 from optparse import OptionParser
 import logging
 import platform
-sys.path.insert(0, '.') # to load *our* test, not Python's test
 from test.utils import run_exe, is_in_rootdir, dump_output_to_temp_files
 
 
