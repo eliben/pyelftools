@@ -11,12 +11,9 @@ import os, sys
 from optparse import OptionParser
 import string
 
-# If elftools is not installed, maybe we're running from the root or scripts
-# dir of the source distribution
-try:
-    import elftools
-except ImportError:
-    sys.path.extend(['.', '..'])
+# If we're running from the root of the development directory, elftools should
+# be loaded from there.
+sys.path.insert(0, '.')
 
 from elftools import __version__
 from elftools.common.exceptions import ELFError
