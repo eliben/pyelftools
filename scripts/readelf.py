@@ -11,7 +11,8 @@ import os, sys
 from optparse import OptionParser
 import string
 
-# For running from development directory.
+# For running from development directory. It should take precedence over the
+# installed pyelftools.
 sys.path.insert(0, '.')
 
 
