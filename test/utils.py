@@ -36,8 +36,7 @@ def run_exe(exe_path, args):
 def is_in_rootdir():
     """ Check whether the current dir is the root dir of pyelftools
     """
-    dirstuff = os.listdir('.')
-    return 'test' in dirstuff and 'elftools' in dirstuff
+    return os.path.isdir('test') and os.path.isdir('elftools')
 
 
 def dump_output_to_temp_files(testlog, *args):
