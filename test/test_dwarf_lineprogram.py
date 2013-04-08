@@ -9,7 +9,7 @@ try:
 except ImportError:
     import unittest
 
-from test.utils import setup_syspath; setup_syspath()
+from utils import setup_syspath; setup_syspath()
 from elftools.common.py3compat import BytesIO, iteritems
 from elftools.dwarf.lineprogram import LineProgram, LineState, LineProgramEntry
 from elftools.dwarf.structs import DWARFStructs

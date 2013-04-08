@@ -7,8 +7,9 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os, sys, subprocess, tempfile
-from elftools.common.py3compat import bytes2str
 
+# This module should not import elftools before setup_syspath() is called!
+# See the Hacking Guide in the documentation for more details.
 
 def setup_syspath():
     """ Setup sys.path so that tests pick up local pyelftools before the
@@ -28,6 +29,7 @@ def run_exe(exe_path, args):
         popen_cmd.insert(0, sys.executable)
     proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE)
     proc_stdout = proc.communicate()[0]
+    from elftools.common.py3compat import bytes2str
     return proc.returncode, bytes2str(proc_stdout)
 
 

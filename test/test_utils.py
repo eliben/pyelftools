@@ -10,7 +10,7 @@ except ImportError:
     import unittest
 from random import randint
 
-from test.utils import setup_syspath; setup_syspath()
+from utils import setup_syspath; setup_syspath()
 from elftools.common.py3compat import int2byte, BytesIO
 from elftools.common.utils import (parse_cstring_from_stream,
         preserve_stream_pos)

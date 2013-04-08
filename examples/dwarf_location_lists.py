@@ -15,7 +15,7 @@ import sys
 try:
     import elftools
 except ImportError:
-    sys.path.extend(['.', '..'])
+    sys.path[0:0] = ['.', '..']
 
 from elftools.common.py3compat import itervalues
 from elftools.elf.elffile import ELFFile
@@ -86,7 +86,7 @@ def show_loclist(loclist, dwarfinfo, indent):
         else:
             d.append(str(loc_entity))
     return '\n'.join(indent + s for s in d)
-    
+
 
 def attribute_has_location_list(attr):
     """ Only some attributes can have location list values, if they have the

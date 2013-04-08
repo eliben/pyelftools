@@ -11,9 +11,9 @@ import os, sys
 from optparse import OptionParser
 import string
 
-# If we're running from the root of the development directory, elftools should
-# be loaded from there.
+# For running from development directory.
 sys.path.insert(0, '.')
+
 
 from elftools import __version__
 from elftools.common.exceptions import ELFError

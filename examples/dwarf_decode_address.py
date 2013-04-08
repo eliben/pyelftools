@@ -15,7 +15,7 @@ import sys
 try:
     import elftools
 except ImportError:
-    sys.path.extend(['.', '..'])
+    sys.path[0:0] = ['.', '..']
 
 from elftools.common.py3compat import maxint, bytes2str
 from elftools.elf.elffile import ELFFile
@@ -45,7 +45,7 @@ def process_file(filename, address):
 def decode_funcname(dwarfinfo, address):
     # Go over all DIEs in the DWARF information, looking for a subprogram
     # entry with an address range that includes the given address. Note that
-    # this simplifies things by disregarding subprograms that may have 
+    # this simplifies things by disregarding subprograms that may have
     # split address ranges.
     for CU in dwarfinfo.iter_CUs():
         for DIE in CU.iter_DIEs():

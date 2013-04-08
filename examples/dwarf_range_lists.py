@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 # elftools example: dwarf_range_lists.py
 #
-# Examine DIE entries which have range list values, and decode these range 
+# Examine DIE entries which have range list values, and decode these range
 # lists.
 #
 # Eli Bendersky (eliben@gmail.com)
@@ -15,7 +15,7 @@ import sys
 try:
     import elftools
 except ImportError:
-    sys.path.extend(['.', '..'])
+    sys.path[0:0] = ['.', '..']
 
 from elftools.common.py3compat import itervalues
 from elftools.elf.elffile import ELFFile

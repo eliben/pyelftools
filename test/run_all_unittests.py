@@ -16,11 +16,9 @@ except ImportError:
 
 
 if __name__ == '__main__':
-    try:
+    import os
+    if not os.path.isdir('test'):
+        print('!! Please execute from the root directory of pyelftools')
+    else:
         tests = unittest.TestLoader().discover('test', 'test*.py', 'test')
         unittest.TextTestRunner().run(tests)
-    except ImportError as err:
-        print(err)
-        print('!! Please execute from the root directory of pyelftools')
-
-

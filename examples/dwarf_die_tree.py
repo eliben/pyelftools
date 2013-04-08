@@ -15,7 +15,7 @@ import sys
 try:
     import elftools
 except ImportError:
-    sys.path.extend(['.', '..'])
+    sys.path[0:0] = ['.', '..']
 
 from elftools.common.py3compat import bytes2str
 from elftools.elf.elffile import ELFFile
