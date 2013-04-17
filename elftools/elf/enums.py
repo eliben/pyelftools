@@ -65,8 +65,6 @@ ENUM_E_TYPE = dict(
 )
 
 # e_machine in the ELF header
-# Source:
-# http://www.scs.stanford.edu/11wi-cs140/pintos/specs/sysv-abi-update.html/ch4.eheader.html
 ENUM_E_MACHINE = dict(
     EM_NONE=0,
     EM_M32=1,
@@ -133,7 +131,6 @@ ENUM_E_MACHINE = dict(
     EM_HUANY=81,
     EM_PRISM=82,
     EM_AVR=83,
-    EM_L10M=180,
     EM_FR30=84,
     EM_D10V=85,
     EM_D30V=86,
@@ -151,6 +148,16 @@ ENUM_E_MACHINE = dict(
     EM_TPC=98,
     EM_SNP1K=99,
     EM_ST200=100,
+    EM_IP2K=101,
+    EM_MAX=102,
+    EM_CR=103,
+    EM_F2MC16=104,
+    EM_MSP430=105,
+    EM_BLACKFIN=106,
+    EM_SE_C33=107,
+    EM_SEP=108,
+    EM_ARCA=109,
+    EM_UNICORE=110,
     EM_L10M=180,
     _default_=Pass,
 )
