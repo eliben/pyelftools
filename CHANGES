@@ -1,7 +1,7 @@
 Changelog
 =========
 
-+ Version 0.21 (??)
++ Version 0.22 (17.04.2013)
 
   - Added new example: dwarf_decode_address - decode function name and
     file & line information from an address.
@@ -11,7 +11,8 @@ Changelog
     request #6).
   - Support support for dumping the dynamic section (Mike Frysinger - pull
     request #7).
-  - Output of scripts/readelf.py now matches that of binutils 2.23.52
+  - Output of scripts/readelf.py now matches that of binutils 2.23.52.
+  - Added more machine EM_ values to ENUM_E_TYPE.
 
 + Version 0.20 (27.01.2012)
 
