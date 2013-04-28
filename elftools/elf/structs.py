@@ -73,6 +73,7 @@ class ELFStructs(object):
         self._create_sym()
         self._create_rel()
         self._create_dyn()
+        self._create_syminfo()
     
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
@@ -203,5 +204,8 @@ class ELFStructs(object):
                 self.Elf_xword('st_size'),
             )
 
-
-
+    def _create_syminfo(self):
+        self.Elf_Syminfo = Struct('Elf_Syminfo',
+            self.Elf_half('si_boundto'),
+            self.Elf_half('si_flags'),
+        )

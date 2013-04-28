@@ -9,7 +9,7 @@
 from .enums import (
     ENUM_D_TAG, ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
     )
-from .constants import P_FLAGS, SH_FLAGS
+from .constants import P_FLAGS, SH_FLAGS, SYMINF0_FLAGS
 from ..common.py3compat import iteritems
 
 
@@ -83,6 +83,22 @@ def describe_reloc_type(x, elffile):
 def describe_dyn_tag(x):
     return _DESCR_D_TAG.get(x, _unknown)
 
+
+def describe_syminfo_flags(x):
+    s = ''
+    for flag in (
+            SYMINF0_FLAGS.SYMINFO_FLG_DIRECT,
+            SYMINF0_FLAGS.SYMINFO_FLG_DIRECTBIND,
+            SYMINF0_FLAGS.SYMINFO_FLG_COPY,
+            SYMINF0_FLAGS.SYMINFO_FLG_LAZYLOAD,
+            SYMINF0_FLAGS.SYMINFO_FLG_NOEXTDIRECT,
+            SYMINF0_FLAGS.SYMINFO_FLG_AUXILIARY,
+            SYMINF0_FLAGS.SYMINFO_FLG_FILTER,
+            SYMINF0_FLAGS.SYMINFO_FLG_INTERPOSE,
+            SYMINF0_FLAGS.SYMINFO_FLG_CAP,
+            SYMINF0_FLAGS.SYMINFO_FLG_DEFERRED):
+        s += _DESCR_SYMINFO_FLAGS[flag] if (x & flag) else ''
+    return s
 
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
@@ -235,6 +251,19 @@ _DESCR_ST_SHNDX = dict(
     SHN_ABS='ABS',
     SHN_COMMON='COM',
 )
+
+_DESCR_SYMINFO_FLAGS = {
+    SYMINF0_FLAGS.SYMINFO_FLG_DIRECT: 'D',
+    SYMINF0_FLAGS.SYMINFO_FLG_DIRECTBIND: 'B',
+    SYMINF0_FLAGS.SYMINFO_FLG_COPY: 'C',
+    SYMINF0_FLAGS.SYMINFO_FLG_LAZYLOAD: 'L',
+    SYMINF0_FLAGS.SYMINFO_FLG_NOEXTDIRECT: 'N',
+    SYMINF0_FLAGS.SYMINFO_FLG_AUXILIARY: 'A',
+    SYMINF0_FLAGS.SYMINFO_FLG_FILTER: 'F',
+    SYMINF0_FLAGS.SYMINFO_FLG_INTERPOSE: 'I',
+    SYMINF0_FLAGS.SYMINFO_FLG_CAP: 'S',
+    SYMINF0_FLAGS.SYMINFO_FLG_DEFERRED: 'P',
+}
 
 _DESCR_RELOC_TYPE_i386 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_i386))

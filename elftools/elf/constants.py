@@ -45,3 +45,20 @@ class P_FLAGS(object):
     PF_MASKOS=0x00FF0000
     PF_MASKPROC=0xFF000000
 
+
+# symbol info flags for entries
+# in the .SUNW_syminfo section
+class SYMINF0_FLAGS(object):
+    """ Flags for the si_flags field of entries
+        in the .SUNW_syminfo section
+    """
+    SYMINFO_FLG_DIRECT=0x1
+    SYMINFO_FLG_FILTER=0x2
+    SYMINFO_FLG_COPY=0x4
+    SYMINFO_FLG_LAZYLOAD=0x8
+    SYMINFO_FLG_DIRECTBIND=0x10
+    SYMINFO_FLG_NOEXTDIRECT=0x20
+    SYMINFO_FLG_AUXILIARY=0x40
+    SYMINFO_FLG_INTERPOSE=0x80
+    SYMINFO_FLG_CAP=0x100
+    SYMINFO_FLG_DEFERRED=0x200

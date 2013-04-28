@@ -123,3 +123,38 @@ class Symbol(object):
         return self.entry[name]
 
 
+class SUNWSyminfoTableSection(Section):
+    """ ELF .SUNW Syminfo table section.
+        Has an associated SymbolTableSection that's passed in the constructor.
+    """
+    def __init__(self, header, name, stream, elffile, symboltable):
+        super(SUNWSyminfoTableSection, self).__init__(header, name, stream)
+        self.elffile = elffile
+        self.elfstructs = self.elffile.structs
+        self.symboltable = symboltable
+
+    def num_symbols(self):
+        """ Number of symbols in the table
+        """
+        return self['sh_size'] // self['sh_entsize'] - 1
+
+    def get_symbol(self, n):
+        """ Get the symbol at index #n from the table (Symbol object)
+            It begins at 1 and not 0 since the first entry is used to
+            store the current version of the syminfo table
+        """
+        # Grab the symbol's entry from the stream
+        entry_offset = self['sh_offset'] + n * self['sh_entsize']
+        entry = struct_parse(
+            self.elfstructs.Elf_Syminfo,
+            self.stream,
+            stream_pos=entry_offset)
+        # Find the symbol name in the associated symbol table
+        name = self.symboltable.get_symbol(n).name
+        return Symbol(entry, name)
+
+    def iter_symbols(self):
+        """ Yield all the symbols in the table
+        """
+        for i in range(1, self.num_symbols() + 1):
+            yield self.get_symbol(i)

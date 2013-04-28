@@ -192,6 +192,7 @@ ENUM_SH_TYPE = dict(
     SHT_LOUSER=0x80000000,
     SHT_HIUSER=0xffffffff,
     SHT_AMD64_UNWIND=0x70000001,
+    SHT_SUNW_syminfo=0x6ffffffc,
     _default_=Pass,
 )
 

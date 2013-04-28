@@ -12,7 +12,8 @@ from ..common.utils import struct_parse, elf_assert
 from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
-        Section, StringTableSection, SymbolTableSection, NullSection)
+        Section, StringTableSection, SymbolTableSection,
+        SUNWSyminfoTableSection, NullSection)
 from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
 from .segments import Segment, InterpSegment
@@ -243,6 +244,8 @@ class ELFFile(object):
             return NullSection(section_header, name, self.stream)
         elif sectype in ('SHT_SYMTAB', 'SHT_DYNSYM'):
             return self._make_symbol_table_section(section_header, name)
+        elif sectype == 'SHT_SUNW_syminfo':
+            return self._make_sunwsyminfo_table_section(section_header, name)
         elif sectype in ('SHT_REL', 'SHT_RELA'):
             return RelocationSection(
                 section_header, name, self.stream, self)
@@ -260,6 +263,16 @@ class ELFFile(object):
             section_header, name, self.stream,
             elffile=self,
             stringtable=strtab_section)
+
+    def _make_sunwsyminfo_table_section(self, section_header, name):
+        """ Create a SymbolTableSection
+        """
+        linked_strtab_index = section_header['sh_link']
+        strtab_section = self.get_section(linked_strtab_index)
+        return SUNWSyminfoTableSection(
+            section_header, name, self.stream,
+            elffile=self,
+            symboltable=strtab_section)
 
     def _get_segment_header(self, n):
         """ Find the header of segment #n, parse it and return the struct
