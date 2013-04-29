@@ -82,10 +82,10 @@ class Elfdump(object):
             self._emitline("\nSyminfo Section:  %s" % bytes2str(section.name))
             self._emitline('     index  flags            bound to                 symbol')
 
-            for nsym, syminfo in enumerate(section.iter_symbols()):
+            for nsym, syminfo in enumerate(section.iter_symbols(), start=1):
 
                 # elfdump doesn't display anything for this kind of symbols
-                symbol = symtable.get_symbol(nsym + 1)
+                symbol = symtable.get_symbol(nsym)
                 if (symbol['st_info']['type'] == 'STT_NOTYPE' and
                         symbol['st_shndx'] == 'SHN_UNDEF'):
                     continue
@@ -105,7 +105,7 @@ class Elfdump(object):
 
                 # syminfo names are truncated to 25 chars, similarly to readelf
                 self._emitline('%10s  %-5s %10s %-24s %s' % (
-                    '[%d]' % (int(nsym) + 1),
+                    '[%d]' % (int(nsym)),
                     describe_syminfo_flags(syminfo['si_flags']),
                     index,
                     boundto,
