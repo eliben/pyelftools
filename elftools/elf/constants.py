@@ -48,7 +48,7 @@ class P_FLAGS(object):
 
 # symbol info flags for entries
 # in the .SUNW_syminfo section
-class SYMINF0_FLAGS(object):
+class SYMINFO_FLAGS(object):
     """ Flags for the si_flags field of entries
         in the .SUNW_syminfo section
     """

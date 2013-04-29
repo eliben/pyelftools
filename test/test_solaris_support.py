@@ -12,7 +12,7 @@ import os
 
 from utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
-from elftools.elf.constants import SYMINF0_FLAGS
+from elftools.elf.constants import SYMINFO_FLAGS
 
 
 class TestSolarisSupport(unittest.TestCase):
@@ -31,8 +31,8 @@ class TestSolarisSupport(unittest.TestCase):
             for symbol in exit_symbols:
                 self.assertEqual(symbol['si_boundto'], 0)
                 self.assertEqual(symbol['si_flags'],
-                                 SYMINF0_FLAGS.SYMINFO_FLG_DIRECT |
-                                 SYMINF0_FLAGS.SYMINFO_FLG_DIRECTBIND)
+                                 SYMINFO_FLAGS.SYMINFO_FLG_DIRECT |
+                                 SYMINFO_FLAGS.SYMINFO_FLG_DIRECTBIND)
 
     def test_SUNW_syminfo_section_x86(self):
         self._test_SUNW_syminfo_section_generic('exe_solaris32_cc.elf')

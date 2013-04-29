@@ -24,7 +24,7 @@ from elftools.common.py3compat import (
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG
-from elftools.elf.constants import SYMINF0_FLAGS
+from elftools.elf.constants import SYMINFO_FLAGS
 from elftools.elf.segments import InterpSegment
 from elftools.elf.sections import SUNWSyminfoTableSection
 from elftools.elf.relocation import RelocationSection
@@ -91,7 +91,7 @@ class Elfdump(object):
                     continue
 
                 index = ''
-                if syminfo['si_flags'] & SYMINF0_FLAGS.SYMINFO_FLG_CAP:
+                if syminfo['si_flags'] & SYMINFO_FLAGS.SYMINFO_FLG_CAP:
                     boundto = '<symbol capabilities>'
                 elif syminfo['si_boundto'] == 0xffff:
                     boundto = '<self>'
