@@ -103,7 +103,10 @@ class Elfdump(object):
                     boundto = ''
                 else:
                     dyn_tag = dyntable.get_tag(syminfo['si_boundto'])
-                    boundto = bytes2str(dyn_tag.needed)
+                    if syminfo['si_flags'] & SYMINFO_FLAGS.SYMINFO_FLG_FILTER:
+                        boundto = bytes2str(dyn_tag.sunw_filter)
+                    else:
+                        boundto = bytes2str(dyn_tag.needed)
                     index = '[%d]' % syminfo['si_boundto']
 
                 # syminfo names are truncated to 24 chars, similarly to elfdump
