@@ -64,6 +64,7 @@ class Elfdump(object):
     def display_syminfo_table(self):
         """ Display the SUNW syminfo tables contained in the file
         """
+        syminfo_section = None
         for section in self.elffile.iter_sections():
             if isinstance(section, SUNWSyminfoTableSection):
                 syminfo_section = section
