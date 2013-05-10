@@ -25,7 +25,8 @@ class DynamicTag(object):
         value of DT_SONAME (fetched from the dynamic symbol table).
     """
     _HANDLED_TAGS = frozenset(
-        ['DT_NEEDED', 'DT_RPATH', 'DT_RUNPATH', 'DT_SONAME'])
+        ['DT_NEEDED', 'DT_RPATH', 'DT_RUNPATH', 'DT_SONAME',
+         'DT_SUNW_FILTER'])
 
     def __init__(self, entry, elffile):
         self.entry = entry
