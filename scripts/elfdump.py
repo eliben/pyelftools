@@ -99,6 +99,8 @@ class Elfdump(object):
                     boundto = '<self>'
                 elif syminfo['si_boundto'] == 0xfffe:
                     boundto = '<parent>'
+                elif syminfo['si_boundto'] == 0xfffc:
+                    boundto = '<extern>'
                 elif syminfo['si_boundto'] == 0xfffd:
                     boundto = ''
                 else:
