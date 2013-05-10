@@ -87,6 +87,7 @@ def describe_dyn_tag(x):
 def describe_syminfo_flags(x):
     s = ''
     for flag in (
+            SYMINFO_FLAGS.SYMINFO_FLG_CAP,
             SYMINFO_FLAGS.SYMINFO_FLG_DIRECT,
             SYMINFO_FLAGS.SYMINFO_FLG_DIRECTBIND,
             SYMINFO_FLAGS.SYMINFO_FLG_COPY,
@@ -95,7 +96,6 @@ def describe_syminfo_flags(x):
             SYMINFO_FLAGS.SYMINFO_FLG_AUXILIARY,
             SYMINFO_FLAGS.SYMINFO_FLG_FILTER,
             SYMINFO_FLAGS.SYMINFO_FLG_INTERPOSE,
-            SYMINFO_FLAGS.SYMINFO_FLG_CAP,
             SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED):
         s += _DESCR_SYMINFO_FLAGS[flag] if (x & flag) else ''
     return s
