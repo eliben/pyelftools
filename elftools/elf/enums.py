@@ -447,3 +447,12 @@ ENUM_RELOC_TYPE_x64 = dict(
     _default_=Pass,
 )
 
+# Syminfo Bound To special values
+ENUM_SYMINFO_BOUNDTO = dict(
+    SYMINFO_BT_SELF=0xffff,
+    SYMINFO_BT_PARENT=0xfffe,
+    SYMINFO_BT_NONE=0xfffd,
+    SYMINFO_BT_EXTERN=0xfffc,
+    _default_=Pass,
+)
+

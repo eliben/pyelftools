@@ -35,7 +35,7 @@ from elftools.elf.descriptions import (
     describe_sh_type, describe_sh_flags,
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
-    describe_syminfo_flags,
+    describe_syminfo_flags, describe_symbol_boundto,
     )
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
@@ -95,14 +95,8 @@ class Elfdump(object):
                 index = ''
                 if syminfo['si_flags'] & SYMINFO_FLAGS.SYMINFO_FLG_CAP:
                     boundto = '<symbol capabilities>'
-                elif syminfo['si_boundto'] == 0xffff:
-                    boundto = '<self>'
-                elif syminfo['si_boundto'] == 0xfffe:
-                    boundto = '<parent>'
-                elif syminfo['si_boundto'] == 0xfffc:
-                    boundto = '<extern>'
-                elif syminfo['si_boundto'] == 0xfffd:
-                    boundto = ''
+                elif not isinstance(syminfo['si_boundto'], int):
+                    boundto = describe_symbol_boundto(syminfo['si_boundto'])
                 else:
                     dyn_tag = dyntable.get_tag(syminfo['si_boundto'])
                     if syminfo['si_flags'] & SYMINFO_FLAGS.SYMINFO_FLG_FILTER:

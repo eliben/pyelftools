@@ -206,6 +206,6 @@ class ELFStructs(object):
 
     def _create_syminfo(self):
         self.Elf_Syminfo = Struct('Elf_Syminfo',
-            self.Elf_half('si_boundto'),
+            Enum(self.Elf_half('si_boundto'), **ENUM_SYMINFO_BOUNDTO),
             self.Elf_half('si_flags'),
         )

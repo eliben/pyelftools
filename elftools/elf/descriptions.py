@@ -100,6 +100,9 @@ def describe_syminfo_flags(x):
         s += _DESCR_SYMINFO_FLAGS[flag] if (x & flag) else ''
     return s
 
+def describe_symbol_boundto(x):
+    return _DESCR_SYMINFO_BOUNDTO.get(x, '%3s' % x)
+
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
 
@@ -264,6 +267,13 @@ _DESCR_SYMINFO_FLAGS = {
     SYMINFO_FLAGS.SYMINFO_FLG_CAP: 'S',
     SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED: 'P',
 }
+
+_DESCR_SYMINFO_BOUNDTO = dict(
+    SYMINFO_BT_SELF='<self>',
+    SYMINFO_BT_PARENT='<parent>',
+    SYMINFO_BT_NONE='',
+    SYMINFO_BT_EXTERN='<extern>',
+)
 
 _DESCR_RELOC_TYPE_i386 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_i386))
