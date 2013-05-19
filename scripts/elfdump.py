@@ -66,23 +66,24 @@ class Elfdump(object):
         """
         for section in self.elffile.iter_sections():
             if isinstance(section, SUNWSyminfoTableSection):
-               syminfo_section = section
-               break
+                syminfo_section = section
+                break
 
         if syminfo_section:
             # We need to dyntable to do get the soname names
             dyntable = self.elffile.get_section_by_name('.dynamic')
 
             if section['sh_entsize'] == 0:
-                self._emitline("\nSymbol table '%s' has a sh_entsize of zero!" % (
-                    bytes2str(section.name)))
+                self._emitline("\nSymbol table '%s' has a sh_entsize of zero!"
+                               % (bytes2str(section.name)))
                 return
 
             # The symbol table section pointed to in sh_link
             symtable = self.elffile.get_section(section['sh_link'])
 
             self._emitline("\nSyminfo Section:  %s" % bytes2str(section.name))
-            self._emitline('     index  flags            bound to                 symbol')
+            self._emitline('%10s  %-5s %10s %-24s %s'
+                           % ('index', 'flags', '', 'bound to', 'symbol'))
 
             for nsym, syminfo in enumerate(section.iter_symbols(), start=1):
 
@@ -102,7 +103,8 @@ class Elfdump(object):
                 elif syminfo['si_boundto'] == 0xfffd:
                     boundto = ''
                 else:
-                    boundto = bytes2str(dyntable.get_tag(syminfo['si_boundto']).needed)
+                    dyn_tag = dyntable.get_tag(syminfo['si_boundto'])
+                    boundto = bytes2str(dyn_tag.needed)
                     index = '[%d]' % syminfo['si_boundto']
 
                 # syminfo names are truncated to 25 chars, similarly to readelf
