@@ -88,9 +88,7 @@ class Elfdump(object):
             for nsym, syminfo in enumerate(section.iter_symbols(), start=1):
 
                 # elfdump doesn't display anything for this kind of symbols
-                symbol = symtable.get_symbol(nsym)
-                if (symbol['st_info']['type'] == 'STT_NOTYPE' and
-                        symbol['st_shndx'] == 'SHN_UNDEF'):
+                if not (syminfo['si_flags'] or syminfo['si_boundto']):
                     continue
 
                 index = ''
