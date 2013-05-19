@@ -105,7 +105,7 @@ class Elfdump(object):
                     boundto = bytes2str(dyn_tag.needed)
                     index = '[%d]' % syminfo['si_boundto']
 
-                # syminfo names are truncated to 25 chars, similarly to readelf
+                # syminfo names are truncated to 24 chars, similarly to elfdump
                 self._emitline('%10s  %-5s %10s %-24s %s' % (
                     '[%d]' % (int(nsym)),
                     describe_syminfo_flags(syminfo['si_flags']),
