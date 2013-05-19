@@ -64,17 +64,19 @@ class Elfdump(object):
     def display_syminfo_table(self):
         """ Display the SUNW syminfo tables contained in the file
         """
-        # The symbol table section pointed to in sh_link
-        dyntable = self.elffile.get_section_by_name('.dynamic')
-
         for section in self.elffile.iter_sections():
-            if not isinstance(section, SUNWSyminfoTableSection):
-                continue
+            if isinstance(section, SUNWSyminfoTableSection):
+               syminfo_section = section
+               break
+
+        if syminfo_section:
+            # We need to dyntable to do get the soname names
+            dyntable = self.elffile.get_section_by_name('.dynamic')
 
             if section['sh_entsize'] == 0:
                 self._emitline("\nSymbol table '%s' has a sh_entsize of zero!" % (
                     bytes2str(section.name)))
-                continue
+                return
 
             # The symbol table section pointed to in sh_link
             symtable = self.elffile.get_section(section['sh_link'])
