@@ -24,11 +24,17 @@ class TestSolarisSupport(unittest.TestCase):
             syminfo_section = elf.get_section_by_name('.SUNW_syminfo')
             self.assertIsNotNone(syminfo_section)
 
+            # The test files were compiled against libc.so.1 with
+            # direct binding, hence the libc symbols used 
+            # (exit, atexit and _exit) have the direct binding flags
+            # in the syminfo table.
+            # We check that this is properly detected.
             exit_symbols = [s for s in syminfo_section.iter_symbols()
                             if 'exit' in s.name]
             self.assertNotEqual(len(exit_symbols), 0)
 
             for symbol in exit_symbols:
+                # libc.so.1 has the index 0 in the dynamic table
                 self.assertEqual(symbol['si_boundto'], 0)
                 self.assertEqual(symbol['si_flags'],
                                  SYMINFO_FLAGS.SYMINFO_FLG_DIRECT |
