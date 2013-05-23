@@ -44,8 +44,7 @@ setup(
         'elftools.construct', 'elftools.construct.lib',
         ],
 
-    scripts=['scripts/readelf.py', 
-             'scripts/elfdump.py']
+    scripts=['scripts/readelf.py']
 )
 
     
