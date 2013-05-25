@@ -1,7 +1,12 @@
 Changelog
 =========
 
-+ Version 0.22 (17.04.2013)
++ Version 0.22 (??)
+
+  - Added some initial support for parsing Solaris OpenCSW ELF files
+    (contributed by Yann Rouillard).
+
++ Version 0.21 (17.04.2013)
 
   - Added new example: dwarf_decode_address - decode function name and
     file & line information from an address.

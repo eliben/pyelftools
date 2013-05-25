@@ -12,7 +12,7 @@ import os
 
 from utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
-from elftools.elf.constants import SYMINFO_FLAGS
+from elftools.elf.constants import SUNW_SYMINFO_FLAGS
 
 
 class TestSolarisSupport(unittest.TestCase):
@@ -37,8 +37,8 @@ class TestSolarisSupport(unittest.TestCase):
                 # libc.so.1 has the index 0 in the dynamic table
                 self.assertEqual(symbol['si_boundto'], 0)
                 self.assertEqual(symbol['si_flags'],
-                                 SYMINFO_FLAGS.SYMINFO_FLG_DIRECT |
-                                 SYMINFO_FLAGS.SYMINFO_FLG_DIRECTBIND)
+                                 SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECT |
+                                 SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECTBIND)
 
     def test_SUNW_syminfo_section_x86(self):
         self._test_SUNW_syminfo_section_generic('exe_solaris32_cc.elf')
