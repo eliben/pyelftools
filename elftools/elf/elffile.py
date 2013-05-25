@@ -126,15 +126,15 @@ class ELFFile(object):
         #
         debug_sections = {}
         for secname in (b'.debug_info', b'.debug_abbrev', b'.debug_str',
-                        b'.debug_line', b'.debug_frame', b'.debug_loc',
-                        b'.debug_ranges'):
+                        b'.debug_line', b'.debug_frame',
+                        b'.debug_loc', b'.debug_ranges'):
             section = self.get_section_by_name(secname)
             if section is None:
                 debug_sections[secname] = None
             else:
                 debug_sections[secname] = self._read_dwarf_section(
-                        section,
-                        relocate_dwarf_sections)
+                    section,
+                    relocate_dwarf_sections)
 
         return DWARFInfo(
                 config=DwarfConfig(
@@ -144,6 +144,8 @@ class ELFFile(object):
                 debug_info_sec=debug_sections[b'.debug_info'],
                 debug_abbrev_sec=debug_sections[b'.debug_abbrev'],
                 debug_frame_sec=debug_sections[b'.debug_frame'],
+                # TODO(eliben): reading of eh_frame is not hooked up yet
+                eh_frame_sec=None,
                 debug_str_sec=debug_sections[b'.debug_str'],
                 debug_loc_sec=debug_sections[b'.debug_loc'],
                 debug_ranges_sec=debug_sections[b'.debug_ranges'],

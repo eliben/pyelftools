@@ -26,13 +26,13 @@ class CallFrameInfo(object):
             Eventually, each entry gets its own structs based on the initial
             length field it starts with. The address_size, however, is taken
             from base_structs. This appears to be a limitation of the DWARFv3
-            standard, fixed in v4 (where an address_size field exists for each
-            CFI. A discussion I had on dwarf-discuss confirms this.
-            Currently for base_structs I simply use the elfclass of the
-            containing file, but more sophisticated methods are used by
-            libdwarf and others, such as guessing which CU contains which FDEs
-            (based on their address ranges) and taking the address_size from
-            those CUs.
+            standard, fixed in v4.
+            A discussion I had on dwarf-discuss confirms this.
+            So for DWARFv4 we'll take the address size from the CIE header,
+            but for earlier versions will use the elfclass of the containing
+            file; more sophisticated methods are used by libdwarf and others,
+            such as guessing which CU contains which FDEs (based on their
+            address ranges) and taking the address_size from those CUs.
     """
     def __init__(self, stream, size, base_structs):
         self.stream = stream
@@ -98,6 +98,14 @@ class CallFrameInfo(object):
         # return_address_register field
         header = struct_parse(
             header_struct, self.stream, offset)
+
+        # If this is DWARF version 4 or later, we can have a more precise
+        # address size, read from the CIE header.
+        if entry_structs.dwarf_version >= 4:
+            entry_structs = DWARFStructs(
+                little_endian=entry_structs.little_endian,
+                dwarf_format=entry_structs.dwarf_format,
+                address_size=header.address_size)
 
         # For convenience, compute the end offset for this entry
         end_offset = (
