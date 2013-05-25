@@ -19,39 +19,39 @@ from .enums import *
 
 
 class DWARFStructs(object):
-    """ Exposes Construct structs suitable for parsing information from DWARF 
+    """ Exposes Construct structs suitable for parsing information from DWARF
         sections. Each compile unit in DWARF info can have its own structs
-        object. Keep in mind that these structs have to be given a name (by 
+        object. Keep in mind that these structs have to be given a name (by
         calling them with a name) before being used for parsing (like other
         Construct structs). Those that should be used without a name are marked
         by (+).
-    
+
         Accessible attributes (mostly as described in chapter 7 of the DWARF
         spec v3):
-    
+
             Dwarf_[u]int{8,16,32,64):
                 Data chunks of the common sizes
-            
+
             Dwarf_offset:
                 32-bit or 64-bit word, depending on dwarf_format
-            
+
             Dwarf_target_addr:
                 32-bit or 64-bit word, depending on address size
-            
+
             Dwarf_initial_length:
                 "Initial length field" encoding
                 section 7.4
-            
+
             Dwarf_{u,s}leb128:
                 ULEB128 and SLEB128 variable-length encoding
-            
+
             Dwarf_CU_header (+):
                 Compilation unit header
-        
+
             Dwarf_abbrev_declaration (+):
                 Abbreviation table declaration - doesn't include the initial
                 code, only the contents.
-            
+
             Dwarf_dw_form (+):
                 A dictionary mapping 'DW_FORM_*' keys into construct Structs
                 that parse such forms. These Structs have already been given
@@ -62,7 +62,7 @@ class DWARFStructs(object):
 
             Dwarf_lineprog_file_entry (+):
                 A single file entry in a line program header or instruction
-        
+
             Dwarf_CIE_header (+):
                 A call-frame CIE
 
@@ -74,18 +74,18 @@ class DWARFStructs(object):
     def __init__(self, little_endian, dwarf_format, address_size):
         """ little_endian:
                 True if the file is little endian, False if big
-            
+
             dwarf_format:
                 DWARF Format: 32 or 64-bit (see spec section 7.4)
-            
+
             address_size:
-                Target machine address size, in bytes (4 or 8). (See spec 
+                Target machine address size, in bytes (4 or 8). (See spec
                 section 7.5.1)
         """
         assert dwarf_format == 32 or dwarf_format == 64
         assert address_size == 8 or address_size == 4
         self.little_endian = little_endian
-        self.dwarf_format = dwarf_format  
+        self.dwarf_format = dwarf_format
         self.address_size = address_size
         self._create_structs()
 
@@ -131,7 +131,7 @@ class DWARFStructs(object):
     def _create_initial_length(self):
         def _InitialLength(name):
             # Adapts a Struct that parses forward a full initial length field.
-            # Only if the first word is the continuation value, the second 
+            # Only if the first word is the continuation value, the second
             # word is parsed from the stream.
             #
             return _InitialLengthAdapter(
@@ -152,13 +152,13 @@ class DWARFStructs(object):
             self.Dwarf_uint16('version'),
             self.Dwarf_offset('debug_abbrev_offset'),
             self.Dwarf_uint8('address_size'))
-    
+
     def _create_abbrev_declaration(self):
         self.Dwarf_abbrev_declaration = Struct('Dwarf_abbrev_entry',
             Enum(self.Dwarf_uleb128('tag'), **ENUM_DW_TAG),
             Enum(self.Dwarf_uint8('children_flag'), **ENUM_DW_CHILDREN),
             RepeatUntilExcluding(
-                lambda obj, ctx: 
+                lambda obj, ctx:
                     obj.name == 'DW_AT_null' and obj.form == 'DW_FORM_null',
                 Struct('attr_spec',
                     Enum(self.Dwarf_uleb128('name'), **ENUM_DW_AT),
@@ -167,12 +167,12 @@ class DWARFStructs(object):
     def _create_dw_form(self):
         self.Dwarf_dw_form = dict(
             DW_FORM_addr=self.Dwarf_target_addr(''),
-            
+
             DW_FORM_block1=self._make_block_struct(self.Dwarf_uint8),
             DW_FORM_block2=self._make_block_struct(self.Dwarf_uint16),
             DW_FORM_block4=self._make_block_struct(self.Dwarf_uint32),
             DW_FORM_block=self._make_block_struct(self.Dwarf_uleb128),
-            
+
             # All DW_FORM_data<n> forms are assumed to be unsigned
             DW_FORM_data1=self.Dwarf_uint8(''),
             DW_FORM_data2=self.Dwarf_uint16(''),
@@ -180,18 +180,18 @@ class DWARFStructs(object):
             DW_FORM_data8=self.Dwarf_uint64(''),
             DW_FORM_sdata=self.Dwarf_sleb128(''),
             DW_FORM_udata=self.Dwarf_uleb128(''),
-            
+
             DW_FORM_string=CString(''),
             DW_FORM_strp=self.Dwarf_offset(''),
             DW_FORM_flag=self.Dwarf_uint8(''),
-            
+
             DW_FORM_ref1=self.Dwarf_uint8(''),
             DW_FORM_ref2=self.Dwarf_uint16(''),
             DW_FORM_ref4=self.Dwarf_uint32(''),
             DW_FORM_ref8=self.Dwarf_uint64(''),
             DW_FORM_ref_udata=self.Dwarf_uleb128(''),
             DW_FORM_ref_addr=self.Dwarf_offset(''),
-            
+
             DW_FORM_indirect=self.Dwarf_uleb128(''),
 
             DW_FORM_flag_present = StaticField('', 0),
@@ -222,7 +222,7 @@ class DWARFStructs(object):
             self.Dwarf_int8('line_base'),
             self.Dwarf_uint8('line_range'),
             self.Dwarf_uint8('opcode_base'),
-            Array(lambda ctx: ctx['opcode_base'] - 1, 
+            Array(lambda ctx: ctx['opcode_base'] - 1,
                   self.Dwarf_uint8('standard_opcode_lengths')),
             RepeatUntilExcluding(
                 lambda obj, ctx: obj == b'',
@@ -249,7 +249,7 @@ class DWARFStructs(object):
             self.Dwarf_target_addr('address_range'))
 
     def _make_block_struct(self, length_field):
-        """ Create a struct for DW_FORM_block<size> 
+        """ Create a struct for DW_FORM_block<size>
         """
         return PrefixedArray(
                     subcon=self.Dwarf_uint8('elem'),
