@@ -215,6 +215,15 @@ ENUM_DW_AT = dict(
     DW_AT_GNU_vector                    = 0x2107,
     DW_AT_GNU_template_name             = 0x2110,
 
+    DW_AT_GNU_call_site_value               = 0x2111,
+    DW_AT_GNU_call_site_data_value          = 0x2112,
+    DW_AT_GNU_call_site_target              = 0x2113,
+    DW_AT_GNU_call_site_target_clobbered    = 0x2114,
+    DW_AT_GNU_tail_call                     = 0x2115,
+    DW_AT_GNU_all_tail_call_sites           = 0x2116,
+    DW_AT_GNU_all_call_sites                = 0x2117,
+    DW_AT_GNU_all_source_call_sites         = 0x2118,
+
     DW_AT_APPLE_optimized               = 0x3fe1,
     DW_AT_APPLE_flags                   = 0x3fe2,
     DW_AT_APPLE_isa                     = 0x3fe3,

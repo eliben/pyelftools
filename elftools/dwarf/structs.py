@@ -194,12 +194,11 @@ class DWARFStructs(object):
 
             DW_FORM_indirect=self.Dwarf_uleb128(''),
 
+            # New forms in DWARFv4
             DW_FORM_flag_present = StaticField('', 0),
-            # Needs checkings
-            #DW_FORM_sec_offset   = self.Dwarf_offset(''),
-            #DW_FORM_exprloc      = self.Dwarf_uleb128(''),
-            #DW_FORM_ref_sig8     = self.Dwarf_offset(''),
-
+            DW_FORM_sec_offset = self.Dwarf_offset(''),
+            DW_FORM_exprloc = self._make_block_struct(self.Dwarf_uleb128),
+            DW_FORM_ref_sig8 = self.Dwarf_offset(''),
         )
 
     def _create_lineprog_header(self):
