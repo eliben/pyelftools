@@ -90,9 +90,9 @@ def compare_output(s1, s2):
         Note: this function contains some rather horrible hacks to ignore
         differences which are not important for the verification of pyelftools.
         This is due to some intricacies of binutils's readelf which pyelftools
-        doesn't currently implement, or silly inconsistencies in the output of
-        readelf, which I was reluctant to replicate.
-        Read the documentation for more details.
+        doesn't currently implement, features that binutils doesn't support,
+        or silly inconsistencies in the output of readelf, which I was reluctant
+        to replicate. Read the documentation for more details.
     """
     def prepare_lines(s):
         return [line for line in s.lower().splitlines() if line.strip() != '']
@@ -146,6 +146,9 @@ def compare_output(s1, s2):
             elif 'os/abi' in lines1[i]:
                 if 'unix - gnu' in lines1[i] and 'unix - linux' in lines2[i]:
                     ok = True
+            elif (  'unknown at value' in lines1[i] and
+                    'dw_at_apple' in lines2[i]):
+                ok = True
             else:
                 for s in ('t (tls)', 'l (large)'):
                     if s in lines1[i] or s in lines2[i]:

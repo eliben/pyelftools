@@ -11,7 +11,7 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename, Enum,
-    Array, PrefixedArray, CString, Embed,
+    Array, PrefixedArray, CString, Embed, StaticField
     )
 from ..common.construct_utils import RepeatUntilExcluding
 
@@ -193,6 +193,13 @@ class DWARFStructs(object):
             DW_FORM_ref_addr=self.Dwarf_offset(''),
             
             DW_FORM_indirect=self.Dwarf_uleb128(''),
+
+            DW_FORM_flag_present = StaticField('', 0),
+            # Needs checkings
+            #DW_FORM_sec_offset   = self.Dwarf_offset(''),
+            #DW_FORM_exprloc      = self.Dwarf_uleb128(''),
+            #DW_FORM_ref_sig8     = self.Dwarf_offset(''),
+
         )
 
     def _create_lineprog_header(self):

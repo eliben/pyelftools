@@ -197,6 +197,9 @@ def _describe_attr_debool(attr, die, section_offset):
     """
     return '1' if attr.value else '0'
 
+def _describe_attr_present(attr, die, section_offset):
+    return '1'
+
 def _describe_attr_block(attr, die, section_offset):
     s = '%s byte block: ' % len(attr.value)
     s += ' '.join('%x' % item for item in attr.value) + ' '
@@ -227,6 +230,11 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_block2=_describe_attr_block,
     DW_FORM_block4=_describe_attr_block,
     DW_FORM_block=_describe_attr_block,
+    DW_FORM_flag_present=_describe_attr_present,
+    # Not sure how to print them
+    # DW_FORM_exprloc=_describe_attr_value_passthrough,
+    # DW_FORM_ref_sig8=_describe_attr_ref,
+
 )
 
 

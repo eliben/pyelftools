@@ -185,7 +185,9 @@ ENUM_DW_AT = dict(
     DW_AT_main_subprogram       = 0x6a,
     DW_AT_data_bit_offset       = 0x6b,
     DW_AT_const_expr            = 0x6c,
-    
+    DW_AT_enum_class            = 0x6d,
+    DW_AT_linkage_name          = 0x6e,
+
     DW_AT_MIPS_fde                      = 0x2001,
     DW_AT_MIPS_loop_begin               = 0x2002,
     DW_AT_MIPS_tail_loop_begin          = 0x2003,
@@ -197,8 +199,37 @@ ENUM_DW_AT = dict(
     DW_AT_MIPS_abstract_name            = 0x2009,
     DW_AT_MIPS_clone_origin             = 0x200a,
     DW_AT_MIPS_has_inlines              = 0x200b,
+    DW_AT_MIPS_stride_byte              = 0x200c,
+    DW_AT_MIPS_stride_elem              = 0x200d,
+    DW_AT_MIPS_ptr_dopetype             = 0x200e,
+    DW_AT_MIPS_allocatable_dopetype     = 0x200f,
+    DW_AT_MIPS_assumed_shape_dopetype   = 0x2010,
+    DW_AT_MIPS_assumed_size             = 0x2011,
 
-    _default_                   = Pass,
+    DW_AT_sf_names                      = 0x2101,
+    DW_AT_src_info                      = 0x2102,
+    DW_AT_mac_info                      = 0x2103,
+    DW_AT_src_coords                    = 0x2104,
+    DW_AT_body_begin                    = 0x2105,
+    DW_AT_body_end                      = 0x2106,
+    DW_AT_GNU_vector                    = 0x2107,
+    DW_AT_GNU_template_name             = 0x2110,
+
+    DW_AT_APPLE_optimized               = 0x3fe1,
+    DW_AT_APPLE_flags                   = 0x3fe2,
+    DW_AT_APPLE_isa                     = 0x3fe3,
+    DW_AT_APPLE_block                   = 0x3fe4,
+    DW_AT_APPLE_major_runtime_vers      = 0x3fe5,
+    DW_AT_APPLE_runtime_class           = 0x3fe6,
+    DW_AT_APPLE_omit_frame_ptr          = 0x3fe7,
+    DW_AT_APPLE_property_name           = 0x3fe8,
+    DW_AT_APPLE_property_getter         = 0x3fe9,
+    DW_AT_APPLE_property_setter         = 0x3fea,
+    DW_AT_APPLE_property_attribute      = 0x3feb,
+    DW_AT_APPLE_objc_complete_type      = 0x3fec,
+    DW_AT_APPLE_property                = 0x3fed,
+
+    _default_ = Pass,
 )
 
 
@@ -225,6 +256,10 @@ ENUM_DW_FORM = dict(
     DW_FORM_ref8            = 0x14,
     DW_FORM_ref_udata       = 0x15,
     DW_FORM_indirect        = 0x16,
+    DW_FORM_sec_offset      = 0x17,
+    DW_FORM_exprloc         = 0x18,
+    DW_FORM_flag_present    = 0x19,
+    DW_FORM_ref_sig8        = 0x20,
 
     _default_               = Pass,
 )

@@ -21,7 +21,7 @@ from .ranges import RangeLists
 
 
 # Describes a debug section
-# 
+#
 # stream: a stream object containing the data of this section
 # name: section name in the container file
 # global_offset: the global offset of the section in its container file
@@ -30,7 +30,7 @@ from .ranges import RangeLists
 # 'name' and 'global_offset' are for descriptional purposes only and
 # aren't strictly required for the DWARF parsing to work.
 #
-DebugSectionDescriptor = namedtuple('DebugSectionDescriptor', 
+DebugSectionDescriptor = namedtuple('DebugSectionDescriptor',
     'stream name global_offset size')
 
 
@@ -51,7 +51,7 @@ DwarfConfig = namedtuple('DwarfConfig',
 
 
 class DWARFInfo(object):
-    """ Acts also as a "context" to other major objects, bridging between 
+    """ Acts also as a "context" to other major objects, bridging between
         various parts of the debug infromation.
     """
     def __init__(self,
@@ -68,7 +68,7 @@ class DWARFInfo(object):
 
             debug_*_sec:
                 DebugSectionDescriptor for a section. Pass None for sections
-                that don't exist. These arguments are best given with 
+                that don't exist. These arguments are best given with
                 keyword syntax.
         """
         self.config = config
@@ -80,7 +80,7 @@ class DWARFInfo(object):
         self.debug_ranges_sec = debug_ranges_sec
         self.debug_line_sec = debug_line_sec
 
-        # This is the DWARFStructs the context uses, so it doesn't depend on 
+        # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
         # to default values.
         self.structs = DWARFStructs(
@@ -119,7 +119,7 @@ class DWARFInfo(object):
         return self._abbrevtable_cache[offset]
 
     def get_string_from_table(self, offset):
-        """ Obtain a string from the string table section, given an offset 
+        """ Obtain a string from the string table section, given an offset
             relative to the section.
         """
         return parse_cstring_from_stream(self.debug_str_sec.stream, offset)
@@ -175,18 +175,18 @@ class DWARFInfo(object):
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.
-            offset = (  offset + 
-                        cu['unit_length'] + 
+            offset = (  offset +
+                        cu['unit_length'] +
                         cu.structs.initial_length_field_size())
             yield cu
-        
+
     def _parse_CU_at_offset(self, offset):
         """ Parse and return a CU at the given offset in the debug_info stream.
         """
         # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v3
-        # states that the first 32-bit word of the CU header determines 
+        # states that the first 32-bit word of the CU header determines
         # whether the CU is represented with 32-bit or 64-bit DWARF format.
-        # 
+        #
         # So we peek at the first word in the CU header to determine its
         # dwarf format. Based on it, we then create a new DWARFStructs
         # instance suitable for this CU and use it to parse the rest.
@@ -205,7 +205,7 @@ class DWARFInfo(object):
             little_endian=self.config.little_endian,
             dwarf_format=dwarf_format,
             address_size=4)
-        
+
         cu_header = struct_parse(
             cu_structs.Dwarf_CU_header, self.debug_info_sec.stream, offset)
         if cu_header['address_size'] == 8:
@@ -213,7 +213,7 @@ class DWARFInfo(object):
                 little_endian=self.config.little_endian,
                 dwarf_format=dwarf_format,
                  address_size=8)
-        
+
         cu_die_offset = self.debug_info_sec.stream.tell()
         dwarf_assert(
             self._is_supported_version(cu_header['version']),
@@ -224,11 +224,11 @@ class DWARFInfo(object):
                 structs=cu_structs,
                 cu_offset=offset,
                 cu_die_offset=cu_die_offset)
-        
+
     def _is_supported_version(self, version):
         """ DWARF version supported by this parser
         """
-        return 2 <= version <= 3
+        return 2 <= version <= 4
 
     def _parse_line_program_at_offset(self, debug_line_offset, structs):
         """ Given an offset to the .debug_line section, parse the line program
