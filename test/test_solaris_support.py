@@ -18,19 +18,19 @@ from elftools.elf.constants import SYMINFO_FLAGS
 class TestSolarisSupport(unittest.TestCase):
 
     def _test_SUNW_syminfo_section_generic(self, testfile):
-        with open(os.path.join('test', 'testfiles',
+        with open(os.path.join('test', 'testfiles_for_unittests',
                                testfile), 'rb') as f:
             elf = ELFFile(f)
-            syminfo_section = elf.get_section_by_name('.SUNW_syminfo')
+            syminfo_section = elf.get_section_by_name(b'.SUNW_syminfo')
             self.assertIsNotNone(syminfo_section)
 
             # The test files were compiled against libc.so.1 with
-            # direct binding, hence the libc symbols used 
+            # direct binding, hence the libc symbols used
             # (exit, atexit and _exit) have the direct binding flags
             # in the syminfo table.
             # We check that this is properly detected.
             exit_symbols = [s for s in syminfo_section.iter_symbols()
-                            if 'exit' in s.name]
+                            if b'exit' in s.name]
             self.assertNotEqual(len(exit_symbols), 0)
 
             for symbol in exit_symbols:

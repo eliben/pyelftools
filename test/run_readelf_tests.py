@@ -183,7 +183,7 @@ def main():
     if len(args) > 0:
         filenames = args
     else:
-        filenames = list(discover_testfiles('test/testfiles'))
+        filenames = list(discover_testfiles('test/testfiles_for_readelf'))
 
     success = True
     for filename in filenames:

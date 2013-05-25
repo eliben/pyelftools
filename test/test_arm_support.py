@@ -15,7 +15,7 @@ from elftools.elf.elffile import ELFFile
 
 class TestARMSupport(unittest.TestCase):
     def test_hello(self):
-        with open(os.path.join('test', 'testfiles',
+        with open(os.path.join('test', 'testfiles_for_unittests',
                                'simple_gcc.elf.arm'), 'rb') as f:
             elf = ELFFile(f)
             self.assertEqual(elf.get_machine_arch(), 'ARM')
