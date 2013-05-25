@@ -265,7 +265,7 @@ class ELFFile(object):
             stringtable=strtab_section)
 
     def _make_sunwsyminfo_table_section(self, section_header, name):
-        """ Create a SymbolTableSection
+        """ Create a SUNWSyminfoTableSection
         """
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
