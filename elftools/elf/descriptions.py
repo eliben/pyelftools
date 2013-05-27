@@ -9,7 +9,7 @@
 from .enums import (
     ENUM_D_TAG, ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
     )
-from .constants import P_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS
+from .constants import P_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS
 from ..common.py3compat import iteritems
 
 
@@ -102,6 +102,18 @@ def describe_syminfo_flags(x):
 
 def describe_symbol_boundto(x):
     return _DESCR_SYMINFO_BOUNDTO.get(x, '%3s' % x)
+
+def describe_ver_flags(x):
+    s = ''
+    for flag in (
+            VER_FLAGS.VER_FLG_WEAK,
+            VER_FLAGS.VER_FLG_BASE,
+            VER_FLAGS.VER_FLG_INFO):
+        if x & flag:
+            if s:
+                s += ' | '
+            s += _DESCR_VER_FLAGS[flag]
+    return s
 
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
@@ -274,6 +286,13 @@ _DESCR_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_NONE='',
     SYMINFO_BT_EXTERN='<extern>',
 )
+
+_DESCR_VER_FLAGS = {
+    0: '',
+    VER_FLAGS.VER_FLG_BASE: 'BASE',
+    VER_FLAGS.VER_FLG_WEAK: 'WEAK',
+    VER_FLAGS.VER_FLG_INFO: 'INFO',
+}
 
 _DESCR_RELOC_TYPE_i386 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_i386))

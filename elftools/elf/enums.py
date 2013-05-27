@@ -184,9 +184,9 @@ ENUM_SH_TYPE = dict(
     SHT_NUM=19,
     SHT_LOOS=0x60000000,
     SHT_GNU_HASH=0x6ffffff6,
-    SHT_GNU_verdef=0x6ffffffd,
-    SHT_GNU_verneed=0x6ffffffe,
-    SHT_GNU_versym=0x6fffffff,
+    SHT_GNU_verdef=0x6ffffffd,  # also SHT_SUNW_verdef
+    SHT_GNU_verneed=0x6ffffffe, # also SHT_SUNW_verneed
+    SHT_GNU_versym=0x6fffffff,  # also SHT_SUNW_versym
     SHT_LOPROC=0x70000000,
     SHT_HIPROC=0x7fffffff,
     SHT_LOUSER=0x80000000,
@@ -447,6 +447,23 @@ ENUM_RELOC_TYPE_x64 = dict(
     _default_=Pass,
 )
 
+# Sunw Syminfo Bound To special values
+ENUM_SUNW_SYMINFO_BOUNDTO = dict(
+    SYMINFO_BT_SELF=0xffff,
+    SYMINFO_BT_PARENT=0xfffe,
+    SYMINFO_BT_NONE=0xfffd,
+    SYMINFO_BT_EXTERN=0xfffc,
+    _default_=Pass,
+)
+
+# Versym section, version dependency index 
+ENUM_VERSYM = dict(
+    VER_NDX_LOCAL=0,
+    VER_NDX_GLOBAL=1,
+    VER_NDX_LORESERVE=0xff00,
+    VER_NDX_ELIMINATE=0xff01,
+    _default_=Pass,
+)
 # Sunw Syminfo Bound To special values
 ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_SELF=0xffff,

@@ -74,6 +74,9 @@ class ELFStructs(object):
         self._create_rel()
         self._create_dyn()
         self._create_sunw_syminfo()
+        self._create_version_needed()
+        self._create_version_definition()
+        self._create_version_symbol()
 
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
@@ -208,4 +211,46 @@ class ELFStructs(object):
         self.Elf_Sunw_Syminfo = Struct('Elf_Sunw_Syminfo',
             Enum(self.Elf_half('si_boundto'), **ENUM_SUNW_SYMINFO_BOUNDTO),
             self.Elf_half('si_flags'),
+        )
+
+    def _create_version_needed(self):
+        # Structure of "version needed" entries is documented in
+        # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
+        self.Elf_Verneed = Struct('Elf_Verneed',
+            self.Elf_half('vn_version'),
+            self.Elf_half('vn_cnt'),
+            self.Elf_word('vn_file'),
+            self.Elf_word('vn_aux'),
+            self.Elf_word('vn_next'),
+        )
+        self.Elf_Vernaux = Struct('Elf_Vernaux',
+            self.Elf_word('vna_hash'),
+            self.Elf_half('vna_flags'),
+            self.Elf_half('vna_other'),
+            self.Elf_word('vna_name'),
+            self.Elf_word('vna_next'),
+        )
+
+    def _create_version_definition(self):
+        # Structure off "version definition" entries are documented in
+        # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
+        self.Elf_Verdef = Struct('Elf_Verdef',
+            self.Elf_half('vd_version'),
+            self.Elf_half('vd_flags'),
+            self.Elf_half('vd_ndx'),
+            self.Elf_half('vd_cnt'),
+            self.Elf_word('vd_hash'),
+            self.Elf_word('vd_aux'),
+            self.Elf_word('vd_next'),
+        )
+        self.Elf_Verdaux = Struct('Elf_Verdaux',
+            self.Elf_word('vda_name'),
+            self.Elf_word('vda_next'),
+        )
+
+    def _create_version_symbol(self):
+        # Structure off "version symbol" entries are documented in
+        # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
+        self.Elf_Versym = Struct('Elf_Versym',
+            Enum(self.Elf_half('ndx'), **ENUM_VERSYM),
         )

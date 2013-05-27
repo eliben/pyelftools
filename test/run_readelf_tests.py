@@ -52,7 +52,8 @@ def run_test_on_file(filename, verbose=False):
     for option in [
             '-e', '-d', '-s', '-r', '-x.text', '-p.shstrtab',
             '--debug-dump=info', '--debug-dump=decodedline',
-            '--debug-dump=frames', '--debug-dump=frames-interp']:
+            '--debug-dump=frames', '--debug-dump=frames-interp',
+            '-V']:
         if verbose: testlog.info("..option='%s'" % option)
         # stdouts will be a 2-element list: output of readelf and output
         # of scripts/readelf.py

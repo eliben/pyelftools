@@ -13,7 +13,9 @@ from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection,
-        SUNWSyminfoTableSection, NullSection)
+        SUNWSyminfoTableSection, VerneedTableSection, 
+        VerdefTableSection, VersymTableSection,
+        NullSection)
 from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
 from .segments import Segment, InterpSegment
@@ -248,6 +250,12 @@ class ELFFile(object):
             return self._make_symbol_table_section(section_header, name)
         elif sectype == 'SHT_SUNW_syminfo':
             return self._make_sunwsyminfo_table_section(section_header, name)
+        elif sectype == 'SHT_GNU_verneed':
+            return self._make_verneed_table_section(section_header, name)
+        elif sectype == 'SHT_GNU_verdef':
+            return self._make_verdef_table_section(section_header, name)
+        elif sectype == 'SHT_GNU_versym':
+            return self._make_versym_table_section(section_header, name)
         elif sectype in ('SHT_REL', 'SHT_RELA'):
             return RelocationSection(
                 section_header, name, self.stream, self)
@@ -272,6 +280,36 @@ class ELFFile(object):
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
         return SUNWSyminfoTableSection(
+            section_header, name, self.stream,
+            elffile=self,
+            symboltable=strtab_section)
+
+    def _make_verneed_table_section(self, section_header, name):
+        """ Create a VerneedTableSection
+        """
+        linked_strtab_index = section_header['sh_link']
+        strtab_section = self.get_section(linked_strtab_index)
+        return VerneedTableSection(
+            section_header, name, self.stream,
+            elffile=self,
+            stringtable=strtab_section)
+
+    def _make_verdef_table_section(self, section_header, name):
+        """ Create a VerdefTableSection
+        """
+        linked_strtab_index = section_header['sh_link']
+        strtab_section = self.get_section(linked_strtab_index)
+        return VerdefTableSection(
+            section_header, name, self.stream,
+            elffile=self,
+            stringtable=strtab_section)
+
+    def _make_versym_table_section(self, section_header, name):
+        """ Create a VersymTableSection
+        """
+        linked_strtab_index = section_header['sh_link']
+        strtab_section = self.get_section(linked_strtab_index)
+        return VersymTableSection(
             section_header, name, self.stream,
             elffile=self,
             symboltable=strtab_section)
