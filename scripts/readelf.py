@@ -24,9 +24,10 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG
 from elftools.elf.segments import InterpSegment
-from elftools.elf.sections import (
-    SymbolTableSection, GNUVerSymTableSection,
-    GNUVerDefTableSection, GNUVerNeedTableSection,
+from elftools.elf.sections import SymbolTableSection
+from elftools.elf.gnuversions import (
+    GNUVerSymTableSection, GNUVerDefTableSection,
+    GNUVerNeedTableSection,
     )
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.descriptions import (
