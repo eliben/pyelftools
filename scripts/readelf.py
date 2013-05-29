@@ -25,8 +25,8 @@ from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG
 from elftools.elf.segments import InterpSegment
 from elftools.elf.sections import (
-    SymbolTableSection, VersymTableSection,
-    VerdefTableSection, VerneedTableSection,
+    SymbolTableSection, GNUVerSymTableSection,
+    GNUVerDefTableSection, GNUVerNeedTableSection,
     )
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.descriptions import (
@@ -424,7 +424,7 @@ class ReadElf(object):
             return
 
         for section in self.elffile.iter_sections():
-            if isinstance(section, VersymTableSection):
+            if isinstance(section, GNUVerSymTableSection):
 
                 self._print_version_section_header(
                     section, 'Version symbols', lead0x=False)
@@ -456,7 +456,7 @@ class ReadElf(object):
 
                     self._emitline()
 
-            elif isinstance(section, VerdefTableSection):
+            elif isinstance(section, GNUVerDefTableSection):
 
                 self._print_version_section_header(
                     section, 'Version definition', indent=2)
@@ -490,7 +490,7 @@ class ReadElf(object):
 
                     offset += verdef['vd_next']
 
-            elif isinstance(section, VerneedTableSection):
+            elif isinstance(section, GNUVerNeedTableSection):
 
                 self._print_version_section_header(section, 'Version needs')
 
@@ -696,11 +696,11 @@ class ReadElf(object):
                               'verneed': None, 'type': None }
 
         for section in self.elffile.iter_sections():
-            if isinstance(section, VersymTableSection):
+            if isinstance(section, GNUVerSymTableSection):
                 self._versioninfo['versym'] = section
-            elif isinstance(section, VerdefTableSection):
+            elif isinstance(section, GNUVerDefTableSection):
                 self._versioninfo['verdef'] = section
-            elif isinstance(section, VerneedTableSection):
+            elif isinstance(section, GNUVerNeedTableSection):
                 self._versioninfo['verneed'] = section
             elif isinstance(section, DynamicSection):
                 for tag in section.iter_tags():
