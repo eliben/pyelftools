@@ -13,11 +13,12 @@ from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection,
-        SUNWSyminfoTableSection, GNUVerNeedTableSection, 
-        GNUVerDefTableSection, GNUVerSymTableSection,
-        NullSection)
+        SUNWSyminfoTableSection, NullSection)
 from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
+from .gnuversions import (
+        GNUVerNeedTableSection, GNUVerDefTableSection,
+        GNUVerSymTableSection)
 from .segments import Segment, InterpSegment
 from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
