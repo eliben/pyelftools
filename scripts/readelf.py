@@ -67,7 +67,6 @@ class ReadElf(object):
 
         self._versioninfo = None
 
-
     def display_file_header(self):
         """ Display the ELF file header
         """
@@ -272,7 +271,6 @@ class ReadElf(object):
                     bytes2str(section.name)))
                 continue
 
-
             self._emitline("\nSymbol table '%s' contains %s entries:" % (
                 bytes2str(section.name), section.num_symbols()))
 
@@ -288,7 +286,7 @@ class ReadElf(object):
                 if (section['sh_type'] == 'SHT_DYNSYM' and
                         self._versioninfo['type'] == 'GNU'):
                     version = self._symbol_version(nsym)
-                    if (version['name'] != bytes2str(symbol.name) and 
+                    if (version['name'] != bytes2str(symbol.name) and
                         version['index'] not in ('VER_NDX_LOCAL',
                                                  'VER_NDX_GLOBAL')):
                         if version['filename']:
@@ -304,7 +302,8 @@ class ReadElf(object):
                 # symbol names are truncated to 25 chars, similarly to readelf
                 self._emitline('%6d: %s %5d %-7s %-6s %-7s %4s %.25s%s' % (
                     nsym,
-                    self._format_hex(symbol['st_value'], fullhex=True, lead0x=False),
+                    self._format_hex(
+                        symbol['st_value'], fullhex=True, lead0x=False),
                     symbol['st_size'],
                     describe_symbol_type(symbol['st_info']['type']),
                     describe_symbol_bind(symbol['st_info']['bind']),
@@ -425,7 +424,6 @@ class ReadElf(object):
 
         for section in self.elffile.iter_sections():
             if isinstance(section, GNUVerSymTableSection):
-
                 self._print_version_section_header(
                     section, 'Version symbols', lead0x=False)
 
@@ -457,7 +455,6 @@ class ReadElf(object):
                     self._emitline()
 
             elif isinstance(section, GNUVerDefTableSection):
-
                 self._print_version_section_header(
                     section, 'Version definition', indent=2)
 
@@ -491,7 +488,6 @@ class ReadElf(object):
                     offset += verdef['vd_next']
 
             elif isinstance(section, GNUVerNeedTableSection):
-
                 self._print_version_section_header(section, 'Version needs')
 
                 offset = 0
@@ -643,7 +639,7 @@ class ReadElf(object):
 
             alternate:
                 If True, override lead0x to emulate the alternate
-                hexadecimal form specified in format string with the # 
+                hexadecimal form specified in format string with the #
                 character: only non-zero values are prefixed with 0x.
                 This form is used by readelf.
         """
@@ -663,11 +659,12 @@ class ReadElf(object):
             field = '%' + '0%sx' % fieldsize
         return s + field % addr
 
-
-    def _print_version_section_header(self, version_section, name, lead0x=True, indent=1):
-        """ Print a section header of one version related section (versym, verneed or verdef)
-            with some options to accomodate readelf little differences between each header
-            (e.g. indentation and 0x prefixing).
+    def _print_version_section_header(self, version_section, name, lead0x=True,
+                                      indent=1):
+        """ Print a section header of one version related section (versym,
+            verneed or verdef) with some options to accomodate readelf
+            little differences between each header (e.g. indentation
+            and 0x prefixing).
         """
         if hasattr(version_section, 'num_versions'):
             num_entries = version_section.num_versions()
@@ -676,14 +673,17 @@ class ReadElf(object):
 
         self._emitline("\n%s section '%s' contains %s entries:" %
             (name, bytes2str(version_section.name), num_entries))
-        self._emitline('%sAddr: %s  Offset: %s  Link: %i (%s)' %
-            (' ' * indent, 
-             self._format_hex(version_section['sh_addr'], fieldsize=16, lead0x=lead0x),
-             self._format_hex(version_section['sh_offset'], fieldsize=6, lead0x=True),
-             version_section['sh_link'],
-             bytes2str(self.elffile.get_section(version_section['sh_link']).name)))
-
-
+        self._emitline('%sAddr: %s  Offset: %s  Link: %i (%s)' % (
+            ' ' * indent,
+            self._format_hex(
+                version_section['sh_addr'], fieldsize=16, lead0x=lead0x),
+            self._format_hex(
+                version_section['sh_offset'], fieldsize=6, lead0x=True),
+            version_section['sh_link'],
+            bytes2str(
+                self.elffile.get_section(version_section['sh_link']).name)
+            )
+        )
 
     def _init_versioninfo(self):
         """ Search and initialize informations about version related sections
@@ -692,8 +692,8 @@ class ReadElf(object):
         if self._versioninfo is not None:
             return
 
-        self._versioninfo = { 'versym': None, 'verdef': None,
-                              'verneed': None, 'type': None }
+        self._versioninfo = {'versym': None, 'verdef': None,
+                             'verneed': None, 'type': None}
 
         for section in self.elffile.iter_sections():
             if isinstance(section, GNUVerSymTableSection):
@@ -706,19 +706,18 @@ class ReadElf(object):
                 for tag in section.iter_tags():
                     if tag['d_tag'] == 'DT_VERSYM':
                         self._versioninfo['type'] = 'GNU'
-                        break 
+                        break
 
         if not self._versioninfo['type'] and (
                 self._versioninfo['verneed'] or self._versioninfo['verdef']):
             self._versioninfo['type'] = 'Solaris'
 
-
     def _symbol_version(self, nsym):
-        """ Return a dict containing information on the 
+        """ Return a dict containing information on the
                    or None if no version information is available
         """
         self._init_versioninfo()
-           
+
         symbol_version = dict.fromkeys(('index', 'name', 'filename', 'hidden'))
 
         if (not self._versioninfo['versym'] or
@@ -731,13 +730,13 @@ class ReadElf(object):
             index = int(index)
 
             if self._versioninfo['type'] == 'GNU':
-                # In GNU versioning mode, the highest bit is used to 
+                # In GNU versioning mode, the highest bit is used to
                 # store wether the symbol is hidden or not
                 if index & 0x8000:
-                    index &= ~0x8000;
+                    index &= ~0x8000
                     symbol_version['hidden'] = True
 
-            if (self._versioninfo['verdef'] and 
+            if (self._versioninfo['verdef'] and
                     index <= self._versioninfo['verdef'].num_versions()):
                 _, verdaux_iter = \
                         self._versioninfo['verdef'].get_version(index)
@@ -750,7 +749,6 @@ class ReadElf(object):
 
         symbol_version['index'] = index
         return symbol_version
-
 
     def _section_from_spec(self, spec):
         """ Retrieve a section given a "spec" (either number or name).
