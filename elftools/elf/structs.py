@@ -74,9 +74,9 @@ class ELFStructs(object):
         self._create_rel()
         self._create_dyn()
         self._create_sunw_syminfo()
-        self._create_version_needed()
-        self._create_version_definition()
-        self._create_version_symbol()
+        self._create_gnu_verneed()
+        self._create_gnu_verdef()
+        self._create_gnu_versym()
 
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
@@ -213,7 +213,7 @@ class ELFStructs(object):
             self.Elf_half('si_flags'),
         )
 
-    def _create_version_needed(self):
+    def _create_gnu_verneed(self):
         # Structure of "version needed" entries is documented in
         # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
         self.Elf_Verneed = Struct('Elf_Verneed',
@@ -231,7 +231,7 @@ class ELFStructs(object):
             self.Elf_word('vna_next'),
         )
 
-    def _create_version_definition(self):
+    def _create_gnu_verdef(self):
         # Structure off "version definition" entries are documented in
         # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
         self.Elf_Verdef = Struct('Elf_Verdef',
@@ -248,7 +248,7 @@ class ELFStructs(object):
             self.Elf_word('vda_next'),
         )
 
-    def _create_version_symbol(self):
+    def _create_gnu_versym(self):
         # Structure off "version symbol" entries are documented in
         # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
         self.Elf_Versym = Struct('Elf_Versym',
