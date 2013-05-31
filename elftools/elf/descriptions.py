@@ -85,35 +85,26 @@ def describe_dyn_tag(x):
 
 
 def describe_syminfo_flags(x):
-    s = ''
-    for flag in (
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_CAP,
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECT,
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_FILTER,
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_AUXILIARY,
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECTBIND,
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_COPY,
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_LAZYLOAD,
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_NOEXTDIRECT,
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_INTERPOSE,
-            SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED):
-        s += _DESCR_SYMINFO_FLAGS[flag] if (x & flag) else ''
-    return s
+    return ''.join(_DESCR_SYMINFO_FLAGS[flag] for flag in (
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_CAP,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECT,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_FILTER,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_AUXILIARY,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECTBIND,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_COPY,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_LAZYLOAD,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_NOEXTDIRECT,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_INTERPOSE,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED) if x & flag)
 
 def describe_symbol_boundto(x):
     return _DESCR_SYMINFO_BOUNDTO.get(x, '%3s' % x)
 
 def describe_ver_flags(x):
-    s = ''
-    for flag in (
-            VER_FLAGS.VER_FLG_WEAK,
-            VER_FLAGS.VER_FLG_BASE,
-            VER_FLAGS.VER_FLG_INFO):
-        if x & flag:
-            if s:
-                s += ' | '
-            s += _DESCR_VER_FLAGS[flag]
-    return s
+    return ' | '.join(_DESCR_VER_FLAGS[flag] for flag in (
+        VER_FLAGS.VER_FLG_WEAK,
+        VER_FLAGS.VER_FLG_BASE,
+        VER_FLAGS.VER_FLG_INFO) if x & flag)
 
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
