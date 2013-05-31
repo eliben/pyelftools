@@ -51,21 +51,90 @@ class VersionAuxiliary(object):
         return self.entry[name]
 
 
-class GNUVerNeedSection(Section):
+class GNUVersionSection(Section):
+    """ Common ancestor class for ELF SUNW|GNU Version Needed/Dependency
+        sections class which contains shareable code
+    """
+
+    def __init__(self, header, name, stream, elffile, stringtable,
+                 field_prefix, version_struct, version_auxiliaries_struct):
+        super(GNUVersionSection, self).__init__(header, name, stream)
+        self.elffile = elffile
+        self.stringtable = stringtable
+        self.field_prefix = field_prefix
+        self.version_struct = version_struct
+        self.version_auxiliaries_struct = version_auxiliaries_struct
+
+    def num_versions(self):
+        """ Number of version entries in the section
+        """
+        return self['sh_info']
+
+    def _field_name(self, name, auxiliary=False):
+        """ Return the real field's name of version or a version auxiliary
+            entry
+        """
+        middle = 'a_' if auxiliary else '_'
+        return self.field_prefix + middle + name
+
+    def _iter_version_auxiliaries(self, entry_offset, count):
+        """ Yield all auxiliary entries of a version entry
+        """
+        name_field = self._field_name('name', auxiliary=True)
+        next_field = self._field_name('next', auxiliary=True)
+
+        for _ in range(count):
+            entry = struct_parse(
+                        self.version_auxiliaries_struct,
+                        self.stream,
+                        stream_pos=entry_offset)
+
+            name = self.stringtable.get_string(entry[name_field])
+            version_aux = VersionAuxiliary(entry, name)
+            yield version_aux
+
+            entry_offset += entry[next_field]
+
+    def iter_versions(self):
+        """ Yield all the version entries in the section
+            Each time it returns the main version structure
+            and an iterator to walk through its auxiliaries entries
+        """
+        aux_field = self._field_name('aux')
+        count_field = self._field_name('cnt')
+        next_field = self._field_name('next')
+
+        entry_offset = self['sh_offset']
+        for _ in range(self.num_versions()):
+            entry = struct_parse(
+                self.version_struct,
+                self.stream,
+                stream_pos=entry_offset)
+
+            elf_assert(entry[count_field] > 0,
+                'Expected number of version auxiliary entries (%s) to be > 0'
+                'for the following version entry: %s' % (
+                    count_field, str(entry)))
+
+            version = Version(entry)
+            aux_entries_offset = entry_offset + entry[aux_field]
+            version_auxiliaries_iter = self._iter_version_auxiliaries(
+                    aux_entries_offset, entry[count_field])
+
+            yield version, version_auxiliaries_iter
+
+            entry_offset += entry[next_field]
+
+
+class GNUVerNeedSection(GNUVersionSection):
     """ ELF SUNW or GNU Version Needed table section.
         Has an associated StringTableSection that's passed in the constructor.
     """
     def __init__(self, header, name, stream, elffile, stringtable):
-        super(GNUVerNeedSection, self).__init__(header, name, stream)
-        self.elffile = elffile
-        self.elfstructs = self.elffile.structs
-        self.stringtable = stringtable
+        super(GNUVerNeedSection, self).__init__(
+                header, name, stream, elffile, stringtable, 'vn',
+                elffile.structs.Elf_Verneed, elffile.structs.Elf_Vernaux)
         self._has_indexes = None
-
-    def num_versions(self):
-        """ Number of version dependency in the table
-        """
-        return self['sh_info']
 
     def has_indexes(self):
         """ Return True if at least one version definition entry has an index
@@ -82,6 +151,11 @@ class GNUVerNeedSection(Section):
 
         return self._has_indexes
 
+    def iter_versions(self):
+        for verneed, vernaux in super(GNUVerNeedSection, self).iter_versions():
+            verneed.name = self.stringtable.get_string(verneed['vn_file'])
+            yield verneed, vernaux
+
     def get_version(self, index):
         """ Get the version information located at index #n in the table
             Return boths the verneed structure and the vernaux structure
@@ -94,67 +168,15 @@ class GNUVerNeedSection(Section):
 
         return None
 
-    def _iter_version_auxiliaries(self, entry_offset, count):
-        """ Yield all auxiliary entries of a version dependency
-        """
-        for _ in range(count):
-            entry = struct_parse(
-                        self.elfstructs.Elf_Vernaux,
-                        self.stream,
-                        stream_pos=entry_offset)
 
-            name = self.stringtable.get_string(entry['vna_name'])
-            version_aux = VersionAuxiliary(entry, name)
-            yield version_aux
-
-            if not entry['vna_next']:
-                break
-
-            entry_offset += entry['vna_next']
-
-    def iter_versions(self):
-        """ Yield all the version dependencies entries in the table
-            Each time it returns the main version dependency structure
-            and an iterator to walk through its auxiliaries entries
-        """
-        entry_offset = self['sh_offset']
-        for _ in range(self.num_versions()):
-            entry = struct_parse(
-                self.elfstructs.Elf_Verneed,
-                self.stream,
-                stream_pos=entry_offset)
-
-            name = self.stringtable.get_string(entry['vn_file'])
-            elf_assert(entry['vn_cnt'] > 0,
-                'Expected number of version names to be > 0 for'
-                'version definition %s' % name)
-
-            verneed = Version(entry, name)
-            aux_entries_offset = entry_offset + entry['vn_aux']
-            vernaux_iter = self._iter_version_auxiliaries(aux_entries_offset,
-                                                          entry['vn_cnt'])
-            yield verneed, vernaux_iter
-
-            if not entry['vn_next']:
-                break
-
-            entry_offset += entry['vn_next']
-
-
-class GNUVerDefSection(Section):
+class GNUVerDefSection(GNUVersionSection):
     """ ELF SUNW or GNU Version Definition table section.
         Has an associated StringTableSection that's passed in the constructor.
     """
     def __init__(self, header, name, stream, elffile, stringtable):
-        super(GNUVerDefSection, self).__init__(header, name, stream)
-        self.elffile = elffile
-        self.elfstructs = self.elffile.structs
-        self.stringtable = stringtable
-
-    def num_versions(self):
-        """ Number of version definitions in the table
-        """
-        return self['sh_info']
+        super(GNUVerDefSection, self).__init__(
+                header, name, stream, elffile, stringtable, 'vd',
+                elffile.structs.Elf_Verdef, elffile.structs.Elf_Verdaux)
 
     def get_version(self, index):
         """ Get the version information located at index #n in the table
@@ -167,51 +189,6 @@ class GNUVerDefSection(Section):
                 return verdef, verdaux_iter
 
         return None
-
-    def _iter_version_auxiliaries(self, entry_offset, count):
-        """ Yield all auxiliary entries of a version definition
-        """
-        for _ in range(count):
-            entry = struct_parse(
-                        self.elfstructs.Elf_Verdaux,
-                        self.stream,
-                        stream_pos=entry_offset)
-
-            name = self.stringtable.get_string(entry['vda_name'])
-            vernaux = VersionAuxiliary(entry, name)
-            yield vernaux
-
-            if not entry['vda_next']:
-                break
-
-            entry_offset += entry['vda_next']
-
-    def iter_versions(self):
-        """ Yield all the version definition entries in the table
-            Each time it returns the main version definition structure
-            and an iterator to walk through its auxiliaries entries
-        """
-        entry_offset = self['sh_offset']
-        for _ in range(self.num_versions()):
-            entry = struct_parse(
-                self.elfstructs.Elf_Verdef,
-                self.stream,
-                stream_pos=entry_offset)
-
-            elf_assert(entry['vd_cnt'] > 0,
-                'Expected number of version names to be > 0'
-                'for version definition at index %i' % entry['vd_ndx'])
-
-            verdef = Version(entry)
-            aux_entries_offset = entry_offset + entry['vd_aux']
-            verdaux_iter = self._iter_version_auxiliaries(aux_entries_offset,
-                                                          entry['vd_cnt'])
-            yield verdef, verdaux_iter
-
-            if not entry['vd_next']:
-                break
-
-            entry_offset += entry['vd_next']
 
 
 class GNUVerSymSection(Section):
