@@ -17,8 +17,8 @@ from .sections import (
 from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
 from .gnuversions import (
-        GNUVerNeedTableSection, GNUVerDefTableSection,
-        GNUVerSymTableSection)
+        GNUVerNeedSection, GNUVerDefSection,
+        GNUVerSymSection)
 from .segments import Segment, InterpSegment
 from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
@@ -286,31 +286,31 @@ class ELFFile(object):
             symboltable=strtab_section)
 
     def _make_gnu_verneed_section(self, section_header, name):
-        """ Create a GNUVerNeedTableSection
+        """ Create a GNUVerNeedSection
         """
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
-        return GNUVerNeedTableSection(
+        return GNUVerNeedSection(
             section_header, name, self.stream,
             elffile=self,
             stringtable=strtab_section)
 
     def _make_gnu_verdef_section(self, section_header, name):
-        """ Create a GNUVerDefTableSection
+        """ Create a GNUVerDefSection
         """
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
-        return GNUVerDefTableSection(
+        return GNUVerDefSection(
             section_header, name, self.stream,
             elffile=self,
             stringtable=strtab_section)
 
     def _make_gnu_versym_section(self, section_header, name):
-        """ Create a GNUVerSymTableSection
+        """ Create a GNUVerSymSection
         """
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
-        return GNUVerSymTableSection(
+        return GNUVerSymSection(
             section_header, name, self.stream,
             elffile=self,
             symboltable=strtab_section)

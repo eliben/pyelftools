@@ -15,8 +15,8 @@ setup_syspath()
 from elftools.elf.elffile import ELFFile
 from elftools.elf.constants import VER_FLAGS
 from elftools.elf.gnuversions import (
-        GNUVerNeedTableSection, GNUVerDefTableSection,
-        GNUVerSymTableSection)
+        GNUVerNeedSection, GNUVerDefSection,
+        GNUVerSymSection)
 
 
 class TestSymbolVersioning(unittest.TestCase):
@@ -57,7 +57,7 @@ class TestSymbolVersioning(unittest.TestCase):
             elf = ELFFile(f)
             versym_section = None
             for section in elf.iter_sections():
-                if isinstance(section, GNUVerSymTableSection):
+                if isinstance(section, GNUVerSymSection):
                     versym_section = section
                     break
 
@@ -87,7 +87,7 @@ class TestSymbolVersioning(unittest.TestCase):
             elf = ELFFile(f)
             verneed_section = None
             for section in elf.iter_sections():
-                if isinstance(section, GNUVerNeedTableSection):
+                if isinstance(section, GNUVerNeedSection):
                     verneed_section = section
                     break
 
@@ -137,7 +137,7 @@ class TestSymbolVersioning(unittest.TestCase):
             elf = ELFFile(f)
             verneed_section = None
             for section in elf.iter_sections():
-                if isinstance(section, GNUVerDefTableSection):
+                if isinstance(section, GNUVerDefSection):
                     verdef_section = section
                     break
 

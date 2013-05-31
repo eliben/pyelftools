@@ -51,12 +51,12 @@ class VersionAuxiliary(object):
         return self.entry[name]
 
 
-class GNUVerNeedTableSection(Section):
+class GNUVerNeedSection(Section):
     """ ELF SUNW or GNU Version Needed table section.
         Has an associated StringTableSection that's passed in the constructor.
     """
     def __init__(self, header, name, stream, elffile, stringtable):
-        super(GNUVerNeedTableSection, self).__init__(header, name, stream)
+        super(GNUVerNeedSection, self).__init__(header, name, stream)
         self.elffile = elffile
         self.elfstructs = self.elffile.structs
         self.stringtable = stringtable
@@ -141,12 +141,12 @@ class GNUVerNeedTableSection(Section):
             entry_offset += entry['vn_next']
 
 
-class GNUVerDefTableSection(Section):
+class GNUVerDefSection(Section):
     """ ELF SUNW or GNU Version Definition table section.
         Has an associated StringTableSection that's passed in the constructor.
     """
     def __init__(self, header, name, stream, elffile, stringtable):
-        super(GNUVerDefTableSection, self).__init__(header, name, stream)
+        super(GNUVerDefSection, self).__init__(header, name, stream)
         self.elffile = elffile
         self.elfstructs = self.elffile.structs
         self.stringtable = stringtable
@@ -214,12 +214,12 @@ class GNUVerDefTableSection(Section):
             entry_offset += entry['vd_next']
 
 
-class GNUVerSymTableSection(Section):
+class GNUVerSymSection(Section):
     """ ELF SUNW or GNU Versym table section.
         Has an associated SymbolTableSection that's passed in the constructor.
     """
     def __init__(self, header, name, stream, elffile, symboltable):
-        super(GNUVerSymTableSection, self).__init__(header, name, stream)
+        super(GNUVerSymSection, self).__init__(header, name, stream)
         self.elffile = elffile
         self.elfstructs = self.elffile.structs
         self.symboltable = symboltable
