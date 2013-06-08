@@ -204,6 +204,10 @@ class DWARFStructs(object):
             DW_FORM_sec_offset = self.Dwarf_offset(''),
             DW_FORM_exprloc = self._make_block_struct(self.Dwarf_uleb128),
             DW_FORM_ref_sig8 = self.Dwarf_offset(''),
+
+            DW_FORM_GNU_strp_alt=self.Dwarf_offset(''),
+            DW_FORM_GNU_ref_alt=self.Dwarf_offset(''),
+            DW_AT_GNU_all_call_sites=self.Dwarf_uleb128(''),
         )
 
     def _create_lineprog_header(self):

@@ -270,6 +270,8 @@ ENUM_DW_FORM = dict(
     DW_FORM_flag_present    = 0x19,
     DW_FORM_ref_sig8        = 0x20,
 
+    DW_FORM_GNU_strp_alt    = 0x1f21,
+    DW_FORM_GNU_ref_alt     = 0x1f20,
     _default_               = Pass,
 )
 
