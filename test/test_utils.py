@@ -45,17 +45,17 @@ class Test_parse_cstring_from_stream(unittest.TestCase):
         self.assertEqual(parse_cstring_from_stream(sio, 2348), text[2348:5000])
 
 
-class Test_preserve_stream_pos(object):
+class Test_preserve_stream_pos(unittest.TestCase):
     def test_basic(self):
-        sio = BytesIO('abcdef')
+        sio = BytesIO(b'abcdef')
         with preserve_stream_pos(sio):
             sio.seek(4)
-        self.assertEqual(stream.tell(), 0)
+        self.assertEqual(sio.tell(), 0)
 
         sio.seek(5)
         with preserve_stream_pos(sio):
             sio.seek(0)
-        self.assertEqual(stream.tell(), 5)
+        self.assertEqual(sio.tell(), 5)
 
 
 if __name__ == '__main__':

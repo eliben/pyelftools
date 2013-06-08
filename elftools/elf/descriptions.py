@@ -7,8 +7,8 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from .enums import (
-    ENUM_D_TAG, ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
-    )
+    ENUM_D_TAG, ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
+        ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64)
 from .constants import P_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS
 from ..common.py3compat import iteritems
 
@@ -77,6 +77,10 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_i386.get(x, _unknown)
     elif arch == 'x64':
         return _DESCR_RELOC_TYPE_x64.get(x, _unknown)
+    elif arch == 'ARM':
+        return _DESCR_RELOC_TYPE_ARM.get(x, _unknown)
+    elif arch == 'AArch64':
+        return _DESCR_RELOC_TYPE_AARCH64.get(x, _unknown)
     else:
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
 
@@ -162,6 +166,8 @@ _DESCR_E_MACHINE = dict(
     EM_IA_64='Intel IA-64',
     EM_X86_64='Advanced Micro Devices X86-64',
     EM_AVR='Atmel AVR 8-bit microcontroller',
+    EM_ARM='ARM',
+    EM_AARCH64='AArch64',
     RESERVED='RESERVED',
 )
 
@@ -176,6 +182,11 @@ _DESCR_P_TYPE = dict(
     PT_GNU_EH_FRAME='GNU_EH_FRAME',
     PT_GNU_STACK='GNU_STACK',
     PT_GNU_RELRO='GNU_RELRO',
+    PT_ARM_ARCHEXT='ARM_ARCHEXT',
+    PT_ARM_EXIDX='ARM_EXIDX',
+    PT_ARM_UNWIND='ARM_UNWIND',
+    PT_AARCH64_ARCHEXT='AARCH64_ARCHEXT',
+    PT_AARCH64_UNWIND='AARCH64_UNWIND',
 )
 
 _DESCR_P_FLAGS = {
@@ -207,6 +218,10 @@ _DESCR_SH_TYPE = dict(
     SHT_GNU_verneed='VERNEED',
     SHT_GNU_versym='VERSYM',
     SHT_GNU_LIBLIST='GNU_LIBLIST',
+    SHT_ARM_EXIDX='ARM_EXIDX',
+    SHT_ARM_PREEMPTMAP='ARM_PREEMPTMAP',
+    SHT_ARM_ATTRIBUTES='ARM_ATTRIBUTES',
+    SHT_ARM_DEBUGOVERLAY='ARM_DEBUGOVERLAY',
 )
 
 _DESCR_SH_FLAGS = {
@@ -280,6 +295,12 @@ _DESCR_RELOC_TYPE_i386 = dict(
 
 _DESCR_RELOC_TYPE_x64 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_x64))
+
+_DESCR_RELOC_TYPE_ARM = dict(
+        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_ARM))
+
+_DESCR_RELOC_TYPE_AARCH64 = dict(
+        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_AARCH64))
 
 _DESCR_D_TAG = dict(
         (v, k) for k, v in iteritems(ENUM_D_TAG))

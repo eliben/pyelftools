@@ -161,6 +161,8 @@ class ELFFile(object):
             return 'x86'
         elif self['e_machine'] == 'EM_ARM':
             return 'ARM'
+        elif self['e_machine'] == 'EM_AARCH64':
+            return 'AArch64'
         else:
             return '<unknown>'
 
