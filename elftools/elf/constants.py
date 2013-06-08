@@ -6,6 +6,26 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+
+class E_FLAGS(object):
+    """ Flag values for the e_flags field of the ELF header
+    """
+    EF_ARM_EABIMASK=0xFF000000
+    EF_ARM_EABI_VER1=0x01000000
+    EF_ARM_EABI_VER2=0x02000000
+    EF_ARM_EABI_VER3=0x03000000
+    EF_ARM_EABI_VER4=0x04000000
+    EF_ARM_EABI_VER5=0x05000000
+    EF_ARM_GCCMASK=0x00400FFF
+    EF_ARM_HASENTRY=0x02
+    EF_ARM_SYMSARESORTED=0x04
+    EF_ARM_DYNSYMSUSESEGIDX=0x8
+    EF_ARM_MAPSYMSFIRST=0x10
+    EF_ARM_LE8=0x00400000
+    EF_ARM_BE8=0x00800000
+    EF_ARM_ABI_FLOAT_SOFT=0x00000200
+    EF_ARM_ABI_FLOAT_HARD=0x00000400
+
 class SHN_INDICES(object):
     """ Special section indices
     """

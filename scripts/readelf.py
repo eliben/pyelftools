@@ -39,6 +39,7 @@ from elftools.elf.descriptions import (
     describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
     describe_ver_flags,
     )
+from elftools.elf.constants import E_FLAGS
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
     describe_reg_name, describe_attr_value, set_global_machine_arch,
@@ -101,8 +102,9 @@ class ReadElf(object):
         self._emit('  Start of section headers:          %s' %
                 header['e_shoff'])
         self._emitline(' (bytes into file)')
-        self._emitline('  Flags:                             %s' %
-                self._format_hex(header['e_flags']))
+        self._emitline('  Flags:                             %s%s' %
+                (self._format_hex(header['e_flags']),
+                self.decode_flags(header['e_flags'])))
         self._emitline('  Size of this header:               %s (bytes)' %
                 header['e_ehsize'])
         self._emitline('  Size of program headers:           %s (bytes)' %
@@ -115,6 +117,17 @@ class ReadElf(object):
                 header['e_shnum'])
         self._emitline('  Section header string table index: %s' %
                 header['e_shstrndx'])
+
+    def decode_flags(self, flags):
+        description = ""
+        if self.elffile['e_machine'] == "EM_ARM":
+            if flags & E_FLAGS.EF_ARM_HASENTRY:
+                description += ", has entry point"
+
+            version = flags & E_FLAGS.EF_ARM_EABIMASK
+            if version == E_FLAGS.EF_ARM_EABI_VER5:
+                description += ", Version5 EABI"
+        return description
 
     def display_program_headers(self, show_heading=True):
         """ Display the ELF program headers.
@@ -316,10 +329,12 @@ class ReadElf(object):
     def display_dynamic_tags(self):
         """ Display the dynamic tags contained in the file
         """
+        has_dynamic_sections = False
         for section in self.elffile.iter_sections():
             if not isinstance(section, DynamicSection):
                 continue
 
+            has_dynamic_sections = True
             self._emitline("\nDynamic section at offset %s contains %s entries:" % (
                 self._format_hex(section['sh_offset']),
                 section.num_tags()))
@@ -355,6 +370,10 @@ class ReadElf(object):
                     padding,
                     '(%s)' % (tag.entry.d_tag[3:],),
                     parsed))
+        if not has_dynamic_sections:
+            # readelf only prints this if there is at least one segment
+            if self.elffile.num_segments():
+                self._emitline("\nThere is no dynamic section in this file.")
 
     def display_relocations(self):
         """ Display the relocations contained in the file
