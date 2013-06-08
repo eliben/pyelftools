@@ -3,6 +3,7 @@ Changelog
 
 + Version 0.22 (??)
 
+  - Support for version sections - contributed by Yann Rouillard.
   - Better ARM support (including AArch64) - contributed by Dobromir Stefanov.
   - Added some initial support for parsing Solaris OpenCSW ELF files
     (contributed by Yann Rouillard).
