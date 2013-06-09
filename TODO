@@ -24,6 +24,5 @@ Preparing a new release
 * Runt 'tox' tests (with '-r' to create new venvs)
 * Now build with upload to send it to PyPi
 * Test with pip install from some new virtualenv
-* If everything is OK, upload the distribution to BitBucket as well
 * The older download can be kept alive for a couple of days
 
