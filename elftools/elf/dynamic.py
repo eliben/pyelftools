@@ -11,7 +11,22 @@ import itertools
 from .sections import Section
 from .segments import Segment
 from ..common.exceptions import ELFError
-from ..common.utils import struct_parse
+from ..common.utils import struct_parse, parse_cstring_from_stream
+
+
+class _DynamicStringTable(object):
+    """ Bare string table based on values found via ELF dynamic tags and
+        loadable segments only.  Good enough for get_string() only.
+    """
+    def __init__(self, stream, table_offset):
+        self._stream = stream
+        self._table_offset = table_offset
+
+    def get_string(self, offset):
+        """ Get the string stored at the given offset in this string table.
+        """
+        return parse_cstring_from_stream(self._stream,
+                                         self._table_offset + offset)
 
 
 class DynamicTag(object):
@@ -61,27 +76,68 @@ class Dynamic(object):
         self._num_tags = -1
         self._offset = position
         self._tagsize = self._elfstructs.Elf_Dyn.sizeof()
+
+        # Do not access this directly yourself; use _get_stringtable() instead.
         self._stringtable = stringtable
+
+    def _get_stringtable(self):
+        """ Return a string table for looking up dynamic tag related strings.
+
+            This won't be a "full" string table object, but will at least
+            support the get_string() function.
+        """
+        if self._stringtable:
+            return self._stringtable
+
+        # If the ELF has stripped its section table (which is unusual, but
+        # perfectly valid), we need to use the dynamic tags to locate the
+        # dynamic string table.
+        strtab = None
+        for tag in self._iter_tags(type='DT_STRTAB'):
+            strtab = tag['d_val']
+            break
+        # If we found a dynamic string table, locate the offset in the file
+        # by using the program headers.
+        if strtab:
+            table_offset = next(self._elffile.address_offsets(strtab), None)
+            if table_offset is not None:
+                self._stringtable = _DynamicStringTable(self._stream, table_offset)
+                return self._stringtable
+
+        # That didn't work for some reason.  Let's use the section header
+        # even though this ELF is super weird.
+        self._stringtable = self._elffile.get_section_by_name(b'.dynstr')
+        return self._stringtable
+
+    def _iter_tags(self, type=None):
+        """ Yield all raw tags (limit to |type| if specified)
+        """
+        for n in itertools.count():
+            tag = self._get_tag(n)
+            if type is None or tag['d_tag'] == type:
+                yield tag
+            if tag['d_tag'] == 'DT_NULL':
+                break
 
     def iter_tags(self, type=None):
         """ Yield all tags (limit to |type| if specified)
         """
-        for n in itertools.count():
-            tag = self.get_tag(n)
-            if type is None or tag.entry.d_tag == type:
-                yield tag
-            if tag.entry.d_tag == 'DT_NULL':
-                break
+        for tag in self._iter_tags(type=type):
+            yield DynamicTag(tag, self._get_stringtable())
+
+    def _get_tag(self, n):
+        """ Get the raw tag at index #n from the file
+        """
+        offset = self._offset + n * self._tagsize
+        return struct_parse(
+            self._elfstructs.Elf_Dyn,
+            self._stream,
+            stream_pos=offset)
 
     def get_tag(self, n):
         """ Get the tag at index #n from the file (DynamicTag object)
         """
-        offset = self._offset + n * self._tagsize
-        entry = struct_parse(
-            self._elfstructs.Elf_Dyn,
-            self._stream,
-            stream_pos=offset)
-        return DynamicTag(entry, self._stringtable)
+        return DynamicTag(self._get_tag(n), self._get_stringtable())
 
     def num_tags(self):
         """ Number of dynamic tags in the file
