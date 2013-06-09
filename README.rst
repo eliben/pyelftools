@@ -3,7 +3,7 @@ Introduction: what is pyelftools?
 
 **pyelftools** is a pure-Python library for parsing and analyzing ELF files
 and DWARF debugging information. See the
-`User's guide <https://bitbucket.org/eliben/pyelftools/wiki/Userguide>`_
+`User's guide <https://github.com/eliben/pyelftools/wiki/User's-guide>`_
 for more details.
 
 Pre-requisites
@@ -12,7 +12,7 @@ Pre-requisites
 As a user of **pyelftools**, one only needs Python to run. It works with
 Python versions 2.6, 2.7 and 3.x (x >= 2). For hacking on **pyelftools** the
 requirements are a bit more strict, please see the
-`hacking guide <https://bitbucket.org/eliben/pyelftools/wiki/Hacking>`_.
+`hacking guide <https://github.com/eliben/pyelftools/wiki/Hacking-guide>`_.
 
 Installing
 ----------
@@ -23,7 +23,7 @@ Installing
 
 Alternatively, you can download the source distribution for the most recent and
 historic versions from the *Downloads* tab on the `pyelftools project page
-<https://bitbucket.org/eliben/pyelftools>`_ (by going to *Tags*). Then, you can
+<https://github.com/eliben/pyelftools>`_ (by going to *Tags*). Then, you can
 install from source, as usual::
 
     > python setup.py install
@@ -37,7 +37,7 @@ How to use it?
 
 **pyelftools** is a regular Python library: you import and invoke it from your
 own code. For a detailed usage guide and links to examples, please consult the
-`user's guide <https://bitbucket.org/eliben/pyelftools/wiki/Userguide>`_.
+`user's guide <https://github.com/eliben/pyelftools/wiki/User's-guide>`_.
 
 License
 -------

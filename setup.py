@@ -28,7 +28,7 @@ setup(
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
-    url='https://bitbucket.org/eliben/pyelftools',
+    url='https://github.com/eliben/pyelftools',
     platforms='Cross Platform',
     classifiers = [
         'Programming Language :: Python :: 2',
