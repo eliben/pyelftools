@@ -29,8 +29,9 @@ install from source, as usual::
     > python setup.py install
 
 Since **pyelftools** is a work in progress, it's recommended to have the most
-recent version of the code. This can be done by downloading the ``tip`` tag
-("trunk") from *Downloads* or just cloning the Mercurial repository.
+recent version of the code. This can be done by downloading the `master zip
+file <https://github.com/eliben/pyelftools/archive/master.zip>`_ or just
+cloning the Git repository.
 
 How to use it?
 --------------
