@@ -65,9 +65,8 @@ def process_file(filename):
                     name = comp_dir
             except KeyError as e:
                 name_attr = top_DIE.attributes['DW_AT_name']
-                name = "bytes2str(name_attr.value)"
+                name = bytes2str(name_attr.value)
             print('    name=%s' % name)
-            #print('    name=%s, %s-%s' % (name, bytes2str(top_DIE.attributes['DW_AT_low_pc'].value), bytes2str(top_DIE.attributes['DW_AT_high_pc'].value)))
 
             # Display DIEs recursively starting with top_DIE
             die_info_rec(top_DIE)
