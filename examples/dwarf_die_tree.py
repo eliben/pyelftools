@@ -8,6 +8,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from __future__ import print_function
+import os
 import sys
 
 # If pyelftools is not installed, the example can also run from the root or
@@ -47,12 +48,26 @@ def process_file(filename):
             # Each DIE holds an OrderedDict of attributes, mapping names to
             # values. Values are represented by AttributeValue objects in
             # elftools/dwarf/die.py
-            # We're interested in the DW_AT_name attribute. Note that its value
+            # We're interested in the filename, which is the join of
+            # 'DW_AT_comp_dir' and 'DW_AT_name', either of which may be
+            # missing in practice. Note that its value
             # is usually a string taken from the .debug_string section. This
             # is done transparently by the library, and such a value will be
             # simply given as a string.
-            name_attr = top_DIE.attributes['DW_AT_name']
-            print('    name=%s' % bytes2str(name_attr.value))
+            try:
+                comp_dir_attr = top_DIE.attributes['DW_AT_comp_dir']
+                comp_dir = bytes2str(comp_dir_attr.value)
+                try:
+                    name_attr = top_DIE.attributes['DW_AT_name']
+                    name = bytes2str(name_attr.value)
+                    name = os.path.join(comp_dir, name)
+                except KeyError as e:
+                    name = comp_dir
+            except KeyError as e:
+                name_attr = top_DIE.attributes['DW_AT_name']
+                name = "bytes2str(name_attr.value)"
+            print('    name=%s' % name)
+            #print('    name=%s, %s-%s' % (name, bytes2str(top_DIE.attributes['DW_AT_low_pc'].value), bytes2str(top_DIE.attributes['DW_AT_high_pc'].value)))
 
             # Display DIEs recursively starting with top_DIE
             die_info_rec(top_DIE)
