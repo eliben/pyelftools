@@ -128,7 +128,7 @@ class DIE(object):
     def __repr__(self):
         s = 'DIE %s, size=%s, has_chidren=%s\n' % (
             self.tag, self.size, self.has_children)
-        for attrname, attrval in self.attributes.iteritems():
+        for attrname, attrval in self.attributes.items():
             s += '    |%-18s:  %s\n' % (attrname, attrval)
         return s
 
