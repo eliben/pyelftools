@@ -28,12 +28,11 @@ class DynamicTag(object):
         ['DT_NEEDED', 'DT_RPATH', 'DT_RUNPATH', 'DT_SONAME',
          'DT_SUNW_FILTER'])
 
-    def __init__(self, entry, elffile):
+    def __init__(self, entry, stringtable):
         self.entry = entry
         if entry.d_tag in self._HANDLED_TAGS:
-            dynstr = elffile.get_section_by_name(b'.dynstr')
             setattr(self, entry.d_tag[3:].lower(),
-                    dynstr.get_string(self.entry.d_val))
+                    stringtable.get_string(self.entry.d_val))
 
     def __getitem__(self, name):
         """ Implement dict-like access to entries
@@ -54,13 +53,14 @@ class DynamicTag(object):
 class Dynamic(object):
     """ Shared functionality between dynamic sections and segments.
     """
-    def __init__(self, stream, elffile, position):
+    def __init__(self, stream, elffile, stringtable, position):
         self._stream = stream
         self._elffile = elffile
         self._elfstructs = elffile.structs
         self._num_tags = -1
         self._offset = position
         self._tagsize = self._elfstructs.Elf_Dyn.sizeof()
+        self._stringtable = stringtable
 
     def iter_tags(self, type=None):
         """ Yield all tags (limit to |type| if specified)
@@ -80,7 +80,7 @@ class Dynamic(object):
             self._elfstructs.Elf_Dyn,
             self._stream,
             stream_pos=offset)
-        return DynamicTag(entry, self._elffile)
+        return DynamicTag(entry, self._stringtable)
 
     def num_tags(self):
         """ Number of dynamic tags in the file
@@ -100,12 +100,24 @@ class DynamicSection(Section, Dynamic):
     """
     def __init__(self, header, name, stream, elffile):
         Section.__init__(self, header, name, stream)
-        Dynamic.__init__(self, stream, elffile, self['sh_offset'])
+        stringtable = elffile.get_section(header['sh_link'])
+        Dynamic.__init__(self, stream, elffile, stringtable, self['sh_offset'])
 
 
 class DynamicSegment(Segment, Dynamic):
     """ ELF dynamic table segment.  Knows how to process the list of tags.
     """
     def __init__(self, header, stream, elffile):
+        # The string table section to be used to resolve string names in
+        # the dynamic tag array is the one pointed at by the sh_link field
+        # of the dynamic section header.
+        # So we must look for the dynamic section contained in the dynamic
+        # segment, we do so by searching for the dynamic section whose content
+        # is located at the same offset as the dynamic segment
+        for section in elffile.iter_sections():
+            if (isinstance(section, DynamicSection) and
+                    section['sh_offset'] == header['p_offset']):
+                stringtable = elffile.get_section(section['sh_link'])
+                break
         Segment.__init__(self, header, stream)
-        Dynamic.__init__(self, stream, elffile, self['p_offset'])
+        Dynamic.__init__(self, stream, elffile, stringtable, self['p_offset'])
