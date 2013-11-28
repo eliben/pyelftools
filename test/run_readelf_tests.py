@@ -23,16 +23,14 @@ testlog = logging.getLogger('run_tests')
 testlog.setLevel(logging.DEBUG)
 testlog.addHandler(logging.StreamHandler(sys.stdout))
 
-# Set the path for calling readelf. By default this is the system readelf.
-# The first assignment to READELF_PATH reflects the binutils version I used
-# to test the current pyelftools with.
-# Alas, binutils's readelf changes its output slightly even between minor
-# releases so a lot of bogus differences can occur; this is why an exact version
-# is specified to reproduce the tests.
-#
-READELF_PATH = '/home/eliben/test/binutils-2.23.52/binutils/readelf'
+# Set the path for calling readelf. We carry our own version of readelf around,
+# because binutils tend to change its output even between daily builds of the
+# same minor release and keeping track is a headache.
+READELF_PATH = 'test/external_tools/readelf'
 if not os.path.exists(READELF_PATH):
     READELF_PATH = 'readelf'
+
+print(READELF_PATH)
 
 def discover_testfiles(rootdir):
     """ Discover test files in the given directory. Yield them one by one.
