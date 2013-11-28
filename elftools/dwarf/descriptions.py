@@ -82,7 +82,7 @@ def describe_CFI_instructions(entry):
                         'DW_CFA_advance_loc4', 'DW_CFA_advance_loc'):
             _assert_FDE_instruction(instr)
             factored_offset = instr.args[0] * cie['code_alignment_factor']
-            s += '  %s: %s to %08x\n' % (
+            s += '  %s: %s to %016x\n' % (
                 name, factored_offset, factored_offset + pc)
             pc += factored_offset
         elif name in (  'DW_CFA_remember_state', 'DW_CFA_restore_state',

@@ -30,8 +30,6 @@ READELF_PATH = 'test/external_tools/readelf'
 if not os.path.exists(READELF_PATH):
     READELF_PATH = 'readelf'
 
-print(READELF_PATH)
-
 def discover_testfiles(rootdir):
     """ Discover test files in the given directory. Yield them one by one.
     """

@@ -923,7 +923,7 @@ class ReadElf(object):
 
         for entry in self._dwarfinfo.CFI_entries():
             if isinstance(entry, CIE):
-                self._emitline('\n%08x %08x %08x CIE' % (
+                self._emitline('\n%08x %016x %016x CIE' % (
                     entry.offset, entry['length'], entry['CIE_id']))
                 self._emitline('  Version:               %d' % entry['version'])
                 self._emitline('  Augmentation:          "%s"' % bytes2str(entry['augmentation']))
@@ -932,7 +932,7 @@ class ReadElf(object):
                 self._emitline('  Return address column: %d' % entry['return_address_register'])
                 self._emitline()
             else: # FDE
-                self._emitline('\n%08x %08x %08x FDE cie=%08x pc=%08x..%08x' % (
+                self._emitline('\n%08x %016x %016x FDE cie=%08x pc=%016x..%016x' % (
                     entry.offset,
                     entry['length'],
                     entry['CIE_pointer'],
@@ -953,7 +953,7 @@ class ReadElf(object):
 
         for entry in self._dwarfinfo.CFI_entries():
             if isinstance(entry, CIE):
-                self._emitline('\n%08x %08x %08x CIE "%s" cf=%d df=%d ra=%d' % (
+                self._emitline('\n%08x %016x %016x CIE "%s" cf=%d df=%d ra=%d' % (
                     entry.offset,
                     entry['length'],
                     entry['CIE_id'],
@@ -963,7 +963,7 @@ class ReadElf(object):
                     entry['return_address_register']))
                 ra_regnum = entry['return_address_register']
             else: # FDE
-                self._emitline('\n%08x %08x %08x FDE cie=%08x pc=%08x..%08x' % (
+                self._emitline('\n%08x %016x %016x FDE cie=%08x pc=%016x..%016x' % (
                     entry.offset,
                     entry['length'],
                     entry['CIE_pointer'],
