@@ -923,8 +923,10 @@ class ReadElf(object):
 
         for entry in self._dwarfinfo.CFI_entries():
             if isinstance(entry, CIE):
-                self._emitline('\n%08x %016x %016x CIE' % (
-                    entry.offset, entry['length'], entry['CIE_id']))
+                self._emitline('\n%08x %s %s CIE' % (
+                    entry.offset,
+                    self._format_hex(entry['length'], fullhex=True, lead0x=False),
+                    self._format_hex(entry['CIE_id'], fullhex=True, lead0x=False)))
                 self._emitline('  Version:               %d' % entry['version'])
                 self._emitline('  Augmentation:          "%s"' % bytes2str(entry['augmentation']))
                 self._emitline('  Code alignment factor: %u' % entry['code_alignment_factor'])
@@ -932,13 +934,15 @@ class ReadElf(object):
                 self._emitline('  Return address column: %d' % entry['return_address_register'])
                 self._emitline()
             else: # FDE
-                self._emitline('\n%08x %016x %016x FDE cie=%08x pc=%016x..%016x' % (
+                self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
-                    entry['length'],
-                    entry['CIE_pointer'],
+                    self._format_hex(entry['length'], fullhex=True, lead0x=False),
+                    self._format_hex(entry['CIE_pointer'], fullhex=True, lead0x=False),
                     entry.cie.offset,
-                    entry['initial_location'],
-                    entry['initial_location'] + entry['address_range']))
+                    self._format_hex(entry['initial_location'], fullhex=True, lead0x=False),
+                    self._format_hex(
+                        entry['initial_location'] + entry['address_range'],
+                        fullhex=True, lead0x=False)))
 
             self._emit(describe_CFI_instructions(entry))
         self._emitline()
@@ -953,23 +957,24 @@ class ReadElf(object):
 
         for entry in self._dwarfinfo.CFI_entries():
             if isinstance(entry, CIE):
-                self._emitline('\n%08x %016x %016x CIE "%s" cf=%d df=%d ra=%d' % (
+                self._emitline('\n%08x %s %s CIE "%s" cf=%d df=%d ra=%d' % (
                     entry.offset,
-                    entry['length'],
-                    entry['CIE_id'],
+                    self._format_hex(entry['length'], fullhex=True, lead0x=False),
+                    self._format_hex(entry['CIE_id'], fullhex=True, lead0x=False),
                     bytes2str(entry['augmentation']),
                     entry['code_alignment_factor'],
                     entry['data_alignment_factor'],
                     entry['return_address_register']))
                 ra_regnum = entry['return_address_register']
             else: # FDE
-                self._emitline('\n%08x %016x %016x FDE cie=%08x pc=%016x..%016x' % (
+                self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
-                    entry['length'],
-                    entry['CIE_pointer'],
+                    self._format_hex(entry['length'], fullhex=True, lead0x=False),
+                    self._format_hex(entry['CIE_pointer'], fullhex=True, lead0x=False),
                     entry.cie.offset,
-                    entry['initial_location'],
-                    entry['initial_location'] + entry['address_range']))
+                    self._format_hex(entry['initial_location'], fullhex=True, lead0x=False),
+                    self._format_hex(entry['initial_location'] + entry['address_range'],
+                        fullhex=True, lead0x=False)))
                 ra_regnum = entry.cie['return_address_register']
 
             # Print the heading row for the decoded table

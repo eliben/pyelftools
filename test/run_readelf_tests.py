@@ -121,8 +121,19 @@ def compare_output(s1, s2):
         # Compare ignoring whitespace
         lines1_parts = lines1[i].split()
         lines2_parts = lines2[i].split()
+
         if ''.join(lines1_parts) != ''.join(lines2_parts):
             ok = False
+
+            try:
+                # Ignore difference in precision of hex representation in the
+                # last part (i.e. 008f3b vs 8f3b)
+                if (''.join(lines1_parts[:-1]) == ''.join(lines2_parts[:-1]) and
+                    int(lines1_parts[-1], 16) == int(lines2_parts[-1], 16)):
+                    ok = True
+            except ValueError:
+                pass
+
             sm = SequenceMatcher()
             sm.set_seqs(lines1[i], lines2[i])
             changes = sm.get_opcodes()
@@ -151,8 +162,8 @@ def compare_output(s1, s2):
                         ok = True
                         break
             if not ok:
-                errmsg = 'Mismatch on line #%s:\n>>%s<<\n>>%s<<\n' % (
-                    i, lines1[i], lines2[i])
+                errmsg = 'Mismatch on line #%s:\n>>%s<<\n>>%s<<\n (%r)' % (
+                    i, lines1[i], lines2[i], changes)
                 return False, errmsg
     return True, ''
 
