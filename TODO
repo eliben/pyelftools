@@ -6,6 +6,14 @@ New version
 * Update CHANGES
 * Tag in hg
 
+construct
+---------
+
+The construct seems to be maintained again - they also backported my Python 3
+fixes. Theoretically, I can remove construct from pyelftools and use it as a
+dependency instead. I don't really have time to play with this now, but may
+do so in the future.
+
 Distribution
 ------------
 
