@@ -265,6 +265,9 @@ ENUM_ST_VISIBILITY = dict(
     STV_INTERNAL=1,
     STV_HIDDEN=2,
     STV_PROTECTED=3,
+    STV_EXPORTED=4,
+    STV_SINGLETON=5,
+    STV_ELIMINATE=6,
     _default_=Pass,
 )
 
