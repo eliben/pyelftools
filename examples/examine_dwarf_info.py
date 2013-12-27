@@ -43,7 +43,7 @@ def process_file(filename):
             print('    Top DIE with tag=%s' % top_DIE.tag)
 
             # We're interested in the filename...
-            print('    name=%s' % top_DIE.get_filename())
+            print('    name=%s' % top_DIE.get_full_path())
 
 if __name__ == '__main__':
     for filename in sys.argv[1:]:
