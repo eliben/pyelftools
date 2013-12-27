@@ -14,7 +14,6 @@ import sys
 # examples/ dir of the source distribution.
 sys.path[0:0] = ['.', '..']
 
-from elftools.common.py3compat import bytes2str
 from elftools.elf.elffile import ELFFile
 
 
@@ -44,15 +43,8 @@ def process_file(filename):
             top_DIE = CU.get_top_DIE()
             print('    Top DIE with tag=%s' % top_DIE.tag)
 
-            # Each DIE holds an OrderedDict of attributes, mapping names to
-            # values. Values are represented by AttributeValue objects in
-            # elftools/dwarf/die.py
-            # We're interested in the DW_AT_name attribute. Note that its value
-            # is usually a string taken from the .debug_string section. This
-            # is done transparently by the library, and such a value will be
-            # simply given as a string.
-            name_attr = top_DIE.attributes['DW_AT_name']
-            print('    name=%s' % bytes2str(name_attr.value))
+            # We're interested in the filename...
+            print('    name=%s' % top_DIE.get_filename())
 
             # Display DIEs recursively starting with top_DIE
             die_info_rec(top_DIE)

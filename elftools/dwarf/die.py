@@ -7,8 +7,9 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from collections import namedtuple
+import os
 
-from ..common.py3compat import OrderedDict
+from ..common.py3compat import OrderedDict, bytes2str
 from ..common.utils import struct_parse, preserve_stream_pos
 
 
@@ -98,6 +99,28 @@ class DIE(object):
             top-level DIE).
         """
         return self._parent
+
+    def get_filename(self):
+        """Return the filename for the DIE.
+        The filename, which is the join of 'DW_AT_comp_dir' and 'DW_AT_name',
+        either of which may be missing in practice. Note that its value
+        is usually a string taken from the .debug_string section and the
+        returned value will be a string.
+        """
+        comp_dir = ''
+        try:
+            comp_dir_attr = self.attributes['DW_AT_comp_dir']
+            comp_dir = bytes2str(comp_dir_attr.value)
+        except KeyError:
+            pass
+
+        fname = ''
+        try:
+            fname_attr = self.attributes['DW_AT_name']
+            fname = bytes2str(fname_attr.value)
+        except KeyError:
+            pass
+        return os.path.join(comp_dir, fname)
 
     def iter_children(self):
         """ Yield all children of this DIE
