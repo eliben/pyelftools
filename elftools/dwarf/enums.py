@@ -52,10 +52,12 @@ ENUM_DW_TAG = dict(
     DW_TAG_namelist_items           = 0x2c,
     DW_TAG_packed_type              = 0x2d,
     DW_TAG_subprogram               = 0x2e,
-    DW_TAG_template_type_parameter  = 0x2f,
+
+    # The DWARF standard defines these as _parameter, not _param, but we
+    # maintain compatibility with readelf.
     DW_TAG_template_type_param      = 0x2f,
-    DW_TAG_template_value_parameter = 0x30,
     DW_TAG_template_value_param     = 0x30,
+
     DW_TAG_thrown_type              = 0x31,
     DW_TAG_try_block                = 0x32,
     DW_TAG_variant_part             = 0x33,
