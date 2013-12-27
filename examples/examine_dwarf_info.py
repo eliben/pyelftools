@@ -7,14 +7,12 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from __future__ import print_function
-import os
 import sys
 
 # If pyelftools is not installed, the example can also run from the root or
 # examples/ dir of the source distribution.
 sys.path[0:0] = ['.', '..']
 
-from elftools.common.py3compat import bytes2str
 from elftools.elf.elffile import ELFFile
 
 
@@ -44,28 +42,8 @@ def process_file(filename):
             top_DIE = CU.get_top_DIE()
             print('    Top DIE with tag=%s' % top_DIE.tag)
 
-            # Each DIE holds an OrderedDict of attributes, mapping names to
-            # values. Values are represented by AttributeValue objects in
-            # elftools/dwarf/die.py
-            # We're interested in the filename, which is the join of
-            # 'DW_AT_comp_dir' and 'DW_AT_name', either of which may be
-            # missing in practice. Note that its value
-            # is usually a string taken from the .debug_string section. This
-            # is done transparently by the library, and such a value will be
-            # simply given as a string.
-            try:
-                comp_dir_attr = top_DIE.attributes['DW_AT_comp_dir']
-                comp_dir = bytes2str(comp_dir_attr.value)
-                try:
-                    name_attr = top_DIE.attributes['DW_AT_name']
-                    name = bytes2str(name_attr.value)
-                    name = os.path.join(comp_dir, name)
-                except KeyError as e:
-                    name = comp_dir
-            except KeyError as e:
-                name_attr = top_DIE.attributes['DW_AT_name']
-                name = bytes2str(name_attr.value)
-            print('    name=%s' % bytes2str(name))
+            # We're interested in the filename...
+            print('    name=%s' % top_DIE.get_filename())
 
 if __name__ == '__main__':
     for filename in sys.argv[1:]:
