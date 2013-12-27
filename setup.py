@@ -46,5 +46,3 @@ setup(
 
     scripts=['scripts/readelf.py']
 )
-
-    

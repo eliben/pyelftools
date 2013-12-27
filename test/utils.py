@@ -19,7 +19,7 @@ def setup_syspath():
         sys.path.insert(0, '.')
 
 
-def run_exe(exe_path, args):
+def run_exe(exe_path, args=[]):
     """ Runs the given executable as a subprocess, given the
         list of arguments. Captures its return code (rc) and stdout and
         returns a pair: rc, stdout_str
