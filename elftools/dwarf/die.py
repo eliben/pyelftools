@@ -9,7 +9,7 @@
 from collections import namedtuple
 import os
 
-from ..common.py3compat import OrderedDict, bytes2str
+from ..common.py3compat import OrderedDict, bytes2str, iteritems
 from ..common.utils import struct_parse, preserve_stream_pos
 
 
@@ -143,7 +143,7 @@ class DIE(object):
     def __repr__(self):
         s = 'DIE %s, size=%s, has_chidren=%s\n' % (
             self.tag, self.size, self.has_children)
-        for attrname, attrval in self.attributes.iteritems():
+        for attrname, attrval in iteritems(self.attributes):
             s += '    |%-18s:  %s\n' % (attrname, attrval)
         return s
 
