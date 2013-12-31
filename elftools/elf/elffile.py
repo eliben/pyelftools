@@ -22,6 +22,36 @@ from .gnuversions import (
 from .segments import Segment, InterpSegment
 from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
+import os
+
+
+class ShiftedIO(object):
+    def __init__(self, stream, shift, size):
+        super(ShiftedIO, self).__init__()
+        self._stream = stream
+        self._shift = shift
+        self._size = size
+        self._cur_offset = shift
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        if whence == os.SEEK_SET:
+            self._cur_offset = offset + self._shift
+        elif whence == os.SEEK_CUR:
+            self._cur_offset = self._cur_offset + offset
+        else:
+            self._cur_offset = self._shift + self._size + offset
+            pass
+        pass
+
+    def read(self, bytes):
+        self._stream.seek(self._cur_offset)
+        buf = self._stream.read(bytes)
+        self._cur_offset = self._cur_offset + len(buf)
+        return buf
+
+    def tell(self):
+        return self._cur_offset - self._shift
+    pass
 
 
 class ELFFile(object):
@@ -46,7 +76,7 @@ class ELFFile(object):
             e_ident_raw:
                 the raw e_ident field of the header
     """
-    def __init__(self, stream):
+    def __init__(self, stream, bytesio=True):
         self.stream = stream
         self._identify_file()
         self.structs = ELFStructs(
@@ -59,6 +89,7 @@ class ELFFile(object):
 
         self._file_stringtable_section = self._get_file_stringtable()
         self._section_name_map = None
+        self._bytesio_enable = bytesio
 
     def num_sections(self):
         """ Number of sections in the file
@@ -344,10 +375,16 @@ class ELFFile(object):
         """ Read the contents of a DWARF section from the stream and return a
             DebugSectionDescriptor. Apply relocations if asked to.
         """
-        self.stream.seek(section['sh_offset'])
         # The section data is read into a new stream, for processing
-        section_stream = BytesIO()
-        section_stream.write(self.stream.read(section['sh_size']))
+        if self._bytesio_enable:
+            self.stream.seek(section['sh_offset'])
+            section_stream = BytesIO()
+            section_stream.write(self.stream.read(section['sh_size']))
+        else:
+            section_stream = ShiftedIO(self.stream,
+                                       section['sh_offset'],
+                                       section['sh_size'])
+            pass
 
         if relocate_dwarf_sections:
             reloc_handler = RelocationHandler(self)
