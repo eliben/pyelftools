@@ -91,6 +91,10 @@ class CompileUnit(object):
             self._dielist_complete = False
             self._dielist[0].remove_all_children()
 
+    def full_load_DIEs(self):
+        self._parse_DIEs(1 << 64)
+        pass
+
     #------ PRIVATE ------#
 
     def __getitem__(self, name):

@@ -117,6 +117,7 @@ class DIE(object):
     def iter_children(self):
         """ Yield all children of this DIE
         """
+        self.cu.full_load_DIEs()
         return iter(self._children)
 
     def iter_siblings(self):
