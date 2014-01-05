@@ -178,6 +178,11 @@ class RelocationHandler(object):
             addend=reloc['r_addend'] if recipe.has_addend else 0)
         # 3. Write the relocated value back into the stream
         stream.seek(reloc['r_offset'])
+
+        # Make sure the relocated value fits back by wrapping it around. This
+        # looks like a problem, but it seems to be the way this is done in
+        # binutils too.
+        relocated_value = relocated_value % (2 ** (recipe.bytesize * 8))
         value_struct.build_stream(relocated_value, stream)
 
     # Relocations are represented by "recipes". Each recipe specifies:
