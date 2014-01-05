@@ -48,10 +48,10 @@ class TestSolarisSupport(unittest.TestCase):
         self._test_SUNW_syminfo_section_generic('exe_solaris64_cc.elf')
 
     def test_SUNW_syminfo_section_sparc32(self):
-        self._test_SUNW_syminfo_section_generic('exe_solaris32_cc.elf.sparc')
+        self._test_SUNW_syminfo_section_generic('exe_solaris32_cc.sparc.elf')
 
     def test_SUNW_syminfo_section_sparc64(self):
-        self._test_SUNW_syminfo_section_generic('exe_solaris64_cc.elf.sparc')
+        self._test_SUNW_syminfo_section_generic('exe_solaris64_cc.sparc.elf')
 
     ldsynsym_reference_data = [b'', b'exe_solaris32.elf', b'crti.s', b'crt1.o',
                                b'crt1.s', b'fsr.s', b'values-Xa.c',
