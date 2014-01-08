@@ -10,8 +10,7 @@ except ImportError:
     import unittest
 import os
 
-from utils import setup_syspath
-setup_syspath()
+from utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicTag
 
@@ -32,7 +31,6 @@ class TestDoubleDynstrSections(unittest.TestCase):
 
         with open(os.path.join('test', 'testfiles_for_unittests', testfile),
                   'rb') as f:
-
             elf = ELFFile(f)
             for section in elf.iter_sections():
                 if isinstance(section, DynamicSection):
@@ -43,7 +41,6 @@ class TestDoubleDynstrSections(unittest.TestCase):
                             TestDoubleDynstrSections.reference_data,
                             d_tags)
                     return
-                
             self.fail('No dynamic section found !!')
 
 
