@@ -204,7 +204,7 @@ class DIE(object):
         elif form == 'DW_FORM_indirect':
             form = raw_value
             raw_value = struct_parse(
-                structs.Dwarf_dw_form[form], self.stream)
+                self.cu.structs.Dwarf_dw_form[form], self.stream)
             # Let's hope this doesn't get too deep :-)
             return self._translate_attr_value(form, raw_value)
         else:
