@@ -471,7 +471,7 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     _default_=Pass,
 )
 
-# Versym section, version dependency index 
+# Versym section, version dependency index
 ENUM_VERSYM = dict(
     VER_NDX_LOCAL=0,
     VER_NDX_GLOBAL=1,
