@@ -20,7 +20,6 @@ from .gnuversions import (
         GNUVerNeedSection, GNUVerDefSection,
         GNUVerSymSection)
 from .segments import Segment, InterpSegment
-from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 
 
