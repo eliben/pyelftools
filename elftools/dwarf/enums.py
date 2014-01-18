@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..construct import Pass
+from ..common.py3compat import iteritems
 
 
 ENUM_DW_TAG = dict(
@@ -276,4 +277,7 @@ ENUM_DW_FORM = dict(
     DW_FORM_GNU_ref_alt     = 0x1f20,
     _default_               = Pass,
 )
+
+# Inverse mapping for ENUM_DW_FORM
+DW_FORM_raw2name = dict((v, k) for k, v in iteritems(ENUM_DW_FORM))
 

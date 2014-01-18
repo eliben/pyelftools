@@ -9,8 +9,10 @@
 from collections import namedtuple
 import os
 
+from ..common.exceptions import DWARFError
 from ..common.py3compat import OrderedDict, bytes2str, iteritems
 from ..common.utils import struct_parse, preserve_stream_pos
+from .enums import DW_FORM_raw2name
 
 
 # AttributeValue - describes an attribute value in the DIE:
@@ -202,7 +204,13 @@ class DIE(object):
         elif form == 'DW_FORM_flag':
             value = not raw_value == 0
         elif form == 'DW_FORM_indirect':
-            form = raw_value
+            try:
+                form = DW_FORM_raw2name[raw_value]
+            except KeyError as err:
+                raise DWARFError(
+                        'Found DW_FORM_indirect with unknown raw_value=' +
+                        str(raw_value))
+
             raw_value = struct_parse(
                 self.cu.structs.Dwarf_dw_form[form], self.stream)
             # Let's hope this doesn't get too deep :-)

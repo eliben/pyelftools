@@ -32,7 +32,7 @@ def struct_parse(struct, stream, stream_pos=None):
         return struct.parse_stream(stream)
     except ConstructError as e:
         raise ELFParseError(e.message)
-    
+
 
 def parse_cstring_from_stream(stream, stream_pos=None):
     """ Parse a C-string from the given stream. The string is returned without
@@ -78,11 +78,10 @@ def dwarf_assert(cond, msg=''):
 @contextmanager
 def preserve_stream_pos(stream):
     """ Usage:
-            
-            # stream has some position FOO (return value of stream.tell())
-            with preserve_stream_pos(stream):
-                # do stuff that manipulates the stream
-            # stream still has position FOO
+        # stream has some position FOO (return value of stream.tell())
+        with preserve_stream_pos(stream):
+            # do stuff that manipulates the stream
+        # stream still has position FOO
     """
     saved_pos = stream.tell()
     yield
