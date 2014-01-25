@@ -178,7 +178,11 @@ class DWARFInfo(object):
         """ Get a RangeLists object representing the .debug_ranges section of
             the DWARF data, or None if this section doesn't exist.
         """
-        return RangeLists(self.debug_ranges_sec.stream, self.structs)
+        # ".debug_ranges" section is optional
+        if self.debug_ranges_sec == None:
+            return None
+        else:
+            return RangeLists(self.debug_ranges_sec.stream, self.structs)
 
     #------ PRIVATE ------#
 
