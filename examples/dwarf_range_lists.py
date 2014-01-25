@@ -37,7 +37,7 @@ def process_file(filename):
         # The range lists are extracted by DWARFInfo from the .debug_ranges
         # section, and returned here as a RangeLists object.
         range_lists = dwarfinfo.range_lists()
-        if range_lists == None:
+        if range_lists is None:
             print('  file has no .debug_ranges section')
             return
 

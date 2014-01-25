@@ -172,17 +172,19 @@ class DWARFInfo(object):
         """ Get a LocationLists object representing the .debug_loc section of
             the DWARF data, or None if this section doesn't exist.
         """
-        return LocationLists(self.debug_loc_sec.stream, self.structs)
+        if self.debug_loc_sec:
+            return LocationLists(self.debug_loc_sec.stream, self.structs)
+        else:
+            return None
 
     def range_lists(self):
         """ Get a RangeLists object representing the .debug_ranges section of
             the DWARF data, or None if this section doesn't exist.
         """
-        # ".debug_ranges" section is optional
-        if self.debug_ranges_sec == None:
-            return None
-        else:
+        if self.debug_ranges_sec:
             return RangeLists(self.debug_ranges_sec.stream, self.structs)
+        else:
+            return None
 
     #------ PRIVATE ------#
 

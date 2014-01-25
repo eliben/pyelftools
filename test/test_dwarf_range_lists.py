@@ -20,9 +20,7 @@ class TestRangeLists(unittest.TestCase):
                                'arm_with_form_indirect.elf'), 'rb') as f:
             elffile = ELFFile(f)
             self.assertTrue(elffile.has_dwarf_info())
-
-            dwarfinfo = elffile.get_dwarf_info()
-            self.assertEqual(dwarfinfo.range_lists(), None)
+            self.assertIsNone(elffile.get_dwarf_info().range_lists())
 
     # Test the presence of .debug_ranges section
     def test_range_list_presence(self):
@@ -30,9 +28,7 @@ class TestRangeLists(unittest.TestCase):
                                'sample_exe64.elf'), 'rb') as f:
             elffile = ELFFile(f)
             self.assertTrue(elffile.has_dwarf_info())
-
-            dwarfinfo = elffile.get_dwarf_info()
-            self.assertTrue(dwarfinfo.range_lists() != None)
+            self.assertIsNotNone(elffile.get_dwarf_info().range_lists())
 
 if __name__ == '__main__':
     unittest.main()
