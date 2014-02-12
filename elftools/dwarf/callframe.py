@@ -11,12 +11,12 @@ from collections import namedtuple
 from ..common.utils import (struct_parse, dwarf_assert, preserve_stream_pos)
 from ..common.py3compat import iterkeys
 from .structs import DWARFStructs
-from .constants import * 
+from .constants import *
 
 
 class CallFrameInfo(object):
     """ DWARF CFI (Call Frame Info)
-        
+
         stream, size:
             A stream holding the .debug_frame section, and the size of the
             section in it.
@@ -26,14 +26,13 @@ class CallFrameInfo(object):
             Eventually, each entry gets its own structs based on the initial
             length field it starts with. The address_size, however, is taken
             from base_structs. This appears to be a limitation of the DWARFv3
-            standard, fixed in v4 (where an address_size field exists for each
-            CFI. I had a discussion about this on dwarf-discuss that confirms
-            this.
-            Currently for base_structs I simply use the elfclass of the
-            containing file, but more sophisticated methods are used by
-            libdwarf and others, such as guessing which CU contains which FDEs
-            (based on their address ranges) and taking the address_size from
-            those CUs.
+            standard, fixed in v4.
+            A discussion I had on dwarf-discuss confirms this.
+            So for DWARFv4 we'll take the address size from the CIE header,
+            but for earlier versions will use the elfclass of the containing
+            file; more sophisticated methods are used by libdwarf and others,
+            such as guessing which CU contains which FDEs (based on their
+            address ranges) and taking the address_size from those CUs.
     """
     def __init__(self, stream, size, base_structs):
         self.stream = stream
@@ -87,7 +86,7 @@ class CallFrameInfo(object):
             entry_structs.Dwarf_offset(''), self.stream)
 
         is_CIE = (
-            (dwarf_format == 32 and CIE_id == 0xFFFFFFFF) or 
+            (dwarf_format == 32 and CIE_id == 0xFFFFFFFF) or
             CIE_id == 0xFFFFFFFFFFFFFFFF)
 
         if is_CIE:
@@ -99,6 +98,14 @@ class CallFrameInfo(object):
         # return_address_register field
         header = struct_parse(
             header_struct, self.stream, offset)
+
+        # If this is DWARF version 4 or later, we can have a more precise
+        # address size, read from the CIE header.
+        if entry_structs.dwarf_version >= 4:
+            entry_structs = DWARFStructs(
+                little_endian=entry_structs.little_endian,
+                dwarf_format=entry_structs.dwarf_format,
+                address_size=header.address_size)
 
         # For convenience, compute the end offset for this entry
         end_offset = (
@@ -251,7 +258,7 @@ class CFIEntry(object):
             reg_order = []
         else: # FDE
             # For a FDE, we need to decode the attached CIE first, because its
-            # decoded table is needed. Its "initial instructions" describe a 
+            # decoded table is needed. Its "initial instructions" describe a
             # line that serves as the base (first) line in the FDE's table.
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
@@ -259,7 +266,7 @@ class CFIEntry(object):
             cur_line = last_line_in_CIE
             cur_line['pc'] = self['initial_location']
             reg_order = copy.copy(cie_decoded_table.reg_order)
-        
+
         table = []
 
         # Keeps a stack for the use of DW_CFA_{remember|restore}_state

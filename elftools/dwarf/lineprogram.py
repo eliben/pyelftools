@@ -215,10 +215,10 @@ class LineProgram(object):
                     add_entry_old_state(opcode, [operand])
                 elif opcode == DW_LNS_negate_stmt:
                     state.is_stmt = not state.is_stmt
-                    add_entry_old_state(opcode, [operand])
+                    add_entry_old_state(opcode, [])
                 elif opcode == DW_LNS_set_basic_block:
                     state.basic_block = True
-                    add_entry_old_state(opcode, [operand])
+                    add_entry_old_state(opcode, [])
                 elif opcode == DW_LNS_const_add_pc:
                     adjusted_opcode = 255 - self['opcode_base']
                     address_addend = ((adjusted_opcode // self['line_range']) *

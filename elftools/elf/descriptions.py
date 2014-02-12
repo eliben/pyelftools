@@ -6,8 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from .enums import ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
-from .constants import P_FLAGS, SH_FLAGS
+from .enums import (
+    ENUM_D_TAG, ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
+        ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64)
+from .constants import P_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS
 from ..common.py3compat import iteritems
 
 
@@ -22,7 +24,7 @@ def describe_ei_version(x):
     if x == 'EV_CURRENT':
         s += ' (current)'
     return s
-    
+
 def describe_ei_osabi(x):
     return _DESCR_EI_OSABI.get(x, _unknown)
 
@@ -41,7 +43,7 @@ def describe_p_type(x):
 def describe_p_flags(x):
     s = ''
     for flag in (P_FLAGS.PF_R, P_FLAGS.PF_W, P_FLAGS.PF_X):
-        s += _DESCR_P_FLAGS[flag] if (x & flag) else ' ' 
+        s += _DESCR_P_FLAGS[flag] if (x & flag) else ' '
     return s
 
 def describe_sh_type(x):
@@ -75,14 +77,43 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_i386.get(x, _unknown)
     elif arch == 'x64':
         return _DESCR_RELOC_TYPE_x64.get(x, _unknown)
+    elif arch == 'ARM':
+        return _DESCR_RELOC_TYPE_ARM.get(x, _unknown)
+    elif arch == 'AArch64':
+        return _DESCR_RELOC_TYPE_AARCH64.get(x, _unknown)
     else:
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
 
+def describe_dyn_tag(x):
+    return _DESCR_D_TAG.get(x, _unknown)
+
+
+def describe_syminfo_flags(x):
+    return ''.join(_DESCR_SYMINFO_FLAGS[flag] for flag in (
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_CAP,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECT,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_FILTER,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_AUXILIARY,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECTBIND,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_COPY,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_LAZYLOAD,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_NOEXTDIRECT,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_INTERPOSE,
+        SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED) if x & flag)
+
+def describe_symbol_boundto(x):
+    return _DESCR_SYMINFO_BOUNDTO.get(x, '%3s' % x)
+
+def describe_ver_flags(x):
+    return ' | '.join(_DESCR_VER_FLAGS[flag] for flag in (
+        VER_FLAGS.VER_FLG_WEAK,
+        VER_FLAGS.VER_FLG_BASE,
+        VER_FLAGS.VER_FLG_INFO) if x & flag)
 
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
 
-    
+
 _DESCR_EI_CLASS = dict(
     ELFCLASSNONE='none',
     ELFCLASS32='ELF32',
@@ -138,6 +169,8 @@ _DESCR_E_MACHINE = dict(
     EM_IA_64='Intel IA-64',
     EM_X86_64='Advanced Micro Devices X86-64',
     EM_AVR='Atmel AVR 8-bit microcontroller',
+    EM_ARM='ARM',
+    EM_AARCH64='AArch64',
     RESERVED='RESERVED',
 )
 
@@ -152,6 +185,11 @@ _DESCR_P_TYPE = dict(
     PT_GNU_EH_FRAME='GNU_EH_FRAME',
     PT_GNU_STACK='GNU_STACK',
     PT_GNU_RELRO='GNU_RELRO',
+    PT_ARM_ARCHEXT='ARM_ARCHEXT',
+    PT_ARM_EXIDX='ARM_EXIDX',
+    PT_ARM_UNWIND='ARM_UNWIND',
+    PT_AARCH64_ARCHEXT='AARCH64_ARCHEXT',
+    PT_AARCH64_UNWIND='AARCH64_UNWIND',
 )
 
 _DESCR_P_FLAGS = {
@@ -183,6 +221,10 @@ _DESCR_SH_TYPE = dict(
     SHT_GNU_verneed='VERNEED',
     SHT_GNU_versym='VERSYM',
     SHT_GNU_LIBLIST='GNU_LIBLIST',
+    SHT_ARM_EXIDX='ARM_EXIDX',
+    SHT_ARM_PREEMPTMAP='ARM_PREEMPTMAP',
+    SHT_ARM_ATTRIBUTES='ARM_ATTRIBUTES',
+    SHT_ARM_DEBUGOVERLAY='ARM_DEBUGOVERLAY',
 )
 
 _DESCR_SH_FLAGS = {
@@ -222,7 +264,10 @@ _DESCR_ST_VISIBILITY = dict(
     STV_DEFAULT='DEFAULT',
     STV_INTERNAL='INTERNAL',
     STV_HIDDEN='HIDDEN',
-    STD_PROTECTED='PROTECTED',
+    STV_PROTECTED='PROTECTED',
+    STV_EXPORTED='EXPORTED',
+    STV_SINGLETON='SINGLETON',
+    STV_ELIMINATE='ELIMINATE',
 )
 
 _DESCR_ST_SHNDX = dict(
@@ -231,10 +276,44 @@ _DESCR_ST_SHNDX = dict(
     SHN_COMMON='COM',
 )
 
+_DESCR_SYMINFO_FLAGS = {
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECT: 'D',
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECTBIND: 'B',
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_COPY: 'C',
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_LAZYLOAD: 'L',
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_NOEXTDIRECT: 'N',
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_AUXILIARY: 'A',
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_FILTER: 'F',
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_INTERPOSE: 'I',
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_CAP: 'S',
+    SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED: 'P',
+}
+
+_DESCR_SYMINFO_BOUNDTO = dict(
+    SYMINFO_BT_SELF='<self>',
+    SYMINFO_BT_PARENT='<parent>',
+    SYMINFO_BT_NONE='',
+    SYMINFO_BT_EXTERN='<extern>',
+)
+
+_DESCR_VER_FLAGS = {
+    0: '',
+    VER_FLAGS.VER_FLG_BASE: 'BASE',
+    VER_FLAGS.VER_FLG_WEAK: 'WEAK',
+    VER_FLAGS.VER_FLG_INFO: 'INFO',
+}
+
 _DESCR_RELOC_TYPE_i386 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_i386))
 
 _DESCR_RELOC_TYPE_x64 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_x64))
 
+_DESCR_RELOC_TYPE_ARM = dict(
+        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_ARM))
 
+_DESCR_RELOC_TYPE_AARCH64 = dict(
+        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_AARCH64))
+
+_DESCR_D_TAG = dict(
+        (v, k) for k, v in iteritems(ENUM_D_TAG))

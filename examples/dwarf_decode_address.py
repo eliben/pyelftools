@@ -10,12 +10,9 @@
 from __future__ import print_function
 import sys
 
-# If elftools is not installed, maybe we're running from the root or examples
-# dir of the source distribution
-try:
-    import elftools
-except ImportError:
-    sys.path.extend(['.', '..'])
+# If pyelftools is not installed, the example can also run from the root or
+# examples/ dir of the source distribution.
+sys.path[0:0] = ['.', '..']
 
 from elftools.common.py3compat import maxint, bytes2str
 from elftools.elf.elffile import ELFFile
@@ -45,7 +42,7 @@ def process_file(filename, address):
 def decode_funcname(dwarfinfo, address):
     # Go over all DIEs in the DWARF information, looking for a subprogram
     # entry with an address range that includes the given address. Note that
-    # this simplifies things by disregarding subprograms that may have 
+    # this simplifies things by disregarding subprograms that may have
     # split address ranges.
     for CU in dwarfinfo.iter_CUs():
         for DIE in CU.iter_DIEs():
@@ -66,16 +63,18 @@ def decode_file_line(dwarfinfo, address):
     for CU in dwarfinfo.iter_CUs():
         # First, look at line programs to find the file/line for the address
         lineprog = dwarfinfo.line_program_for_CU(CU)
-        prevaddr = maxint
+        prevstate = None
         for entry in lineprog.get_entries():
             # We're interested in those entries where a new state is assigned
-            state = entry.state
-            if state is not None and not state.end_sequence:
-                if prevaddr <= address <= state.address:
-                    filename = lineprog['file_entry'][state.file - 1].name
-                    line = state.line
-                    return filename, line
-                prevaddr = state.address
+            if entry.state is None or entry.state.end_sequence:
+                continue
+            # Looking for a range of addresses in two consecutive states that
+            # contain the required address.
+            if prevstate and prevstate.address <= address < entry.state.address:
+                filename = lineprog['file_entry'][prevstate.file - 1].name
+                line = prevstate.line
+                return filename, line
+            prevstate = entry.state
     return None, None
 
 

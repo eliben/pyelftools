@@ -13,8 +13,8 @@ from difflib import SequenceMatcher
 from optparse import OptionParser
 import logging
 import platform
-sys.path.insert(0, '.') # to load *our* test, not Python's test
-from test.utils import run_exe, is_in_rootdir, dump_output_to_temp_files
+from utils import setup_syspath; setup_syspath()
+from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
 
 
 # Create a global logger object
@@ -23,6 +23,12 @@ testlog = logging.getLogger('run_tests')
 testlog.setLevel(logging.DEBUG)
 testlog.addHandler(logging.StreamHandler(sys.stdout))
 
+# Set the path for calling readelf. We carry our own version of readelf around,
+# because binutils tend to change its output even between daily builds of the
+# same minor release and keeping track is a headache.
+READELF_PATH = 'test/external_tools/readelf'
+if not os.path.exists(READELF_PATH):
+    READELF_PATH = 'readelf'
 
 def discover_testfiles(rootdir):
     """ Discover test files in the given directory. Yield them one by one.
@@ -40,14 +46,14 @@ def run_test_on_file(filename, verbose=False):
     success = True
     testlog.info("Test file '%s'" % filename)
     for option in [
-            '-e', '-s', '-r', '-x.text', '-p.shstrtab',
+            '-e', '-d', '-s', '-r', '-x.text', '-p.shstrtab', '-V',
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp']:
         if verbose: testlog.info("..option='%s'" % option)
-        # stdouts will be a 2-element list: output of readelf and output 
+        # stdouts will be a 2-element list: output of readelf and output
         # of scripts/readelf.py
         stdouts = []
-        for exe_path in ['readelf', 'scripts/readelf.py']:
+        for exe_path in [READELF_PATH, 'scripts/readelf.py']:
             args = [option, filename]
             if verbose: testlog.info("....executing: '%s %s'" % (
                 exe_path, ' '.join(args)))
@@ -64,6 +70,7 @@ def run_test_on_file(filename, verbose=False):
             success = False
             testlog.info('.......................FAIL')
             testlog.info('....for option "%s"' % option)
+            testlog.info('....Output #1 is readelf, Output #2 is pyelftools')
             testlog.info('@@ ' + errmsg)
             dump_output_to_temp_files(testlog, *stdouts)
     return success
@@ -79,9 +86,9 @@ def compare_output(s1, s2):
         Note: this function contains some rather horrible hacks to ignore
         differences which are not important for the verification of pyelftools.
         This is due to some intricacies of binutils's readelf which pyelftools
-        doesn't currently implement, or silly inconsistencies in the output of
-        readelf, which I was reluctant to replicate.
-        Read the documentation for more details.
+        doesn't currently implement, features that binutils doesn't support,
+        or silly inconsistencies in the output of readelf, which I was reluctant
+        to replicate. Read the documentation for more details.
     """
     def prepare_lines(s):
         return [line for line in s.lower().splitlines() if line.strip() != '']
@@ -95,7 +102,7 @@ def compare_output(s1, s2):
             if not filter_out:
                 if not line.startswith('unknown: length'):
                     yield line
-        
+
     lines1 = prepare_lines(s1)
     lines2 = prepare_lines(s2)
 
@@ -114,13 +121,24 @@ def compare_output(s1, s2):
         # Compare ignoring whitespace
         lines1_parts = lines1[i].split()
         lines2_parts = lines2[i].split()
+
         if ''.join(lines1_parts) != ''.join(lines2_parts):
             ok = False
+
+            try:
+                # Ignore difference in precision of hex representation in the
+                # last part (i.e. 008f3b vs 8f3b)
+                if (''.join(lines1_parts[:-1]) == ''.join(lines2_parts[:-1]) and
+                    int(lines1_parts[-1], 16) == int(lines2_parts[-1], 16)):
+                    ok = True
+            except ValueError:
+                pass
+
             sm = SequenceMatcher()
             sm.set_seqs(lines1[i], lines2[i])
             changes = sm.get_opcodes()
             if flag_after_symtable:
-                # Detect readelf's adding @ with lib and version after 
+                # Detect readelf's adding @ with lib and version after
                 # symbol name.
                 if (    len(changes) == 2 and changes[1][0] == 'delete' and
                         lines1[i][changes[1][1]] == '@'):
@@ -128,20 +146,24 @@ def compare_output(s1, s2):
             elif 'at_const_value' in lines1[i]:
                 # On 32-bit machines, readelf doesn't correctly represent
                 # some boundary LEB128 numbers
-                num2 = int(lines2_parts[-1])
+                val = lines2_parts[-1]
+                num2 = int(val, 16 if val.startswith('0x') else 10)
                 if num2 <= -2**31 and '32' in platform.architecture()[0]:
                     ok = True
             elif 'os/abi' in lines1[i]:
                 if 'unix - gnu' in lines1[i] and 'unix - linux' in lines2[i]:
                     ok = True
-            else: 
+            elif (  'unknown at value' in lines1[i] and
+                    'dw_at_apple' in lines2[i]):
+                ok = True
+            else:
                 for s in ('t (tls)', 'l (large)'):
                     if s in lines1[i] or s in lines2[i]:
                         ok = True
                         break
             if not ok:
-                errmsg = 'Mismatch on line #%s:\n>>%s<<\n>>%s<<\n' % (
-                    i, lines1[i], lines2[i])
+                errmsg = 'Mismatch on line #%s:\n>>%s<<\n>>%s<<\n (%r)' % (
+                    i, lines1[i], lines2[i], changes)
                 return False, errmsg
     return True, ''
 
@@ -161,6 +183,8 @@ def main():
 
     if options.verbose:
         testlog.info('Running in verbose mode')
+        testlog.info('Python executable = %s' % sys.executable)
+        testlog.info('readelf path = %s' % READELF_PATH)
         testlog.info('Given list of files: %s' % args)
 
     # If file names are given as command-line arguments, only these files
@@ -169,13 +193,13 @@ def main():
     if len(args) > 0:
         filenames = args
     else:
-        filenames = list(discover_testfiles('test/testfiles'))
+        filenames = list(discover_testfiles('test/testfiles_for_readelf'))
 
     success = True
     for filename in filenames:
         if success:
             success = success and run_test_on_file(
-                                    filename, 
+                                    filename,
                                     verbose=options.verbose)
 
     if success:
@@ -188,7 +212,4 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-
-
-
 

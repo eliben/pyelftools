@@ -15,7 +15,7 @@ class Segment(object):
     def __init__(self, header, stream):
         self.header = header
         self.stream = stream
-    
+
     def data(self):
         """ The segment data from the file.
         """
@@ -30,8 +30,8 @@ class Segment(object):
     def section_in_segment(self, section):
         """ Is the given section contained in this segment?
 
-            Note: this tries to reproduce the intricate rules of the 
-            ELF_SECTION_IN_SEGMENT_STRICT macro of the header 
+            Note: this tries to reproduce the intricate rules of the
+            ELF_SECTION_IN_SEGMENT_STRICT macro of the header
             elf/include/internal.h in the source of binutils.
         """
         # Only the 'strict' checks from ELF_SECTION_IN_SEGMENT_1 are included
@@ -41,7 +41,7 @@ class Segment(object):
 
         # Only PT_LOAD, PT_GNU_RELR0 and PT_TLS segments can contain SHF_TLS
         # sections
-        if (    secflags & SH_FLAGS.SHF_TLS and 
+        if (    secflags & SH_FLAGS.SHF_TLS and
                 segtype in ('PT_TLS', 'PT_GNU_RELR0', 'PT_LOAD')):
             return False
         # PT_TLS segment contains only SHF_TLS sections, PT_PHDR no sections
@@ -61,7 +61,7 @@ class Segment(object):
             # not match at the very end of the segment (unless the segment is
             # also zero size, which is handled by the second condition).
             if not (secaddr >= vaddr and
-                    secaddr - vaddr + section['sh_size'] <= self['p_memsz'] and 
+                    secaddr - vaddr + section['sh_size'] <= self['p_memsz'] and
                     secaddr - vaddr <= self['p_memsz'] - 1):
                 return False
 
@@ -74,7 +74,7 @@ class Segment(object):
 
         # Same logic as with secaddr vs. vaddr checks above, just on offsets in
         # the file
-        return (secoffset >= poffset and 
+        return (secoffset >= poffset and
                 secoffset - poffset + section['sh_size'] <= self['p_filesz'] and
                 secoffset - poffset <= self['p_filesz'] - 1)
 

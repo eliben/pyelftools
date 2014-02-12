@@ -23,12 +23,12 @@ class Relocation(object):
     def __init__(self, entry, elffile):
         self.entry = entry
         self.elffile = elffile
-        
+
     def is_RELA(self):
         """ Is this a RELA relocation? If not, it's REL.
         """
         return 'r_addend' in self.entry
-        
+
     def __getitem__(self, name):
         """ Dict-like access to entries
         """
@@ -112,7 +112,7 @@ class RelocationHandler(object):
                     relsection.name in reloc_section_names):
                 return relsection
         return None
-        
+
     def apply_section_relocations(self, stream, reloc_section):
         """ Apply all relocations in reloc_section (a RelocationSection object)
             to the given stream, that contains the data of the section that is
@@ -162,7 +162,7 @@ class RelocationHandler(object):
         elif recipe.bytesize == 8:
             value_struct = self.elffile.structs.Elf_word64('')
         else:
-            raise ELFRelocationError('Invalid bytesize %s for relocation' % 
+            raise ELFRelocationError('Invalid bytesize %s for relocation' %
                     recipe_bytesize)
 
         # 1. Read the value from the stream (with correct size and endianness)
@@ -178,6 +178,11 @@ class RelocationHandler(object):
             addend=reloc['r_addend'] if recipe.has_addend else 0)
         # 3. Write the relocated value back into the stream
         stream.seek(reloc['r_offset'])
+
+        # Make sure the relocated value fits back by wrapping it around. This
+        # looks like a problem, but it seems to be the way this is done in
+        # binutils too.
+        relocated_value = relocated_value % (2 ** (recipe.bytesize * 8))
         value_struct.build_stream(relocated_value, stream)
 
     # Relocations are represented by "recipes". Each recipe specifies:
@@ -198,10 +203,13 @@ class RelocationHandler(object):
 
     def _reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
         return sym_value + value - offset
-        
+
     def _reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
         return sym_value + addend
-        
+
+    def _reloc_calc_sym_plus_addend_pcrel(value, sym_value, offset, addend=0):
+        return sym_value + addend - offset
+
     _RELOCATION_RECIPES_X86 = {
         ENUM_RELOC_TYPE_i386['R_386_NONE']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
@@ -212,12 +220,15 @@ class RelocationHandler(object):
             bytesize=4, has_addend=False,
             calc_func=_reloc_calc_sym_plus_value_pcrel),
     }
-    
+
     _RELOCATION_RECIPES_X64 = {
         ENUM_RELOC_TYPE_x64['R_X86_64_NONE']: _RELOCATION_RECIPE_TYPE(
             bytesize=8, has_addend=True, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_x64['R_X86_64_64']: _RELOCATION_RECIPE_TYPE(
             bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_x64['R_X86_64_PC32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True,
+            calc_func=_reloc_calc_sym_plus_addend_pcrel),
         ENUM_RELOC_TYPE_x64['R_X86_64_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_x64['R_X86_64_32S']: _RELOCATION_RECIPE_TYPE(

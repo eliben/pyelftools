@@ -1,10 +1,15 @@
+#-------------------------------------------------------------------------------
+# elftools tests
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
-import sys
 
-sys.path.extend(('..', '.'))
+from utils import setup_syspath; setup_syspath()
 from elftools.dwarf.descriptions import ExprDumper, set_global_machine_arch
 from elftools.dwarf.structs import DWARFStructs
 
@@ -23,12 +28,12 @@ class TestExprDumper(unittest.TestCase):
         self.visitor.process_expr([0x1b])
         self.assertEqual(self.visitor.get_str(),
             'DW_OP_div')
-        
+
         self.setUp()
         self.visitor.process_expr([0x74, 0x82, 0x01])
         self.assertEqual(self.visitor.get_str(),
             'DW_OP_breg4 (rsi): 130')
-        
+
         self.setUp()
         self.visitor.process_expr([0x91, 0x82, 0x01])
         self.assertEqual(self.visitor.get_str(),

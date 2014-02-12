@@ -9,18 +9,25 @@
 #-------------------------------------------------------------------------------
 from __future__ import print_function
 
+import os, sys
+
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
 
 
-if __name__ == '__main__':
-    try:
-        tests = unittest.TestLoader().discover('test', 'test*.py', 'test')
-        unittest.TextTestRunner().run(tests)
-    except ImportError as err:
-        print(err)
+def main():
+    if not os.path.isdir('test'):
         print('!! Please execute from the root directory of pyelftools')
+        return 1
+    else:
+        tests = unittest.TestLoader().discover('test', 'test*.py', 'test')
+        result = unittest.TextTestRunner().run(tests)
+        if result.wasSuccessful():
+            return 0
+        else:
+            return 1
 
-
+if __name__ == '__main__':
+    sys.exit(main())

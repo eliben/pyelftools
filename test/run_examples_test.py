@@ -9,8 +9,8 @@
 #-------------------------------------------------------------------------------
 import os, sys
 import logging
-sys.path.insert(0, '.')
-from test.utils import run_exe, is_in_rootdir, dump_output_to_temp_files
+from utils import setup_syspath; setup_syspath()
+from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
 
 
 # Create a global logger object
@@ -54,7 +54,7 @@ def run_example_and_compare(example_path):
     if rc != 0:
         testlog.info('.......ERROR - example returned error code %s' % rc)
         return False
-    
+
     # Comparison is done as lists of lines, to avoid EOL problems
     if example_out.split() == ref_str.split():
         return True

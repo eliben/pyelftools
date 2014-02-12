@@ -6,6 +6,14 @@ New version
 * Update CHANGES
 * Tag in hg
 
+construct
+---------
+
+The construct seems to be maintained again - they also backported my Python 3
+fixes. Theoretically, I can remove construct from pyelftools and use it as a
+dependency instead. I don't really have time to play with this now, but may
+do so in the future.
+
 Distribution
 ------------
 
@@ -14,6 +22,7 @@ python setup.py build sdist upload
 Preparing a new release
 -----------------------
 
+* Run readelf tests with up-to-date readelf (from the new binutils)
 * Run all tests with Python 2.7 before packaging, on Linux
 * Make sure new version was updated everywhere appropriate
 * Packaging done on Linux
@@ -23,6 +32,5 @@ Preparing a new release
 * Runt 'tox' tests (with '-r' to create new venvs)
 * Now build with upload to send it to PyPi
 * Test with pip install from some new virtualenv
-* If everything is OK, upload the distribution to BitBucket as well
 * The older download can be kept alive for a couple of days
 

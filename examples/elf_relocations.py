@@ -10,12 +10,10 @@
 from __future__ import print_function
 import sys
 
-# If elftools is not installed, maybe we're running from the root or examples
-# dir of the source distribution
-try:
-    import elftools
-except ImportError:
-    sys.path.extend(['.', '..'])
+# If pyelftools is not installed, the example can also run from the root or
+# examples/ dir of the source distribution.
+sys.path[0:0] = ['.', '..']
+
 
 from elftools.common.py3compat import bytes2str
 from elftools.elf.elffile import ELFFile

@@ -12,28 +12,32 @@ from ..common.utils import struct_parse, elf_assert
 from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
-        Section, StringTableSection, SymbolTableSection, NullSection)
+        Section, StringTableSection, SymbolTableSection,
+        SUNWSyminfoTableSection, NullSection)
+from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
+from .gnuversions import (
+        GNUVerNeedSection, GNUVerDefSection,
+        GNUVerSymSection)
 from .segments import Segment, InterpSegment
-from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 
 
 class ELFFile(object):
     """ Creation: the constructor accepts a stream (file-like object) with the
         contents of an ELF file.
-    
+
         Accessible attributes:
 
             stream:
                 The stream holding the data of the file - must be a binary
                 stream (bytes, not string).
 
-            elfclass: 
+            elfclass:
                 32 or 64 - specifies the word size of the target machine
-            
+
             little_endian:
-                boolean - specifies the target machine's endianness     
+                boolean - specifies the target machine's endianness
 
             header:
                 the complete ELF file header
@@ -51,24 +55,24 @@ class ELFFile(object):
 
         self.stream.seek(0)
         self.e_ident_raw = self.stream.read(16)
-        
+
         self._file_stringtable_section = self._get_file_stringtable()
         self._section_name_map = None
-    
+
     def num_sections(self):
         """ Number of sections in the file
         """
         return self['e_shnum']
-    
+
     def get_section(self, n):
         """ Get the section at index #n from the file (Section object or a
             subclass)
         """
         section_header = self._get_section_header(n)
         return self._make_section(section_header)
-    
+
     def get_section_by_name(self, name):
-        """ Get a section from the file, by name. Return None if no such 
+        """ Get a section from the file, by name. Return None if no such
             section exists.
         """
         # The first time this method is called, construct a name to number
@@ -80,18 +84,18 @@ class ELFFile(object):
                 self._section_name_map[sec.name] = i
         secnum = self._section_name_map.get(name, None)
         return None if secnum is None else self.get_section(secnum)
-    
+
     def iter_sections(self):
         """ Yield all the sections in the file
         """
         for i in range(self.num_sections()):
             yield self.get_section(i)
-    
+
     def num_segments(self):
         """ Number of segments in the file
         """
         return self['e_phnum']
-    
+
     def get_segment(self, n):
         """ Get the segment at index #n from the file (Segment object)
         """
@@ -105,7 +109,7 @@ class ELFFile(object):
             yield self.get_segment(i)
 
     def has_dwarf_info(self):
-        """ Check whether this file appears to have debugging information. 
+        """ Check whether this file appears to have debugging information.
             We assume that if it has the debug_info section, it has all theother
             required sections as well.
         """
@@ -118,21 +122,21 @@ class ELFFile(object):
             If relocate_dwarf_sections is True, relocations for DWARF sections
             are looked up and applied.
         """
-        # Expect that has_dwarf_info was called, so at least .debug_info is 
-        # present. 
+        # Expect that has_dwarf_info was called, so at least .debug_info is
+        # present.
         # Sections that aren't found will be passed as None to DWARFInfo.
         #
         debug_sections = {}
-        for secname in (b'.debug_info', b'.debug_abbrev', b'.debug_str', 
-                        b'.debug_line', b'.debug_frame', b'.debug_loc',
-                        b'.debug_ranges'):
+        for secname in (b'.debug_info', b'.debug_abbrev', b'.debug_str',
+                        b'.debug_line', b'.debug_frame',
+                        b'.debug_loc', b'.debug_ranges'):
             section = self.get_section_by_name(secname)
             if section is None:
                 debug_sections[secname] = None
             else:
                 debug_sections[secname] = self._read_dwarf_section(
-                        section,
-                        relocate_dwarf_sections)
+                    section,
+                    relocate_dwarf_sections)
 
         return DWARFInfo(
                 config=DwarfConfig(
@@ -142,6 +146,8 @@ class ELFFile(object):
                 debug_info_sec=debug_sections[b'.debug_info'],
                 debug_abbrev_sec=debug_sections[b'.debug_abbrev'],
                 debug_frame_sec=debug_sections[b'.debug_frame'],
+                # TODO(eliben): reading of eh_frame is not hooked up yet
+                eh_frame_sec=None,
                 debug_str_sec=debug_sections[b'.debug_str'],
                 debug_loc_sec=debug_sections[b'.debug_loc'],
                 debug_ranges_sec=debug_sections[b'.debug_ranges'],
@@ -149,12 +155,16 @@ class ELFFile(object):
 
     def get_machine_arch(self):
         """ Return the machine architecture, as detected from the ELF header.
-            At the moment the only supported architectures are x86 and x64.
+            Not all architectures are supported at the moment.
         """
         if self['e_machine'] == 'EM_X86_64':
             return 'x64'
         elif self['e_machine'] in ('EM_386', 'EM_486'):
             return 'x86'
+        elif self['e_machine'] == 'EM_ARM':
+            return 'ARM'
+        elif self['e_machine'] == 'EM_AARCH64':
+            return 'AArch64'
         else:
             return '<unknown>'
 
@@ -169,7 +179,7 @@ class ELFFile(object):
         """ Verify the ELF file and identify its class and endianness.
         """
         # Note: this code reads the stream directly, without using ELFStructs,
-        # since we don't yet know its exact format. ELF was designed to be 
+        # since we don't yet know its exact format. ELF was designed to be
         # read like this - its e_ident field is word-size and endian agnostic.
         #
         self.stream.seek(0)
@@ -191,34 +201,36 @@ class ELFFile(object):
             self.little_endian = False
         else:
             raise ELFError('Invalid EI_DATA %s' % repr(ei_data))
-    
+
     def _section_offset(self, n):
         """ Compute the offset of section #n in the file
         """
         return self['e_shoff'] + n * self['e_shentsize']
-    
+
     def _segment_offset(self, n):
         """ Compute the offset of segment #n in the file
         """
         return self['e_phoff'] + n * self['e_phentsize']
-    
+
     def _make_segment(self, segment_header):
         """ Create a Segment object of the appropriate type
         """
         segtype = segment_header['p_type']
         if segtype == 'PT_INTERP':
             return InterpSegment(segment_header, self.stream)
+        elif segtype == 'PT_DYNAMIC':
+            return DynamicSegment(segment_header, self.stream, self)
         else:
             return Segment(segment_header, self.stream)
 
     def _get_section_header(self, n):
-        """ Find the header of section #n, parse it and return the struct 
+        """ Find the header of section #n, parse it and return the struct
         """
         return struct_parse(
             self.structs.Elf_Shdr,
             self.stream,
             stream_pos=self._section_offset(n))
-    
+
     def _get_section_name(self, section_header):
         """ Given a section header, find this section's name in the file's
             string table
@@ -231,16 +243,26 @@ class ELFFile(object):
         """
         name = self._get_section_name(section_header)
         sectype = section_header['sh_type']
-        
+
         if sectype == 'SHT_STRTAB':
             return StringTableSection(section_header, name, self.stream)
         elif sectype == 'SHT_NULL':
             return NullSection(section_header, name, self.stream)
-        elif sectype in ('SHT_SYMTAB', 'SHT_DYNSYM'):
+        elif sectype in ('SHT_SYMTAB', 'SHT_DYNSYM', 'SHT_SUNW_LDYNSYM'):
             return self._make_symbol_table_section(section_header, name)
+        elif sectype == 'SHT_SUNW_syminfo':
+            return self._make_sunwsyminfo_table_section(section_header, name)
+        elif sectype == 'SHT_GNU_verneed':
+            return self._make_gnu_verneed_section(section_header, name)
+        elif sectype == 'SHT_GNU_verdef':
+            return self._make_gnu_verdef_section(section_header, name)
+        elif sectype == 'SHT_GNU_versym':
+            return self._make_gnu_versym_section(section_header, name)
         elif sectype in ('SHT_REL', 'SHT_RELA'):
             return RelocationSection(
                 section_header, name, self.stream, self)
+        elif sectype == 'SHT_DYNAMIC':
+            return DynamicSection(section_header, name, self.stream, self)
         else:
             return Section(section_header, name, self.stream)
 
@@ -254,6 +276,46 @@ class ELFFile(object):
             elffile=self,
             stringtable=strtab_section)
 
+    def _make_sunwsyminfo_table_section(self, section_header, name):
+        """ Create a SUNWSyminfoTableSection
+        """
+        linked_strtab_index = section_header['sh_link']
+        strtab_section = self.get_section(linked_strtab_index)
+        return SUNWSyminfoTableSection(
+            section_header, name, self.stream,
+            elffile=self,
+            symboltable=strtab_section)
+
+    def _make_gnu_verneed_section(self, section_header, name):
+        """ Create a GNUVerNeedSection
+        """
+        linked_strtab_index = section_header['sh_link']
+        strtab_section = self.get_section(linked_strtab_index)
+        return GNUVerNeedSection(
+            section_header, name, self.stream,
+            elffile=self,
+            stringtable=strtab_section)
+
+    def _make_gnu_verdef_section(self, section_header, name):
+        """ Create a GNUVerDefSection
+        """
+        linked_strtab_index = section_header['sh_link']
+        strtab_section = self.get_section(linked_strtab_index)
+        return GNUVerDefSection(
+            section_header, name, self.stream,
+            elffile=self,
+            stringtable=strtab_section)
+
+    def _make_gnu_versym_section(self, section_header, name):
+        """ Create a GNUVerSymSection
+        """
+        linked_strtab_index = section_header['sh_link']
+        strtab_section = self.get_section(linked_strtab_index)
+        return GNUVerSymSection(
+            section_header, name, self.stream,
+            elffile=self,
+            symboltable=strtab_section)
+
     def _get_segment_header(self, n):
         """ Find the header of segment #n, parse it and return the struct
         """
@@ -261,7 +323,7 @@ class ELFFile(object):
             self.structs.Elf_Phdr,
             self.stream,
             stream_pos=self._segment_offset(n))
-    
+
     def _get_file_stringtable(self):
         """ Find the file's string table section
         """

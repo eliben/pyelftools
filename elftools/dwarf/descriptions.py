@@ -24,7 +24,7 @@ def set_global_machine_arch(machine_arch):
 def describe_attr_value(attr, die, section_offset):
     """ Given an attribute attr, return the textual representation of its
         value, suitable for tools like readelf.
-        
+
         To cover all cases, this function needs some extra arguments:
 
         die: the DIE this attribute was extracted from
@@ -32,11 +32,11 @@ def describe_attr_value(attr, die, section_offset):
     """
     descr_func = _ATTR_DESCRIPTION_MAP[attr.form]
     val_description = descr_func(attr, die, section_offset)
-    
+
     # For some attributes we can display further information
     extra_info_func = _EXTRA_INFO_DESCRIPTION_MAP[attr.name]
     extra_info = extra_info_func(attr, die, section_offset)
-    return str(val_description) + '\t' + extra_info    
+    return str(val_description) + '\t' + extra_info
 
 
 def describe_CFI_instructions(entry):
@@ -45,7 +45,7 @@ def describe_CFI_instructions(entry):
     """
     def _assert_FDE_instruction(instr):
         dwarf_assert(
-            isinstance(entry, FDE), 
+            isinstance(entry, FDE),
             'Unexpected instruction "%s" for a CIE' % instr)
 
     def _full_reg_name(regnum):
@@ -82,7 +82,7 @@ def describe_CFI_instructions(entry):
                         'DW_CFA_advance_loc4', 'DW_CFA_advance_loc'):
             _assert_FDE_instruction(instr)
             factored_offset = instr.args[0] * cie['code_alignment_factor']
-            s += '  %s: %s to %08x\n' % (
+            s += '  %s: %s to %016x\n' % (
                 name, factored_offset, factored_offset + pc)
             pc += factored_offset
         elif name in (  'DW_CFA_remember_state', 'DW_CFA_restore_state',
@@ -126,7 +126,7 @@ def describe_CFI_CFA_rule(rule):
         return 'exp'
     else:
         return '%s%+d' % (describe_reg_name(rule.reg), rule.offset)
-    
+
 
 def describe_DWARF_expr(expr, structs):
     """ Textual description of a DWARF expression encoded in 'expr'.
@@ -197,23 +197,29 @@ def _describe_attr_debool(attr, die, section_offset):
     """
     return '1' if attr.value else '0'
 
+def _describe_attr_present(attr, die, section_offset):
+    """ Some forms may simply mean that an attribute is present,
+        without providing any value.
+    """
+    return '1'
+
 def _describe_attr_block(attr, die, section_offset):
     s = '%s byte block: ' % len(attr.value)
-    s += ' '.join('%x' % item for item in attr.value)
+    s += ' '.join('%x' % item for item in attr.value) + ' '
     return s
-    
+
 
 _ATTR_DESCRIPTION_MAP = defaultdict(
     lambda: _describe_attr_value_passthrough, # default_factory
-    
+
     DW_FORM_ref1=_describe_attr_ref,
     DW_FORM_ref2=_describe_attr_ref,
     DW_FORM_ref4=_describe_attr_ref,
     DW_FORM_ref8=_describe_attr_split_64bit,
-    DW_FORM_ref_udata=_describe_attr_ref,        
+    DW_FORM_ref_udata=_describe_attr_ref,
     DW_FORM_ref_addr=_describe_attr_hex_addr,
     DW_FORM_data4=_describe_attr_hex,
-    DW_FORM_data8=_describe_attr_split_64bit,
+    DW_FORM_data8=_describe_attr_hex,
     DW_FORM_addr=_describe_attr_hex,
     DW_FORM_sec_offset=_describe_attr_hex,
     DW_FORM_flag=_describe_attr_debool,
@@ -227,6 +233,9 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_block2=_describe_attr_block,
     DW_FORM_block4=_describe_attr_block,
     DW_FORM_block=_describe_attr_block,
+    DW_FORM_flag_present=_describe_attr_present,
+    DW_FORM_exprloc=_describe_attr_block,
+    DW_FORM_ref_sig8=_describe_attr_ref,
 )
 
 
@@ -402,7 +411,7 @@ def _import_extra(attr, die, section_offset):
 
 _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
     lambda: _make_extra_string(''), # default_factory
-    
+
     DW_AT_inline=_make_extra_mapper(
         _DESCR_DW_INL, '(Unknown inline attribute value: %x',
         default_interpolate_value=True),
@@ -463,7 +472,7 @@ _REG_NAMES_x64 = [
 class ExprDumper(GenericExprVisitor):
     """ A concrete visitor for DWARF expressions that dumps a textual
         representation of the complete expression.
-        
+
         Usage: after creation, call process_expr, and then get_str for a
         semicolon-delimited string representation of the decoded expression.
     """
@@ -485,10 +494,10 @@ class ExprDumper(GenericExprVisitor):
             'DW_OP_pick', 'DW_OP_plus_uconst', 'DW_OP_bra', 'DW_OP_skip',
             'DW_OP_fbreg', 'DW_OP_piece', 'DW_OP_deref_size',
             'DW_OP_xderef_size', 'DW_OP_regx',])
-        
+
         for n in range(0, 32):
             self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)
-        
+
         self._ops_with_two_decimal_args = set([
             'DW_OP_const8u', 'DW_OP_const8s', 'DW_OP_bregx', 'DW_OP_bit_piece'])
 

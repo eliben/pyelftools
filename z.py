@@ -1,3 +1,10 @@
+#-------------------------------------------------------------------------------
+# elftools
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
+
 # Just a script for playing around with pyelftools during testing
 # please ignore it!
 #
