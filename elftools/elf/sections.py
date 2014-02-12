@@ -6,7 +6,6 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import CString
 from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
 
 
