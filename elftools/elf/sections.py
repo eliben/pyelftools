@@ -41,6 +41,8 @@ class Section(object):
 
     def __eq__(self, other):
         return self.header == other.header
+    def __hash__(self):
+        return hash(self.header)
 
 
 class NullSection(Section):
