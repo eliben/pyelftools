@@ -1,7 +1,7 @@
 Changelog
 =========
 
-+ Version 0.22 (??)
++ Version 0.22 (30.03.2014)
 
   - pyelftools repository moved to https://github.com/eliben/pyelftools
   - Support for version sections - contributed by Yann Rouillard.
@@ -35,4 +35,3 @@ Changelog
     on Windows.
 
 + Version 0.10 - Initial public release (06.01.2012)
-

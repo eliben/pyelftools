@@ -4,7 +4,7 @@ New version
 * Update elftools/__init__.py
 * Update setup.py
 * Update CHANGES
-* Tag in hg
+* Tag in git (v0.xx)
 
 construct
 ---------
@@ -22,10 +22,8 @@ python setup.py build sdist upload
 Preparing a new release
 -----------------------
 
-* Run readelf tests with up-to-date readelf (from the new binutils)
-* Run all tests with Python 2.7 before packaging, on Linux
+* Run tox
 * Make sure new version was updated everywhere appropriate
-* Packaging done on Linux
 * Run ``python setup.py build sdist`` (no 'upload' yet)
 * Untar the created ``dist/pyelftools-x.y.tar.gz`` and make sure
   everything looks ok
@@ -33,4 +31,3 @@ Preparing a new release
 * Now build with upload to send it to PyPi
 * Test with pip install from some new virtualenv
 * The older download can be kept alive for a couple of days
-
