@@ -22,12 +22,11 @@ python setup.py build sdist upload
 Preparing a new release
 -----------------------
 
-* Run tox
+* Run 'tox' tests (with '-r' to create new venvs)
 * Make sure new version was updated everywhere appropriate
 * Run ``python setup.py build sdist`` (no 'upload' yet)
 * Untar the created ``dist/pyelftools-x.y.tar.gz`` and make sure
   everything looks ok
-* Runt 'tox' tests (with '-r' to create new venvs)
 * Now build with upload to send it to PyPi
 * Test with pip install from some new virtualenv
 * The older download can be kept alive for a couple of days
