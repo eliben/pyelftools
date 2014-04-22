@@ -141,7 +141,7 @@ class ELFFile(object):
         return DWARFInfo(
                 config=DwarfConfig(
                     little_endian=self.little_endian,
-                    default_address_size=self.elfclass / 8,
+                    default_address_size=self.elfclass // 8,
                     machine_arch=self.get_machine_arch()),
                 debug_info_sec=debug_sections[b'.debug_info'],
                 debug_abbrev_sec=debug_sections[b'.debug_abbrev'],

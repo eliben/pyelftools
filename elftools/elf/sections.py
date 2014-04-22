@@ -6,7 +6,6 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import CString
 from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
 
 
@@ -41,6 +40,8 @@ class Section(object):
 
     def __eq__(self, other):
         return self.header == other.header
+    def __hash__(self):
+        return hash(self.header)
 
 
 class NullSection(Section):
@@ -77,9 +78,9 @@ class SymbolTableSection(Section):
         self.elfstructs = self.elffile.structs
         self.stringtable = stringtable
         elf_assert(self['sh_entsize'] > 0,
-                'Expected entry size of section %s to be > 0' % name)
+                'Expected entry size of section %r to be > 0' % name)
         elf_assert(self['sh_size'] % self['sh_entsize'] == 0,
-                'Expected section size to be a multiple of entry size in section %s' % name)
+                'Expected section size to be a multiple of entry size in section %r' % name)
 
     def num_symbols(self):
         """ Number of symbols in the table
