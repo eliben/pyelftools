@@ -10,6 +10,7 @@ import itertools
 
 from .sections import Section
 from .segments import Segment
+from ..common.exceptions import ELFError
 from ..common.utils import struct_parse
 
 from .enums import ENUM_D_TAG
@@ -29,6 +30,8 @@ class DynamicTag(object):
          'DT_SUNW_FILTER'])
 
     def __init__(self, entry, stringtable):
+        if stringtable is None:
+            raise ELFError('Creating DynamicTag without string table')
         self.entry = entry
         if entry.d_tag in self._HANDLED_TAGS:
             setattr(self, entry.d_tag[3:].lower(),
@@ -114,6 +117,7 @@ class DynamicSegment(Segment, Dynamic):
         # So we must look for the dynamic section contained in the dynamic
         # segment, we do so by searching for the dynamic section whose content
         # is located at the same offset as the dynamic segment
+        stringtable = None
         for section in elffile.iter_sections():
             if (isinstance(section, DynamicSection) and
                     section['sh_offset'] == header['p_offset']):
