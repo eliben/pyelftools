@@ -350,11 +350,9 @@ class ReadElf(object):
                     parsed = 'Library runpath: [%s]' % bytes2str(tag.runpath)
                 elif tag.entry.d_tag == 'DT_SONAME':
                     parsed = 'Library soname: [%s]' % bytes2str(tag.soname)
-                elif (tag.entry.d_tag.endswith('SZ') or
-                      tag.entry.d_tag.endswith('ENT')):
+                elif tag.entry.d_tag.endswith(('SZ', 'ENT')):
                     parsed = '%i (bytes)' % tag['d_val']
-                elif (tag.entry.d_tag.endswith('NUM') or
-                      tag.entry.d_tag.endswith('COUNT')):
+                elif tag.entry.d_tag.endswith(('NUM', 'COUNT')):
                     parsed = '%i' % tag['d_val']
                 elif tag.entry.d_tag == 'DT_PLTREL':
                     s = describe_dyn_tag(tag.entry.d_val)
