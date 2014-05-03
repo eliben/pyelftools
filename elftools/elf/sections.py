@@ -76,9 +76,9 @@ class SymbolTableSection(Section):
         self.elfstructs = self.elffile.structs
         self.stringtable = stringtable
         elf_assert(self['sh_entsize'] > 0,
-                'Expected entry size of section %s to be > 0' % name)
+                'Expected entry size of section %r to be > 0' % name)
         elf_assert(self['sh_size'] % self['sh_entsize'] == 0,
-                'Expected section size to be a multiple of entry size in section %s' % name)
+                'Expected section size to be a multiple of entry size in section %r' % name)
 
     def num_symbols(self):
         """ Number of symbols in the table
