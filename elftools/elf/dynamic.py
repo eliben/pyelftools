@@ -13,8 +13,6 @@ from .segments import Segment
 from ..common.exceptions import ELFError
 from ..common.utils import struct_parse
 
-from .enums import ENUM_D_TAG
-
 
 class DynamicTag(object):
     """ Dynamic Tag object - representing a single dynamic tag entry from a
