@@ -107,15 +107,17 @@ class ELFFile(object):
         """
         for i in range(self.num_segments()):
             yield self.get_segment(i)
-    
+
     def address_offsets(self, start, size=1):
-        """ Yield a file offset for each ELF segment matching a memory region
+        """ Yield a file offset for each ELF segment containing a memory region.
+
+            A memory region is defined by the range [start...start+size). The
+            offset of the region is yielded.
         """
         end = start + size
         for seg in self.iter_segments():
             if (start >= seg['p_vaddr'] and
-                    end <= seg['p_vaddr'] + seg['p_filesz']):
-                # Region is contained completely within this segment
+                end <= seg['p_vaddr'] + seg['p_filesz']):
                 yield start - seg['p_vaddr'] + seg['p_offset']
 
     def has_dwarf_info(self):
