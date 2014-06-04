@@ -6,7 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
+from ..common.utils import struct_parse, elf_assert
+from .strings import StringTable
 
 
 class Section(object):
@@ -54,18 +55,12 @@ class NullSection(Section):
         return True
 
 
-class StringTableSection(Section):
+class StringTableSection(Section, StringTable):
     """ ELF string table section.
     """
     def __init__(self, header, name, stream):
-        super(StringTableSection, self).__init__(header, name, stream)
-
-    def get_string(self, offset):
-        """ Get the string stored at the given offset in this string table.
-        """
-        table_offset = self['sh_offset']
-        s = parse_cstring_from_stream(self.stream, table_offset + offset)
-        return s
+        Section.__init__(self, header, name, stream)
+        StringTable.__init__(self, self.stream, self['sh_offset'])
 
 
 class SymbolTableSection(Section):
