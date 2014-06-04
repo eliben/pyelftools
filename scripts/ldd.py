@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
-# scripts/readelf.py
+# scripts/ldd.py
 #
 # A clone of 'ldd' in Python, based on the pyelftools library
 #
@@ -83,22 +83,22 @@ def ldpaths(ld_so_conf='/etc/ld.so.conf'):
     return paths
 
 
-# We cache the dependencies for speed.  The structure is
+# We cache the paths for speed.  The structure is
 # { ELFClass : { SONAME : library, ... }, ELFClass : ... }
-cache = {}
+path_cache = {}
 
 def dynamic_dt_needed_paths( dt_needed, eclass, paths):
     """ Search library paths for the library file corresponding
         to the given DT_NEEDED and ELF Class.
     """
-    global cache
-    if not eclass in cache:
-        cache[eclass] = {}
+    global path_cache
+    if not eclass in path_cache:
+        path_cache[eclass] = {}
 
     dt_needed_paths = {}
     for n in dt_needed:
-        if n in cache[eclass].keys():
-           dt_needed_paths[n] = cache[eclass][n]
+        if n in path_cache[eclass].keys():
+           dt_needed_paths[n] = path_cache[eclass][n]
         else:
             for p in paths:
                 lib = p + os.sep + n
@@ -108,7 +108,7 @@ def dynamic_dt_needed_paths( dt_needed, eclass, paths):
                             readlib = ReadElf(file)
                             if eclass == readlib.elf_class():
                                 dt_needed_paths[n] = lib
-                                cache[eclass][n] = lib
+                                path_cache[eclass][n] = lib
                         except ELFError as ex:
                             sys.stderr.write('ELF error: %s\n' % ex)
                             sys.exit(1)
@@ -116,10 +116,17 @@ def dynamic_dt_needed_paths( dt_needed, eclass, paths):
     return dt_needed_paths
 
 
+# Keep a list of all the libraries for which we have already obtained
+# their NEEDED dependencies.  We skip libraries we've alrady analyzed
+# to avoid repeated work.
+dep_cache = []
+
 def all_dynamic_dt_needed_paths(f, paths):
     """ Return a dictionary of all the DT_NEEDED => Library Paths for
         a given ELF file obtained by recursively following linkage.
     """
+    global dep_cache
+
     with open(f, 'rb') as file:
         try:
             readelf = ReadElf(file)
@@ -128,7 +135,9 @@ def all_dynamic_dt_needed_paths(f, paths):
             dt_needed = readelf.dynamic_dt_needed()
             dt_needed_paths = dynamic_dt_needed_paths(dt_needed, eclass, paths)
             for n, lib in dt_needed_paths.items():
-                dt_needed_paths = dict(all_dynamic_dt_needed_paths(lib, paths), **dt_needed_paths)
+                if not lib in dep_cache:
+                    dt_needed_paths = dict(all_dynamic_dt_needed_paths(lib, paths), **dt_needed_paths)
+                    dep_cache.append(lib)
         except ELFError as ex:
             sys.stderr.write('ELF error: %s\n' % ex)
             sys.exit(1)
