@@ -171,6 +171,7 @@ _DESCR_E_MACHINE = dict(
     EM_AVR='Atmel AVR 8-bit microcontroller',
     EM_ARM='ARM',
     EM_AARCH64='AArch64',
+    EM_BLAFKIN='Analog Devices Blackfin',
     RESERVED='RESERVED',
 )
 
