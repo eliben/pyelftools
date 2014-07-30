@@ -91,6 +91,8 @@ class ELFFile(object):
         for i in range(self.num_sections()):
             yield self.get_section(i)
 
+    sections = property(iter_sections, None, None, iter_sections.__doc__)
+
     def num_segments(self):
         """ Number of segments in the file
         """
@@ -107,6 +109,8 @@ class ELFFile(object):
         """
         for i in range(self.num_segments()):
             yield self.get_segment(i)
+
+    segments = property(iter_segments, None, None, iter_segments.__doc__)
 
     def address_offsets(self, start, size=1):
         """ Yield a file offset for each ELF segment containing a memory region.
@@ -165,6 +169,8 @@ class ELFFile(object):
                 debug_ranges_sec=debug_sections[b'.debug_ranges'],
                 debug_line_sec=debug_sections[b'.debug_line'])
 
+    dwarf_info = property(get_dwarf_info, None, None, get_dwarf_info.__doc__)
+
     def get_machine_arch(self):
         """ Return the machine architecture, as detected from the ELF header.
             Not all architectures are supported at the moment.
@@ -179,6 +185,8 @@ class ELFFile(object):
             return 'AArch64'
         else:
             return '<unknown>'
+
+    machine_arch = property(get_machine_arch, None, None, get_machine_arch.__doc__)
 
     #-------------------------------- PRIVATE --------------------------------#
 
