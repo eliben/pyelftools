@@ -46,6 +46,9 @@ class ELFFile(object):
                 the raw e_ident field of the header
     """
     def __init__(self, stream):
+        if isinstance(stream, "".__class__):
+            stream = open(stream, 'rb')
+
         self.stream = stream
         self._identify_file()
         self.structs = ELFStructs(
