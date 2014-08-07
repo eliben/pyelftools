@@ -46,6 +46,20 @@ class TestDynamic(unittest.TestCase):
         exp = ['libc.so.6']
         self.assertEqual(libs, exp)
 
+    def test_reading_symbols(self):
+        """Verify we can read symbol table without SymbolTableSection"""
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'aarch64_super_stripped.elf'), 'rb') as f:
+            elf = ELFFile(f)
+            for segment in elf.iter_segments():
+                if segment.header.p_type != 'PT_DYNAMIC':
+                    continue
+
+                symbol_names = [x.name for x in segment.iter_symbols()]
+
+        exp = [b'', b'__libc_start_main', b'__gmon_start__', b'abort']
+        self.assertEqual(symbol_names, exp)
+
 
 if __name__ == '__main__':
     unittest.main()
