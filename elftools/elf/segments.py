@@ -7,7 +7,8 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..construct import CString
-from ..common.utils import struct_parse
+from ..common.utils import roundup, struct_parse
+from ..common.py3compat import bytes2str
 from .constants import SH_FLAGS
 
 
@@ -96,3 +97,41 @@ class InterpSegment(Segment):
             stream_pos=path_offset)
 
 
+class NoteSegment(Segment):
+    """ NOTE segment. Knows how to parse notes.
+    """
+    def __init__(self, header, stream, elffile):
+        super(NoteSegment, self).__init__(header, stream)
+        self._elfstructs = elffile.structs
+
+    def iter_notes(self):
+        """ Iterates the list of notes in the segment.
+        """
+        offset = self['p_offset']
+        end = self['p_offset'] + self['p_filesz']
+        while offset < end:
+            note = struct_parse(
+                self._elfstructs.Elf_Nhdr,
+                self.stream,
+                stream_pos=offset)
+            note['n_offset'] = offset
+            offset += self._elfstructs.Elf_Nhdr.sizeof()
+            self.stream.seek(offset)
+            # n_namesz is 4-byte aligned.
+            disk_namesz = roundup(note['n_namesz'], 2)
+            note['n_name'] = bytes2str(
+                CString('').parse(self.stream.read(disk_namesz)))
+            offset += disk_namesz
+
+            desc_data = bytes2str(self.stream.read(note['n_descsz']))
+            if note['n_type'] == 'NT_GNU_ABI_TAG':
+                note['n_desc'] = struct_parse(self._elfstructs.Elf_Nhdr_abi,
+                                              self.stream,
+                                              offset)
+            elif note['n_type'] == 'NT_GNU_BUILD_ID':
+                note['n_desc'] = ''.join('%.2x' % ord(b) for b in desc_data)
+            else:
+                note['n_desc'] = desc_data
+            offset += roundup(note['n_descsz'], 2)
+            note['n_size'] = offset - note['n_offset']
+            yield note

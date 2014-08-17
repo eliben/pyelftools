@@ -77,6 +77,7 @@ class ELFStructs(object):
         self._create_gnu_verneed()
         self._create_gnu_verdef()
         self._create_gnu_versym()
+        self._create_note()
 
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
@@ -253,4 +254,18 @@ class ELFStructs(object):
         # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
         self.Elf_Versym = Struct('Elf_Versym',
             Enum(self.Elf_half('ndx'), **ENUM_VERSYM),
+        )
+
+    def _create_note(self):
+        # Structure of "PT_NOTE" section
+        self.Elf_Nhdr = Struct('Elf_Nhdr',
+            self.Elf_word('n_namesz'),
+            self.Elf_word('n_descsz'),
+            Enum(self.Elf_word('n_type'), **ENUM_NOTE_N_TYPE),
+        )
+        self.Elf_Nhdr_abi = Struct('Elf_Nhdr_abi',
+            Enum(self.Elf_word('abi_os'), **ENUM_NOTE_ABI_TAG_OS),
+            self.Elf_word('abi_major'),
+            self.Elf_word('abi_minor'),
+            self.Elf_word('abi_tiny'),
         )
