@@ -488,6 +488,26 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     _default_=Pass,
 )
 
+# PT_NOTE section types
+ENUM_NOTE_N_TYPE = dict(
+    NT_GNU_ABI_TAG=1,
+    NT_GNU_HWCAP=2,
+    NT_GNU_BUILD_ID=3,
+    NT_GNU_GOLD_VERSION=4,
+    _default_=Pass,
+)
+
+# Values in GNU .note.ABI-tag notes (n_type=='NT_GNU_ABI_TAG')
+ENUM_NOTE_ABI_TAG_OS = dict(
+    ELF_NOTE_OS_LINUX=0,
+    ELF_NOTE_OS_GNU=1,
+    ELF_NOTE_OS_SOLARIS2=2,
+    ELF_NOTE_OS_FREEBSD=3,
+    ELF_NOTE_OS_NETBSD=4,
+    ELF_NOTE_OS_SYLLABLE=5,
+    _default_=Pass,
+)
+
 ENUM_RELOC_TYPE_ARM = dict(
     R_ARM_NONE=0,
     R_ARM_PC24=1,

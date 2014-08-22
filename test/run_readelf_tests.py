@@ -46,7 +46,7 @@ def run_test_on_file(filename, verbose=False):
     success = True
     testlog.info("Test file '%s'" % filename)
     for option in [
-            '-e', '-d', '-s', '-r', '-x.text', '-p.shstrtab', '-V',
+            '-e', '-d', '-s', '-n', '-r', '-x.text', '-p.shstrtab', '-V',
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp']:
         if verbose: testlog.info("..option='%s'" % option)
@@ -212,4 +212,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-

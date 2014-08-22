@@ -23,7 +23,7 @@ from elftools.common.py3compat import (
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG
-from elftools.elf.segments import InterpSegment
+from elftools.elf.segments import InterpSegment, NoteSegment
 from elftools.elf.sections import SymbolTableSection
 from elftools.elf.gnuversions import (
     GNUVerSymSection, GNUVerDefSection,
@@ -37,7 +37,7 @@ from elftools.elf.descriptions import (
     describe_sh_type, describe_sh_flags,
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
-    describe_ver_flags,
+    describe_ver_flags, describe_note
     )
 from elftools.elf.constants import E_FLAGS
 from elftools.dwarf.dwarfinfo import DWARFInfo
@@ -373,6 +373,23 @@ class ReadElf(object):
             if self.elffile.num_segments():
                 self._emitline("\nThere is no dynamic section in this file.")
 
+    def display_notes(self):
+        """ Display the notes contained in the file
+        """
+        for segment in self.elffile.iter_segments():
+            if isinstance(segment, NoteSegment):
+                for note in segment.iter_notes():
+                      self._emitline(
+                          "\nDisplaying notes found at file offset "
+                          "%s with length %s:" % (
+                              self._format_hex(note['n_offset'], fieldsize=8),
+                              self._format_hex(note['n_size'], fieldsize=8)))
+                      self._emitline('  Owner                 Data size	Description')
+                      self._emitline('  %s%s %s\t%s' % (
+                          note['n_name'], ' ' * (20 - len(note['n_name'])),
+                          self._format_hex(note['n_descsz'], fieldsize=8),
+                          describe_note(note)))
+
     def display_relocations(self):
         """ Display the relocations contained in the file
         """
@@ -446,8 +463,8 @@ class ReadElf(object):
                     section, 'Version symbols', lead0x=False)
 
                 num_symbols = section.num_symbols()
-    
-                # Symbol version info are printed four by four entries 
+
+                # Symbol version info are printed four by four entries
                 for idx_by_4 in range(0, num_symbols, 4):
 
                     self._emit('  %03x:' % idx_by_4)
@@ -1055,6 +1072,9 @@ def main(stream=None):
     optparser.add_option('-s', '--symbols', '--syms',
             action='store_true', dest='show_symbols',
             help='Display the symbol table')
+    optparser.add_option('-n', '--notes',
+            action='store_true', dest='show_notes',
+            help='Display the core notes (if present)')
     optparser.add_option('-r', '--relocs',
             action='store_true', dest='show_relocs',
             help='Display the relocations (if present)')
@@ -1101,6 +1121,8 @@ def main(stream=None):
                 readelf.display_dynamic_tags()
             if options.show_symbols:
                 readelf.display_symbol_tables()
+            if options.show_notes:
+                readelf.display_notes()
             if options.show_relocs:
                 readelf.display_relocations()
             if options.show_version_info:
@@ -1133,5 +1155,3 @@ def profile_main():
 if __name__ == '__main__':
     main()
     #profile_main()
-
-

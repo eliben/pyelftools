@@ -19,7 +19,7 @@ from .relocation import RelocationSection, RelocationHandler
 from .gnuversions import (
         GNUVerNeedSection, GNUVerDefSection,
         GNUVerSymSection)
-from .segments import Segment, InterpSegment
+from .segments import Segment, InterpSegment, NoteSegment
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 
 
@@ -232,6 +232,8 @@ class ELFFile(object):
             return InterpSegment(segment_header, self.stream)
         elif segtype == 'PT_DYNAMIC':
             return DynamicSegment(segment_header, self.stream, self)
+        elif segtype == 'PT_NOTE':
+            return NoteSegment(segment_header, self.stream, self)
         else:
             return Segment(segment_header, self.stream)
 
@@ -372,5 +374,3 @@ class ELFFile(object):
                 name=section.name,
                 global_offset=section['sh_offset'],
                 size=section['sh_size'])
-
-
