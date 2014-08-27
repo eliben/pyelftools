@@ -185,6 +185,8 @@ class DIE(object):
             raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
 
             value = self._translate_attr_value(form, raw_value)
+            if name in self.attributes:
+                raise DWARFError('Duplicated Dwarf attribute=' + name)
             self.attributes[name] = AttributeValue(
                 name=name,
                 form=form,
