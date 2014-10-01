@@ -1053,10 +1053,7 @@ def main(stream=None):
             version=VERSION_STRING)
     optparser.add_option('-a', '--all',
             action='store_true', dest='show_all',
-            help=(
-                'Equivalent to specifying `--file-header`, `--program-headers`,' +
-                ' `--sections`, `--symbols`, `--relocs`, `--dynamic`, `--notes`,' +
-                ' and `--version-info`'))
+            help='Equivalent to: -h -l -S -s -r -d -n -V')
     optparser.add_option('-d', '--dynamic',
             action='store_true', dest='show_dynamic_tags',
             help='Display the dynamic section')
@@ -1107,10 +1104,24 @@ def main(stream=None):
 
     if options.show_all_headers:
         do_file_header = do_section_header = do_program_header = True
+    elif options.show_all:
+        do_dynamic_tags   = True
+        do_file_header    = True
+        do_notes          = True
+        do_program_header = True
+        do_relocs         = True
+        do_section_header = True
+        do_symbols        = True
+        do_version_info   = True
     else:
-        do_file_header = options.show_file_header
-        do_section_header = options.show_section_header
+        do_dynamic_tags   = options.show_dynamic_tags
+        do_file_header    = options.show_file_header
+        do_notes          = options.show_notes
         do_program_header = options.show_program_header
+        do_relocs         = options.show_relocs
+        do_section_header = options.show_section_header
+        do_symbols        = options.show_symbols
+        do_version_info   = options.show_version_info
 
     if options.show_dynamic_tags:
         do_dynamic_tags = True
@@ -1126,16 +1137,6 @@ def main(stream=None):
 
     if options.show_version_info:
         do_version_info = True
-
-    if options.show_all:
-        do_dynamic_tags   = True
-        do_file_header    = True
-        do_program_header = True
-        do_relocs         = True
-        do_section_header = True
-        do_notes          = True
-        do_symbols        = True
-        do_version_info   = True
 
 
     with open(args[0], 'rb') as file:
