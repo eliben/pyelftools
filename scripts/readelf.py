@@ -1123,21 +1123,6 @@ def main(stream=None):
         do_symbols        = options.show_symbols
         do_version_info   = options.show_version_info
 
-    if options.show_dynamic_tags:
-        do_dynamic_tags = True
-
-    if options.show_notes:
-        do_notes = True
-
-    if options.show_relocs:
-        do_relocs = True
-
-    if options.show_symbols:
-        do_symbols = True
-
-    if options.show_version_info:
-        do_version_info = True
-
 
     with open(args[0], 'rb') as file:
         try:
