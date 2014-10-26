@@ -49,7 +49,11 @@ def describe_CFI_instructions(entry):
             'Unexpected instruction "%s" for a CIE' % instr)
 
     def _full_reg_name(regnum):
-        return 'r%s (%s)' % (regnum, describe_reg_name(regnum))
+        regname = describe_reg_name(regnum, _MACHINE_ARCH, False)
+        if regname:
+            return 'r%s (%s)' % (regnum, regname)
+        else:
+            return 'r%s' % regnum
 
     if isinstance(entry, CIE):
         cie = entry
@@ -146,7 +150,7 @@ def describe_DWARF_expr(expr, structs):
     return '(' + dwarf_expr_dumper.get_str() + ')'
 
 
-def describe_reg_name(regnum, machine_arch=None):
+def describe_reg_name(regnum, machine_arch=None, default=True):
     """ Provide a textual description for a register name, given its serial
         number. The number is expected to be valid.
     """
@@ -157,8 +161,10 @@ def describe_reg_name(regnum, machine_arch=None):
         return _REG_NAMES_x86[regnum]
     elif machine_arch == 'x64':
         return _REG_NAMES_x64[regnum]
+    elif default:
+        return 'r%s' % regnum
     else:
-        return '<none>'
+        return None
 
 #-------------------------------------------------------------------------------
 
