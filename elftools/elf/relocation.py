@@ -11,7 +11,7 @@ from collections import namedtuple
 from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
 from .sections import Section
-from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64
+from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS
 
 
 class Relocation(object):
@@ -147,6 +147,11 @@ class RelocationHandler(object):
                 raise ELFRelocationError(
                     'Unexpected REL relocation for x64: %s' % reloc)
             recipe = self._RELOCATION_RECIPES_X64.get(reloc_type, None)
+        elif self.elffile.get_machine_arch() == 'MIPS':
+            if reloc.is_RELA():
+                raise ELFRelocationError(
+                    'Unexpected RELA relocation for MIPS: %s' % reloc)
+            recipe = self._RELOCATION_RECIPES_MIPS.get(reloc_type, None)
 
         if recipe is None:
             raise ELFRelocationError(
@@ -209,6 +214,15 @@ class RelocationHandler(object):
 
     def _reloc_calc_sym_plus_addend_pcrel(value, sym_value, offset, addend=0):
         return sym_value + addend - offset
+
+    # https://dmz-portal.mips.com/wiki/MIPS_relocation_types
+    _RELOCATION_RECIPES_MIPS = {
+        ENUM_RELOC_TYPE_MIPS['R_MIPS_NONE']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
+        ENUM_RELOC_TYPE_MIPS['R_MIPS_32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False,
+            calc_func=_reloc_calc_sym_plus_value),
+    }
 
     _RELOCATION_RECIPES_X86 = {
         ENUM_RELOC_TYPE_i386['R_386_NONE']: _RELOCATION_RECIPE_TYPE(

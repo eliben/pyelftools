@@ -177,6 +177,8 @@ class ELFFile(object):
             return 'ARM'
         elif self['e_machine'] == 'EM_AARCH64':
             return 'AArch64'
+        elif self['e_machine'] == 'EM_MIPS':
+            return 'MIPS'
         else:
             return '<unknown>'
 

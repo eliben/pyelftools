@@ -7,8 +7,9 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from .enums import (
-    ENUM_D_TAG, ENUM_E_VERSION, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
-        ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64)
+    ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE, ENUM_SH_TYPE,
+    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
+    ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_MIPS)
 from .constants import P_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS
 from ..common.py3compat import iteritems
 
@@ -38,7 +39,12 @@ def describe_e_version_numeric(x):
     return '0x%x' % ENUM_E_VERSION[x]
 
 def describe_p_type(x):
-    return _DESCR_P_TYPE.get(x, _unknown)
+    if x in _DESCR_P_TYPE:
+        return _DESCR_P_TYPE.get(x)
+    elif x >= ENUM_P_TYPE['PT_LOOS'] and x <= ENUM_P_TYPE['PT_HIOS']:
+        return 'LOOS+%lx' % (x - ENUM_P_TYPE['PT_LOOS'])
+    else:
+        return _unknown
 
 def describe_p_flags(x):
     s = ''
@@ -47,7 +53,12 @@ def describe_p_flags(x):
     return s
 
 def describe_sh_type(x):
-    return _DESCR_SH_TYPE.get(x, _unknown)
+    if x in _DESCR_SH_TYPE:
+        return _DESCR_SH_TYPE.get(x)
+    elif x >= ENUM_SH_TYPE['SHT_LOOS'] and x < ENUM_SH_TYPE['SHT_GNU_versym']:
+        return 'loos+%lx' % (x - ENUM_SH_TYPE['SHT_LOOS'])
+    else:
+        return _unknown
 
 def describe_sh_flags(x):
     s = ''
@@ -81,6 +92,8 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_ARM.get(x, _unknown)
     elif arch == 'AArch64':
         return _DESCR_RELOC_TYPE_AARCH64.get(x, _unknown)
+    elif arch == 'MIPS':
+        return _DESCR_RELOC_TYPE_MIPS.get(x, _unknown)
     else:
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
 
@@ -242,6 +255,41 @@ _DESCR_SH_TYPE = dict(
     SHT_ARM_PREEMPTMAP='ARM_PREEMPTMAP',
     SHT_ARM_ATTRIBUTES='ARM_ATTRIBUTES',
     SHT_ARM_DEBUGOVERLAY='ARM_DEBUGOVERLAY',
+    SHT_MIPS_LIBLIST='MIPS_LIBLIST',
+    SHT_MIPS_DEBUG='MIPS_DEBUG',
+    SHT_MIPS_REGINFO='MIPS_REGINFO',
+    SHT_MIPS_PACKAGE='MIPS_PACKAGE',
+    SHT_MIPS_PACKSYM='MIPS_PACKSYM',
+    SHT_MIPS_RELD='MIPS_RELD',
+    SHT_MIPS_IFACE='MIPS_IFACE',
+    SHT_MIPS_CONTENT='MIPS_CONTENT',
+    SHT_MIPS_OPTIONS='MIPS_OPTIONS',
+    SHT_MIPS_SHDR='MIPS_SHDR',
+    SHT_MIPS_FDESC='MIPS_FDESC',
+    SHT_MIPS_EXTSYM='MIPS_EXTSYM',
+    SHT_MIPS_DENSE='MIPS_DENSE',
+    SHT_MIPS_PDESC='MIPS_PDESC',
+    SHT_MIPS_LOCSYM='MIPS_LOCSYM',
+    SHT_MIPS_AUXSYM='MIPS_AUXSYM',
+    SHT_MIPS_OPTSYM='MIPS_OPTSYM',
+    SHT_MIPS_LOCSTR='MIPS_LOCSTR',
+    SHT_MIPS_LINE='MIPS_LINE',
+    SHT_MIPS_RFDESC='MIPS_RFDESC',
+    SHT_MIPS_DELTASYM='MIPS_DELTASYM',
+    SHT_MIPS_DELTAINST='MIPS_DELTAINST',
+    SHT_MIPS_DELTACLASS='MIPS_DELTACLASS',
+    SHT_MIPS_DWARF='MIPS_DWARF',
+    SHT_MIPS_DELTADECL='MIPS_DELTADECL',
+    SHT_MIPS_SYMBOL_LIB='MIPS_SYMBOL_LIB',
+    SHT_MIPS_EVENTS='MIPS_EVENTS',
+    SHT_MIPS_TRANSLATE='MIPS_TRANSLATE',
+    SHT_MIPS_PIXIE='MIPS_PIXIE',
+    SHT_MIPS_XLATE='MIPS_XLATE',
+    SHT_MIPS_XLATE_DEBUG='MIPS_XLATE_DEBUG',
+    SHT_MIPS_WHIRL='MIPS_WHIRL',
+    SHT_MIPS_EH_REGION='MIPS_EH_REGION',
+    SHT_MIPS_XLATE_OLD='MIPS_XLATE_OLD',
+    SHT_MIPS_PDR_EXCEPTION='MIPS_PDR_EXCEPTION',
 )
 
 _DESCR_SH_FLAGS = {
@@ -349,6 +397,9 @@ _DESCR_RELOC_TYPE_ARM = dict(
 
 _DESCR_RELOC_TYPE_AARCH64 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_AARCH64))
+
+_DESCR_RELOC_TYPE_MIPS = dict(
+        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_MIPS))
 
 _DESCR_D_TAG = dict(
         (v, k) for k, v in iteritems(ENUM_D_TAG))

@@ -127,6 +127,16 @@ class ReadElf(object):
             version = flags & E_FLAGS.EF_ARM_EABIMASK
             if version == E_FLAGS.EF_ARM_EABI_VER5:
                 description += ", Version5 EABI"
+        elif self.elffile['e_machine'] == "EM_MIPS":
+            if flags & E_FLAGS.EF_MIPS_NOREORDER:
+                description += ", noreorder"
+            if flags & E_FLAGS.EF_MIPS_CPIC:
+                description += ", cpic"
+            if not (flags & E_FLAGS.EF_MIPS_ABI2) and not (flags & E_FLAGS.EF_MIPS_ABI_ON32):
+                description += ", o32"
+            if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_1:
+                description += ", mips1"
+
         return description
 
     def display_program_headers(self, show_heading=True):
@@ -1005,15 +1015,19 @@ class ReadElf(object):
             reg_order = sorted(ifilter(
                 lambda r: r != ra_regnum,
                 decoded_table.reg_order))
+            if len(decoded_table.reg_order):
 
-            # Headings for the registers
-            for regnum in reg_order:
-                self._emit('%-6s' % describe_reg_name(regnum))
-            self._emitline('ra      ')
+                # Headings for the registers
+                for regnum in reg_order:
+                    self._emit('%-6s' % describe_reg_name(regnum))
+                self._emitline('ra      ')
 
-            # Now include ra_regnum in reg_order to print its values similarly
-            # to the other registers.
-            reg_order.append(ra_regnum)
+                # Now include ra_regnum in reg_order to print its values similarly
+                # to the other registers.
+                reg_order.append(ra_regnum)
+            else:
+                self._emitline()
+
             for line in decoded_table.table:
                 self._emit(self._format_hex(
                     line['pc'], fullhex=True, lead0x=False))
