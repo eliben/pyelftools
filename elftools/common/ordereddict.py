@@ -41,7 +41,9 @@ class OrderedDict(dict):
             self.__root = root = []                     # sentinel node
             root[:] = [root, root, None]
             self.__map = {}
-        self.__update(*args, **kwds)
+        # Do not call for __update with no arguments
+        if len(args) > 0:
+            self.__update(*args, **kwds)
 
     def __setitem__(self, key, value, dict_setitem=dict.__setitem__):
         'od.__setitem__(i, y) <==> od[i]=y'
