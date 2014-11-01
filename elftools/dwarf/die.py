@@ -6,11 +6,11 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import os
 
 from ..common.exceptions import DWARFError
-from ..common.py3compat import OrderedDict, bytes2str, iteritems
+from ..common.py3compat import bytes2str, iteritems
 from ..common.utils import struct_parse, preserve_stream_pos
 from .enums import DW_FORM_raw2name
 

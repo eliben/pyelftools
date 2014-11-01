@@ -15,9 +15,6 @@ if PY3:
     StringIO = io.StringIO
     BytesIO = io.BytesIO
 
-    import collections
-    OrderedDict = collections.OrderedDict
-
     _iterkeys = "keys"
     _iteritems = "items"
     _itervalues = "values"
@@ -33,8 +30,6 @@ if PY3:
 else:
     import cStringIO
     StringIO = BytesIO = cStringIO.StringIO
-
-    from .ordereddict import OrderedDict
 
     _iterkeys = "iterkeys"
     _iteritems = "iteritems"

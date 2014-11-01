@@ -10,7 +10,7 @@ Pre-requisites
 --------------
 
 As a user of **pyelftools**, one only needs Python to run. It works with
-Python versions 2.6, 2.7 and 3.x (x >= 2). For hacking on **pyelftools** the
+Python versions 2.7 and 3.x (x >= 2). For hacking on **pyelftools** the
 requirements are a bit more strict, please see the
 `hacking guide <https://github.com/eliben/pyelftools/wiki/Hacking-guide>`_.
 

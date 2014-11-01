@@ -1,6 +1,14 @@
 Changelog
 =========
 
++ Version 0.23 (??)
+
+  - Minimal Python 2.x version raised to 2.7
+  - Basic support for MIPS (contributed by Karl Vogel).
+  - Support for PT_NOTE segment parsing (contributed by Alex Deymo).
+  - Support for parsing symbol table in dynamic segment
+    (contributed by Nam T. Nguyen).
+
 + Version 0.22 (30.03.2014)
 
   - pyelftools repository moved to https://github.com/eliben/pyelftools
