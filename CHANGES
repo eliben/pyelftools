@@ -1,7 +1,7 @@
 Changelog
 =========
 
-+ Version 0.23 (??)
++ Version 0.23 (08.11.2014)
 
   - Minimal Python 2.x version raised to 2.7
   - Basic support for MIPS (contributed by Karl Vogel).
