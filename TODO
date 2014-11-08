@@ -29,4 +29,3 @@ Preparing a new release
   everything looks ok
 * Now build with upload to send it to PyPi
 * Test with pip install from some new virtualenv
-* The older download can be kept alive for a couple of days
