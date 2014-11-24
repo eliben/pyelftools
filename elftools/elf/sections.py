@@ -81,6 +81,7 @@ class SymbolTableSection(Section):
                 'Expected entry size of section %r to be > 0' % name)
         elf_assert(self['sh_size'] % self['sh_entsize'] == 0,
                 'Expected section size to be a multiple of entry size in section %r' % name)
+        self._symbol_name_map = None
 
     def num_symbols(self):
         """ Number of symbols in the table
@@ -99,6 +100,20 @@ class SymbolTableSection(Section):
         # Find the symbol name in the associated string table
         name = self.stringtable.get_string(entry['st_name'])
         return Symbol(entry, name)
+
+    def get_symbol_by_name(self, name):
+        """ Get a symbol by its name. Return None if no symbol by the given
+            name exists.
+        """
+        # The first time this method is called, construct a name to number
+        # mapping
+        #
+        if self._symbol_name_map is None:
+            self._symbol_name_map = {}
+            for i, sym in enumerate(self.iter_symbols()):
+                self._symbol_name_map[sym.name] = i
+        symnum = self._symbol_name_map.get(name)
+        return None if symnum is None else self.get_symbol(symnum)
 
     def iter_symbols(self):
         """ Yield all the symbols in the table
