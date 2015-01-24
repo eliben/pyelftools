@@ -79,6 +79,14 @@ class Segment(object):
                 secoffset - poffset + section['sh_size'] <= self['p_filesz'] and
                 secoffset - poffset <= self['p_filesz'] - 1)
 
+    def __str__(self):
+        try: return self.header.p_type
+        except: return super(Segment, self).__str__()
+
+    def __repr__(self):
+        return "%s(%r, %r)" % (self.__class__.__name__, self.header, self.stream)
+
+
 
 class InterpSegment(Segment):
     """ INTERP segment. Knows how to obtain the path to the interpreter used

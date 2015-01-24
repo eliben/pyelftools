@@ -43,6 +43,12 @@ class Section(object):
     def __hash__(self):
         return hash(self.header)
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return "%s(%r, %r, %r)" % (self.__class__.__name__, self.header, self.name, self.stream)
+
 
 class NullSection(Section):
     """ ELF NULL section
