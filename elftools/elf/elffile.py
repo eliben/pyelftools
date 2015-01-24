@@ -46,7 +46,10 @@ class ELFFile(object):
                 the raw e_ident field of the header
     """
     def __init__(self, stream):
+        self.name = None
+
         if isinstance(stream, "".__class__):
+            self.name = stream
             stream = open(stream, 'rb')
 
         self.stream = stream
@@ -61,6 +64,14 @@ class ELFFile(object):
 
         self._file_stringtable_section = self._get_file_stringtable()
         self._section_name_map = None
+
+    def __repr__(self):
+        if self.name:
+            return "%s(%r)" % (self.__class__.__name__, self.name)
+        return super(ELF, self).__repr__()
+
+    def __str__(self):
+        return repr(self)
 
     def num_sections(self):
         """ Number of sections in the file
