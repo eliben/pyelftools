@@ -81,7 +81,7 @@ class Segment(object):
 
     def __str__(self):
         try: return self.header.p_type
-        except: return super(Segment, self).__str__()
+        except AttributeError: return super(Segment, self).__str__()
 
     def __repr__(self):
         return "%s(%r, %r)" % (self.__class__.__name__, self.header, self.stream)
