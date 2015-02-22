@@ -53,7 +53,7 @@ def run_test_on_file(filename, verbose=False):
         # stdouts will be a 2-element list: output of readelf and output
         # of scripts/readelf.py
         stdouts = []
-        for exe_path in [READELF_PATH, 'scripts/readelf.py']:
+        for exe_path in [READELF_PATH, 'scripts/pyreadelf']:
             args = [option, filename]
             if verbose: testlog.info("....executing: '%s %s'" % (
                 exe_path, ' '.join(args)))
