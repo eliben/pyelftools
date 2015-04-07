@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
-
+from collections import defaultdict
 
 class Section(object):
     """ Base class for ELF sections. Also used for all sections types that have
@@ -102,18 +102,18 @@ class SymbolTableSection(Section):
         return Symbol(entry, name)
 
     def get_symbol_by_name(self, name):
-        """ Get a symbol by its name. Return None if no symbol by the given
-            name exists.
+        """ Get a symbol(s) by name. Return None if no symbol by the given name
+            exists.
         """
         # The first time this method is called, construct a name to number
         # mapping
         #
         if self._symbol_name_map is None:
-            self._symbol_name_map = {}
+            self._symbol_name_map = defaultdict(list)
             for i, sym in enumerate(self.iter_symbols()):
-                self._symbol_name_map[sym.name] = i
-        symnum = self._symbol_name_map.get(name)
-        return None if symnum is None else self.get_symbol(symnum)
+                self._symbol_name_map[sym.name].append(i)
+        symnums = self._symbol_name_map.get(name)
+        return [self.get_symbol(i) for i in symnums] if symnums else None
 
     def iter_symbols(self):
         """ Yield all the symbols in the table
