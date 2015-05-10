@@ -92,7 +92,7 @@ class InterpSegment(Segment):
         """
         path_offset = self['p_offset']
         return struct_parse(
-            CString(''),
+            CString('', encoding='ascii'),
             self.stream,
             stream_pos=path_offset)
 

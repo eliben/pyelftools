@@ -22,9 +22,9 @@ class TestDoubleDynstrSections(unittest.TestCase):
     """
 
     reference_data = [
-        b'libz.so.1',
-        b'libc.so.6',
-        b'lib_versioned.so.1',
+        'libz.so.1',
+        'libc.so.6',
+        'lib_versioned.so.1',
     ]
 
     def _test_double_dynstr_section_generic(self, testfile):
