@@ -204,7 +204,7 @@ class ReadElf(object):
 
             if isinstance(segment, InterpSegment):
                 self._emitline('      [Requesting program interpreter: %s]' %
-                    bytes2str(segment.get_interp_name()))
+                    segment.get_interp_name())
 
         # Sections to segments mapping
         #
@@ -353,13 +353,13 @@ class ReadElf(object):
             padding = 20 + (8 if self.elffile.elfclass == 32 else 0)
             for tag in section.iter_tags():
                 if tag.entry.d_tag == 'DT_NEEDED':
-                    parsed = 'Shared library: [%s]' % bytes2str(tag.needed)
+                    parsed = 'Shared library: [%s]' % tag.needed
                 elif tag.entry.d_tag == 'DT_RPATH':
-                    parsed = 'Library rpath: [%s]' % bytes2str(tag.rpath)
+                    parsed = 'Library rpath: [%s]' % tag.rpath
                 elif tag.entry.d_tag == 'DT_RUNPATH':
-                    parsed = 'Library runpath: [%s]' % bytes2str(tag.runpath)
+                    parsed = 'Library runpath: [%s]' % tag.runpath
                 elif tag.entry.d_tag == 'DT_SONAME':
-                    parsed = 'Library soname: [%s]' % bytes2str(tag.soname)
+                    parsed = 'Library soname: [%s]' % tag.soname
                 elif tag.entry.d_tag.endswith(('SZ', 'ENT')):
                     parsed = '%i (bytes)' % tag['d_val']
                 elif tag.entry.d_tag.endswith(('NUM', 'COUNT')):
@@ -541,7 +541,7 @@ class ReadElf(object):
                     self._emitline('  %s: Version: %i  File: %s  Cnt: %i' % (
                             self._format_hex(offset, fieldsize=6,
                                              alternate=True),
-                            verneed['vn_version'], bytes2str(verneed.name),
+                            verneed['vn_version'], verneed.name,
                             verneed['vn_cnt']))
 
                     vernaux_offset = offset + verneed['vn_aux']
@@ -556,7 +556,7 @@ class ReadElf(object):
                         self._emitline(
                             '  %s:   Name: %s  Flags: %s  Version: %i' % (
                                 self._format_hex(vernaux_offset, fieldsize=4),
-                                bytes2str(vernaux.name), flags,
+                                vernaux.name, flags,
                                 vernaux['vna_other']))
 
                         vernaux_offset += vernaux['vna_next']
@@ -806,7 +806,7 @@ class ReadElf(object):
                 return None
         except ValueError:
             # Not a number. Must be a name then
-            return self.elffile.get_section_by_name(str2bytes(spec))
+            return self.elffile.get_section_by_name(spec)
 
     def _note_relocs_for_section(self, section):
         """ If there are relocation sections pointing to the givne section,
@@ -893,7 +893,7 @@ class ReadElf(object):
         for cu in self._dwarfinfo.iter_CUs():
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
 
-            cu_filename = lineprogram['file_entry'][0].name
+            cu_filename = bytes2str(lineprogram['file_entry'][0].name)
             if len(lineprogram['include_directory']) > 0:
                 dir_index = lineprogram['file_entry'][0].dir_index
                 if dir_index > 0:
