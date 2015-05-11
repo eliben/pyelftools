@@ -102,8 +102,8 @@ class RelocationHandler(object):
             found.
         """
         reloc_section_names = (
-                b'.rel' + section.name,
-                b'.rela' + section.name)
+                '.rel' + section.name,
+                '.rela' + section.name)
         # Find the relocation section aimed at this one. Currently assume
         # that either .rel or .rela section exists for this section, but
         # not both.

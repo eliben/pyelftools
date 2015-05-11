@@ -22,30 +22,30 @@ from elftools.elf.gnuversions import (
 class TestSymbolVersioning(unittest.TestCase):
 
     versym_reference_data = [
-        {'name': b'', 'ndx': 'VER_NDX_LOCAL'},
-        {'name': b'', 'ndx': 'VER_NDX_LOCAL'},
-        {'name': b'_ITM_deregisterTMCloneTable', 'ndx': 'VER_NDX_LOCAL'},
-        {'name': b'puts', 'ndx': 5},
-        {'name': b'strlcat', 'ndx': 'VER_NDX_LOCAL'},
-        {'name': b'__stack_chk_fail', 'ndx': 6},
-        {'name': b'__gmon_start__', 'ndx': 'VER_NDX_LOCAL'},
-        {'name': b'gzoffset', 'ndx': 7},
-        {'name': b'_Jv_RegisterClasses', 'ndx': 'VER_NDX_LOCAL'},
-        {'name': b'_ITM_registerTMCloneTable', 'ndx': 'VER_NDX_LOCAL'},
-        {'name': b'__cxa_finalize', 'ndx': 5},
-        {'name': b'_edata', 'ndx': 'VER_NDX_GLOBAL'},
-        {'name': b'VER_1.0', 'ndx': 2},
-        {'name': b'function1_ver1_1', 'ndx': 'VER_NDX_GLOBAL'},
-        {'name': b'_end', 'ndx': 'VER_NDX_GLOBAL'},
-        {'name': b'function1', 'ndx': 4 | 0x8000},
-        {'name': b'__bss_start', 'ndx': 'VER_NDX_GLOBAL'},
-        {'name': b'function1', 'ndx': 2},
-        {'name': b'VER_1.1', 'ndx': 3},
-        {'name': b'_init', 'ndx': 'VER_NDX_GLOBAL'},
-        {'name': b'function1_ver1_0', 'ndx': 'VER_NDX_GLOBAL'},
-        {'name': b'_fini', 'ndx': 'VER_NDX_GLOBAL'},
-        {'name': b'VER_1.2', 'ndx': 4},
-        {'name': b'function2', 'ndx': 3},
+        {'name': '', 'ndx': 'VER_NDX_LOCAL'},
+        {'name': '', 'ndx': 'VER_NDX_LOCAL'},
+        {'name': '_ITM_deregisterTMCloneTable', 'ndx': 'VER_NDX_LOCAL'},
+        {'name': 'puts', 'ndx': 5},
+        {'name': 'strlcat', 'ndx': 'VER_NDX_LOCAL'},
+        {'name': '__stack_chk_fail', 'ndx': 6},
+        {'name': '__gmon_start__', 'ndx': 'VER_NDX_LOCAL'},
+        {'name': 'gzoffset', 'ndx': 7},
+        {'name': '_Jv_RegisterClasses', 'ndx': 'VER_NDX_LOCAL'},
+        {'name': '_ITM_registerTMCloneTable', 'ndx': 'VER_NDX_LOCAL'},
+        {'name': '__cxa_finalize', 'ndx': 5},
+        {'name': '_edata', 'ndx': 'VER_NDX_GLOBAL'},
+        {'name': 'VER_1.0', 'ndx': 2},
+        {'name': 'function1_ver1_1', 'ndx': 'VER_NDX_GLOBAL'},
+        {'name': '_end', 'ndx': 'VER_NDX_GLOBAL'},
+        {'name': 'function1', 'ndx': 4 | 0x8000},
+        {'name': '__bss_start', 'ndx': 'VER_NDX_GLOBAL'},
+        {'name': 'function1', 'ndx': 2},
+        {'name': 'VER_1.1', 'ndx': 3},
+        {'name': '_init', 'ndx': 'VER_NDX_GLOBAL'},
+        {'name': 'function1_ver1_0', 'ndx': 'VER_NDX_GLOBAL'},
+        {'name': '_fini', 'ndx': 'VER_NDX_GLOBAL'},
+        {'name': 'VER_1.2', 'ndx': 4},
+        {'name': 'function2', 'ndx': 3},
     ]
 
     def test_versym_section(self):
@@ -69,13 +69,13 @@ class TestSymbolVersioning(unittest.TestCase):
                 self.assertEqual(versym['ndx'], ref_versym['ndx'])
 
     verneed_reference_data = [
-        {'name': b'libz.so.1', 'vn_version': 1, 'vn_cnt': 1,
+        {'name': 'libz.so.1', 'vn_version': 1, 'vn_cnt': 1,
          'vernaux': [
-            {'name': b'ZLIB_1.2.3.5', 'vna_flags': 0, 'vna_other': 7}]},
-        {'name': b'libc.so.6', 'vn_version': 1, 'vn_cnt': 2,
+            {'name': 'ZLIB_1.2.3.5', 'vna_flags': 0, 'vna_other': 7}]},
+        {'name': 'libc.so.6', 'vn_version': 1, 'vn_cnt': 2,
          'vernaux': [
-            {'name': b'GLIBC_2.4', 'vna_flags': 0, 'vna_other': 6},
-            {'name': b'GLIBC_2.2.5', 'vna_flags': 0, 'vna_other': 5}]},
+            {'name': 'GLIBC_2.4', 'vna_flags': 0, 'vna_other': 6},
+            {'name': 'GLIBC_2.2.5', 'vna_flags': 0, 'vna_other': 5}]},
         ]
 
     def test_verneed_section(self):
@@ -114,18 +114,18 @@ class TestSymbolVersioning(unittest.TestCase):
         {'vd_ndx': 1, 'vd_version': 1, 'vd_flags': VER_FLAGS.VER_FLG_BASE,
          'vd_cnt': 1,
          'verdaux': [
-            {'name': b'lib_versioned.so.1'}]},
+            {'name': 'lib_versioned.so.1'}]},
         {'vd_ndx': 2, 'vd_version': 1, 'vd_flags': 0, 'vd_cnt': 1,
          'verdaux': [
-            {'name': b'VER_1.0'}]},
+            {'name': 'VER_1.0'}]},
         {'vd_ndx': 3, 'vd_version': 1, 'vd_flags': 0, 'vd_cnt': 2,
          'verdaux': [
-            {'name': b'VER_1.1'},
-            {'name': b'VER_1.0'}]},
+            {'name': 'VER_1.1'},
+            {'name': 'VER_1.0'}]},
         {'vd_ndx': 4, 'vd_version': 1, 'vd_flags': 0, 'vd_cnt': 2,
          'verdaux': [
-            {'name': b'VER_1.2'},
-            {'name': b'VER_1.1'}]},
+            {'name': 'VER_1.2'},
+            {'name': 'VER_1.1'}]},
         ]
 
     def test_verdef_section(self):
