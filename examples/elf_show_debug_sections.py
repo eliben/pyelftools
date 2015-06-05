@@ -23,9 +23,9 @@ def process_file(filename):
         elffile = ELFFile(f)
 
         for section in elffile.iter_sections():
-            # Section names are bytes objects
-            if section.name.startswith(b'.debug'):
-                print('  ' + bytes2str(section.name))
+            # Section names are string
+            if section.name.startswith('.debug'):
+                print('  ' + section.name)
 
 
 if __name__ == '__main__':

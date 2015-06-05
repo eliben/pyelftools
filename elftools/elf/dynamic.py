@@ -115,7 +115,7 @@ class Dynamic(object):
 
         # That didn't work for some reason.  Let's use the section header
         # even though this ELF is super weird.
-        self._stringtable = self._elffile.get_section_by_name(b'.dynstr')
+        self._stringtable = self._elffile.get_section_by_name('.dynstr')
         return self._stringtable
 
     def _iter_tags(self, type=None):
