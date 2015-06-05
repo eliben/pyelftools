@@ -5,7 +5,7 @@ Changelog
 
   - Retrieve symbols by name - get_symbol_by_name (#58).
   - Symbol/section names are strings internally now, not bytestrings (this may
-    affect API usage in Python 3) (#69).
+    affect API usage in Python 3) (#76).
 
 + Version 0.23 (08.11.2014)
 
