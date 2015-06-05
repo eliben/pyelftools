@@ -82,4 +82,3 @@ if __name__ == '__main__':
     for filename in sys.argv[1:]:
         # For testing we use a hardcoded address.
         process_file(filename, 0x400503)
-

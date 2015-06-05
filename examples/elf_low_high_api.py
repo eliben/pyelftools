@@ -15,7 +15,6 @@ import sys
 # examples/ dir of the source distribution.
 sys.path[0:0] = ['.', '..']
 
-from elftools.common.py3compat import bytes2str
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 
@@ -87,5 +86,3 @@ def section_info_highlevel(stream):
 if __name__ == '__main__':
     for filename in sys.argv[1:]:
         process_file(filename)
-
-
