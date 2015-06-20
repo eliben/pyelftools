@@ -186,6 +186,7 @@ ENUM_SH_TYPE = dict(
     SHT_NUM=19,
     SHT_LOOS=0x60000000,
     SHT_GNU_HASH=0x6ffffff6,
+    SHT_GNU_LIBLIST=0x6ffffff7,
     SHT_GNU_verdef=0x6ffffffd,  # also SHT_SUNW_verdef
     SHT_GNU_verneed=0x6ffffffe, # also SHT_SUNW_verneed
     SHT_GNU_versym=0x6fffffff,  # also SHT_SUNW_versym, SHT_HIOS
