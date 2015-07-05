@@ -79,6 +79,8 @@ def decode_file_line(dwarfinfo, address):
 
 
 if __name__ == '__main__':
-    for filename in sys.argv[1:]:
-        # For testing we use a hardcoded address.
-        process_file(filename, 0x400503)
+    if len(sys.argv) < 3:
+        print('Expected usage: {0} <address> <executable>'.format(sys.argv[0]))
+        sys.exit(1)
+    addr = int(sys.argv[1], 0)
+    process_file(sys.argv[2], addr)
