@@ -35,7 +35,8 @@ def reference_output_path(example_path):
     """
     examples_root, example_name = os.path.split(example_path)
     example_noext, _ = os.path.splitext(example_name)
-    return os.path.join(examples_root, 'reference_output', example_noext + '.out')
+    return os.path.join(examples_root, 'reference_output',
+                        example_noext + '.out')
 
 
 def run_example_and_compare(example_path):

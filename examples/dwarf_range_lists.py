@@ -82,10 +82,3 @@ def attribute_has_range_list(attr):
 if __name__ == '__main__':
     for filename in sys.argv[1:]:
         process_file(filename)
-
-
-
-
-
-
-
