@@ -51,7 +51,8 @@ def run_example_and_compare(example_path):
         testlog.info('.......ERROR - reference output cannot be read! - %s' % e)
         return False
 
-    rc, example_out = run_exe(example_path, ['./examples/sample_exe64.elf'])
+    rc, example_out = run_exe(example_path, ['--test',
+                                             './examples/sample_exe64.elf'])
     if rc != 0:
         testlog.info('.......ERROR - example returned error code %s' % rc)
         return False

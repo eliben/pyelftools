@@ -79,6 +79,10 @@ def decode_file_line(dwarfinfo, address):
 
 
 if __name__ == '__main__':
+    if sys.argv[1] == '--test':
+        process_file(sys.argv[2], 0x400503)
+        sys.exit(0)
+
     if len(sys.argv) < 3:
         print('Expected usage: {0} <address> <executable>'.format(sys.argv[0]))
         sys.exit(1)

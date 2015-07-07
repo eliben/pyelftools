@@ -6,6 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import print_function
 import os, sys, subprocess, tempfile
 
 # This module should not import elftools before setup_syspath() is called!
@@ -19,7 +20,7 @@ def setup_syspath():
         sys.path.insert(0, '.')
 
 
-def run_exe(exe_path, args=[]):
+def run_exe(exe_path, args=[], echo=False):
     """ Runs the given executable as a subprocess, given the
         list of arguments. Captures its return code (rc) and stdout and
         returns a pair: rc, stdout_str
@@ -27,6 +28,8 @@ def run_exe(exe_path, args=[]):
     popen_cmd = [exe_path] + args
     if os.path.splitext(exe_path)[1] == '.py':
         popen_cmd.insert(0, sys.executable)
+    if echo:
+      print('[cmd]', ' '.join(popen_cmd))
     proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE)
     proc_stdout = proc.communicate()[0]
     from elftools.common.py3compat import bytes2str

@@ -33,6 +33,6 @@ def process_file(filename):
 
 
 if __name__ == '__main__':
-    for filename in sys.argv[1:]:
-        process_file(filename)
-
+    if sys.argv[1] == '--test':
+        for filename in sys.argv[2:]:
+            process_file(filename)
