@@ -166,6 +166,18 @@ def describe_reg_name(regnum, machine_arch=None, default=True):
     else:
         return None
 
+def describe_form_class(form):
+    """For a given form name, determine its value class.
+
+    For example, given 'DW_FORM_data1' returns 'constant'.
+
+    For some forms, like DW_FORM_indirect and DW_FORM_sec_offset, the class is
+    not hard-coded and extra information is required. For these, None is
+    returned.
+    """
+    return _FORM_CLASS[form]
+
+
 #-------------------------------------------------------------------------------
 
 # The machine architecture. Set globally via set_global_machine_arch
@@ -244,6 +256,33 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_ref_sig8=_describe_attr_ref,
 )
 
+_FORM_CLASS = dict(
+    DW_FORM_addr='address',
+    DW_FORM_block2='block',
+    DW_FORM_block4='block',
+    DW_FORM_data2='constant',
+    DW_FORM_data4='constant',
+    DW_FORM_data8='constant',
+    DW_FORM_string='string',
+    DW_FORM_block='block',
+    DW_FORM_block1='block',
+    DW_FORM_data1='constant',
+    DW_FORM_flag='flag',
+    DW_FORM_sdata='constant',
+    DW_FORM_strp='string',
+    DW_FORM_udata='constant',
+    DW_FORM_ref_addr='reference',
+    DW_FORM_ref1='reference',
+    DW_FORM_ref2='reference',
+    DW_FORM_ref4='reference',
+    DW_FORM_ref8='reference',
+    DW_FORM_ref_udata='reference',
+    DW_FORM_indirect=None,
+    DW_FORM_sec_offset=None,
+    DW_FORM_exprloc='exprloc',
+    DW_FORM_flag_present='flag',
+    DW_FORM_ref_sig8='reference',
+)
 
 _DESCR_DW_INL = {
     DW_INL_not_inlined: '(not inlined)',

@@ -6,6 +6,12 @@ Changelog
   - Retrieve symbols by name - get_symbol_by_name (#58).
   - Symbol/section names are strings internally now, not bytestrings (this may
     affect API usage in Python 3) (#76).
+  - Added DT_MIPS_* constants to ENUM_D_TAG (#79)
+  - Made dwarf_decode_address example a bit more useful for command-line
+    invocation.
+  - More DWARF v4 support w.r.t decoding function ranges; DW_AT_high_pc value
+    is now either absolute or relative to DW_AT_low_pc, depending on the class
+    of the form encoded in the file.
 
 + Version 0.23 (08.11.2014)
 
