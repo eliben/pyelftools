@@ -150,4 +150,3 @@ class CompileUnit(object):
                 if len(parentstack) > 0:
                     # end of children for the current parent
                     parentstack.pop()
-
