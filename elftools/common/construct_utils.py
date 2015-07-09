@@ -10,11 +10,11 @@ from ..construct import Subconstruct, ConstructError, ArrayError
 
 
 class RepeatUntilExcluding(Subconstruct):
-    """ A version of construct's RepeatUntil that doesn't include the last 
+    """ A version of construct's RepeatUntil that doesn't include the last
         element (which casued the repeat to exit) in the return value.
-        
+
         Only parsing is currently implemented.
-        
+
         P.S. removed some code duplication
     """
     __slots__ = ["predicate"]
@@ -29,7 +29,7 @@ class RepeatUntilExcluding(Subconstruct):
             context_for_subcon = context
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
                 context_for_subcon = context.__copy__()
-            
+
             while True:
                 subobj = self.subcon._parse(stream, context_for_subcon)
                 if self.predicate(subobj, context):
@@ -42,4 +42,3 @@ class RepeatUntilExcluding(Subconstruct):
         raise NotImplementedError('no building')
     def _sizeof(self, context):
         raise SizeofError("can't calculate size")
-

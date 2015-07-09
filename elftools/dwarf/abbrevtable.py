@@ -15,10 +15,10 @@ class AbbrevTable(object):
     def __init__(self, structs, stream, offset):
         """ Create new abbreviation table. Parses the actual table from the
             stream and stores it internally.
-        
+
             structs:
                 A DWARFStructs instance for parsing the data
-            
+
             stream, offset:
                 The stream and offset into the stream where this abbreviation
                 table lives.
@@ -26,7 +26,7 @@ class AbbrevTable(object):
         self.structs = structs
         self.stream = stream
         self.offset = offset
-        
+
         self._abbrev_map = self._parse_abbrev_table()
 
     def get_abbrev(self, code):
@@ -54,15 +54,15 @@ class AbbrevTable(object):
 
 
 class AbbrevDecl(object):
-    """ Wraps a parsed abbreviation declaration, exposing its fields with 
+    """ Wraps a parsed abbreviation declaration, exposing its fields with
         dict-like access, and adding some convenience methods.
-        
+
         The abbreviation declaration represents an "entry" that points to it.
     """
     def __init__(self, code, decl):
         self.code = code
         self.decl = decl
-    
+
     def has_children(self):
         """ Does the entry have children?
         """
@@ -74,7 +74,6 @@ class AbbrevDecl(object):
         """
         for attr_spec in self['attr_spec']:
             yield attr_spec.name, attr_spec.form
-            
+
     def __getitem__(self, entry):
         return self.decl[entry]
-
