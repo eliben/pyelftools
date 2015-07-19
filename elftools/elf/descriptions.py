@@ -53,10 +53,11 @@ def describe_p_flags(x):
     return s
 
 def describe_sh_type(x):
+    ex = ENUM_SH_TYPE.get(x, None)
     if x in _DESCR_SH_TYPE:
         return _DESCR_SH_TYPE.get(x)
-    elif x >= ENUM_SH_TYPE['SHT_LOOS'] and x < ENUM_SH_TYPE['SHT_GNU_versym']:
-        return 'loos+%lx' % (x - ENUM_SH_TYPE['SHT_LOOS'])
+    elif ex >= ENUM_SH_TYPE['SHT_LOOS'] and ex < ENUM_SH_TYPE['SHT_GNU_versym']:
+        return 'loos+%lx' % (ex - ENUM_SH_TYPE['SHT_LOOS'])
     else:
         return _unknown
 
