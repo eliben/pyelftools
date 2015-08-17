@@ -68,7 +68,7 @@ class TestLineProgram(unittest.TestCase):
         self.assertEqual(linetable[0].args, [0x239])
         self.assertLineState(linetable[1].state, address=0x239, line=3)
         self.assertEqual(linetable[1].command, 0xb)
-        self.assertEqual(linetable[1].args, [2, 0])
+        self.assertEqual(linetable[1].args, [2, 0, 0])
         self.assertLineState(linetable[2].state, address=0x23c, line=5)
         self.assertLineState(linetable[3].state, address=0x244, line=6)
         self.assertLineState(linetable[4].state, address=0x24b, line=7, end_sequence=False)
