@@ -226,11 +226,9 @@ class DWARFStructs(object):
             self.Dwarf_uint16('version'),
             self.Dwarf_offset('header_length'),
             self.Dwarf_uint8('minimum_instruction_length'),
-			
-			If(lambda ctx: ctx['version'] >= 4, 
-				self.Dwarf_uint8("maximum_operations_per_instruction"),
-				1),
-				
+            If(lambda ctx: ctx['version'] >= 4, 
+                self.Dwarf_uint8("maximum_operations_per_instruction"),
+                1),
             self.Dwarf_uint8('default_is_stmt'),
             self.Dwarf_int8('line_base'),
             self.Dwarf_uint8('line_range'),

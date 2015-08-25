@@ -153,24 +153,18 @@ class LineProgram(object):
             if opcode >= self.header['opcode_base']:
                 # Special opcode (follow the recipe in 6.2.5.1)
                 maximum_operations_per_instruction = self['maximum_operations_per_instruction']
-                
-                
                 adjusted_opcode = opcode - self['opcode_base']
                 operation_advance = adjusted_opcode // self['line_range']
-                
-                address_addend = self['minimum_instruction_length'] * ((state.op_index + operation_advance) // maximum_operations_per_instruction)
-                
+                address_addend = (
+                    self['minimum_instruction_length'] * 
+                        ((state.op_index + operation_advance) //
+                          maximum_operations_per_instruction))
                 state.address += address_addend
-                
                 state.op_index = (state.op_index + operation_advance) % maximum_operations_per_instruction
-                
                 line_addend = self['line_base'] + (adjusted_opcode % self['line_range'])
-                
                 state.line += line_addend
-                
-                add_entry_new_state(opcode, [line_addend, address_addend, state.op_index])
-                
-                
+                add_entry_new_state(
+                    opcode, [line_addend, address_addend, state.op_index])
             elif opcode == 0:
                 # Extended opcode: start with a zero byte, followed by
                 # instruction size and the instruction itself.
