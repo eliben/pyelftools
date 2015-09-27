@@ -121,7 +121,7 @@ class NoteSegment(Segment):
             # n_namesz is 4-byte aligned.
             disk_namesz = roundup(note['n_namesz'], 2)
             # skip parsing truncated notes.
-            if offset+disk_namesz+roundup(note['n_descsz'] > end:
+            if offset+disk_namesz+roundup(note['n_descsz'], 2) > end:
                 break;
             note['n_name'] = bytes2str(
                 CString('').parse(self.stream.read(disk_namesz)))
