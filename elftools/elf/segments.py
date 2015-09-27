@@ -124,6 +124,12 @@ class NoteSegment(Segment):
             offset += disk_namesz
 
             desc_data = bytes2str(self.stream.read(note['n_descsz']))
+            if note['n_name'] == 'GNU':                                       
+                for key in ENUM_NOTE_N_TYPE:
+                    if note['n_type'] == ENUM_NOTE_N_TYPE[key] :
+                        note['n_type']=key;
+						break;
+
             if note['n_type'] == 'NT_GNU_ABI_TAG':
                 note['n_desc'] = struct_parse(self._elfstructs.Elf_Nhdr_abi,
                                               self.stream,
