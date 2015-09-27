@@ -11,6 +11,7 @@ from ..common.utils import roundup, struct_parse
 from ..common.py3compat import bytes2str
 from .constants import SH_FLAGS
 
+from .enums import ENUM_GNU_NOTE_N_TYPE
 
 class Segment(object):
     def __init__(self, header, stream):
@@ -109,7 +110,7 @@ class NoteSegment(Segment):
         """
         offset = self['p_offset']
         end = self['p_offset'] + self['p_filesz']
-        while offset < end:
+        while offset+self._elfstructs.Elf_Nhdr.sizeof() < end:
             note = struct_parse(
                 self._elfstructs.Elf_Nhdr,
                 self.stream,
@@ -119,16 +120,19 @@ class NoteSegment(Segment):
             self.stream.seek(offset)
             # n_namesz is 4-byte aligned.
             disk_namesz = roundup(note['n_namesz'], 2)
+            # skip parsing truncated notes.
+            if offset+disk_namesz+roundup(note['n_descsz'] > end:
+                break;
             note['n_name'] = bytes2str(
                 CString('').parse(self.stream.read(disk_namesz)))
             offset += disk_namesz
 
             desc_data = bytes2str(self.stream.read(note['n_descsz']))
             if note['n_name'] == 'GNU':                                       
-                for key in ENUM_NOTE_N_TYPE:
-                    if note['n_type'] == ENUM_NOTE_N_TYPE[key] :
+                for key in ENUM_GNU_NOTE_N_TYPE:
+                    if note['n_type'] == ENUM_GNU_NOTE_N_TYPE[key] :
                         note['n_type']=key;
-						break;
+                        break;
 
             if note['n_type'] == 'NT_GNU_ABI_TAG':
                 note['n_desc'] = struct_parse(self._elfstructs.Elf_Nhdr_abi,
