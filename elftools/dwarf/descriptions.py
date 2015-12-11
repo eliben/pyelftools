@@ -420,9 +420,20 @@ _DWARF_EXPR_DUMPER_CACHE = {}
 def _location_list_extra(attr, die, section_offset):
     # According to section 2.6 of the DWARF spec v3, class loclistptr means
     # a location list, and class block means a location expression.
-    #
-    if attr.form in ('DW_FORM_data4', 'DW_FORM_data8'):
+    # DW_FORM_sec_offset is new in DWARFv4 as a section offset.
+    if attr.form in ('DW_FORM_data4', 'DW_FORM_data8', 'DW_FORM_sec_offset'):
         return '(location list)'
+    else:
+        return describe_DWARF_expr(attr.value, die.cu.structs)
+
+
+def _data_member_location_extra(attr, die, section_offset):
+    # According to section 5.5.6 of the DWARF spec v4, a data member location
+    # can be an integer offset, or a location description.
+    #
+    if attr.form in ('DW_FORM_data1', 'DW_FORM_data2',
+                     'DW_FORM_data4', 'DW_FORM_data8'):
+        return ''  # No extra description needed
     else:
         return describe_DWARF_expr(attr.value, die.cu.structs)
 
@@ -479,7 +490,7 @@ _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
     DW_AT_location=_location_list_extra,
     DW_AT_string_length=_location_list_extra,
     DW_AT_return_addr=_location_list_extra,
-    DW_AT_data_member_location=_location_list_extra,
+    DW_AT_data_member_location=_data_member_location_extra,
     DW_AT_vtable_elem_location=_location_list_extra,
     DW_AT_segment=_location_list_extra,
     DW_AT_static_link=_location_list_extra,
