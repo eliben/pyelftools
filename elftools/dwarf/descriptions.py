@@ -489,6 +489,10 @@ _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
     DW_AT_data_location=_location_list_extra,
     DW_AT_stride=_location_list_extra,
     DW_AT_import=_import_extra,
+    DW_AT_GNU_call_site_value=_location_list_extra,
+    DW_AT_GNU_call_site_data_value=_location_list_extra,
+    DW_AT_GNU_call_site_target=_location_list_extra,
+    DW_AT_GNU_call_site_target_clobbered=_location_list_extra,
 )
 
 # 8 in a line, for easier counting

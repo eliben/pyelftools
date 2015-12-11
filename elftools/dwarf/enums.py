@@ -79,6 +79,8 @@ ENUM_DW_TAG = dict(
     DW_TAG_rvalue_reference_type    = 0x42,
 
     DW_TAG_lo_user                  = 0x4080,
+    DW_TAG_GNU_call_site            = 0x4109,
+    DW_TAG_GNU_call_site_parameter  = 0x410a,
     DW_TAG_hi_user                  = 0xffff,
 
     _default_                       = Pass,
