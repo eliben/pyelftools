@@ -9,7 +9,7 @@ try:
 except ImportError:
     import unittest
 
-from utils import setup_syspath; setup_syspath()
+from .utils import setup_syspath; setup_syspath()
 from elftools.dwarf.descriptions import ExprDumper, set_global_machine_arch
 from elftools.dwarf.structs import DWARFStructs
 

@@ -11,7 +11,7 @@ except ImportError:
 import os
 import copy
 
-from utils import setup_syspath; setup_syspath()
+from .utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
 from elftools.elf.constants import SUNW_SYMINFO_FLAGS
 
