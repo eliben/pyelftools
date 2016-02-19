@@ -434,6 +434,8 @@ def _data_member_location_extra(attr, die, section_offset):
     if attr.form in ('DW_FORM_data1', 'DW_FORM_data2',
                      'DW_FORM_data4', 'DW_FORM_data8'):
         return ''  # No extra description needed
+    elif attr.form in ('DW_FORM_sdata')
+        return str(attr.value)
     else:
         return describe_DWARF_expr(attr.value, die.cu.structs)
 
