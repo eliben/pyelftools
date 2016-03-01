@@ -3,7 +3,7 @@
 ** gcc -g -o hello.out hello.c
 **
 ** To run the test that shows the error, do a readelf dump:
-** readelf --debug-dump=info hello.out
+** readelf.py --debug-dump=info hello.out
 ** 
 ** When using an unmodified descriptions.py, you will get a 
 ** python exception when it tries to read the 'ijk' element 
