@@ -93,6 +93,9 @@ class DWARFInfo(object):
         # Cache for abbrev tables: a dict keyed by offset
         self._abbrevtable_cache = {}
 
+        self._CU_next_offset = 0
+        self._CU_cache = []
+
     def iter_CUs(self):
         """ Yield all the compile units (CompileUnit objects) in the debug info
         """
@@ -191,16 +194,28 @@ class DWARFInfo(object):
     def _parse_CUs_iter(self):
         """ Parse CU entries from debug_info. Yield CUs in order of appearance.
         """
-        offset = 0
-        while offset < self.debug_info_sec.size:
-            cu = self._parse_CU_at_offset(offset)
+        idx = 0
+        while idx < len(self._CU_cache):
+            yield self._CU_cache[idx]
+            idx = idx + 1
+
+        while self._CU_next_offset < self.debug_info_sec.size:
+            cu = self._parse_CU_at_offset(self._CU_next_offset)
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.
-            offset = (  offset +
+            offset = (  self._CU_next_offset +
                         cu['unit_length'] +
                         cu.structs.initial_length_field_size())
+            self._CU_next_offset = offset
+            self._CU_cache.append(cu)
+            last_cache_len = len(self._CU_cache)
             yield cu
+
+            # There are new CUs added to the cache since last yield.
+            while last_cache_len < len(self._CU_cache):
+                yield self._CU_cache[last_cache_len]
+                last_cache_len = last_cache_len + 1
 
     def _parse_CU_at_offset(self, offset):
         """ Parse and return a CU at the given offset in the debug_info stream.

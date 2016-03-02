@@ -55,6 +55,8 @@ class CompileUnit(object):
 
         # A list of DIEs belonging to this CU. Lazily parsed.
         self._dielist = []
+        self._dielist_complete = False
+        self._dielist_next_offset = cu_die_offset
 
     def dwarf_format(self):
         """ Get the DWARF format (32 or 64) for this CU
@@ -79,8 +81,19 @@ class CompileUnit(object):
         """ Iterate over all the DIEs in the CU, in order of their appearance.
             Note that null DIEs will also be returned.
         """
-        self._parse_DIEs()
+        self._parse_DIEs(1 << 64)
         return iter(self._dielist)
+
+    def clear_DIEs(self):
+        if self._dielist:
+            self._dielist[1:] = []
+            self._dielist_next_offset = self._die_offset_after_first
+            self._dielist_complete = False
+            self._dielist[0].remove_all_children()
+
+    def full_load_DIEs(self):
+        self._parse_DIEs(1 << 64)
+        pass
 
     #------ PRIVATE ------#
 
@@ -92,16 +105,16 @@ class CompileUnit(object):
     def _get_DIE(self, index):
         """ Get the DIE at the given index
         """
-        self._parse_DIEs()
+        self._parse_DIEs(index)
         return self._dielist[index]
 
-    def _parse_DIEs(self):
+    def _parse_DIEs(self, want):
         """ Parse all the DIEs pertaining to this CU from the stream and shove
             them sequentially into self._dielist.
             Also set the child/sibling/parent links in the DIEs according
             (unflattening the prefix-order of the DIE tree).
         """
-        if len(self._dielist) > 0:
+        if self._dielist_complete or len(self._dielist) > want:
             return
 
         # Compute the boundary (one byte past the bounds) of this CU in the
@@ -111,14 +124,21 @@ class CompileUnit(object):
                         self.structs.initial_length_field_size())
 
         # First pass: parse all DIEs and place them into self._dielist
-        die_offset = self.cu_die_offset
-        while die_offset < cu_boundary:
+        die_offset = self._dielist_next_offset
+        while die_offset < cu_boundary and len(self._dielist) <= want:
             die = DIE(
                     cu=self,
                     stream=self.dwarfinfo.debug_info_sec.stream,
                     offset=die_offset)
             self._dielist.append(die)
             die_offset += die.size
+            if len(self._dielist) == 1:
+                self._die_offset_after_first = die_offset
+                pass
+        self._dielist_next_offset = die_offset
+
+        if die_offset >= cu_boundary:
+            self._dielist_complete = True
 
         # Second pass - unflatten the DIE tree
         self._unflatten_tree()
@@ -141,6 +161,7 @@ class CompileUnit(object):
                 cur_parent.add_child(die)
                 die.set_parent(cur_parent)
                 if die.has_children:
+                    die.remove_all_children()
                     parentstack.append(die)
             else:
                 # parentstack should not be really empty here. However, some
