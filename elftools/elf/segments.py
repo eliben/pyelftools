@@ -119,9 +119,21 @@ class NoteSegment(Segment):
             self.stream.seek(offset)
             # n_namesz is 4-byte aligned.
             disk_namesz = roundup(note['n_namesz'], 2)
-            note['n_name'] = bytes2str(
-                CString('').parse(self.stream.read(disk_namesz)))
-            offset += disk_namesz
+            if disk_namesz > 0:
+                name_bytes = self.stream.read(disk_namesz)
+                # Name is supposed to be a NUL-terminated string, so the
+                # length of the string is actually namesz - 1.
+                # However, some vendors put unterminated strings in,
+                # which we return as-is. Of course, this means that if
+                # the vendor's normally unterminated string happens to end
+                # in a NUL, we will mistake it for a NUL-terminated string
+                # and truncate it - but that's what they get for not
+                # following the spec.
+                name_len = note['n_namesz'] - 1
+                if name_bytes[name_len] != 0:
+                    name_len = name_len + 1
+                note['n_name'] = bytes2str(name_bytes[0:name_len])
+                offset += disk_namesz
 
             desc_data = bytes2str(self.stream.read(note['n_descsz']))
             if note['n_type'] == 'NT_GNU_ABI_TAG':
