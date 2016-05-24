@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 from ..construct import CString
 from ..common.utils import roundup, struct_parse
-from ..common.py3compat import bytes2str
+from ..common.py3compat import byte2int, bytes2str
 from .constants import SH_FLAGS
 
 
@@ -130,7 +130,7 @@ class NoteSegment(Segment):
                 # and truncate it - but that's what they get for not
                 # following the spec.
                 name_len = note['n_namesz'] - 1
-                if name_bytes[name_len] != 0:
+                if byte2int(name_bytes[name_len]) != 0:
                     name_len = name_len + 1
                 note['n_name'] = bytes2str(name_bytes[0:name_len])
                 offset += disk_namesz
