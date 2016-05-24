@@ -835,7 +835,7 @@ class ReadElf(object):
     def _dump_debug_info(self):
         """ Dump the debugging info section.
         """
-        self._emitline('Contents of the .debug_info section:\n')
+        self._emitline('Contents of the %s section:\n' % self._dwarfinfo.debug_info_sec.name)
 
         # Offset of the .debug_info section in the stream
         section_offset = self._dwarfinfo.debug_info_sec.global_offset
@@ -888,7 +888,7 @@ class ReadElf(object):
         """ Dump the (decoded) line programs from .debug_line
             The programs are dumped in the order of the CUs they belong to.
         """
-        self._emitline('Decoded dump of debug contents of section .debug_line:\n')
+        self._emitline('Decoded dump of debug contents of section %s:\n' % self._dwarfinfo.debug_line_sec.name)
 
         for cu in self._dwarfinfo.iter_CUs():
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
@@ -951,7 +951,7 @@ class ReadElf(object):
         """
         if not self._dwarfinfo.has_CFI():
             return
-        self._emitline('Contents of the .debug_frame section:')
+        self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_frame_sec.name)
 
         for entry in self._dwarfinfo.CFI_entries():
             if isinstance(entry, CIE):
@@ -985,7 +985,7 @@ class ReadElf(object):
         if not self._dwarfinfo.has_CFI():
             return
 
-        self._emitline('Contents of the .debug_frame section:')
+        self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_frame_sec.name)
 
         for entry in self._dwarfinfo.CFI_entries():
             if isinstance(entry, CIE):

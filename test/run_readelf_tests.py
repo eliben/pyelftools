@@ -97,7 +97,8 @@ def compare_output(s1, s2):
         for line in lines:
             if 'of the .eh_frame section' in line:
                 filter_out = True
-            elif 'of the .debug_frame section' in line:
+            elif 'of the .debug_frame section' in line or \
+                'of the .zdebug_frame section' in line:
                 filter_out = False
             if not filter_out:
                 if not line.startswith('unknown: length'):
