@@ -191,6 +191,9 @@ class DWARFInfo(object):
     def _parse_CUs_iter(self):
         """ Parse CU entries from debug_info. Yield CUs in order of appearance.
         """
+        if self.debug_info_sec is None:
+            return
+
         offset = 0
         while offset < self.debug_info_sec.size:
             cu = self._parse_CU_at_offset(offset)
