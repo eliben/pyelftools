@@ -4,5 +4,7 @@ python:
   - "3.2"
   - "3.3"
   - "3.4"
+install:
+  - pip install .
 script: python test/all_tests.py
 
