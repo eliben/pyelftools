@@ -9,7 +9,7 @@
 from contextlib import contextmanager
 from .exceptions import ELFParseError, ELFError, DWARFError
 from .py3compat import int2byte
-from ..construct import ConstructError
+from construct import ConstructError
 
 
 def bytelist2string(bytelist):

@@ -9,7 +9,7 @@
 from ..common.py3compat import BytesIO
 from ..common.exceptions import ELFError
 from ..common.utils import struct_parse, elf_assert
-from ..construct import ConstructError
+from construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection,

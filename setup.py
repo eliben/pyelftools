@@ -41,8 +41,9 @@ setup(
         'elftools.elf',
         'elftools.common',
         'elftools.dwarf',
-        'elftools.construct', 'elftools.construct.lib',
         ],
 
-    scripts=['scripts/readelf.py']
+    scripts=['scripts/readelf.py'],
+
+    install_requires=['construct']
 )
