@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import Subconstruct, ConstructError, ArrayError
+from construct import Subconstruct, ConstructError, ArrayError
 
 
 class RepeatUntilExcluding(Subconstruct):
