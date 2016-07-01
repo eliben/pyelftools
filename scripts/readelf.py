@@ -662,6 +662,8 @@ class ReadElf(object):
             self._dump_debug_frames()
         elif dump_what == 'frames-interp':
             self._dump_debug_frames_interp()
+        elif dump_what == 'aranges':
+            self._dump_debug_aranges()
         else:
             self._emitline('debug dump not yet supported for "%s"' % dump_what)
 
@@ -978,6 +980,44 @@ class ReadElf(object):
 
             self._emit(describe_CFI_instructions(entry))
         self._emitline()
+
+    def _dump_debug_aranges(self):
+        """ Dump the aranges table
+        """
+        aranges_table = self._dwarfinfo.get_aranges()
+        if aranges_table == None:
+            return
+        # seems redundent, but we need to get the unsorted set of entries to match system readelf
+        unordered_entries = aranges_table._get_entries()
+       
+        if len(unordered_entries) == 0:
+            self._emitline()
+            self._emitline("Section '.debug_aranges' has no debugging data.")
+            return
+            
+        self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_aranges_sec.name)
+        self._emitline()
+        prev_offset = None
+        for entry in unordered_entries:
+            if prev_offset != entry.info_offset:
+                if entry != unordered_entries[0]:
+                    self._emitline('    %s %s' % (
+                        self._format_hex(0, fullhex=True, lead0x=False), 
+                        self._format_hex(0, fullhex=True, lead0x=False)))
+                self._emitline('  Length:                   %d' % (entry.unit_length))
+                self._emitline('  Version:                  %d' % (entry.version))
+                self._emitline('  Offset into .debug_info:  0x%x' % (entry.info_offset))
+                self._emitline('  Pointer Size:             %d' % (entry.address_size))
+                self._emitline('  Segment Size:             %d' % (entry.segment_size))
+                self._emitline()
+                self._emitline('    Address            Length')
+            self._emitline('    %s %s' % (
+                self._format_hex(entry.begin_addr, fullhex=True, lead0x=False), 
+                self._format_hex(entry.length, fullhex=True, lead0x=False)))
+            prev_offset = entry.info_offset
+        self._emitline('    %s %s' % (
+                self._format_hex(0, fullhex=True, lead0x=False), 
+                self._format_hex(0, fullhex=True, lead0x=False)))
 
     def _dump_debug_frames_interp(self):
         """ Dump the interpreted (decoded) frame information from .debug_frame
