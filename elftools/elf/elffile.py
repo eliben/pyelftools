@@ -7,9 +7,17 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import io
-import resource
 import struct
 import zlib
+
+try:
+    import resource
+    PAGESIZE = resource.getpagesize()
+except ImportError:
+    # Windows system
+    import mmap
+    PAGESIZE = mmap.PAGESIZE
+
 from ..common.py3compat import BytesIO
 from ..common.exceptions import ELFError
 from ..common.utils import struct_parse, elf_assert
@@ -416,7 +424,7 @@ class ELFFile(object):
         decompressor = zlib.decompressobj()
         uncompressed_stream = BytesIO()
         while True:
-            chunk = section.stream.read(resource.getpagesize())
+            chunk = section.stream.read(PAGESIZE)
             if not chunk:
                 break
             uncompressed_stream.write(decompressor.decompress(chunk))
