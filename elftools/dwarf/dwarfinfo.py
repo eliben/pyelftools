@@ -18,6 +18,7 @@ from .lineprogram import LineProgram
 from .callframe import CallFrameInfo
 from .locationlists import LocationLists
 from .ranges import RangeLists
+from .aranges import ARanges
 
 
 # Describes a debug section
@@ -57,6 +58,7 @@ class DWARFInfo(object):
     def __init__(self,
             config,
             debug_info_sec,
+            debug_aranges_sec,
             debug_abbrev_sec,
             debug_frame_sec,
             eh_frame_sec,
@@ -74,6 +76,7 @@ class DWARFInfo(object):
         """
         self.config = config
         self.debug_info_sec = debug_info_sec
+        self.debug_aranges_sec = debug_aranges_sec
         self.debug_abbrev_sec = debug_abbrev_sec
         self.debug_frame_sec = debug_frame_sec
         self.eh_frame_sec = eh_frame_sec
@@ -167,6 +170,17 @@ class DWARFInfo(object):
             size=self.eh_frame_sec.size,
             base_structs=self.structs)
         return cfi.get_entries()
+
+    def get_aranges(self):
+        """ Get an ARanges object representing the .debug_aranges section of
+            the DWARF data, or None if the section doesn't exist
+        """
+        if self.debug_aranges_sec:
+            return ARanges(self.debug_aranges_sec.stream, 
+                self.debug_aranges_sec.size, 
+                self.structs)
+        else:
+            return None
 
     def location_lists(self):
         """ Get a LocationLists object representing the .debug_loc section of

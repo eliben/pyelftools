@@ -7,7 +7,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import os, sys
+import os, sys, platform
 import re
 from difflib import SequenceMatcher
 from optparse import OptionParser
@@ -26,9 +26,12 @@ testlog.addHandler(logging.StreamHandler(sys.stdout))
 # Set the path for calling readelf. We carry our own version of readelf around,
 # because binutils tend to change its output even between daily builds of the
 # same minor release and keeping track is a headache.
-READELF_PATH = 'test/external_tools/readelf'
-if not os.path.exists(READELF_PATH):
-    READELF_PATH = 'readelf'
+if platform.system() == "Darwin": # MacOS
+    READELF_PATH = 'greadelf'
+else:
+    READELF_PATH = 'test/external_tools/readelf'
+    if not os.path.exists(READELF_PATH):
+        READELF_PATH = 'readelf'
 
 def discover_testfiles(rootdir):
     """ Discover test files in the given directory. Yield them one by one.
@@ -48,7 +51,8 @@ def run_test_on_file(filename, verbose=False):
     for option in [
             '-e', '-d', '-s', '-n', '-r', '-x.text', '-p.shstrtab', '-V',
             '--debug-dump=info', '--debug-dump=decodedline',
-            '--debug-dump=frames', '--debug-dump=frames-interp']:
+            '--debug-dump=frames', '--debug-dump=frames-interp',
+            '--debug-dump=aranges']:
         if verbose: testlog.info("..option='%s'" % option)
         # stdouts will be a 2-element list: output of readelf and output
         # of scripts/readelf.py

@@ -132,6 +132,7 @@ class DWARFStructs(object):
         self._create_dw_form()
         self._create_lineprog_header()
         self._create_callframe_entry_headers()
+        self._create_aranges_header()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -209,6 +210,15 @@ class DWARFStructs(object):
             DW_FORM_GNU_ref_alt=self.Dwarf_offset(''),
             DW_AT_GNU_all_call_sites=self.Dwarf_uleb128(''),
         )
+
+    def _create_aranges_header(self):
+        self.Dwarf_aranges_header = Struct("Dwarf_aranges_header",
+            self.Dwarf_initial_length('unit_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_offset('debug_info_offset'), # a little tbd
+            self.Dwarf_uint8('address_size'),
+            self.Dwarf_uint8('segment_size')
+            )
 
     def _create_lineprog_header(self):
         # A file entry is terminated by a NULL byte, so we don't want to parse
