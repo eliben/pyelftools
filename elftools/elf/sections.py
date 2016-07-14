@@ -8,6 +8,8 @@
 #-------------------------------------------------------------------------------
 from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
 from collections import defaultdict
+from .notes import iter_notes
+
 
 class Section(object):
     """ Base class for ELF sections. Also used for all sections types that have
@@ -174,3 +176,18 @@ class SUNWSyminfoTableSection(Section):
         """
         for i in range(1, self.num_symbols() + 1):
             yield self.get_symbol(i)
+
+
+class NoteSection(Section):
+    """ ELF NOTE section. Knows how to parse notes.
+    """
+    def __init__(self, header, name, stream, elffile):
+        super(NoteSection, self).__init__(header, name, stream)
+        self.elffile = elffile
+
+    def iter_notes(self):
+        """ Yield all the notes in the section.  Each result is a dictionary-
+            like object with "n_name", "n_type", and "n_desc" fields, amongst
+            others.
+        """
+        return iter_notes(self.elffile, self['sh_offset'], self['sh_size'])
