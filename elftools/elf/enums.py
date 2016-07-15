@@ -598,7 +598,7 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
 )
 
 # PT_NOTE section types
-ENUM_NOTE_N_TYPE = dict(
+ENUM_GNU_NOTE_N_TYPE = dict(
     NT_GNU_ABI_TAG=1,
     NT_GNU_HWCAP=2,
     NT_GNU_BUILD_ID=3,

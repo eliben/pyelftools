@@ -261,7 +261,7 @@ class ELFStructs(object):
         self.Elf_Nhdr = Struct('Elf_Nhdr',
             self.Elf_word('n_namesz'),
             self.Elf_word('n_descsz'),
-            Enum(self.Elf_word('n_type'), **ENUM_NOTE_N_TYPE),
+            self.Elf_word('n_type'),
         )
         self.Elf_Nhdr_abi = Struct('Elf_Nhdr_abi',
             Enum(self.Elf_word('abi_os'), **ENUM_NOTE_ABI_TAG_OS),
