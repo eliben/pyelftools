@@ -24,7 +24,7 @@ from ..common.utils import struct_parse, elf_assert
 from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection,
-        SUNWSyminfoTableSection, NullSection)
+        SUNWSyminfoTableSection, NullSection, NoteSection)
 from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
 from .gnuversions import (
@@ -307,6 +307,8 @@ class ELFFile(object):
                 section_header, name, self.stream, self)
         elif sectype == 'SHT_DYNAMIC':
             return DynamicSection(section_header, name, self.stream, self)
+        elif sectype == 'SHT_NOTE':
+            return NoteSection(section_header, name, self.stream, self)
         else:
             return Section(section_header, name, self.stream)
 
