@@ -24,7 +24,7 @@ class LocationLists(object):
         self.stream = stream
         self.structs = structs
         self._max_addr = 2 ** (self.structs.address_size * 8) - 1
-        
+
     def get_location_list_at_offset(self, offset):
         """ Get a location list at the given offset in the section.
         """
@@ -57,7 +57,7 @@ class LocationLists(object):
             elif begin_offset == self._max_addr:
                 # Base address selection entry
                 lst.append(BaseAddressEntry(base_address=end_offset))
-            else: 
+            else:
                 # Location list entry
                 expr_len = struct_parse(
                     self.structs.Dwarf_uint16(''), self.stream)
@@ -69,4 +69,3 @@ class LocationLists(object):
                     end_offset=end_offset,
                     loc_expr=loc_expr))
         return lst
-
