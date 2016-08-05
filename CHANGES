@@ -1,7 +1,7 @@
 Changelog
 =========
 
-+ Version 0.24 (??)
++ Version 0.24 (04.08.2016)
 
   - Retrieve symbols by name - get_symbol_by_name (#58).
   - Symbol/section names are strings internally now, not bytestrings (this may
