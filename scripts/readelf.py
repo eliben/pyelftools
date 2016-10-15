@@ -304,7 +304,6 @@ class ReadElf(object):
                 self._emitline('   Num:    Value          Size Type    Bind   Vis      Ndx Name')
 
             for nsym, symbol in enumerate(section.iter_symbols()):
-
                 version_info = ''
                 # readelf doesn't display version info for Solaris versioning
                 if (section['sh_type'] == 'SHT_DYNSYM' and
@@ -572,6 +571,10 @@ class ReadElf(object):
             self._emitline("Section '%s' does not exist in the file!" % (
                 section_spec))
             return
+        if section['sh_type'] == 'SHT_NOBITS':
+            self._emitline("\nSection '%s' has no data to dump." % (
+                section_spec))
+            return
 
         self._emitline("\nHex dump of section '%s':" % section.name)
         self._note_relocs_for_section(section)
@@ -613,6 +616,10 @@ class ReadElf(object):
         section = self._section_from_spec(section_spec)
         if section is None:
             self._emitline("Section '%s' does not exist in the file!" % (
+                section_spec))
+            return
+        if section['sh_type'] == 'SHT_NOBITS':
+            self._emitline("\nSection '%s' has no data to dump." % (
                 section_spec))
             return
 
