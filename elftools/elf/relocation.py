@@ -12,7 +12,7 @@ from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
 from .sections import Section
 from .enums import (
-    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS)
+    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS, ENUM_RELOC_TYPE_ARM)
 
 
 class Relocation(object):
@@ -220,6 +220,9 @@ class RelocationHandler(object):
         return sym_value + addend - offset
 
     _RELOCATION_RECIPES_ARM = {
+        ENUM_RELOC_TYPE_ARM['R_ARM_ABS32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False,
+            calc_func=_reloc_calc_sym_plus_value),
     }
 
     # https://dmz-portal.mips.com/wiki/MIPS_relocation_types
@@ -255,3 +258,5 @@ class RelocationHandler(object):
         ENUM_RELOC_TYPE_x64['R_X86_64_32S']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
     }
+
+
