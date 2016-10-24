@@ -151,6 +151,11 @@ class RelocationHandler(object):
                 raise ELFRelocationError(
                     'Unexpected RELA relocation for MIPS: %s' % reloc)
             recipe = self._RELOCATION_RECIPES_MIPS.get(reloc_type, None)
+        elif self.elffile.get_machine_arch() == 'ARM':
+            if reloc.is_RELA():
+                raise ELFRelocationError(
+                    'Unexpected RELA relocation for ARM: %s' % reloc)
+            recipe = self._RELOCATION_RECIPES_ARM.get(reloc_type, None)
 
         if recipe is None:
             raise ELFRelocationError(
@@ -213,6 +218,9 @@ class RelocationHandler(object):
 
     def _reloc_calc_sym_plus_addend_pcrel(value, sym_value, offset, addend=0):
         return sym_value + addend - offset
+
+    _RELOCATION_RECIPES_ARM = {
+    }
 
     # https://dmz-portal.mips.com/wiki/MIPS_relocation_types
     _RELOCATION_RECIPES_MIPS = {
