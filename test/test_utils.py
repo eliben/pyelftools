@@ -60,6 +60,3 @@ class Test_preserve_stream_pos(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-
-

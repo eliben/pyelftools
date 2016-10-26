@@ -12,6 +12,7 @@ except ImportError:
 from utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
 
+
 class TestMap(unittest.TestCase):
     def test_address_offsets(self):
         class MockELF(ELFFile):

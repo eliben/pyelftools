@@ -223,7 +223,6 @@ class ELFFile(object):
         # Note: this code reads the stream directly, without using ELFStructs,
         # since we don't yet know its exact format. ELF was designed to be
         # read like this - its e_ident field is word-size and endian agnostic.
-        #
         self.stream.seek(0)
         magic = self.stream.read(4)
         elf_assert(magic == b'\x7fELF', 'Magic number does not match')

@@ -13,6 +13,7 @@ import os
 from utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
 
+
 class TestARMSupport(unittest.TestCase):
     def test_hello(self):
         with open(os.path.join('test', 'testfiles_for_unittests',
@@ -39,6 +40,6 @@ class TestARMSupport(unittest.TestCase):
             all_CUs = list(dwarfinfo.iter_CUs())
             self.assertEqual(len(all_CUs), 9)
 
+
 if __name__ == '__main__':
     unittest.main()
-

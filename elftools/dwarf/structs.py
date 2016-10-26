@@ -235,7 +235,7 @@ class DWARFStructs(object):
             self.Dwarf_uint16('version'),
             self.Dwarf_offset('header_length'),
             self.Dwarf_uint8('minimum_instruction_length'),
-            If(lambda ctx: ctx['version'] >= 4, 
+            If(lambda ctx: ctx['version'] >= 4,
                 self.Dwarf_uint8("maximum_operations_per_instruction"),
                 1),
             self.Dwarf_uint8('default_is_stmt'),
@@ -332,7 +332,6 @@ class _SLEB128Adapter(Adapter):
             value = (value << 7) + (ord(b) & 0x7F)
         if ord(obj[-1]) & 0x40:
             # negative -> sign extend
-            #
             value |= - (1 << (7 * len(obj)))
         return value
 
@@ -347,5 +346,3 @@ def _SLEB128(name):
     """ A construct creator for SLEB128 encoding.
     """
     return Rename(name, _SLEB128Adapter(_LEB128_reader()))
-
-
