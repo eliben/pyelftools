@@ -139,7 +139,6 @@ class DWARFStructs(object):
             # Adapts a Struct that parses forward a full initial length field.
             # Only if the first word is the continuation value, the second
             # word is parsed from the stream.
-            #
             return _InitialLengthAdapter(
                 Struct(name,
                     self.Dwarf_uint32('first'),
