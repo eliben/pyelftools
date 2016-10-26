@@ -1,6 +1,12 @@
 Changelog
 =========
 
++ Version 0.25 (??)
+
+  - Don't attempt to hex/string dump SHT_NOBITS sections in readelf (#119).
+  - Add Python 3.5 testing to the tox file.
+  - Minor bugfixes (#118)
+
 + Version 0.24 (04.08.2016)
 
   - Retrieve symbols by name - get_symbol_by_name (#58).
@@ -16,7 +22,6 @@ Changelog
   - Support for .debug_aranges section (#108)
   - Support for zlib-compressed debug sections (#102)
   - Support for DWARF v4 line programs (#82)
-
 
 + Version 0.23 (08.11.2014)
 

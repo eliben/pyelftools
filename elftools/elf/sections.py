@@ -45,7 +45,7 @@ class Section(object):
             return self.header == other.header
         except AttributeError:
             return False
-    
+
     def __hash__(self):
         return hash(self.header)
 

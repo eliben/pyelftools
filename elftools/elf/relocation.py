@@ -11,7 +11,8 @@ from collections import namedtuple
 from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
 from .sections import Section
-from .enums import ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS
+from .enums import (
+    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS)
 
 
 class Relocation(object):
@@ -248,5 +249,3 @@ class RelocationHandler(object):
         ENUM_RELOC_TYPE_x64['R_X86_64_32S']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
     }
-
-
