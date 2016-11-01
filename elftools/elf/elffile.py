@@ -12,6 +12,8 @@ import zlib
 
 try:
     import resource
+    if "getpagesize" not in dir(resource):
+        raise ImportError
     PAGESIZE = resource.getpagesize()
 except ImportError:
     # Windows system
