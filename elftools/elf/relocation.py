@@ -169,7 +169,7 @@ class RelocationHandler(object):
             value_struct = self.elffile.structs.Elf_word64('')
         else:
             raise ELFRelocationError('Invalid bytesize %s for relocation' %
-                    recipe_bytesize)
+                    recipe.bytesize)
 
         # 1. Read the value from the stream (with correct size and endianness)
         original_value = struct_parse(
