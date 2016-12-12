@@ -11,7 +11,7 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename, Enum,
-    Array, PrefixedArray, CString, Embed, StaticField
+    Array, PrefixedArray, CString, Embed, StaticField, RangeError
     )
 from ..common.construct_utils import RepeatUntilExcluding
 
@@ -83,11 +83,10 @@ class DWARFStructs(object):
                 DWARF Format: 32 or 64-bit (see spec section 7.4)
 
             address_size:
-                Target machine address size, in bytes (4 or 8). (See spec
+                Target machine address size, in bytes. (See spec
                 section 7.5.1)
         """
         assert dwarf_format == 32 or dwarf_format == 64
-        assert address_size == 8 or address_size == 4
         self.little_endian = little_endian
         self.dwarf_format = dwarf_format
         self.address_size = address_size
@@ -106,8 +105,16 @@ class DWARFStructs(object):
             self.Dwarf_uint32 = ULInt32
             self.Dwarf_uint64 = ULInt64
             self.Dwarf_offset = ULInt32 if self.dwarf_format == 32 else ULInt64
-            self.Dwarf_target_addr = (
-                ULInt32 if self.address_size == 4 else ULInt64)
+            if self.address_size == 1:
+                self.Dwarf_target_addr = ULInt8
+            elif self.address_size == 2:
+                self.Dwarf_target_addr = ULInt16
+            elif self.address_size == 4:
+                self.Dwarf_target_addr = ULInt32
+            elif self.address_size == 8:
+                self.Dwarf_target_addr = ULInt64
+            else:
+                raise RangeError("Target address size (%d) not supported" % self.address_size)
             self.Dwarf_int8 = SLInt8
             self.Dwarf_int16 = SLInt16
             self.Dwarf_int32 = SLInt32
@@ -118,8 +125,16 @@ class DWARFStructs(object):
             self.Dwarf_uint32 = UBInt32
             self.Dwarf_uint64 = UBInt64
             self.Dwarf_offset = UBInt32 if self.dwarf_format == 32 else UBInt64
-            self.Dwarf_target_addr = (
-                UBInt32 if self.address_size == 4 else UBInt64)
+            if self.address_size == 1:
+                self.Dwarf_target_addr = UBInt8
+            elif self.address_size == 2:
+                self.Dwarf_target_addr = UBInt16
+            elif self.address_size == 4:
+                self.Dwarf_target_addr = UBInt32
+            elif self.address_size == 8:
+                self.Dwarf_target_addr = UBInt64
+            else:
+                raise RangeError("Target address size (%d) not supported" % self.address_size)
             self.Dwarf_int8 = SBInt8
             self.Dwarf_int16 = SBInt16
             self.Dwarf_int32 = SBInt32
