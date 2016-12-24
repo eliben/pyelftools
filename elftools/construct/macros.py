@@ -349,7 +349,7 @@ def Bitwise(subcon):
             resizer = resizer)
     return con
 
-def Aligned(subcon, modulus = 4, pattern = "\x00"):
+def Aligned(subcon, modulus = 4, pattern = b"\x00"):
     r"""aligns subcon to modulus boundary using padding pattern
     * subcon - the subcon to align
     * modulus - the modulus boundary (default is 4)
