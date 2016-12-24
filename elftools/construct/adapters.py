@@ -380,12 +380,12 @@ class PaddingAdapter(Adapter):
     
     Parameters:
     * subcon - the subcon to pad
-    * pattern - the padding pattern (character). default is "\x00"
+    * pattern - the padding pattern (character as byte). default is b"\x00"
     * strict - whether or not to verify, during parsing, that the given 
       padding matches the padding pattern. default is False (unstrict)
     """
     __slots__ = ["pattern", "strict"]
-    def __init__(self, subcon, pattern = "\x00", strict = False):
+    def __init__(self, subcon, pattern = b"\x00", strict = False):
         Adapter.__init__(self, subcon)
         self.pattern = pattern
         self.strict = strict
