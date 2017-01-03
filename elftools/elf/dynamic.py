@@ -47,8 +47,15 @@ class DynamicTag(object):
             raise ELFError('Creating DynamicTag without string table')
         self.entry = entry
         if entry.d_tag in self._HANDLED_TAGS:
-            setattr(self, entry.d_tag[3:].lower(),
-                    stringtable.get_string(self.entry.d_val))
+            # stringtable.get_string() tries to ascii-decode the requested
+            # string from the string table. In some files the string can't
+            # be decoded, resulting in a UnicodeDecodeError. Ignore the
+            # error rather than fail to create the tag.
+            try:
+                setattr(self, entry.d_tag[3:].lower(),
+                        stringtable.get_string(self.entry.d_val))
+            except UnicodeDecodeError:
+                pass
 
     def __getitem__(self, name):
         """ Implement dict-like access to entries
