@@ -66,7 +66,7 @@ class DynamicTag(object):
         return '<DynamicTag (%s): %r>' % (self.entry.d_tag, self.entry)
 
     def __str__(self):
-        if self.entry.d_tag in self._HANDLED_TAGS:
+        if (self.entry.d_tag in self._HANDLED_TAGS) and (self.entry.d_tag[3:].lower() in dir(self)):
             s = '"%s"' % getattr(self, self.entry.d_tag[3:].lower())
         else:
             s = '%#x' % self.entry.d_ptr
