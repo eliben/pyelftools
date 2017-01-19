@@ -52,7 +52,7 @@ Changelog
     where serialized DIE trees have extra NULLs at the end.
   - Very initial support for ARM ELF files (Matthew Fernandez - pull
     request #6).
-  - Support support for dumping the dynamic section (Mike Frysinger - pull
+  - Support for dumping the dynamic section (Mike Frysinger - pull
     request #7).
   - Output of scripts/readelf.py now matches that of binutils 2.23.52.
   - Added more machine EM_ values to ENUM_E_TYPE.
