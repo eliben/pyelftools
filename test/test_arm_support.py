@@ -10,7 +10,7 @@ except ImportError:
     import unittest
 import os
 
-from utils import setup_syspath; setup_syspath()
+from .utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
 
 
