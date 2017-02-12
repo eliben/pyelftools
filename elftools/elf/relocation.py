@@ -12,7 +12,7 @@ from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
 from .sections import Section
 from .enums import (
-    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS, ENUM_RELOC_TYPE_ARM)
+    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS, ENUM_RELOC_TYPE_ARM, ENUM_D_TAG)
 
 
 class Relocation(object):
@@ -44,49 +44,101 @@ class Relocation(object):
         return self.__repr__()
 
 
-class RelocationSection(Section):
-    """ ELF relocation section. Serves as a collection of Relocation entries.
+class RelocationTable(object):
+    """ Shared functionality between relocation sections and relocation tables
     """
-    def __init__(self, header, name, elffile):
-        super(RelocationSection, self).__init__(header, name, elffile)
-        if self.header['sh_type'] == 'SHT_REL':
-            expected_size = self.structs.Elf_Rel.sizeof()
-            self.entry_struct = self.structs.Elf_Rel
-        elif self.header['sh_type'] == 'SHT_RELA':
-            expected_size = self.structs.Elf_Rela.sizeof()
-            self.entry_struct = self.structs.Elf_Rela
-        else:
-            elf_assert(False, 'Unknown relocation type section')
 
-        elf_assert(
-            self.header['sh_entsize'] == expected_size,
-            'Expected sh_entsize of SHT_REL section to be %s' % expected_size)
+    def __init__(self, elffile, offset, size, is_rela):
+        self._stream = elffile.stream
+        self._elffile = elffile
+        self._elfstructs = elffile.structs
+        self._size = size
+        self._offset = offset
+        self._is_rela = is_rela
+
+        if is_rela:
+            self.entry_struct = self._elfstructs.Elf_Rela
+        else:
+            self.entry_struct = self._elfstructs.Elf_Rel
+
+        self.entry_size = self.entry_struct.sizeof()
 
     def is_RELA(self):
         """ Is this a RELA relocation section? If not, it's REL.
         """
-        return self.header['sh_type'] == 'SHT_RELA'
+        return self._is_rela
 
     def num_relocations(self):
         """ Number of relocations in the section
         """
-        return self['sh_size'] // self['sh_entsize']
+        return self._size // self.entry_size
 
     def get_relocation(self, n):
         """ Get the relocation at index #n from the section (Relocation object)
         """
-        entry_offset = self['sh_offset'] + n * self['sh_entsize']
+        entry_offset = self._offset + n * self.entry_size
         entry = struct_parse(
             self.entry_struct,
-            self.stream,
+            self._stream,
             stream_pos=entry_offset)
-        return Relocation(entry, self.elffile)
+        return Relocation(entry, self._elffile)
 
     def iter_relocations(self):
         """ Yield all the relocations in the section
         """
         for i in range(self.num_relocations()):
             yield self.get_relocation(i)
+
+
+class RelocationSection(Section, RelocationTable):
+    """ ELF relocation section. Serves as a collection of Relocation entries.
+    """
+    def __init__(self, header, name, elffile):
+        Section.__init__(self, header, name, elffile)
+        RelocationTable.__init__(self, self.elffile,
+            self['sh_offset'], self['sh_size'], header['sh_type'] == 'SHT_RELA')
+
+        elf_assert(header['sh_type'] in ('SHT_REL', 'SHT_RELA'),
+            'Unknown relocation type section')
+        elf_assert(header['sh_entsize'] == self.entry_size,
+            'Expected sh_entsize of %s section to be %s' % (
+                header['sh_type'], self.entry_size))
+
+
+def get_dynamic_reloc_tables(elffile, dynamic):
+    """ Load all available relocation tables from a DYNAMIC section or segment.
+
+    elffile: ELFFile to parse
+    dynamic: DYNAMIC section or segment to parse.
+    """
+
+    result = {}
+
+    if list(dynamic.iter_tags('DT_REL')):
+        result['REL'] = RelocationTable(elffile,
+            dynamic.get_table_offset('DT_REL')[1],
+            next(dynamic.iter_tags('DT_RELSZ'))['d_val'], False)
+
+        relentsz = next(dynamic.iter_tags('DT_RELENT'))['d_val']
+        elf_assert(result['REL'].entry_size == relentsz,
+            'Expected DT_RELENT to be %s' % relentsz)
+
+    if list(dynamic.iter_tags('DT_RELA')):
+        result['RELA'] = RelocationTable(elffile,
+            dynamic.get_table_offset('DT_RELA')[1],
+            next(dynamic.iter_tags('DT_RELASZ'))['d_val'], True)
+
+        relentsz = next(dynamic.iter_tags('DT_RELAENT'))['d_val']
+        elf_assert(result['RELA'].entry_size == relentsz,
+            'Expected DT_RELAENT to be %s' % relentsz)
+
+    if list(dynamic.iter_tags('DT_JMPREL')):
+        result['JMPREL'] = RelocationTable(elffile,
+            dynamic.get_table_offset('DT_JMPREL')[1],
+            next(dynamic.iter_tags('DT_PLTRELSZ'))['d_val'],
+            next(dynamic.iter_tags('DT_PLTREL'))['d_val'] == ENUM_D_TAG['DT_RELA'])
+
+    return result
 
 
 class RelocationHandler(object):
