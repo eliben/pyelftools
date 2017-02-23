@@ -78,6 +78,7 @@ class ELFStructs(object):
         self._create_gnu_verdef()
         self._create_gnu_versym()
         self._create_note()
+        self._create_stabs()
 
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
@@ -268,4 +269,15 @@ class ELFStructs(object):
             self.Elf_word('abi_major'),
             self.Elf_word('abi_minor'),
             self.Elf_word('abi_tiny'),
+        )
+
+    def _create_stabs(self):
+        # Structure of one stabs entry, see binutils/bfd/stabs.c
+        # Names taken from https://sourceware.org/gdb/current/onlinedocs/stabs.html#Overview
+        self.Elf_Stabs = Struct('Elf_Stabs',
+            self.Elf_word('n_strx'),
+            self.Elf_byte('n_type'),
+            self.Elf_byte('n_other'),
+            self.Elf_half('n_desc'),
+            self.Elf_word('n_value'),
         )
