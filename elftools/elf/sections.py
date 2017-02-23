@@ -204,17 +204,17 @@ class StabSection(Section):
         self.elffile = elffile
 
     def iter_stabs(self):
-		elffile = self.elffile
-		offset = self['sh_offset']
-		size = self['sh_size']
-		end = offset + size
-		while offset < end:
-			stabs = struct_parse(
-				elffile.structs.Elf_Stabs,
-				elffile.stream,
-				stream_pos=offset)
-			stabs['n_offset'] = offset
-			offset += elffile.structs.Elf_Stabs.sizeof()
-			elffile.stream.seek(offset)
-			yield stabs
+        elffile = self.elffile
+        offset = self['sh_offset']
+        size = self['sh_size']
+        end = offset + size
+        while offset < end:
+            stabs = struct_parse(
+                elffile.structs.Elf_Stabs,
+                elffile.stream,
+                stream_pos=offset)
+            stabs['n_offset'] = offset
+            offset += elffile.structs.Elf_Stabs.sizeof()
+            elffile.stream.seek(offset)
+            yield stabs
 
