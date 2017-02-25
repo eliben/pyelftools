@@ -204,6 +204,8 @@ class StabSection(Section):
         self.elffile = elffile
 
     def iter_stabs(self):
+        """ Yield all stab entries.  Result type is ELFStructs.Elf_Stabs.
+        """
         elffile = self.elffile
         offset = self['sh_offset']
         size = self['sh_size']
