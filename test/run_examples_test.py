@@ -9,7 +9,6 @@
 #-------------------------------------------------------------------------------
 import os, sys
 import logging
-from utils import setup_syspath; setup_syspath()
 from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
 
 

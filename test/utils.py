@@ -9,16 +9,6 @@
 from __future__ import print_function
 import os, sys, subprocess, tempfile
 
-# This module should not import elftools before setup_syspath() is called!
-# See the Hacking Guide in the documentation for more details.
-
-def setup_syspath():
-    """ Setup sys.path so that tests pick up local pyelftools before the
-        installed one when run from development directory.
-    """
-    if sys.path[0] != '.':
-        sys.path.insert(0, '.')
-
 
 def run_exe(exe_path, args=[], echo=False):
     """ Runs the given executable as a subprocess, given the
@@ -54,4 +44,3 @@ def dump_output_to_temp_files(testlog, *args):
         file.write(s)
         file.close()
         testlog.info('@@ Output #%s dumped to file: %s' % (i + 1, path))
-
