@@ -10,11 +10,7 @@
 from __future__ import print_function
 
 import os, sys
-
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 
 def main():

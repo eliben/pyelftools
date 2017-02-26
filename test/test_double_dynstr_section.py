@@ -4,13 +4,9 @@
 # Yann Rouillard (yann@pleiades.fr.eu.org)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 import os
 
-from utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicTag
 

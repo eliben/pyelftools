@@ -4,12 +4,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
-from utils import setup_syspath; setup_syspath()
 from elftools.common.py3compat import BytesIO, iteritems
 from elftools.dwarf.lineprogram import LineProgram, LineState, LineProgramEntry
 from elftools.dwarf.structs import DWARFStructs

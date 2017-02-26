@@ -1,13 +1,14 @@
-# Tests the functionality of the ELF file function `get_symbol_by_name`.
-
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+#-------------------------------------------------------------------------------
+# Tests the functionality of get_symbol_by_name
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
+import unittest
 import os
 
-from utils import setup_syspath; setup_syspath()
 from elftools.elf.elffile import ELFFile
+
 
 class TestGetSymbolByName(unittest.TestCase):
     def test_existing_symbol(self):
