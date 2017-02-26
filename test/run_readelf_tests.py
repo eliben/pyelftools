@@ -15,9 +15,11 @@ import logging
 import platform
 from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
 
+# Make it possible to run this file from the root dir of pyelftools without
+# installing pyelftools; useful for Travis testing, etc.
+sys.path[0:0] = ['.']
 
 # Create a global logger object
-#
 testlog = logging.getLogger('run_tests')
 testlog.setLevel(logging.DEBUG)
 testlog.addHandler(logging.StreamHandler(sys.stdout))

@@ -12,6 +12,10 @@ from __future__ import print_function
 import os, sys
 import unittest
 
+# Make it possible to run this file from the root dir of pyelftools without
+# installing pyelftools; useful for Travis testing, etc.
+sys.path[0:0] = ['.']
+
 
 def main():
     if not os.path.isdir('test'):
