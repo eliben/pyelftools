@@ -199,35 +199,16 @@ class DynamicSegment(Segment, Dynamic):
         if tab_ptr is None or tab_offset is None:
             raise ELFError('Segment does not contain DT_SYMTAB.')
 
+        # Get number of symbols from the hash table header. The size of the array "chain"
+        # equals to the number of the dynamic symbols.
+        hash_ptr, hash_offset = self.get_table_offset('DT_HASH')
+        hash_tbl = struct_parse(self._elfstructs.Elf_SymHashHdr, self._stream, hash_offset)
+        number_of_symbols = hash_tbl.nchain
+        
+        # Iterate the symbol table
         symbol_size = self._elfstructs.Elf_Sym.sizeof()
-
-        # Find closest higher pointer than tab_ptr. We'll use that to mark the
-        # end of the symbol table.
-        nearest_ptr = None
-        for tag in self.iter_tags():
-            tag_ptr = tag['d_ptr']
-            if tag['d_tag'] == 'DT_SYMENT':
-                if symbol_size != tag['d_val']:
-                    # DT_SYMENT is the size of one symbol entry. It must be the
-                    # same as returned by Elf_Sym.sizeof.
-                    raise ELFError('DT_SYMENT (%d) != Elf_Sym (%d).' %
-                                   (tag['d_val'], symbol_size))
-            if (tag_ptr > tab_ptr and
-                    (nearest_ptr is None or nearest_ptr > tag_ptr)):
-                nearest_ptr = tag_ptr
-
-        if nearest_ptr is None:
-            # Use the end of segment that contains DT_SYMTAB.
-            for segment in self._elffile.iter_segments():
-                if (segment['p_vaddr'] <= tab_ptr and
-                        tab_ptr <= (segment['p_vaddr'] + segment['p_filesz'])):
-                    nearest_ptr = segment['p_vaddr'] + segment['p_filesz']
-
-        if nearest_ptr is None:
-            raise ELFError('Cannot determine the end of DT_SYMTAB.')
-
         string_table = self._get_stringtable()
-        for i in range((nearest_ptr - tab_ptr) // symbol_size):
+        for i in range(number_of_symbols):
             symbol = struct_parse(self._elfstructs.Elf_Sym, self._stream,
                                   i * symbol_size + tab_offset)
             symbol_name = string_table.get_string(symbol['st_name'])

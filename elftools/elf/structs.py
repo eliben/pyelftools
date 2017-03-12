@@ -36,6 +36,9 @@ class ELFStructs(object):
             Elf_Sym:
                 Symbol table entry
 
+            Elf_SymHashHdr:
+                Symbol hash table header
+
             Elf_Rel, Elf_Rela:
                 Entries in relocation sections
     """
@@ -71,6 +74,7 @@ class ELFStructs(object):
         self._create_phdr()
         self._create_shdr()
         self._create_sym()
+        self._create_sym_hash_table_header()
         self._create_rel()
         self._create_dyn()
         self._create_sunw_syminfo()
@@ -177,6 +181,12 @@ class ELFStructs(object):
             Enum(self.Elf_sxword('d_tag'), **ENUM_D_TAG),
             self.Elf_xword('d_val'),
             Value('d_ptr', lambda ctx: ctx['d_val']),
+        )
+
+    def _create_sym_hash_table_header(self):
+        self.Elf_SymHashHdr = Struct('Elf_SymHashHdr',
+            self.Elf_word('nbucket'),
+            self.Elf_word('nchain')
         )
 
     def _create_sym(self):
