@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import Pass
+from ..construct28 import Pass
 from ..common.py3compat import iteritems
 
 

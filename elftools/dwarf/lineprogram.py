@@ -141,7 +141,7 @@ class LineProgram(object):
         offset = self.program_start_offset
         while offset < self.program_end_offset:
             opcode = struct_parse(
-                self.structs.Dwarf_uint8(''), 
+                ''/self.structs.Dwarf_uint8, 
                 self.stream,
                 offset)
 
@@ -170,7 +170,7 @@ class LineProgram(object):
                 # instruction size and the instruction itself.
                 inst_len = struct_parse(self.structs.Dwarf_uleb128(''),
                                         self.stream)
-                ex_opcode = struct_parse(self.structs.Dwarf_uint8(''),
+                ex_opcode = struct_parse(''/self.structs.Dwarf_uint8,
                                          self.stream)
 
                 if ex_opcode == DW_LNE_end_sequence:
@@ -179,7 +179,7 @@ class LineProgram(object):
                     # reset state
                     state = LineState(self.header['default_is_stmt']) 
                 elif ex_opcode == DW_LNE_set_address:
-                    operand = struct_parse(self.structs.Dwarf_target_addr(''),
+                    operand = struct_parse(''/self.structs.Dwarf_target_addr,
                                            self.stream)
                     state.address = operand
                     add_entry_old_state(ex_opcode, [operand], is_extended=True)
@@ -232,7 +232,7 @@ class LineProgram(object):
                     state.address += address_addend
                     add_entry_old_state(opcode, [address_addend])
                 elif opcode == DW_LNS_fixed_advance_pc:
-                    operand = struct_parse(self.structs.Dwarf_uint16(''),
+                    operand = struct_parse(''/self.structs.Dwarf_uint16,
                                            self.stream)
                     state.address += operand
                     add_entry_old_state(opcode, [operand])
@@ -243,7 +243,7 @@ class LineProgram(object):
                     state.epilogue_begin = True
                     add_entry_old_state(opcode, [])
                 elif opcode == DW_LNS_set_isa:
-                    operand = struct_parse(self.structs.Dwarf_uleb128(''),
+                    operand = struct_parse(''/self.structs.Dwarf_uleb128,
                                            self.stream)
                     state.isa = operand
                     add_entry_old_state(opcode, [operand])

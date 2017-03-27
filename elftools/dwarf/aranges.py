@@ -75,8 +75,8 @@ class ARanges(object):
                 self.stream.seek(seek_to)
 
                 # entries in this set/CU
-                addr = struct_parse(addr_size('addr'), self.stream)
-                length = struct_parse(addr_size('length'), self.stream)
+                addr = struct_parse('addr'/addr_size, self.stream)
+                length = struct_parse('length'/addr_size, self.stream)
                 while addr != 0 or length != 0:
                     # 'begin_addr length info_offset version address_size segment_size'
                     entries.append(
@@ -87,8 +87,8 @@ class ARanges(object):
                             version=aranges_header["version"],
                             address_size=aranges_header["address_size"],
                             segment_size=aranges_header["segment_size"]))
-                    addr = struct_parse(addr_size('addr'), self.stream)
-                    length = struct_parse(addr_size('length'), self.stream)
+                    addr = struct_parse('addr'/addr_size, self.stream)
+                    length = struct_parse('length'/addr_size, self.stream)
             # Segmentation exists in executable
             elif aranges_header["segment_size"] != 0:
                 raise NotImplementedError("Segmentation not implemented")

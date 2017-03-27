@@ -7,11 +7,11 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import (
-    UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
-    SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
-    Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename, Enum,
-    Array, PrefixedArray, CString, Embed, StaticField
+from ..construct28 import (
+    Int8ub, Int16ub, Int32ub, Int64ub, Int8ul, Int16ul, Int32ul, Int64ul,
+    Int8sb, Int16sb, Int32sb, Int64sb, Int8sl, Int16sl, Int32sl, Int64sl,
+    Adapter, Struct, ConstructError, If, RepeatUntil, Bytes, Renamed, Enum,
+    Array, PrefixedArray, CString, Embedded, Bytes, IfThenElse, Computed
     )
 from ..common.construct_utils import RepeatUntilExcluding
 
@@ -101,29 +101,29 @@ class DWARFStructs(object):
 
     def _create_structs(self):
         if self.little_endian:
-            self.Dwarf_uint8 = ULInt8
-            self.Dwarf_uint16 = ULInt16
-            self.Dwarf_uint32 = ULInt32
-            self.Dwarf_uint64 = ULInt64
-            self.Dwarf_offset = ULInt32 if self.dwarf_format == 32 else ULInt64
+            self.Dwarf_uint8 = Int8ul
+            self.Dwarf_uint16 = Int16ul
+            self.Dwarf_uint32 = Int32ul
+            self.Dwarf_uint64 = Int64ul
+            self.Dwarf_offset = Int32ul if self.dwarf_format == 32 else Int64ul
             self.Dwarf_target_addr = (
-                ULInt32 if self.address_size == 4 else ULInt64)
-            self.Dwarf_int8 = SLInt8
-            self.Dwarf_int16 = SLInt16
-            self.Dwarf_int32 = SLInt32
-            self.Dwarf_int64 = SLInt64
+                Int32ul if self.address_size == 4 else Int64ul)
+            self.Dwarf_int8 = Int8sl
+            self.Dwarf_int16 = Int16sl
+            self.Dwarf_int32 = Int32sl
+            self.Dwarf_int64 = Int64sl
         else:
-            self.Dwarf_uint8 = UBInt8
-            self.Dwarf_uint16 = UBInt16
-            self.Dwarf_uint32 = UBInt32
-            self.Dwarf_uint64 = UBInt64
-            self.Dwarf_offset = UBInt32 if self.dwarf_format == 32 else UBInt64
+            self.Dwarf_uint8 = Int8ub
+            self.Dwarf_uint16 = Int16ub
+            self.Dwarf_uint32 = Int32ub
+            self.Dwarf_uint64 = Int64ub
+            self.Dwarf_offset = Int32ub if self.dwarf_format == 32 else Int64ub
             self.Dwarf_target_addr = (
-                UBInt32 if self.address_size == 4 else UBInt64)
-            self.Dwarf_int8 = SBInt8
-            self.Dwarf_int16 = SBInt16
-            self.Dwarf_int32 = SBInt32
-            self.Dwarf_int64 = SBInt64
+                Int32ub if self.address_size == 4 else Int64ub)
+            self.Dwarf_int8 = Int8sb
+            self.Dwarf_int16 = Int16sb
+            self.Dwarf_int32 = Int32sb
+            self.Dwarf_int64 = Int64sb
 
         self._create_initial_length()
         self._create_leb128()
@@ -139,12 +139,11 @@ class DWARFStructs(object):
             # Adapts a Struct that parses forward a full initial length field.
             # Only if the first word is the continuation value, the second
             # word is parsed from the stream.
-            return _InitialLengthAdapter(
-                Struct(name,
-                    self.Dwarf_uint32('first'),
+            return Renamed(name, _InitialLengthAdapter(
+                Struct(
+                    'first'/self.Dwarf_uint32,
                     If(lambda ctx: ctx.first == 0xFFFFFFFF,
-                        self.Dwarf_uint64('second'),
-                        elsevalue=None)))
+                        'second'/self.Dwarf_uint64))))
         self.Dwarf_initial_length = _InitialLength
 
     def _create_leb128(self):
@@ -152,101 +151,103 @@ class DWARFStructs(object):
         self.Dwarf_sleb128 = _SLEB128
 
     def _create_cu_header(self):
-        self.Dwarf_CU_header = Struct('Dwarf_CU_header',
+        self.Dwarf_CU_header = 'Dwarf_CU_header'/Struct(
             self.Dwarf_initial_length('unit_length'),
-            self.Dwarf_uint16('version'),
-            self.Dwarf_offset('debug_abbrev_offset'),
-            self.Dwarf_uint8('address_size'))
+            'version'/self.Dwarf_uint16,
+            'debug_abbrev_offset'/self.Dwarf_offset,
+            'address_size'/self.Dwarf_uint8)
 
     def _create_abbrev_declaration(self):
-        self.Dwarf_abbrev_declaration = Struct('Dwarf_abbrev_entry',
-            Enum(self.Dwarf_uleb128('tag'), **ENUM_DW_TAG),
-            Enum(self.Dwarf_uint8('children_flag'), **ENUM_DW_CHILDREN),
+        self.Dwarf_abbrev_declaration = 'Dwarf_abbrev_entry'/Struct(
+            Enum(self.Dwarf_uleb128('tag'), Pass, **ENUM_DW_TAG),
+            Enum('children_flag'/self.Dwarf_uint8, Pass, **ENUM_DW_CHILDREN),
             RepeatUntilExcluding(
                 lambda obj, ctx:
                     obj.name == 'DW_AT_null' and obj.form == 'DW_FORM_null',
-                Struct('attr_spec',
-                    Enum(self.Dwarf_uleb128('name'), **ENUM_DW_AT),
-                    Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM))))
+                'attr_spec'/Struct(
+                    Enum(self.Dwarf_uleb128('name'), Pass, **ENUM_DW_AT),
+                    Enum(self.Dwarf_uleb128('form'), Pass, **ENUM_DW_FORM))))
 
     def _create_dw_form(self):
         self.Dwarf_dw_form = dict(
-            DW_FORM_addr=self.Dwarf_target_addr(''),
+            DW_FORM_addr = ''/self.Dwarf_target_addr,
 
-            DW_FORM_block1=self._make_block_struct(self.Dwarf_uint8),
-            DW_FORM_block2=self._make_block_struct(self.Dwarf_uint16),
-            DW_FORM_block4=self._make_block_struct(self.Dwarf_uint32),
-            DW_FORM_block=self._make_block_struct(self.Dwarf_uleb128),
+            DW_FORM_block1 = self._make_block_struct(self.Dwarf_uint8),
+            DW_FORM_block2 = self._make_block_struct(self.Dwarf_uint16),
+            DW_FORM_block4 = self._make_block_struct(self.Dwarf_uint32),
+            DW_FORM_block = self._make_block_struct(self.Dwarf_uleb128),
 
             # All DW_FORM_data<n> forms are assumed to be unsigned
-            DW_FORM_data1=self.Dwarf_uint8(''),
-            DW_FORM_data2=self.Dwarf_uint16(''),
-            DW_FORM_data4=self.Dwarf_uint32(''),
-            DW_FORM_data8=self.Dwarf_uint64(''),
-            DW_FORM_sdata=self.Dwarf_sleb128(''),
-            DW_FORM_udata=self.Dwarf_uleb128(''),
+            DW_FORM_data1 = ''/self.Dwarf_uint8,
+            DW_FORM_data2 = ''/self.Dwarf_uint16,
+            DW_FORM_data4 = ''/self.Dwarf_uint32,
+            DW_FORM_data8 = ''/self.Dwarf_uint64,
+            DW_FORM_sdata = self.Dwarf_sleb128(''),
+            DW_FORM_udata = self.Dwarf_uleb128(''),
 
-            DW_FORM_string=CString(''),
-            DW_FORM_strp=self.Dwarf_offset(''),
-            DW_FORM_flag=self.Dwarf_uint8(''),
+            DW_FORM_string = ''/CString(),
+            DW_FORM_strp = ''/self.Dwarf_offset,
+            DW_FORM_flag = ''/self.Dwarf_uint8,
 
-            DW_FORM_ref1=self.Dwarf_uint8(''),
-            DW_FORM_ref2=self.Dwarf_uint16(''),
-            DW_FORM_ref4=self.Dwarf_uint32(''),
-            DW_FORM_ref8=self.Dwarf_uint64(''),
-            DW_FORM_ref_udata=self.Dwarf_uleb128(''),
-            DW_FORM_ref_addr=self.Dwarf_offset(''),
+            DW_FORM_ref1 = ''/self.Dwarf_uint8,
+            DW_FORM_ref2 = ''/self.Dwarf_uint16,
+            DW_FORM_ref4 = ''/self.Dwarf_uint32,
+            DW_FORM_ref8 = ''/self.Dwarf_uint64,
+            DW_FORM_ref_udata = self.Dwarf_uleb128(''),
+            DW_FORM_ref_addr = ''/self.Dwarf_offset,
 
-            DW_FORM_indirect=self.Dwarf_uleb128(''),
+            DW_FORM_indirect = self.Dwarf_uleb128(''),
 
             # New forms in DWARFv4
-            DW_FORM_flag_present = StaticField('', 0),
-            DW_FORM_sec_offset = self.Dwarf_offset(''),
+            DW_FORM_flag_present = Bytes(0),
+            DW_FORM_sec_offset = ''/ self.Dwarf_offset,
             DW_FORM_exprloc = self._make_block_struct(self.Dwarf_uleb128),
-            DW_FORM_ref_sig8 = self.Dwarf_offset(''),
+            DW_FORM_ref_sig8 = ''/ self.Dwarf_offset,
 
-            DW_FORM_GNU_strp_alt=self.Dwarf_offset(''),
-            DW_FORM_GNU_ref_alt=self.Dwarf_offset(''),
-            DW_AT_GNU_all_call_sites=self.Dwarf_uleb128(''),
+            DW_FORM_GNU_strp_alt = ''/self.Dwarf_offset,
+            DW_FORM_GNU_ref_alt = ''/self.Dwarf_offset,
+            DW_AT_GNU_all_call_sites = self.Dwarf_uleb128(''),
         )
 
     def _create_aranges_header(self):
-        self.Dwarf_aranges_header = Struct("Dwarf_aranges_header",
+        self.Dwarf_aranges_header = 'Dwarf_aranges_header'/Struct(
             self.Dwarf_initial_length('unit_length'),
-            self.Dwarf_uint16('version'),
-            self.Dwarf_offset('debug_info_offset'), # a little tbd
-            self.Dwarf_uint8('address_size'),
-            self.Dwarf_uint8('segment_size')
+            'version'/self.Dwarf_uint16,
+            'debug_info_offset'/self.Dwarf_offset, # a little tbd
+            'address_size'/self.Dwarf_uint8,
+            'segment_size'/self.Dwarf_uint8
             )
 
     def _create_lineprog_header(self):
         # A file entry is terminated by a NULL byte, so we don't want to parse
         # past it. Therefore an If is used.
-        self.Dwarf_lineprog_file_entry = Struct('file_entry',
-            CString('name'),
-            If(lambda ctx: len(ctx.name) != 0,
-                Embed(Struct('',
+        self.Dwarf_lineprog_file_entry = 'file_entry'/Struct(
+            'name'/CString(),
+            Embedded(IfThenElse(lambda ctx: len(ctx.name) != 0,
+                Struct(
                     self.Dwarf_uleb128('dir_index'),
                     self.Dwarf_uleb128('mtime'),
-                    self.Dwarf_uleb128('length')))))
+                    self.Dwarf_uleb128('length')),
+                Struct())))
 
-        self.Dwarf_lineprog_header = Struct('Dwarf_lineprog_header',
+        self.Dwarf_lineprog_header = 'Dwarf_lineprog_header'/Struct(
             self.Dwarf_initial_length('unit_length'),
-            self.Dwarf_uint16('version'),
-            self.Dwarf_offset('header_length'),
-            self.Dwarf_uint8('minimum_instruction_length'),
-            If(lambda ctx: ctx['version'] >= 4,
-                self.Dwarf_uint8("maximum_operations_per_instruction"),
-                1),
-            self.Dwarf_uint8('default_is_stmt'),
-            self.Dwarf_int8('line_base'),
-            self.Dwarf_uint8('line_range'),
-            self.Dwarf_uint8('opcode_base'),
+            'version'/self.Dwarf_uint16,
+            'header_length'/self.Dwarf_offset,
+            'minimum_instruction_length'/self.Dwarf_uint8,
+            "maximum_operations_per_instruction"/IfThenElse(
+                lambda ctx: ctx['version'] >= 4,
+                self.Dwarf_uint8,
+                Computed(1)),
+            'default_is_stmt'/self.Dwarf_uint8,
+            'line_base'/self.Dwarf_int8,
+            'line_range'/self.Dwarf_uint8,
+            'opcode_base'/self.Dwarf_uint8,
             Array(lambda ctx: ctx['opcode_base'] - 1,
-                  self.Dwarf_uint8('standard_opcode_lengths')),
+                  'standard_opcode_lengths'/self.Dwarf_uint8),
             RepeatUntilExcluding(
                 lambda obj, ctx: obj == b'',
-                CString('include_directory')),
+                'include_directory'/CString()),
             RepeatUntilExcluding(
                 lambda obj, ctx: len(obj.name) == 0,
                 self.Dwarf_lineprog_file_entry),
@@ -255,38 +256,42 @@ class DWARFStructs(object):
     def _create_callframe_entry_headers(self):
         # The CIE header was modified in DWARFv4.
         if self.dwarf_version == 4:
-            self.Dwarf_CIE_header = Struct('Dwarf_CIE_header',
+            self.Dwarf_CIE_header = 'Dwarf_CIE_header'/Struct(
                 self.Dwarf_initial_length('length'),
-                self.Dwarf_offset('CIE_id'),
-                self.Dwarf_uint8('version'),
-                CString('augmentation'),
-                self.Dwarf_uint8('address_size'),
-                self.Dwarf_uint8('segment_size'),
+                'CIE_id'/self.Dwarf_offset,
+                'version'/self.Dwarf_uint8,
+                'augmentation'/CString(),
+                'address_size'/self.Dwarf_uint8,
+                'segment_size'/self.Dwarf_uint8,
                 self.Dwarf_uleb128('code_alignment_factor'),
                 self.Dwarf_sleb128('data_alignment_factor'),
                 self.Dwarf_uleb128('return_address_register'))
         else:
-            self.Dwarf_CIE_header = Struct('Dwarf_CIE_header',
+            self.Dwarf_CIE_header = 'Dwarf_CIE_header'/Struct(
                 self.Dwarf_initial_length('length'),
-                self.Dwarf_offset('CIE_id'),
-                self.Dwarf_uint8('version'),
-                CString('augmentation'),
+                'CIE_id'/self.Dwarf_offset,
+                'version'/self.Dwarf_uint8,
+                'augmentation'/CString(),
                 self.Dwarf_uleb128('code_alignment_factor'),
                 self.Dwarf_sleb128('data_alignment_factor'),
                 self.Dwarf_uleb128('return_address_register'))
 
-        self.Dwarf_FDE_header = Struct('Dwarf_FDE_header',
+        self.Dwarf_FDE_header = 'Dwarf_FDE_header'/Struct(
             self.Dwarf_initial_length('length'),
-            self.Dwarf_offset('CIE_pointer'),
-            self.Dwarf_target_addr('initial_location'),
-            self.Dwarf_target_addr('address_range'))
+            'CIE_pointer'/self.Dwarf_offset,
+            'initial_location'/self.Dwarf_target_addr,
+            'address_range'/self.Dwarf_target_addr)
 
     def _make_block_struct(self, length_field):
         """ Create a struct for DW_FORM_block<size>
         """
+        if length_field == self.Dwarf_uleb128:
+            lfield = length_field('')
+        else:
+            lfield = ''/length_field 
         return PrefixedArray(
-                    subcon=self.Dwarf_uint8('elem'),
-                    length_field=length_field(''))
+                    subcon='elem'/self.Dwarf_uint8,
+                    lengthfield=lfield)
 
 
 class _InitialLengthAdapter(Adapter):
@@ -310,7 +315,7 @@ def _LEB128_reader():
     """
     return RepeatUntil(
                 lambda obj, ctx: ord(obj) < 0x80,
-                Field(None, 1))
+                Bytes(1))
 
 
 class _ULEB128Adapter(Adapter):
@@ -339,10 +344,10 @@ class _SLEB128Adapter(Adapter):
 def _ULEB128(name):
     """ A construct creator for ULEB128 encoding.
     """
-    return Rename(name, _ULEB128Adapter(_LEB128_reader()))
+    return Renamed(name, _ULEB128Adapter(_LEB128_reader()))
 
 
 def _SLEB128(name):
     """ A construct creator for SLEB128 encoding.
     """
-    return Rename(name, _SLEB128Adapter(_LEB128_reader()))
+    return Renamed(name, _SLEB128Adapter(_LEB128_reader()))

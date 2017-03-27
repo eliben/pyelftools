@@ -164,9 +164,9 @@ class RelocationHandler(object):
         # 0. Find out which struct we're going to be using to read this value
         #    from the stream and write it back.
         if recipe.bytesize == 4:
-            value_struct = self.elffile.structs.Elf_word('')
+            value_struct = ''/self.elffile.structs.Elf_word
         elif recipe.bytesize == 8:
-            value_struct = self.elffile.structs.Elf_word64('')
+            value_struct = ''/self.elffile.structs.Elf_word64
         else:
             raise ELFRelocationError('Invalid bytesize %s for relocation' %
                     recipe.bytesize)

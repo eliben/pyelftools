@@ -6,8 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import Subconstruct, ConstructError, ArrayError
-
+from ..construct28 import Subconstruct, ConstructError, RangeError
+from ..construct28.lib import ListContainer
 
 class RepeatUntilExcluding(Subconstruct):
     """ A version of construct's RepeatUntil that doesn't include the last
@@ -19,24 +19,18 @@ class RepeatUntilExcluding(Subconstruct):
     """
     __slots__ = ["predicate"]
     def __init__(self, predicate, subcon):
-        Subconstruct.__init__(self, subcon)
+        super(RepeatUntilExcluding, self).__init__(subcon)
         self.predicate = predicate
-        self._clear_flag(self.FLAG_COPY_CONTEXT)
-        self._set_flag(self.FLAG_DYNAMIC)
-    def _parse(self, stream, context):
-        obj = []
+    def _parse(self, stream, context, path):
+        obj = ListContainer()
         try:
-            context_for_subcon = context
-            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                context_for_subcon = context.__copy__()
-
             while True:
-                subobj = self.subcon._parse(stream, context_for_subcon)
+                subobj = self.subcon._parse(stream, context, path)
                 if self.predicate(subobj, context):
                     break
                 obj.append(subobj)
         except ConstructError as ex:
-            raise ArrayError("missing terminator", ex)
+            raise RangeError("missing terminator", ex)
         return obj
     def _build(self, obj, stream, context):
         raise NotImplementedError('no building')
