@@ -6,8 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct28 import Subconstruct, ConstructError, RangeError
-from ..construct28.lib import ListContainer
+from construct import Subconstruct, ConstructError, RangeError
+from construct.lib import ListContainer
 
 class RepeatUntilExcluding(Subconstruct):
     """ A version of construct's RepeatUntil that doesn't include the last

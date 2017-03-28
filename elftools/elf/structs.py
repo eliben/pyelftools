@@ -7,7 +7,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct28 import (
+from construct import (
     Int8ub, Int16ub, Int32ub, Int64ub,
     Int8ul, Int16ul, Int32ul, Int64ul,
     Int32sb, Int32sl, Int64sb, Int64sl,

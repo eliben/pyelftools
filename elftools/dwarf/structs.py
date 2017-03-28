@@ -7,7 +7,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct28 import (
+from construct import (
     Int8ub, Int16ub, Int32ub, Int64ub, Int8ul, Int16ul, Int32ul, Int64ul,
     Int8sb, Int16sb, Int32sb, Int64sb, Int8sl, Int16sl, Int32sl, Int64sl,
     Adapter, Struct, ConstructError, If, RepeatUntil, Bytes, Renamed, Enum,

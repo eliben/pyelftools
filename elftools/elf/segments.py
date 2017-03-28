@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct28 import CString
+from construct import CString
 from ..common.utils import struct_parse
 from .constants import SH_FLAGS
 from .notes import iter_notes

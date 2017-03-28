@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 from ..common.py3compat import bytes2str
 from ..common.utils import struct_parse, roundup
-from ..construct28 import CString
+from construct import CString
 
 
 def iter_notes(elffile, offset, size):
