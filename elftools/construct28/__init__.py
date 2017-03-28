@@ -19,11 +19,11 @@ Hands-on example:
     b"\x01\x02\x03"
 """
 
-from construct.core import *
-from construct.expr import this, Path, Path2, PathFunc, len_, sum_, min_, max_, abs_, obj_, True_, False_
-from construct.debug import Probe, ProbeInto, Debugger
-from construct.version import version, version_string, release_date
-from construct import lib
+from .core import *
+from .expr import this, Path, Path2, PathFunc, len_, sum_, min_, max_, abs_, obj_, True_, False_
+from .debug import Probe, ProbeInto, Debugger
+from .version import version, version_string, release_date
+from . import lib
 
 
 #===============================================================================

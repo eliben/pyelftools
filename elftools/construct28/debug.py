@@ -7,8 +7,8 @@ import traceback
 import pdb
 import inspect
 
-from construct import *
-from construct.lib import *
+from . import *
+from .lib import *
 
 
 class Probe(Construct):

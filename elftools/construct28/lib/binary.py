@@ -1,4 +1,4 @@
-from construct.lib.py3compat import *
+from .py3compat import *
 
 
 def integer2bits(number, width):

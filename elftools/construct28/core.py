@@ -8,7 +8,7 @@ from binascii import hexlify, unhexlify
 import sys
 import collections
 
-from construct.lib import *
+from .lib import *
 
 
 #===============================================================================

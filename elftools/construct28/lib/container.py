@@ -2,7 +2,7 @@
 Various containers exposed to the user.
 """
 
-from construct.lib.py3compat import *
+from .py3compat import *
 
 
 globalfullprinting = None
