@@ -70,12 +70,12 @@ class Dynamic(object):
     """ Shared functionality between dynamic sections and segments.
     """
     def __init__(self, stream, elffile, stringtable, position):
+        self.elffile = elffile
+        self.elfstructs = elffile.structs
         self._stream = stream
-        self._elffile = elffile
-        self._elfstructs = elffile.structs
         self._num_tags = -1
         self._offset = position
-        self._tagsize = self._elfstructs.Elf_Dyn.sizeof()
+        self._tagsize = self.elfstructs.Elf_Dyn.sizeof()
 
         # Do not access this directly yourself; use _get_stringtable() instead.
         self._stringtable = stringtable
@@ -92,7 +92,7 @@ class Dynamic(object):
         # by using the program headers.
         offset = None
         if ptr:
-            offset = next(self._elffile.address_offsets(ptr), None)
+            offset = next(self.elffile.address_offsets(ptr), None)
 
         return ptr, offset
 
@@ -115,7 +115,7 @@ class Dynamic(object):
 
         # That didn't work for some reason.  Let's use the section header
         # even though this ELF is super weird.
-        self._stringtable = self._elffile.get_section_by_name('.dynstr')
+        self._stringtable = self.elffile.get_section_by_name('.dynstr')
         return self._stringtable
 
     def _iter_tags(self, type=None):
@@ -139,7 +139,7 @@ class Dynamic(object):
         """
         offset = self._offset + n * self._tagsize
         return struct_parse(
-            self._elfstructs.Elf_Dyn,
+            self.elfstructs.Elf_Dyn,
             self._stream,
             stream_pos=offset)
 
@@ -199,7 +199,7 @@ class DynamicSegment(Segment, Dynamic):
         if tab_ptr is None or tab_offset is None:
             raise ELFError('Segment does not contain DT_SYMTAB.')
 
-        symbol_size = self._elfstructs.Elf_Sym.sizeof()
+        symbol_size = self.elfstructs.Elf_Sym.sizeof()
 
         # Find closest higher pointer than tab_ptr. We'll use that to mark the
         # end of the symbol table.
@@ -218,7 +218,7 @@ class DynamicSegment(Segment, Dynamic):
 
         if nearest_ptr is None:
             # Use the end of segment that contains DT_SYMTAB.
-            for segment in self._elffile.iter_segments():
+            for segment in self.elffile.iter_segments():
                 if (segment['p_vaddr'] <= tab_ptr and
                         tab_ptr <= (segment['p_vaddr'] + segment['p_filesz'])):
                     nearest_ptr = segment['p_vaddr'] + segment['p_filesz']
@@ -228,7 +228,7 @@ class DynamicSegment(Segment, Dynamic):
 
         string_table = self._get_stringtable()
         for i in range((nearest_ptr - tab_ptr) // symbol_size):
-            symbol = struct_parse(self._elfstructs.Elf_Sym, self._stream,
+            symbol = struct_parse(self.elfstructs.Elf_Sym, self._stream,
                                   i * symbol_size + tab_offset)
             symbol_name = string_table.get_string(symbol['st_name'])
             yield Symbol(symbol, symbol_name)
