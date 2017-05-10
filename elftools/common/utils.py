@@ -7,9 +7,9 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from contextlib import contextmanager
+from construct import ConstructError
 from .exceptions import ELFParseError, ELFError, DWARFError
 from .py3compat import int2byte
-from ..construct import ConstructError
 
 
 def bytelist2string(bytelist):

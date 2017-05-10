@@ -73,7 +73,7 @@ class CallFrameInfo(object):
             return self._entry_cache[offset]
 
         entry_length = struct_parse(
-            self.base_structs.Dwarf_uint32(''), self.stream, offset)
+            ''/self.base_structs.Dwarf_uint32, self.stream, offset)
         dwarf_format = 64 if entry_length == 0xFFFFFFFF else 32
 
         entry_structs = DWARFStructs(
@@ -83,7 +83,7 @@ class CallFrameInfo(object):
 
         # Read the next field to see whether this is a CIE or FDE
         CIE_id = struct_parse(
-            entry_structs.Dwarf_offset(''), self.stream)
+            ''/entry_structs.Dwarf_offset, self.stream)
 
         is_CIE = (
             (dwarf_format == 32 and CIE_id == 0xFFFFFFFF) or
@@ -136,7 +136,7 @@ class CallFrameInfo(object):
         """
         instructions = []
         while offset < end_offset:
-            opcode = struct_parse(structs.Dwarf_uint8(''), self.stream, offset)
+            opcode = struct_parse(''/structs.Dwarf_uint8, self.stream, offset)
             args = []
 
             primary = opcode & _PRIMARY_MASK
@@ -155,13 +155,13 @@ class CallFrameInfo(object):
                 args = []
             elif opcode == DW_CFA_set_loc:
                 args = [
-                    struct_parse(structs.Dwarf_target_addr(''), self.stream)]
+                    struct_parse(''/structs.Dwarf_target_addr, self.stream)]
             elif opcode == DW_CFA_advance_loc1:
-                args = [struct_parse(structs.Dwarf_uint8(''), self.stream)]
+                args = [struct_parse(''/structs.Dwarf_uint8, self.stream)]
             elif opcode == DW_CFA_advance_loc2:
-                args = [struct_parse(structs.Dwarf_uint16(''), self.stream)]
+                args = [struct_parse(''/structs.Dwarf_uint16, self.stream)]
             elif opcode == DW_CFA_advance_loc4:
-                args = [struct_parse(structs.Dwarf_uint32(''), self.stream)]
+                args = [struct_parse(''/structs.Dwarf_uint32, self.stream)]
             elif opcode in (DW_CFA_offset_extended, DW_CFA_register,
                             DW_CFA_def_cfa, DW_CFA_val_offset):
                 args = [

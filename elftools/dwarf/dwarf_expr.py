@@ -153,7 +153,7 @@ class GenericExprVisitor(object):
 
     def _visit_OP_addr(self, opcode, opcode_name):
         self._cur_args = [
-                struct_parse(self.structs.Dwarf_target_addr(''), self.stream)]
+                struct_parse(''/self.structs.Dwarf_target_addr, self.stream)]
 
     def _make_visitor_arg_struct(self, struct_arg):
         """ Create a visitor method for an opcode that that accepts a single
@@ -180,37 +180,37 @@ class GenericExprVisitor(object):
             
         add('DW_OP_addr', self._visit_OP_addr)
         add('DW_OP_const1u', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint8('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_uint8))
         add('DW_OP_const1s', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_int8))
         add('DW_OP_const2u', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint16('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_uint16))
         add('DW_OP_const2s', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_int16))
         add('DW_OP_const4u', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_uint32))
         add('DW_OP_const4s', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int32('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_int32))
         add('DW_OP_const8u', 
             self._make_visitor_arg_struct2(
-                self.structs.Dwarf_uint32(''),
-                self.structs.Dwarf_uint32('')))
+                ''/self.structs.Dwarf_uint32,
+                ''/self.structs.Dwarf_uint32))
         add('DW_OP_const8s', 
             self._make_visitor_arg_struct2(
-                self.structs.Dwarf_int32(''),
-                self.structs.Dwarf_int32('')))
+                ''/self.structs.Dwarf_int32,
+                ''/self.structs.Dwarf_int32))
         add('DW_OP_constu',
             self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
         add('DW_OP_consts',
             self._make_visitor_arg_struct(self.structs.Dwarf_sleb128('')))
         add('DW_OP_pick',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint8('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_uint8))
         add('DW_OP_plus_uconst',
             self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
         add('DW_OP_bra', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_int16))
         add('DW_OP_skip', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_int16))
 
         for opname in [ 'DW_OP_deref', 'DW_OP_dup', 'DW_OP_drop', 'DW_OP_over',
                         'DW_OP_swap', 'DW_OP_swap', 'DW_OP_rot', 'DW_OP_xderef',
@@ -244,14 +244,14 @@ class GenericExprVisitor(object):
                 self.structs.Dwarf_uleb128(''),
                 self.structs.Dwarf_uleb128('')))
         add('DW_OP_deref_size',
-            self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_int8))
         add('DW_OP_xderef_size',
-            self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_int8))
         add('DW_OP_call2',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint16('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_uint16))
         add('DW_OP_call4',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_uint32))
         add('DW_OP_call_ref',
-            self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
+            self._make_visitor_arg_struct(''/self.structs.Dwarf_offset))
 
 

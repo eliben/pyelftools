@@ -48,9 +48,9 @@ class RangeLists(object):
         lst = []
         while True:
             begin_offset = struct_parse(
-                self.structs.Dwarf_target_addr(''), self.stream)
+                ''/self.structs.Dwarf_target_addr, self.stream)
             end_offset = struct_parse(
-                self.structs.Dwarf_target_addr(''), self.stream)
+                ''/self.structs.Dwarf_target_addr, self.stream)
             if begin_offset == 0 and end_offset == 0:
                 # End of list - we're done.
                 break

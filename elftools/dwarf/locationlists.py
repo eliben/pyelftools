@@ -48,9 +48,9 @@ class LocationLists(object):
         lst = []
         while True:
             begin_offset = struct_parse(
-                self.structs.Dwarf_target_addr(''), self.stream)
+                ''/self.structs.Dwarf_target_addr, self.stream)
             end_offset = struct_parse(
-                self.structs.Dwarf_target_addr(''), self.stream)
+                ''/self.structs.Dwarf_target_addr, self.stream)
             if begin_offset == 0 and end_offset == 0:
                 # End of list - we're done.
                 break
@@ -60,8 +60,8 @@ class LocationLists(object):
             else:
                 # Location list entry
                 expr_len = struct_parse(
-                    self.structs.Dwarf_uint16(''), self.stream)
-                loc_expr = [struct_parse(self.structs.Dwarf_uint8(''),
+                    ''/self.structs.Dwarf_uint16, self.stream)
+                loc_expr = [struct_parse(''/self.structs.Dwarf_uint8,
                                          self.stream)
                                 for i in range(expr_len)]
                 lst.append(LocationEntry(

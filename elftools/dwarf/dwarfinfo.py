@@ -231,7 +231,7 @@ class DWARFInfo(object):
         # instance suitable for this CU and use it to parse the rest.
         #
         initial_length = struct_parse(
-            self.structs.Dwarf_uint32(''), self.debug_info_sec.stream, offset)
+            ''/self.structs.Dwarf_uint32, self.debug_info_sec.stream, offset)
         dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
 
         # At this point we still haven't read the whole header, so we don't
