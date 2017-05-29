@@ -114,17 +114,27 @@ class RelocationHandler(object):
                 return relsection
         return None
 
-    def apply_section_relocations(self, stream, reloc_section):
+    def apply_section_relocations(self, stream, reloc_section, symbol_mapping=None, section_base=0):
         """ Apply all relocations in reloc_section (a RelocationSection object)
             to the given stream, that contains the data of the section that is
             being relocated. The stream is modified as a result.
+
+            An optional argument symbol_mapping can be passed as parameter to
+            the relocation process. The symbol mapping maps symbol ordinals to
+            addresses. If no symbol mapping is provided, symbols are taken to be at
+            absolute address st_value from their entry in the symbol table.
+
+            Another optional argument section_base can be passed, which is the starting
+            address of the section to be relocated in memory. This is used to
+            correctly emit pc-relative relocations. If not passed this will
+            default to 0.
         """
         # The symbol table associated with this relocation section
         symtab = self.elffile.get_section(reloc_section['sh_link'])
         for reloc in reloc_section.iter_relocations():
-            self._do_apply_relocation(stream, reloc, symtab)
+            self._do_apply_relocation(stream, reloc, symtab, symbol_mapping, section_base)
 
-    def _do_apply_relocation(self, stream, reloc, symtab):
+    def _do_apply_relocation(self, stream, reloc, symtab, symbol_mapping=None, section_base=0):
         # Preparations for performing the relocation: obtain the value of
         # the symbol mentioned in the relocation, as well as the relocation
         # recipe which tells us how to actually perform it.
@@ -133,7 +143,10 @@ class RelocationHandler(object):
             raise ELFRelocationError(
                 'Invalid symbol reference in relocation: index %s' % (
                     reloc['r_info_sym']))
-        sym_value = symtab.get_symbol(reloc['r_info_sym'])['st_value']
+        if symbol_mapping is None:
+            sym_value = symtab.get_symbol(reloc['r_info_sym'])['st_value']
+        else:
+            sym_value = symbol_mapping[reloc['r_info_sym']]
 
         reloc_type = reloc['r_info_type']
         recipe = None
@@ -181,7 +194,8 @@ class RelocationHandler(object):
             value=original_value,
             sym_value=sym_value,
             offset=reloc['r_offset'],
-            addend=reloc['r_addend'] if recipe.has_addend else 0)
+            addend=reloc['r_addend'] if recipe.has_addend else 0,
+            section_base=section_base)
         # 3. Write the relocated value back into the stream
         stream.seek(reloc['r_offset'])
 
@@ -201,20 +215,20 @@ class RelocationHandler(object):
     _RELOCATION_RECIPE_TYPE = namedtuple('_RELOCATION_RECIPE_TYPE',
         'bytesize has_addend calc_func')
 
-    def _reloc_calc_identity(value, sym_value, offset, addend=0):
+    def _reloc_calc_identity(value, sym_value, offset, addend=0, section_base=0):
         return value
 
-    def _reloc_calc_sym_plus_value(value, sym_value, offset, addend=0):
+    def _reloc_calc_sym_plus_value(value, sym_value, offset, addend=0, section_base=0):
         return sym_value + value
 
-    def _reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
-        return sym_value + value - offset
+    def _reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0, section_base=0):
+        return sym_value + value - offset - section_base
 
-    def _reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
+    def _reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0, section_base=0):
         return sym_value + addend
 
-    def _reloc_calc_sym_plus_addend_pcrel(value, sym_value, offset, addend=0):
-        return sym_value + addend - offset
+    def _reloc_calc_sym_plus_addend_pcrel(value, sym_value, offset, addend=0, section_base=0):
+        return sym_value + addend - offset - section_base
 
     # https://dmz-portal.mips.com/wiki/MIPS_relocation_types
     _RELOCATION_RECIPES_MIPS = {
