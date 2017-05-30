@@ -1119,6 +1119,9 @@ def main(stream=None):
             add_help_option=False, # -h is a real option of readelf
             prog='readelf.py',
             version=VERSION_STRING)
+    optparser.add_option('-a', '--all',
+            action='store_true', dest='show_all',
+            help='Equivalent to: -h -l -S -s -r -d -n -V')
     optparser.add_option('-d', '--dynamic',
             action='store_true', dest='show_dynamic_tags',
             help='Display the dynamic section')
@@ -1167,12 +1170,31 @@ def main(stream=None):
         optparser.print_help()
         sys.exit(0)
 
+    # Defaults, which may be overridden, below.
+    do_dynamic_tags   = options.show_dynamic_tags
+    do_file_header    = options.show_file_header
+    do_notes          = options.show_notes
+    do_program_header = options.show_program_header
+    do_relocs         = options.show_relocs
+    do_section_header = options.show_section_header
+    do_symbols        = options.show_symbols
+    do_version_info   = options.show_version_info
+
+    # Overrides.
     if options.show_all_headers:
         do_file_header = do_section_header = do_program_header = True
-    else:
-        do_file_header = options.show_file_header
-        do_section_header = options.show_section_header
-        do_program_header = options.show_program_header
+
+    if options.show_all:
+        do_dynamic_tags   = True
+        do_file_header    = True
+        do_notes          = True
+        do_program_header = True
+        do_relocs         = True
+        do_section_header = True
+        do_symbols        = True
+        do_version_info   = True
+    # /Overrides.
+
 
     with open(args[0], 'rb') as file:
         try:
@@ -1185,15 +1207,15 @@ def main(stream=None):
             if do_program_header:
                 readelf.display_program_headers(
                         show_heading=not do_file_header)
-            if options.show_dynamic_tags:
+            if do_dynamic_tags:
                 readelf.display_dynamic_tags()
-            if options.show_symbols:
+            if do_symbols:
                 readelf.display_symbol_tables()
-            if options.show_notes:
+            if do_notes:
                 readelf.display_notes()
-            if options.show_relocs:
+            if do_relocs:
                 readelf.display_relocations()
-            if options.show_version_info:
+            if do_version_info:
                 readelf.display_version_info()
             if options.show_hex_dump:
                 readelf.display_hex_dump(options.show_hex_dump)
