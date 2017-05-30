@@ -191,18 +191,19 @@ class DIE(object):
                 value=value,
                 raw_value=raw_value,
                 offset=attr_offset)
-		
-        # some compilers add a zero termination after the die -> consume the
-        # zero termination to avoid wrong die size calculation
-        zero_term = False
+
+        # count and then consume any null termination bytes to avoid wrong die size calculation
+        zero_term = 0
         with preserve_stream_pos(self.stream):
-            v = self.stream.read(1)
-            if(v[0]==0):
-                zero_term = True
-        
-        if(zero_term):
-            # there was a zero termination -> consume it
-            self.stream.read(1)
+            while True:
+                b = self.stream.read(1)
+                if b == 0:
+                    zero_term += 1
+                else:
+                    break
+        if zero_term > 0:
+            # there was at least one zero termination -> consume all of them
+            self.stream.read(zero_term)
 
         self.size = self.stream.tell() - self.offset
 
