@@ -19,71 +19,18 @@ def recursion_lock(retval, lock_name = "__recursion_lock__"):
         return wrapper
     return decorator
 
-class Container(MutableMapping):
+class Container(dict):
     """
     A generic container of attributes.
 
     Containers are the common way to express parsed data.
     """
-
-    def __init__(self, **kw):
-        self.__dict__ = kw
-
-    # The core dictionary interface.
-
-    def __getitem__(self, name):
-        return self.__dict__[name]
-
-    def __delitem__(self, name):
-        del self.__dict__[name]
-
-    def __setitem__(self, name, value):
-        self.__dict__[name] = value
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def __len__(self):
-        return len(self.__dict__.keys())
-
-    # Extended dictionary interface.
-
-    def update(self, other):
-        self.__dict__.update(other)
-
-    __update__ = update
-
-    def __contains__(self, value):
-        return value in self.__dict__
-
-    # Rich comparisons.
-
-    def __eq__(self, other):
-        try:
-            return self.__dict__ == other.__dict__
-        except AttributeError:
-            return False
-
-    def __ne__(self, other):
-        return not self == other
-
-    # Copy interface.
-
-    def copy(self):
-        return self.__class__(**self.__dict__)
-
-    __copy__ = copy
-
-    # Iterator interface.
-
-    def __iter__(self):
-        return iter(self.__dict__)
-
-    def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, repr(self.__dict__))
-
-    def __str__(self):
-        return "%s(%s)" % (self.__class__.__name__, str(self.__dict__))
+    def __getattr__(self, attr):
+        return self[attr]
+    def __setattr__(self, attr, value):
+        self[attr] = value
+    def __delattr__(self, attr):
+        del self[attr]
 
 class FlagsContainer(Container):
     """
