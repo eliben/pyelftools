@@ -31,7 +31,7 @@ def iter_notes(elffile, offset, size):
 
         desc_data = bytes2str(elffile.stream.read(note['n_descsz']))
         if note['n_type'] == 'NT_GNU_ABI_TAG':
-            note['n_desc'] = struct_parse(elffile.structs.Elf_Nhdr_abi,
+            note['n_desc'] = struct_parse(elffile.structs.Elf_abi,
                                           elffile.stream,
                                           offset)
         elif note['n_type'] == 'NT_GNU_BUILD_ID':

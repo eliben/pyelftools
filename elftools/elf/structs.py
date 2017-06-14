@@ -43,9 +43,33 @@ class ELFStructs(object):
         assert elfclass == 32 or elfclass == 64
         self.little_endian = little_endian
         self.elfclass = elfclass
-        self._create_structs()
 
-    def _create_structs(self):
+    def create_basic_structs(self):
+        """ Create scalar structs and ehdr struct needed for initial determining
+            of ELF type.
+        """
+        self._create_scalar_structs()
+        self._create_ehdr()
+
+    def create_advanced_structs(self, elftype=None):
+        """ Create all ELF structs except the ehdr. They may possibly depend
+            on provided #elftype previously parsed from ehdr. """
+        self._create_phdr()
+        self._create_shdr()
+        self._create_sym()
+        self._create_rel()
+        self._create_dyn()
+        self._create_sunw_syminfo()
+        self._create_gnu_verneed()
+        self._create_gnu_verdef()
+        self._create_gnu_versym()
+        self._create_gnu_abi()
+        self._create_note(elftype)
+        self._create_stabs()
+
+    #-------------------------------- PRIVATE --------------------------------#
+
+    def _create_scalar_structs(self):
         if self.little_endian:
             self.Elf_byte = ULInt8
             self.Elf_half = ULInt16
@@ -66,19 +90,6 @@ class ELFStructs(object):
             self.Elf_sword = SBInt32
             self.Elf_xword = UBInt32 if self.elfclass == 32 else UBInt64
             self.Elf_sxword = SBInt32 if self.elfclass == 32 else SBInt64
-
-        self._create_ehdr()
-        self._create_phdr()
-        self._create_shdr()
-        self._create_sym()
-        self._create_rel()
-        self._create_dyn()
-        self._create_sunw_syminfo()
-        self._create_gnu_verneed()
-        self._create_gnu_verdef()
-        self._create_gnu_versym()
-        self._create_note()
-        self._create_stabs()
 
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
@@ -257,18 +268,22 @@ class ELFStructs(object):
             Enum(self.Elf_half('ndx'), **ENUM_VERSYM),
         )
 
-    def _create_note(self):
-        # Structure of "PT_NOTE" section
-        self.Elf_Nhdr = Struct('Elf_Nhdr',
-            self.Elf_word('n_namesz'),
-            self.Elf_word('n_descsz'),
-            Enum(self.Elf_word('n_type'), **ENUM_NOTE_N_TYPE),
-        )
-        self.Elf_Nhdr_abi = Struct('Elf_Nhdr_abi',
+    def _create_gnu_abi(self):
+        # Structure of GNU ABI notes is documented in
+        # https://code.woboq.org/userspace/glibc/csu/abi-note.S.html
+        self.Elf_abi = Struct('Elf_abi',
             Enum(self.Elf_word('abi_os'), **ENUM_NOTE_ABI_TAG_OS),
             self.Elf_word('abi_major'),
             self.Elf_word('abi_minor'),
             self.Elf_word('abi_tiny'),
+        )
+
+    def _create_note(self, elftype=None):
+        # Structure of "PT_NOTE" section
+        self.Elf_Nhdr = Struct('Elf_Nhdr',
+            self.Elf_word('n_namesz'),
+            self.Elf_word('n_descsz'),
+            Enum(self.Elf_word('n_type'), **(ENUM_NOTE_N_TYPE if elftype != "ET_CORE" else ENUM_CORE_NOTE_N_TYPE)),
         )
 
     def _create_stabs(self):

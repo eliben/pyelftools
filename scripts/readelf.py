@@ -233,6 +233,10 @@ class ReadElf(object):
             self._emitline('There are %s section headers, starting at offset %s' % (
                 elfheader['e_shnum'], self._format_hex(elfheader['e_shoff'])))
 
+        if self.elffile.num_sections() == 0:
+            self._emitline('There are no sections in this file.')
+            return
+
         self._emitline('\nSection Header%s:' % (
             's' if elfheader['e_shnum'] > 1 else ''))
 
@@ -568,8 +572,10 @@ class ReadElf(object):
         """
         section = self._section_from_spec(section_spec)
         if section is None:
-            self._emitline("Section '%s' does not exist in the file!" % (
-                section_spec))
+            # readelf prints the warning to stderr. Even though stderrs are not compared
+            # in tests, we comply that behavior.
+            print >>sys.stderr, 'readelf: Warning: Section \'%s\' was not dumped because it does not exist!' % (
+                section_spec)
             return
         if section['sh_type'] == 'SHT_NOBITS':
             self._emitline("\nSection '%s' has no data to dump." % (
@@ -615,8 +621,10 @@ class ReadElf(object):
         """
         section = self._section_from_spec(section_spec)
         if section is None:
-            self._emitline("Section '%s' does not exist in the file!" % (
-                section_spec))
+            # readelf prints the warning to stderr. Even though stderrs are not compared
+            # in tests, we comply that behavior.
+            print >>sys.stderr, 'readelf.py: Warning: Section \'%s\' was not dumped because it does not exist!' % (
+                section_spec)
             return
         if section['sh_type'] == 'SHT_NOBITS':
             self._emitline("\nSection '%s' has no data to dump." % (
@@ -996,12 +1004,12 @@ class ReadElf(object):
             return
         # seems redundent, but we need to get the unsorted set of entries to match system readelf
         unordered_entries = aranges_table._get_entries()
-       
+
         if len(unordered_entries) == 0:
             self._emitline()
             self._emitline("Section '.debug_aranges' has no debugging data.")
             return
-            
+
         self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_aranges_sec.name)
         self._emitline()
         prev_offset = None
@@ -1009,7 +1017,7 @@ class ReadElf(object):
             if prev_offset != entry.info_offset:
                 if entry != unordered_entries[0]:
                     self._emitline('    %s %s' % (
-                        self._format_hex(0, fullhex=True, lead0x=False), 
+                        self._format_hex(0, fullhex=True, lead0x=False),
                         self._format_hex(0, fullhex=True, lead0x=False)))
                 self._emitline('  Length:                   %d' % (entry.unit_length))
                 self._emitline('  Version:                  %d' % (entry.version))
@@ -1019,11 +1027,11 @@ class ReadElf(object):
                 self._emitline()
                 self._emitline('    Address            Length')
             self._emitline('    %s %s' % (
-                self._format_hex(entry.begin_addr, fullhex=True, lead0x=False), 
+                self._format_hex(entry.begin_addr, fullhex=True, lead0x=False),
                 self._format_hex(entry.length, fullhex=True, lead0x=False)))
             prev_offset = entry.info_offset
         self._emitline('    %s %s' % (
-                self._format_hex(0, fullhex=True, lead0x=False), 
+                self._format_hex(0, fullhex=True, lead0x=False),
                 self._format_hex(0, fullhex=True, lead0x=False)))
 
     def _dump_debug_frames_interp(self):

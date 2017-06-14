@@ -597,12 +597,24 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     _default_=Pass,
 )
 
-# PT_NOTE section types
+# PT_NOTE section types for all ELF types except ET_CORE
 ENUM_NOTE_N_TYPE = dict(
     NT_GNU_ABI_TAG=1,
     NT_GNU_HWCAP=2,
     NT_GNU_BUILD_ID=3,
     NT_GNU_GOLD_VERSION=4,
+    _default_=Pass,
+)
+
+# PT_NOTE section types for ET_CORE
+ENUM_CORE_NOTE_N_TYPE = dict(
+    NT_PRSTATUS=1,
+    NT_FPREGSET=2,
+    NT_PRPSINFO=3,
+    NT_TASKSTRUCT=4,
+    NT_AUXV=6,
+    NT_SIGINFO=0x53494749,
+    NT_FILE=0x46494c45,
     _default_=Pass,
 )
 
