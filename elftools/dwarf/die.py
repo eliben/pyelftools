@@ -162,7 +162,6 @@ class DIE(object):
         # obtain the abbrev declaration for this DIE.
         # Note: here and elsewhere, preserve_stream_pos is used on operations
         # that manipulate the stream by reading data from it.
-        #
         self.abbrev_code = struct_parse(
             structs.Dwarf_uleb128(''), self.stream, self.offset)
 
@@ -179,7 +178,6 @@ class DIE(object):
 
         # Guided by the attributes listed in the abbreviation declaration, parse
         # values from the stream.
-        #
         for name, form in abbrev_decl.iter_attr_specs():
             attr_offset = self.stream.tell()
             raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
@@ -192,18 +190,18 @@ class DIE(object):
                 raw_value=raw_value,
                 offset=attr_offset)
 
-        # count and then consume any null termination bytes to avoid wrong die size calculation
-        zero_term = 0
+        # Count and then consume any null termination bytes to avoid wrong die
+        # size calculation.
+        num_zero_terminators = 0
         with preserve_stream_pos(self.stream):
             while True:
-                b = self.stream.read(1)
-                if b == 0:
-                    zero_term += 1
+                if self.stream.read(1) == 0:
+                    num_zero_terminators += 1
                 else:
                     break
-        if zero_term > 0:
-            # there was at least one zero termination -> consume all of them
-            self.stream.read(zero_term)
+        if num_zero_terminators > 0:
+            # There was at least one zero termination -> consume all of them.
+            self.stream.read(num_zero_terminators)
 
         self.size = self.stream.tell() - self.offset
 
