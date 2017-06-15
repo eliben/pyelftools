@@ -574,8 +574,8 @@ class ReadElf(object):
         if section is None:
             # readelf prints the warning to stderr. Even though stderrs are not compared
             # in tests, we comply that behavior.
-            print >>sys.stderr, 'readelf: Warning: Section \'%s\' was not dumped because it does not exist!' % (
-                section_spec)
+            sys.stderr.write('readelf: Warning: Section \'%s\' was not dumped because it does not exist!\n' % (
+                section_spec))
             return
         if section['sh_type'] == 'SHT_NOBITS':
             self._emitline("\nSection '%s' has no data to dump." % (
@@ -623,8 +623,8 @@ class ReadElf(object):
         if section is None:
             # readelf prints the warning to stderr. Even though stderrs are not compared
             # in tests, we comply that behavior.
-            print >>sys.stderr, 'readelf.py: Warning: Section \'%s\' was not dumped because it does not exist!' % (
-                section_spec)
+            sys.stderr.write('readelf.py: Warning: Section \'%s\' was not dumped because it does not exist!\n' % (
+                section_spec))
             return
         if section['sh_type'] == 'SHT_NOBITS':
             self._emitline("\nSection '%s' has no data to dump." % (
