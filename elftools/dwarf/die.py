@@ -192,6 +192,19 @@ class DIE(object):
                 raw_value=raw_value,
                 offset=attr_offset)
 
+        # count and then consume any null termination bytes to avoid wrong die size calculation
+        zero_term = 0
+        with preserve_stream_pos(self.stream):
+            while True:
+                b = self.stream.read(1)
+                if b == 0:
+                    zero_term += 1
+                else:
+                    break
+        if zero_term > 0:
+            # there was at least one zero termination -> consume all of them
+            self.stream.read(zero_term)
+
         self.size = self.stream.tell() - self.offset
 
     def _translate_attr_value(self, form, raw_value):

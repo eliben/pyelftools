@@ -203,7 +203,7 @@ class DWARFStructs(object):
             DW_FORM_flag_present = StaticField('', 0),
             DW_FORM_sec_offset = self.Dwarf_offset(''),
             DW_FORM_exprloc = self._make_block_struct(self.Dwarf_uleb128),
-            DW_FORM_ref_sig8 = self.Dwarf_offset(''),
+            DW_FORM_ref_sig8 = self.Dwarf_uint64(''),
 
             DW_FORM_GNU_strp_alt=self.Dwarf_offset(''),
             DW_FORM_GNU_ref_alt=self.Dwarf_offset(''),
