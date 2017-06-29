@@ -36,6 +36,10 @@ def iter_notes(elffile, offset, size):
                                           offset)
         elif note['n_type'] == 'NT_GNU_BUILD_ID':
             note['n_desc'] = ''.join('%.2x' % ord(b) for b in desc_data)
+        elif note['n_type'] == 'NT_PRPSINFO':
+            note['n_desc'] = struct_parse(elffile.structs.Elf_Prpsinfo,
+                                          elffile.stream,
+                                          offset)
         else:
             note['n_desc'] = desc_data
         offset += roundup(note['n_descsz'], 2)

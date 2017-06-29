@@ -573,7 +573,7 @@ class ReadElf(object):
         section = self._section_from_spec(section_spec)
         if section is None:
             # readelf prints the warning to stderr. Even though stderrs are not compared
-            # in tests, we comply that behavior.
+            # in tests, we comply with that behavior.
             sys.stderr.write('readelf: Warning: Section \'%s\' was not dumped because it does not exist!\n' % (
                 section_spec))
             return
@@ -622,7 +622,7 @@ class ReadElf(object):
         section = self._section_from_spec(section_spec)
         if section is None:
             # readelf prints the warning to stderr. Even though stderrs are not compared
-            # in tests, we comply that behavior.
+            # in tests, we comply with that behavior.
             sys.stderr.write('readelf.py: Warning: Section \'%s\' was not dumped because it does not exist!\n' % (
                 section_spec))
             return
