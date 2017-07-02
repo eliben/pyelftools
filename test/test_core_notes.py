@@ -12,13 +12,12 @@ from elftools.elf.segments import NoteSegment
 
 class TestCoreNotes(unittest.TestCase):
     """ This test makes sure than core dump specific
-        sections are properly analyzed. 
+        sections are properly analyzed.
     """
 
     def test_core_prpsinfo(self):
-        """ Test ...
-        """
-        with open(os.path.join('test', 'testfiles_for_unittests', 'core_linux64.elf'),
+        with open(os.path.join('test',
+                               'testfiles_for_unittests', 'core_linux64.elf'),
                   'rb') as f:
             elf = ELFFile(f)
             for segment in elf.iter_segments():
@@ -40,5 +39,9 @@ class TestCoreNotes(unittest.TestCase):
                     self.assertEquals(desc['pr_ppid'], 23187)
                     self.assertEquals(desc['pr_pgrp'], 23395)
                     self.assertEquals(desc['pr_sid'], 23187)
-                    self.assertEquals(desc['pr_fname'], b'coredump_self\x00\x00\x00')
-                    self.assertEquals(desc['pr_psargs'], b'./coredump_self foo bar 42 ' + b'\x00' * (80 - 27))
+                    self.assertEquals(
+                        desc['pr_fname'],
+                        b'coredump_self\x00\x00\x00')
+                    self.assertEquals(
+                        desc['pr_psargs'],
+                        b'./coredump_self foo bar 42 ' + b'\x00' * (80 - 27))

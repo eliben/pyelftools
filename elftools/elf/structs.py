@@ -45,7 +45,7 @@ class ELFStructs(object):
         self.elfclass = elfclass
 
     def create_basic_structs(self):
-        """ Create word-size related structs and ehdr struct needed for 
+        """ Create word-size related structs and ehdr struct needed for
             initial determining of ELF type.
         """
         if self.little_endian:
@@ -72,7 +72,8 @@ class ELFStructs(object):
 
     def create_advanced_structs(self, elftype=None):
         """ Create all ELF structs except the ehdr. They may possibly depend
-            on provided #elftype previously parsed from ehdr. """
+            on provided #elftype previously parsed from ehdr.
+        """
         self._create_phdr()
         self._create_shdr()
         self._create_sym()
@@ -280,12 +281,14 @@ class ELFStructs(object):
         self.Elf_Nhdr = Struct('Elf_Nhdr',
             self.Elf_word('n_namesz'),
             self.Elf_word('n_descsz'),
-            Enum(self.Elf_word('n_type'), **(ENUM_NOTE_N_TYPE if elftype != "ET_CORE" else ENUM_CORE_NOTE_N_TYPE)),
+            Enum(self.Elf_word('n_type'),
+                 **(ENUM_NOTE_N_TYPE if elftype != "ET_CORE"
+                    else ENUM_CORE_NOTE_N_TYPE)),
         )
 
         # A process psinfo structure according to
         # http://elixir.free-electrons.com/linux/v2.6.35/source/include/linux/elfcore.h#L84
-        if self.elfclass == 32: 
+        if self.elfclass == 32:
             self.Elf_Prpsinfo = Struct('Elf_Prpsinfo',
                 self.Elf_byte('pr_state'),
                 String('pr_sname', 1),
@@ -318,7 +321,6 @@ class ELFStructs(object):
                 String('pr_fname', 16),
                 String('pr_psargs', 80),
             )
-
 
     def _create_stabs(self):
         # Structure of one stabs entry, see binutils/bfd/stabs.c
