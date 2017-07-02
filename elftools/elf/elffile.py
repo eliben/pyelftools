@@ -51,6 +51,10 @@ class ELFFile(object):
             little_endian:
                 boolean - specifies the target machine's endianness
 
+            elftype:
+                string or int, either known value of E_TYPE enum defining ELF type
+                (e.g. executable, dynamic library or core dump) or integral unparsed value
+
             header:
                 the complete ELF file header
 
@@ -63,8 +67,11 @@ class ELFFile(object):
         self.structs = ELFStructs(
             little_endian=self.little_endian,
             elfclass=self.elfclass)
-        self.header = self._parse_elf_header()
 
+        self.structs.create_basic_structs()
+        self.header = self._parse_elf_header()
+        self.elftype = self['e_type']
+        self.structs.create_advanced_structs(self.elftype)
         self.stream.seek(0)
         self.e_ident_raw = self.stream.read(16)
 
