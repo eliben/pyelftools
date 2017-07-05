@@ -12,7 +12,6 @@ from ..common.py3compat import bytes2str, iteritems
 from ..common.utils import struct_parse, preserve_stream_pos
 from .enums import DW_FORM_raw2name
 from collections import namedtuple
-import sys
 
 # Support OrderedDict on Python < 2.7
 try:
