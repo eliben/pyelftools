@@ -5,15 +5,20 @@
 #
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
-#-------------------------------------------------------------------------------
-from collections import namedtuple, OrderedDict
+# -------------------------------------------------------------------------------
 import os
-
 from ..common.exceptions import DWARFError
 from ..common.py3compat import bytes2str, iteritems
 from ..common.utils import struct_parse, preserve_stream_pos
 from .enums import DW_FORM_raw2name
+from collections import namedtuple
+import sys
 
+# Support OrderedDict on Python < 2.7
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ..common.legacy import OrderedDict
 
 # AttributeValue - describes an attribute value in the DIE:
 #
