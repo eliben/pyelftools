@@ -13,7 +13,12 @@ from ..common.utils import struct_parse, preserve_stream_pos
 from .enums import DW_FORM_raw2name
 from collections import namedtuple
 
-# Support OrderedDict on Python < 2.7
+#
+# NOTE: pyelftools is *not* supported on < 2.7 but
+#       adding an OrderedDict class makes most of
+#       the core functionality work
+#
+
 try:
     from collections import OrderedDict
 except ImportError:
