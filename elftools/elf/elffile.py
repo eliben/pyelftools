@@ -297,9 +297,9 @@ class ELFFile(object):
         sectype = section_header['sh_type']
 
         if sectype == 'SHT_STRTAB':
-            return StringTableSection(section_header, name, self.stream)
+            return StringTableSection(section_header, name, self)
         elif sectype == 'SHT_NULL':
-            return NullSection(section_header, name, self.stream)
+            return NullSection(section_header, name, self)
         elif sectype in ('SHT_SYMTAB', 'SHT_DYNSYM', 'SHT_SUNW_LDYNSYM'):
             return self._make_symbol_table_section(section_header, name)
         elif sectype == 'SHT_SUNW_syminfo':
@@ -311,16 +311,15 @@ class ELFFile(object):
         elif sectype == 'SHT_GNU_versym':
             return self._make_gnu_versym_section(section_header, name)
         elif sectype in ('SHT_REL', 'SHT_RELA'):
-            return RelocationSection(
-                section_header, name, self.stream, self)
+            return RelocationSection(section_header, name, self)
         elif sectype == 'SHT_DYNAMIC':
-            return DynamicSection(section_header, name, self.stream, self)
+            return DynamicSection(section_header, name, self)
         elif sectype == 'SHT_NOTE':
-            return NoteSection(section_header, name, self.stream, self)
+            return NoteSection(section_header, name, self)
         elif sectype == 'SHT_PROGBITS' and name == '.stab':
-            return StabSection(section_header, name, self.stream, self)
+            return StabSection(section_header, name, self)
         else:
-            return Section(section_header, name, self.stream)
+            return Section(section_header, name, self)
 
     def _make_symbol_table_section(self, section_header, name):
         """ Create a SymbolTableSection
@@ -328,7 +327,7 @@ class ELFFile(object):
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
         return SymbolTableSection(
-            section_header, name, self.stream,
+            section_header, name,
             elffile=self,
             stringtable=strtab_section)
 
@@ -338,7 +337,7 @@ class ELFFile(object):
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
         return SUNWSyminfoTableSection(
-            section_header, name, self.stream,
+            section_header, name,
             elffile=self,
             symboltable=strtab_section)
 
@@ -348,7 +347,7 @@ class ELFFile(object):
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
         return GNUVerNeedSection(
-            section_header, name, self.stream,
+            section_header, name,
             elffile=self,
             stringtable=strtab_section)
 
@@ -358,7 +357,7 @@ class ELFFile(object):
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
         return GNUVerDefSection(
-            section_header, name, self.stream,
+            section_header, name,
             elffile=self,
             stringtable=strtab_section)
 
@@ -368,7 +367,7 @@ class ELFFile(object):
         linked_strtab_index = section_header['sh_link']
         strtab_section = self.get_section(linked_strtab_index)
         return GNUVerSymSection(
-            section_header, name, self.stream,
+            section_header, name,
             elffile=self,
             symboltable=strtab_section)
 
@@ -387,7 +386,7 @@ class ELFFile(object):
         return StringTableSection(
                 header=self._get_section_header(stringtable_section_num),
                 name='',
-                stream=self.stream)
+                elffile=self)
 
     def _parse_elf_header(self):
         """ Parses the ELF file header and assigns the result to attributes

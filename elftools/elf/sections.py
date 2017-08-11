@@ -19,10 +19,12 @@ class Section(object):
          > sec = Section(...)
          > sec['sh_type']  # section type
     """
-    def __init__(self, header, name, stream):
+    def __init__(self, header, name, elffile):
         self.header = header
         self.name = name
-        self.stream = stream
+        self.elffile = elffile
+        self.stream = self.elffile.stream
+        self.structs = self.elffile.structs
 
     def data(self):
         """ The section data from the file.
@@ -53,9 +55,6 @@ class Section(object):
 class NullSection(Section):
     """ ELF NULL section
     """
-    def __init__(self, header, name, stream):
-        super(NullSection, self).__init__(header, name, stream)
-
     def is_null(self):
         return True
 
@@ -63,9 +62,6 @@ class NullSection(Section):
 class StringTableSection(Section):
     """ ELF string table section.
     """
-    def __init__(self, header, name, stream):
-        super(StringTableSection, self).__init__(header, name, stream)
-
     def get_string(self, offset):
         """ Get the string stored at the given offset in this string table.
         """
@@ -78,10 +74,8 @@ class SymbolTableSection(Section):
     """ ELF symbol table section. Has an associated StringTableSection that's
         passed in the constructor.
     """
-    def __init__(self, header, name, stream, elffile, stringtable):
-        super(SymbolTableSection, self).__init__(header, name, stream)
-        self.elffile = elffile
-        self.elfstructs = self.elffile.structs
+    def __init__(self, header, name, elffile, stringtable):
+        super(SymbolTableSection, self).__init__(header, name, elffile)
         self.stringtable = stringtable
         elf_assert(self['sh_entsize'] > 0,
                 'Expected entry size of section %r to be > 0' % name)
@@ -100,7 +94,7 @@ class SymbolTableSection(Section):
         # Grab the symbol's entry from the stream
         entry_offset = self['sh_offset'] + n * self['sh_entsize']
         entry = struct_parse(
-            self.elfstructs.Elf_Sym,
+            self.structs.Elf_Sym,
             self.stream,
             stream_pos=entry_offset)
         # Find the symbol name in the associated string table
@@ -149,10 +143,8 @@ class SUNWSyminfoTableSection(Section):
     """ ELF .SUNW Syminfo table section.
         Has an associated SymbolTableSection that's passed in the constructor.
     """
-    def __init__(self, header, name, stream, elffile, symboltable):
-        super(SUNWSyminfoTableSection, self).__init__(header, name, stream)
-        self.elffile = elffile
-        self.elfstructs = self.elffile.structs
+    def __init__(self, header, name, elffile, symboltable):
+        super(SUNWSyminfoTableSection, self).__init__(header, name, elffile)
         self.symboltable = symboltable
 
     def num_symbols(self):
@@ -168,7 +160,7 @@ class SUNWSyminfoTableSection(Section):
         # Grab the symbol's entry from the stream
         entry_offset = self['sh_offset'] + n * self['sh_entsize']
         entry = struct_parse(
-            self.elfstructs.Elf_Sunw_Syminfo,
+            self.structs.Elf_Sunw_Syminfo,
             self.stream,
             stream_pos=entry_offset)
         # Find the symbol name in the associated symbol table
@@ -185,10 +177,6 @@ class SUNWSyminfoTableSection(Section):
 class NoteSection(Section):
     """ ELF NOTE section. Knows how to parse notes.
     """
-    def __init__(self, header, name, stream, elffile):
-        super(NoteSection, self).__init__(header, name, stream)
-        self.elffile = elffile
-
     def iter_notes(self):
         """ Yield all the notes in the section.  Each result is a dictionary-
             like object with "n_name", "n_type", and "n_desc" fields, amongst
@@ -199,24 +187,19 @@ class NoteSection(Section):
 class StabSection(Section):
     """ ELF stab section.
     """
-    def __init__(self, header, name, stream, elffile):
-        super(StabSection, self).__init__(header, name, stream)
-        self.elffile = elffile
-
     def iter_stabs(self):
         """ Yield all stab entries.  Result type is ELFStructs.Elf_Stabs.
         """
-        elffile = self.elffile
         offset = self['sh_offset']
         size = self['sh_size']
         end = offset + size
         while offset < end:
             stabs = struct_parse(
-                elffile.structs.Elf_Stabs,
-                elffile.stream,
+                self.structs.Elf_Stabs,
+                self.elffile.stream,
                 stream_pos=offset)
             stabs['n_offset'] = offset
-            offset += elffile.structs.Elf_Stabs.sizeof()
-            elffile.stream.seek(offset)
+            offset += self.structs.Elf_Stabs.sizeof()
+            self.stream.seek(offset)
             yield stabs
 
