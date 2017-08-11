@@ -338,6 +338,15 @@ ENUM_SH_TYPE = dict(
     _default_=Pass,
 )
 
+ENUM_ELFCOMPRESS_TYPE = dict(
+    ELFCOMPRESS_ZLIB=1,
+    ELFCOMPRESS_LOOS=0x60000000,
+    ELFCOMPRESS_HIOS=0x6fffffff,
+    ELFCOMPRESS_LOPROC=0x70000000,
+    ELFCOMPRESS_HIPROC=0x7fffffff,
+    _default_=Pass,
+)
+
 # p_type in the program header
 # some values scavenged from the ELF headers in binutils-2.21
 ENUM_P_TYPE = dict(

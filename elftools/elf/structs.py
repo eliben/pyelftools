@@ -76,6 +76,7 @@ class ELFStructs(object):
         """
         self._create_phdr()
         self._create_shdr()
+        self._create_chdr()
         self._create_sym()
         self._create_rel()
         self._create_dyn()
@@ -152,6 +153,20 @@ class ELFStructs(object):
             self.Elf_xword('sh_addralign'),
             self.Elf_xword('sh_entsize'),
         )
+
+    def _create_chdr(self):
+        # Structure of compressed sections header. It is documented in Oracle
+        # "Linker and Libraries Guide", Part IV ELF Application Binary
+        # Interface, Chapter 13 Object File Format, Section Compression:
+        # https://docs.oracle.com/cd/E53394_01/html/E54813/section_compression.html
+        fields = [
+            Enum(self.Elf_word('ch_type'), **ENUM_ELFCOMPRESS_TYPE),
+            self.Elf_xword('ch_size'),
+            self.Elf_xword('ch_addralign'),
+        ]
+        if self.elfclass == 64:
+            fields.insert(1, self.Elf_word('ch_reserved'))
+        self.Elf_Chdr = Struct('Elf_Chdr', *fields)
 
     def _create_rel(self):
         # r_info is also taken apart into r_info_sym and r_info_type.
