@@ -398,10 +398,9 @@ class ELFFile(object):
         """ Read the contents of a DWARF section from the stream and return a
             DebugSectionDescriptor. Apply relocations if asked to.
         """
-        self.stream.seek(section['sh_offset'])
         # The section data is read into a new stream, for processing
         section_stream = BytesIO()
-        section_stream.write(self.stream.read(section['sh_size']))
+        section_stream.write(section.data())
 
         if relocate_dwarf_sections:
             reloc_handler = RelocationHandler(self)
