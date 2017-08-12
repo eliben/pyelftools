@@ -15,6 +15,8 @@ class ELFRelocationError(ELFError):
 class ELFParseError(ELFError):
     pass
 
-class DWARFError(Exception):
+class ELFCompressionError(ELFError):
     pass
 
+class DWARFError(Exception):
+    pass
