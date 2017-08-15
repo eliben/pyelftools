@@ -226,7 +226,7 @@ class ELFStructs(object):
 
     def _create_gnu_verneed(self):
         # Structure of "version needed" entries is documented in
-        # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
+        # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Verneed = Struct('Elf_Verneed',
             self.Elf_half('vn_version'),
             self.Elf_half('vn_cnt'),
@@ -243,8 +243,8 @@ class ELFStructs(object):
         )
 
     def _create_gnu_verdef(self):
-        # Structure off "version definition" entries are documented in
-        # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
+        # Structure of "version definition" entries are documented in
+        # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Verdef = Struct('Elf_Verdef',
             self.Elf_half('vd_version'),
             self.Elf_half('vd_flags'),
@@ -260,8 +260,8 @@ class ELFStructs(object):
         )
 
     def _create_gnu_versym(self):
-        # Structure off "version symbol" entries are documented in
-        # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
+        # Structure of "version symbol" entries are documented in
+        # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Versym = Struct('Elf_Versym',
             Enum(self.Elf_half('ndx'), **ENUM_VERSYM),
         )
