@@ -51,6 +51,11 @@ class ELFFile(object):
             little_endian:
                 boolean - specifies the target machine's endianness
 
+            elftype:
+                string or int, either known value of E_TYPE enum defining ELF
+                type (e.g. executable, dynamic library or core dump) or integral
+                unparsed value
+
             header:
                 the complete ELF file header
 
@@ -63,8 +68,11 @@ class ELFFile(object):
         self.structs = ELFStructs(
             little_endian=self.little_endian,
             elfclass=self.elfclass)
-        self.header = self._parse_elf_header()
 
+        self.structs.create_basic_structs()
+        self.header = self._parse_elf_header()
+        self.elftype = self['e_type']
+        self.structs.create_advanced_structs(self.elftype)
         self.stream.seek(0)
         self.e_ident_raw = self.stream.read(16)
 
@@ -152,17 +160,17 @@ class ELFFile(object):
         # Sections that aren't found will be passed as None to DWARFInfo.
         #
 
-        section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev', '.debug_str',
-                         '.debug_line', '.debug_frame',
+        section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev',
+                         '.debug_str', '.debug_line', '.debug_frame',
                          '.debug_loc', '.debug_ranges')
 
         compressed = bool(self.get_section_by_name('.zdebug_info'))
         if compressed:
             section_names = tuple(map(lambda x: '.z' + x[1:], section_names))
 
-        debug_info_sec_name, debug_aranges_sec_name, debug_abbrev_sec_name, debug_str_sec_name, \
-            debug_line_sec_name, debug_frame_sec_name, debug_loc_sec_name, \
-            debug_ranges_sec_name = section_names
+        (debug_info_sec_name, debug_aranges_sec_name, debug_abbrev_sec_name,
+         debug_str_sec_name, debug_line_sec_name, debug_frame_sec_name,
+         debug_loc_sec_name, debug_ranges_sec_name) = section_names
 
         debug_sections = {}
         for secname in section_names:

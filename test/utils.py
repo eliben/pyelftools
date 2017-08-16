@@ -20,7 +20,7 @@ def run_exe(exe_path, args=[], echo=False):
         popen_cmd.insert(0, sys.executable)
     if echo:
       print('[cmd]', ' '.join(popen_cmd))
-    proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE)
+    proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc_stdout = proc.communicate()[0]
     from elftools.common.py3compat import bytes2str
     return proc.returncode, bytes2str(proc_stdout)
