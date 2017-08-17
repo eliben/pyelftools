@@ -195,6 +195,9 @@ def main():
     optparser.add_option('-V', '--verbose',
         action='store_true', dest='verbose',
         help='Verbose output')
+    optparser.add_option('-k', '--keep-going',
+        action='store_true', dest='keep_going',
+        help="Run all tests, don't stop at the first failure")
     options, args = optparser.parse_args()
 
     if options.verbose:
@@ -210,16 +213,20 @@ def main():
     else:
         filenames = list(discover_testfiles('test/testfiles_for_readelf'))
 
-    success = True
+    failures = 0
     for filename in filenames:
-        if success:
-            success = success and run_test_on_file(
-                                    filename,
-                                    verbose=options.verbose)
+        if not run_test_on_file(filename, verbose=options.verbose):
+            failures += 1
+            if not options.keep_going:
+                break
 
-    if success:
+    if failures == 0:
         testlog.info('\nConclusion: SUCCESS')
         return 0
+    elif options.keep_going:
+        testlog.info('\nConclusion: FAIL ({}/{})'.format(
+            failures, len(filenames)))
+        return 1
     else:
         testlog.info('\nConclusion: FAIL')
         return 1
