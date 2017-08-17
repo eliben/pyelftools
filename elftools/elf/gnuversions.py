@@ -56,10 +56,9 @@ class GNUVersionSection(Section):
         sections class which contains shareable code
     """
 
-    def __init__(self, header, name, stream, elffile, stringtable,
+    def __init__(self, header, name, elffile, stringtable,
                  field_prefix, version_struct, version_auxiliaries_struct):
-        super(GNUVersionSection, self).__init__(header, name, stream)
-        self.elffile = elffile
+        super(GNUVersionSection, self).__init__(header, name, elffile)
         self.stringtable = stringtable
         self.field_prefix = field_prefix
         self.version_struct = version_struct
@@ -130,9 +129,9 @@ class GNUVerNeedSection(GNUVersionSection):
     """ ELF SUNW or GNU Version Needed table section.
         Has an associated StringTableSection that's passed in the constructor.
     """
-    def __init__(self, header, name, stream, elffile, stringtable):
+    def __init__(self, header, name, elffile, stringtable):
         super(GNUVerNeedSection, self).__init__(
-                header, name, stream, elffile, stringtable, 'vn',
+                header, name, elffile, stringtable, 'vn',
                 elffile.structs.Elf_Verneed, elffile.structs.Elf_Vernaux)
         self._has_indexes = None
 
@@ -173,9 +172,9 @@ class GNUVerDefSection(GNUVersionSection):
     """ ELF SUNW or GNU Version Definition table section.
         Has an associated StringTableSection that's passed in the constructor.
     """
-    def __init__(self, header, name, stream, elffile, stringtable):
+    def __init__(self, header, name, elffile, stringtable):
         super(GNUVerDefSection, self).__init__(
-                header, name, stream, elffile, stringtable, 'vd',
+                header, name, elffile, stringtable, 'vd',
                 elffile.structs.Elf_Verdef, elffile.structs.Elf_Verdaux)
 
     def get_version(self, index):
@@ -195,10 +194,8 @@ class GNUVerSymSection(Section):
     """ ELF SUNW or GNU Versym table section.
         Has an associated SymbolTableSection that's passed in the constructor.
     """
-    def __init__(self, header, name, stream, elffile, symboltable):
-        super(GNUVerSymSection, self).__init__(header, name, stream)
-        self.elffile = elffile
-        self.elfstructs = self.elffile.structs
+    def __init__(self, header, name, elffile, symboltable):
+        super(GNUVerSymSection, self).__init__(header, name, elffile)
         self.symboltable = symboltable
 
     def num_symbols(self):
@@ -214,7 +211,7 @@ class GNUVerSymSection(Section):
         # Grab the symbol's entry from the stream
         entry_offset = self['sh_offset'] + n * self['sh_entsize']
         entry = struct_parse(
-            self.elfstructs.Elf_Versym,
+            self.structs.Elf_Versym,
             self.stream,
             stream_pos=entry_offset)
         # Find the symbol name in the associated symbol table

@@ -47,16 +47,14 @@ class Relocation(object):
 class RelocationSection(Section):
     """ ELF relocation section. Serves as a collection of Relocation entries.
     """
-    def __init__(self, header, name, stream, elffile):
-        super(RelocationSection, self).__init__(header, name, stream)
-        self.elffile = elffile
-        self.elfstructs = self.elffile.structs
+    def __init__(self, header, name, elffile):
+        super(RelocationSection, self).__init__(header, name, elffile)
         if self.header['sh_type'] == 'SHT_REL':
-            expected_size = self.elfstructs.Elf_Rel.sizeof()
-            self.entry_struct = self.elfstructs.Elf_Rel
+            expected_size = self.structs.Elf_Rel.sizeof()
+            self.entry_struct = self.structs.Elf_Rel
         elif self.header['sh_type'] == 'SHT_RELA':
-            expected_size = self.elfstructs.Elf_Rela.sizeof()
-            self.entry_struct = self.elfstructs.Elf_Rela
+            expected_size = self.structs.Elf_Rela.sizeof()
+            self.entry_struct = self.structs.Elf_Rela
         else:
             elf_assert(False, 'Unknown relocation type section')
 

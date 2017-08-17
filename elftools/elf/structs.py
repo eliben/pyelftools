@@ -76,6 +76,7 @@ class ELFStructs(object):
         """
         self._create_phdr()
         self._create_shdr()
+        self._create_chdr()
         self._create_sym()
         self._create_rel()
         self._create_dyn()
@@ -153,6 +154,20 @@ class ELFStructs(object):
             self.Elf_xword('sh_entsize'),
         )
 
+    def _create_chdr(self):
+        # Structure of compressed sections header. It is documented in Oracle
+        # "Linker and Libraries Guide", Part IV ELF Application Binary
+        # Interface, Chapter 13 Object File Format, Section Compression:
+        # https://docs.oracle.com/cd/E53394_01/html/E54813/section_compression.html
+        fields = [
+            Enum(self.Elf_word('ch_type'), **ENUM_ELFCOMPRESS_TYPE),
+            self.Elf_xword('ch_size'),
+            self.Elf_xword('ch_addralign'),
+        ]
+        if self.elfclass == 64:
+            fields.insert(1, self.Elf_word('ch_reserved'))
+        self.Elf_Chdr = Struct('Elf_Chdr', *fields)
+
     def _create_rel(self):
         # r_info is also taken apart into r_info_sym and r_info_type.
         # This is done in Value to avoid endianity issues while parsing.
@@ -226,7 +241,7 @@ class ELFStructs(object):
 
     def _create_gnu_verneed(self):
         # Structure of "version needed" entries is documented in
-        # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
+        # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Verneed = Struct('Elf_Verneed',
             self.Elf_half('vn_version'),
             self.Elf_half('vn_cnt'),
@@ -243,8 +258,8 @@ class ELFStructs(object):
         )
 
     def _create_gnu_verdef(self):
-        # Structure off "version definition" entries are documented in
-        # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
+        # Structure of "version definition" entries are documented in
+        # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Verdef = Struct('Elf_Verdef',
             self.Elf_half('vd_version'),
             self.Elf_half('vd_flags'),
@@ -260,8 +275,8 @@ class ELFStructs(object):
         )
 
     def _create_gnu_versym(self):
-        # Structure off "version symbol" entries are documented in
-        # Oracle "Linker and Libraries Guide", Chapter 7 Object File Format
+        # Structure of "version symbol" entries are documented in
+        # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Versym = Struct('Elf_Versym',
             Enum(self.Elf_half('ndx'), **ENUM_VERSYM),
         )
