@@ -27,12 +27,14 @@ from .aranges import ARanges
 # name: section name in the container file
 # global_offset: the global offset of the section in its container file
 # size: the size of the section's data, in bytes
+# address: the virtual address for the section's data
 #
 # 'name' and 'global_offset' are for descriptional purposes only and
-# aren't strictly required for the DWARF parsing to work.
+# aren't strictly required for the DWARF parsing to work. 'address' is required
+# to properly decode the special '.eh_frame' format.
 #
 DebugSectionDescriptor = namedtuple('DebugSectionDescriptor',
-    'stream name global_offset size')
+    'stream name global_offset size address')
 
 
 # Some configuration parameters for the DWARF reader. This exists to allow
@@ -96,6 +98,15 @@ class DWARFInfo(object):
         # Cache for abbrev tables: a dict keyed by offset
         self._abbrevtable_cache = {}
 
+    @property
+    def has_debug_info(self):
+        """ Return whether this contains debug information.
+
+        It can be not the case when the ELF only contains .eh_frame, which is
+        encoded DWARF but not actually for debugging.
+        """
+        return bool(self.debug_info_sec)
+
     def iter_CUs(self):
         """ Yield all the compile units (CompileUnit objects) in the debug info
         """
@@ -154,6 +165,7 @@ class DWARFInfo(object):
         cfi = CallFrameInfo(
             stream=self.debug_frame_sec.stream,
             size=self.debug_frame_sec.size,
+            address=self.debug_frame_sec.address,
             base_structs=self.structs)
         return cfi.get_entries()
 
@@ -168,7 +180,9 @@ class DWARFInfo(object):
         cfi = CallFrameInfo(
             stream=self.eh_frame_sec.stream,
             size=self.eh_frame_sec.size,
-            base_structs=self.structs)
+            address=self.eh_frame_sec.address,
+            base_structs=self.structs,
+            for_eh_frame=True)
         return cfi.get_entries()
 
     def get_aranges(self):

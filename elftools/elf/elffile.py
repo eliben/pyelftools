@@ -145,8 +145,9 @@ class ELFFile(object):
             We assume that if it has the .debug_info or .zdebug_info section, it
             has all the other required sections as well.
         """
-        return bool(self.get_section_by_name('.debug_info')) or \
-            bool(self.get_section_by_name('.zdebug_info'))
+        return (self.get_section_by_name('.debug_info') or
+            self.get_section_by_name('.zdebug_info') or
+            self.get_section_by_name('.eh_frame'))
 
     def get_dwarf_info(self, relocate_dwarf_sections=True):
         """ Return a DWARFInfo object representing the debugging information in
@@ -158,7 +159,6 @@ class ELFFile(object):
         # Expect that has_dwarf_info was called, so at least .debug_info is
         # present.
         # Sections that aren't found will be passed as None to DWARFInfo.
-        #
 
         section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev',
                          '.debug_str', '.debug_line', '.debug_frame',
@@ -168,9 +168,13 @@ class ELFFile(object):
         if compressed:
             section_names = tuple(map(lambda x: '.z' + x[1:], section_names))
 
+        # As it is loaded in the process image, .eh_frame cannot be compressed
+        section_names += ('.eh_frame', )
+
         (debug_info_sec_name, debug_aranges_sec_name, debug_abbrev_sec_name,
          debug_str_sec_name, debug_line_sec_name, debug_frame_sec_name,
-         debug_loc_sec_name, debug_ranges_sec_name) = section_names
+         debug_loc_sec_name, debug_ranges_sec_name,
+         eh_frame_sec_name) = section_names
 
         debug_sections = {}
         for secname in section_names:
@@ -181,7 +185,7 @@ class ELFFile(object):
                 dwarf_section = self._read_dwarf_section(
                     section,
                     relocate_dwarf_sections)
-                if compressed:
+                if compressed and secname.startswith('.z'):
                     dwarf_section = self._decompress_dwarf_section(dwarf_section)
                 debug_sections[secname] = dwarf_section
 
@@ -194,8 +198,7 @@ class ELFFile(object):
                 debug_aranges_sec=debug_sections[debug_aranges_sec_name],
                 debug_abbrev_sec=debug_sections[debug_abbrev_sec_name],
                 debug_frame_sec=debug_sections[debug_frame_sec_name],
-                # TODO(eliben): reading of eh_frame is not hooked up yet
-                eh_frame_sec=None,
+                eh_frame_sec=debug_sections[eh_frame_sec_name],
                 debug_str_sec=debug_sections[debug_str_sec_name],
                 debug_loc_sec=debug_sections[debug_loc_sec_name],
                 debug_ranges_sec=debug_sections[debug_ranges_sec_name],
@@ -413,7 +416,8 @@ class ELFFile(object):
                 stream=section_stream,
                 name=section.name,
                 global_offset=section['sh_offset'],
-                size=section['sh_size'])
+                size=section['sh_size'],
+                address=section['sh_addr'])
 
     @staticmethod
     def _decompress_dwarf_section(section):
