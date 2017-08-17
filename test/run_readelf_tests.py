@@ -211,7 +211,7 @@ def main():
     if len(args) > 0:
         filenames = args
     else:
-        filenames = list(discover_testfiles('test/testfiles_for_readelf'))
+        filenames = sorted(discover_testfiles('test/testfiles_for_readelf'))
 
     failures = 0
     for filename in filenames:
