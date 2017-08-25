@@ -132,6 +132,10 @@ def describe_note(x):
             n_desc['abi_major'], n_desc['abi_minor'], n_desc['abi_tiny'])
     elif x['n_type'] == 'NT_GNU_BUILD_ID':
         desc = '\n    Build ID: %s' % (n_desc)
+    else:
+        desc = '\n    description data: {}'.format(' '.join(
+            '{:02x}'.format(ord(byte)) for byte in n_desc
+        ))
 
     note_type = (x['n_type'] if isinstance(x['n_type'], str)
                  else 'Unknown note type:')
@@ -248,6 +252,7 @@ _DESCR_SH_TYPE = dict(
     SHT_INIT_ARRAY='INIT_ARRAY',
     SHT_FINI_ARRAY='FINI_ARRAY',
     SHT_PREINIT_ARRAY='PREINIT_ARRAY',
+    SHT_GNU_ATTRIBUTES='GNU_ATTRIBUTES',
     SHT_GNU_HASH='GNU_HASH',
     SHT_GROUP='GROUP',
     SHT_SYMTAB_SHNDX='SYMTAB SECTION INDICIES',
