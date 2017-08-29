@@ -240,7 +240,7 @@ class RelocationHandler(object):
         ENUM_RELOC_TYPE_x64['R_X86_64_64']: _RELOCATION_RECIPE_TYPE(
             bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_x64['R_X86_64_PC32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=True,
+            bytesize=4, has_addend=True,
             calc_func=_reloc_calc_sym_plus_addend_pcrel),
         ENUM_RELOC_TYPE_x64['R_X86_64_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),

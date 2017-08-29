@@ -23,6 +23,9 @@ if PY3:
     def str2bytes(s): return s.encode('latin-1')
     def int2byte(i):return bytes((i,))
     def byte2int(b): return b
+    def iterbytes(b):
+        for i in range(len(b)):
+            yield b[i:i+1]
 
     ifilter = filter
 
@@ -39,6 +42,8 @@ else:
     def str2bytes(s): return s
     int2byte = chr
     byte2int = ord
+    def iterbytes(b):
+        return iter(b)
 
     from itertools import ifilter
 

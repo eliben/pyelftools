@@ -19,7 +19,7 @@ sys.path.insert(0, '.')
 from elftools import __version__
 from elftools.common.exceptions import ELFError
 from elftools.common.py3compat import (
-        ifilter, byte2int, bytes2str, itervalues, str2bytes)
+        ifilter, byte2int, bytes2str, itervalues, str2bytes, iterbytes)
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG
@@ -48,7 +48,7 @@ from elftools.dwarf.descriptions import (
     )
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
-from elftools.dwarf.callframe import CIE, FDE
+from elftools.dwarf.callframe import CIE, FDE, ZERO
 
 
 class ReadElf(object):
@@ -852,6 +852,8 @@ class ReadElf(object):
     def _dump_debug_info(self):
         """ Dump the debugging info section.
         """
+        if not self._dwarfinfo.has_debug_info:
+            return
         self._emitline('Contents of the %s section:\n' % self._dwarfinfo.debug_info_sec.name)
 
         # Offset of the .debug_info section in the stream
@@ -905,6 +907,8 @@ class ReadElf(object):
         """ Dump the (decoded) line programs from .debug_line
             The programs are dumped in the order of the CUs they belong to.
         """
+        if not self._dwarfinfo.has_debug_info:
+            return
         self._emitline('Decoded dump of debug contents of section %s:\n' % self._dwarfinfo.debug_line_sec.name)
 
         for cu in self._dwarfinfo.iter_CUs():
@@ -963,14 +967,16 @@ class ReadElf(object):
                     # Another readelf oddity...
                     self._emitline()
 
-    def _dump_debug_frames(self):
-        """ Dump the raw frame information from .debug_frame
-        """
-        if not self._dwarfinfo.has_CFI():
-            return
-        self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_frame_sec.name)
+    def _dump_frames_info(self, section, cfi_entries):
+        """ Dump the raw call frame info in a section.
 
-        for entry in self._dwarfinfo.CFI_entries():
+        `section` is the Section instance that contains the call frame info
+        while `cfi_entries` must be an iterable that yields the sequence of
+        CIE or FDE instances.
+        """
+        self._emitline('Contents of the %s section:' % section.name)
+
+        for entry in cfi_entries:
             if isinstance(entry, CIE):
                 self._emitline('\n%08x %s %s CIE' % (
                     entry.offset,
@@ -981,8 +987,14 @@ class ReadElf(object):
                 self._emitline('  Code alignment factor: %u' % entry['code_alignment_factor'])
                 self._emitline('  Data alignment factor: %d' % entry['data_alignment_factor'])
                 self._emitline('  Return address column: %d' % entry['return_address_register'])
+                if entry.augmentation_bytes:
+                    self._emitline('  Augmentation data:     {}'.format(' '.join(
+                        '{:02x}'.format(ord(b))
+                        for b in iterbytes(entry.augmentation_bytes)
+                    )))
                 self._emitline()
-            else: # FDE
+
+            elif isinstance(entry, FDE):
                 self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
                     self._format_hex(entry['length'], fullhex=True, lead0x=False),
@@ -992,9 +1004,33 @@ class ReadElf(object):
                     self._format_hex(
                         entry['initial_location'] + entry['address_range'],
                         fullhex=True, lead0x=False)))
+                if entry.augmentation_bytes:
+                    self._emitline('  Augmentation data:     {}'.format(' '.join(
+                        '{:02x}'.format(ord(b))
+                        for b in iterbytes(entry.augmentation_bytes)
+                    )))
+
+            else: # ZERO terminator
+                assert isinstance(entry, ZERO)
+                self._emitline('\n%08x ZERO terminator' % entry.offset)
+                continue
 
             self._emit(describe_CFI_instructions(entry))
         self._emitline()
+
+    def _dump_debug_frames(self):
+        """ Dump the raw frame info from .debug_frame and .eh_frame sections.
+        """
+        if self._dwarfinfo.has_EH_CFI():
+            self._dump_frames_info(
+                    self._dwarfinfo.eh_frame_sec,
+                    self._dwarfinfo.EH_CFI_entries())
+        self._emitline()
+
+        if self._dwarfinfo.has_CFI():
+            self._dump_frames_info(
+                    self._dwarfinfo.debug_frame_sec,
+                    self._dwarfinfo.CFI_entries())
 
     def _dump_debug_aranges(self):
         """ Dump the aranges table
@@ -1034,15 +1070,16 @@ class ReadElf(object):
                 self._format_hex(0, fullhex=True, lead0x=False),
                 self._format_hex(0, fullhex=True, lead0x=False)))
 
-    def _dump_debug_frames_interp(self):
-        """ Dump the interpreted (decoded) frame information from .debug_frame
+    def _dump_frames_interp_info(self, section, cfi_entries):
+        """ Dump interpreted (decoded) frame information in a section.
+
+        `section` is the Section instance that contains the call frame info
+        while `cfi_entries` must be an iterable that yields the sequence of
+        CIE or FDE instances.
         """
-        if not self._dwarfinfo.has_CFI():
-            return
+        self._emitline('Contents of the %s section:' % section.name)
 
-        self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_frame_sec.name)
-
-        for entry in self._dwarfinfo.CFI_entries():
+        for entry in cfi_entries:
             if isinstance(entry, CIE):
                 self._emitline('\n%08x %s %s CIE "%s" cf=%d df=%d ra=%d' % (
                     entry.offset,
@@ -1053,7 +1090,8 @@ class ReadElf(object):
                     entry['data_alignment_factor'],
                     entry['return_address_register']))
                 ra_regnum = entry['return_address_register']
-            else: # FDE
+
+            elif isinstance(entry, FDE):
                 self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
                     self._format_hex(entry['length'], fullhex=True, lead0x=False),
@@ -1064,12 +1102,18 @@ class ReadElf(object):
                         fullhex=True, lead0x=False)))
                 ra_regnum = entry.cie['return_address_register']
 
+            else: # ZERO terminator
+                assert isinstance(entry, ZERO)
+                self._emitline('\n%08x ZERO terminator' % entry.offset)
+                continue
+
+
             # Print the heading row for the decoded table
             self._emit('   LOC')
             self._emit('  ' if entry.structs.address_size == 4 else '          ')
             self._emit(' CFA      ')
 
-            # Decode the table nad look at the registers it describes.
+            # Decode the table and look at the registers it describes.
             # We build reg_order here to match readelf's order. In particular,
             # registers are sorted by their number, and the register matching
             # ra_regnum is always listed last with a special heading.
@@ -1084,8 +1128,8 @@ class ReadElf(object):
                     self._emit('%-6s' % describe_reg_name(regnum))
                 self._emitline('ra      ')
 
-                # Now include ra_regnum in reg_order to print its values similarly
-                # to the other registers.
+                # Now include ra_regnum in reg_order to print its values
+                # similarly to the other registers.
                 reg_order.append(ra_regnum)
             else:
                 self._emitline()
@@ -1103,6 +1147,21 @@ class ReadElf(object):
                     self._emit('%-6s' % s)
                 self._emitline()
         self._emitline()
+
+    def _dump_debug_frames_interp(self):
+        """ Dump the interpreted (decoded) frame information from .debug_frame
+        and .eh_framae sections.
+        """
+        if self._dwarfinfo.has_EH_CFI():
+            self._dump_frames_interp_info(
+                    self._dwarfinfo.eh_frame_sec,
+                    self._dwarfinfo.EH_CFI_entries())
+        self._emitline()
+
+        if self._dwarfinfo.has_CFI():
+            self._dump_frames_interp_info(
+                    self._dwarfinfo.debug_frame_sec,
+                    self._dwarfinfo.CFI_entries())
 
     def _emit(self, s=''):
         """ Emit an object to output

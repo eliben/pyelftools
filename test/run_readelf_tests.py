@@ -107,22 +107,9 @@ def compare_output(s1, s2):
     """
     def prepare_lines(s):
         return [line for line in s.lower().splitlines() if line.strip() != '']
-    def filter_readelf_lines(lines):
-        filter_out = False
-        for line in lines:
-            if 'of the .eh_frame section' in line:
-                filter_out = True
-            elif 'of the .debug_frame section' in line or \
-                'of the .zdebug_frame section' in line:
-                filter_out = False
-            if not filter_out:
-                if not line.startswith('unknown: length'):
-                    yield line
 
     lines1 = prepare_lines(s1)
     lines2 = prepare_lines(s2)
-
-    lines1 = list(filter_readelf_lines(lines1))
 
     flag_after_symtable = False
 

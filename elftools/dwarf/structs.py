@@ -253,6 +253,16 @@ class DWARFStructs(object):
             )
 
     def _create_callframe_entry_headers(self):
+        self.Dwarf_CIE_header = Struct('Dwarf_CIE_header',
+            self.Dwarf_initial_length('length'),
+            self.Dwarf_offset('CIE_id'),
+            self.Dwarf_uint8('version'),
+            CString('augmentation'),
+            self.Dwarf_uleb128('code_alignment_factor'),
+            self.Dwarf_sleb128('data_alignment_factor'),
+            self.Dwarf_uleb128('return_address_register'))
+        self.EH_CIE_header = self.Dwarf_CIE_header
+
         # The CIE header was modified in DWARFv4.
         if self.dwarf_version == 4:
             self.Dwarf_CIE_header = Struct('Dwarf_CIE_header',
@@ -262,15 +272,6 @@ class DWARFStructs(object):
                 CString('augmentation'),
                 self.Dwarf_uint8('address_size'),
                 self.Dwarf_uint8('segment_size'),
-                self.Dwarf_uleb128('code_alignment_factor'),
-                self.Dwarf_sleb128('data_alignment_factor'),
-                self.Dwarf_uleb128('return_address_register'))
-        else:
-            self.Dwarf_CIE_header = Struct('Dwarf_CIE_header',
-                self.Dwarf_initial_length('length'),
-                self.Dwarf_offset('CIE_id'),
-                self.Dwarf_uint8('version'),
-                CString('augmentation'),
                 self.Dwarf_uleb128('code_alignment_factor'),
                 self.Dwarf_sleb128('data_alignment_factor'),
                 self.Dwarf_uleb128('return_address_register'))
