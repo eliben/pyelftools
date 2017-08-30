@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 # elftools: common/py3compat.py
 #
-# Python 3 compatibility code
+# Python 2/3 compatibility code
 #
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
@@ -15,15 +15,22 @@ if PY3:
     StringIO = io.StringIO
     BytesIO = io.BytesIO
 
-    _iterkeys = "keys"
-    _iteritems = "items"
-    _itervalues = "values"
+    # Functions for acting on bytestrings and strings. In Python 2 and 3,
+    # strings and bytes are the same and chr/ord can be used to convert between
+    # numeric byte values and their string pepresentations. In Python 3, bytes
+    # and strings are different types and bytes hold numeric values when
+    # iterated over.
 
     def bytes2str(b): return b.decode('latin-1')
     def str2bytes(s): return s.encode('latin-1')
-    def int2byte(i):return bytes((i,))
+    def int2byte(i): return bytes((i,))
     def byte2int(b): return b
+
     def iterbytes(b):
+        """Return an iterator over the elements of a bytes object.
+        
+        For example, for b'abc' yields b'a', b'b' and then b'c'.
+        """
         for i in range(len(b)):
             yield b[i:i+1]
 
@@ -33,10 +40,6 @@ if PY3:
 else:
     import cStringIO
     StringIO = BytesIO = cStringIO.StringIO
-
-    _iterkeys = "iterkeys"
-    _iteritems = "iteritems"
-    _itervalues = "itervalues"
 
     def bytes2str(b): return b
     def str2bytes(s): return s
@@ -52,13 +55,12 @@ else:
 
 def iterkeys(d):
     """Return an iterator over the keys of a dictionary."""
-    return getattr(d, _iterkeys)()
+    return getattr(d, 'keys' if PY3 else 'iterkeys')()
 
 def itervalues(d):
     """Return an iterator over the values of a dictionary."""
-    return getattr(d, _itervalues)()
+    return getattr(d, 'values' if PY3 else 'itervalues')()
 
 def iteritems(d):
     """Return an iterator over the items of a dictionary."""
-    return getattr(d, _iteritems)()
-
+    return getattr(d, 'items' if PY3 else 'iteritems')()
