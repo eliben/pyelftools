@@ -23,8 +23,8 @@ from elftools.common.py3compat import (
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG
-from elftools.elf.segments import InterpSegment, NoteSegment
-from elftools.elf.sections import SymbolTableSection
+from elftools.elf.segments import InterpSegment
+from elftools.elf.sections import NoteSection, SymbolTableSection
 from elftools.elf.gnuversions import (
     GNUVerSymSection, GNUVerDefSection,
     GNUVerNeedSection,
@@ -74,8 +74,9 @@ class ReadElf(object):
         """
         self._emitline('ELF Header:')
         self._emit('  Magic:   ')
-        self._emitline(' '.join('%2.2x' % byte2int(b)
-                                    for b in self.elffile.e_ident_raw))
+        self._emit(' '.join('%2.2x' % byte2int(b)
+                   for b in self.elffile.e_ident_raw))
+        self._emitline('      ')
         header = self.elffile.header
         e_ident = header['e_ident']
         self._emitline('  Class:                             %s' %
@@ -121,12 +122,20 @@ class ReadElf(object):
     def decode_flags(self, flags):
         description = ""
         if self.elffile['e_machine'] == "EM_ARM":
-            if flags & E_FLAGS.EF_ARM_HASENTRY:
-                description += ", has entry point"
+            eabi = flags & E_FLAGS.EF_ARM_EABIMASK
+            flags &= ~E_FLAGS.EF_ARM_EABIMASK
 
-            version = flags & E_FLAGS.EF_ARM_EABIMASK
-            if version == E_FLAGS.EF_ARM_EABI_VER5:
-                description += ", Version5 EABI"
+            if flags & E_FLAGS.EF_ARM_RELEXEC:
+                description += ', relocatable executabl'
+                flags &= ~E_FLAGS.EF_ARM_RELEXEC
+
+            if eabi == E_FLAGS.EF_ARM_EABI_VER5:
+                description += ', Version5 EABI'
+                if flags:
+                    description += ', <unknown>'
+            else:
+                desrciption += ', <unrecognized EABI>'
+
         elif self.elffile['e_machine'] == "EM_MIPS":
             if flags & E_FLAGS.EF_MIPS_NOREORDER:
                 description += ", noreorder"
@@ -277,20 +286,31 @@ class ReadElf(object):
                     section['sh_addralign']))
 
         self._emitline('Key to Flags:')
-        self._emit('  W (write), A (alloc), X (execute), M (merge), S (strings)')
-        if self.elffile['e_machine'] in ('EM_X86_64', 'EM_L10M'):
-            self._emitline(', l (large)')
-        else:
-            self._emitline()
-        self._emitline('  I (info), L (link order), G (group), T (TLS), E (exclude), x (unknown)')
-        self._emitline('  O (extra OS processing required) o (OS specific), p (processor specific)')
+        self._emitline('  W (write), A (alloc), X (execute), M (merge),'
+                       ' S (strings), I (info),')
+        self._emitline('  L (link order), O (extra OS processing required),'
+                       ' G (group), T (TLS),')
+        self._emitline('  C (compressed), x (unknown), o (OS specific),'
+                       ' E (exclude),')
+        self._emit('  ')
+        if self.elffile['e_machine'] == 'EM_ARM':
+            self._emit('y (purecode), ')
+        self._emitline('p (processor specific)')
 
     def display_symbol_tables(self):
         """ Display the symbol tables contained in the file
         """
         self._init_versioninfo()
 
-        for section in self.elffile.iter_sections():
+        symbol_tables = [s for s in self.elffile.iter_sections()
+                         if isinstance(s, SymbolTableSection)]
+
+        if not symbol_tables and self.elffile.num_sections() == 0:
+            self._emitline('')
+            self._emitline('Dynamic symbol information is not available for'
+                           ' displaying symbols.')
+
+        for section in symbol_tables:
             if not isinstance(section, SymbolTableSection):
                 continue
 
@@ -382,24 +402,19 @@ class ReadElf(object):
                     '(%s)' % (tag.entry.d_tag[3:],),
                     parsed))
         if not has_dynamic_sections:
-            # readelf only prints this if there is at least one segment
-            if self.elffile.num_segments():
-                self._emitline("\nThere is no dynamic section in this file.")
+            self._emitline("\nThere is no dynamic section in this file.")
 
     def display_notes(self):
         """ Display the notes contained in the file
         """
-        for segment in self.elffile.iter_segments():
-            if isinstance(segment, NoteSegment):
-                for note in segment.iter_notes():
-                      self._emitline(
-                          "\nDisplaying notes found at file offset "
-                          "%s with length %s:" % (
-                              self._format_hex(note['n_offset'], fieldsize=8),
-                              self._format_hex(note['n_size'], fieldsize=8)))
+        for section in self.elffile.iter_sections():
+            if isinstance(section, NoteSection):
+                for note in section.iter_notes():
+                      self._emitline("\nDisplaying notes found in: {}".format(
+                          section.name))
                       self._emitline('  Owner                 Data size	Description')
-                      self._emitline('  %s%s %s\t%s' % (
-                          note['n_name'], ' ' * (20 - len(note['n_name'])),
+                      self._emitline('  %s %s\t%s' % (
+                          note['n_name'].ljust(20),
                           self._format_hex(note['n_descsz'], fieldsize=8),
                           describe_note(note)))
 
@@ -440,17 +455,25 @@ class ReadElf(object):
 
                 symbol = symtable.get_symbol(rel['r_info_sym'])
                 # Some symbols have zero 'st_name', so instead what's used is
-                # the name of the section they point at
+                # the name of the section they point at. Truncate symbol names
+                # (excluding version info) to 22 chars, similarly to readelf.
                 if symbol['st_name'] == 0:
                     symsec = self.elffile.get_section(symbol['st_shndx'])
                     symbol_name = symsec.name
+                    version = ''
                 else:
                     symbol_name = symbol.name
-                self._emit(' %s %s%22.22s' % (
+                    version = self._symbol_version(rel['r_info_sym'])
+                    version = (version['name']
+                               if version and version['name'] else '')
+                symbol_name = '%.22s' % symbol_name
+                if version:
+                    symbol_name += '@' + version
+
+                self._emit(' %s %s' % (
                     self._format_hex(
                         symbol['st_value'],
                         fullhex=True, lead0x=False),
-                    '  ' if self.elffile.elfclass == 32 else '',
                     symbol_name))
                 if section.is_RELA():
                     self._emit(' %s %x' % (
@@ -981,7 +1004,7 @@ class ReadElf(object):
                 self._emitline('\n%08x %s %s CIE' % (
                     entry.offset,
                     self._format_hex(entry['length'], fullhex=True, lead0x=False),
-                    self._format_hex(entry['CIE_id'], fullhex=True, lead0x=False)))
+                    self._format_hex(entry['CIE_id'], fieldsize=8, lead0x=False)))
                 self._emitline('  Version:               %d' % entry['version'])
                 self._emitline('  Augmentation:          "%s"' % bytes2str(entry['augmentation']))
                 self._emitline('  Code alignment factor: %u' % entry['code_alignment_factor'])
@@ -998,7 +1021,7 @@ class ReadElf(object):
                 self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
                     self._format_hex(entry['length'], fullhex=True, lead0x=False),
-                    self._format_hex(entry['CIE_pointer'], fullhex=True, lead0x=False),
+                    self._format_hex(entry['CIE_pointer'], fieldsize=8, lead0x=False),
                     entry.cie.offset,
                     self._format_hex(entry['initial_location'], fullhex=True, lead0x=False),
                     self._format_hex(
@@ -1084,7 +1107,7 @@ class ReadElf(object):
                 self._emitline('\n%08x %s %s CIE "%s" cf=%d df=%d ra=%d' % (
                     entry.offset,
                     self._format_hex(entry['length'], fullhex=True, lead0x=False),
-                    self._format_hex(entry['CIE_id'], fullhex=True, lead0x=False),
+                    self._format_hex(entry['CIE_id'], fieldsize=8, lead0x=False),
                     bytes2str(entry['augmentation']),
                     entry['code_alignment_factor'],
                     entry['data_alignment_factor'],
@@ -1095,12 +1118,18 @@ class ReadElf(object):
                 self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
                     self._format_hex(entry['length'], fullhex=True, lead0x=False),
-                    self._format_hex(entry['CIE_pointer'], fullhex=True, lead0x=False),
+                    self._format_hex(entry['CIE_pointer'], fieldsize=8, lead0x=False),
                     entry.cie.offset,
                     self._format_hex(entry['initial_location'], fullhex=True, lead0x=False),
                     self._format_hex(entry['initial_location'] + entry['address_range'],
                         fullhex=True, lead0x=False)))
                 ra_regnum = entry.cie['return_address_register']
+
+                # If the FDE brings adds no unwinding information compared to
+                # its CIE, omit its table.
+                if (len(entry.get_decoded().table) ==
+                        len(entry.cie.get_decoded().table)):
+                    continue
 
             else: # ZERO terminator
                 assert isinstance(entry, ZERO)
