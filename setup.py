@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os, sys
-from distutils.core import setup
+from setuptools import setup
 
 
 try:
