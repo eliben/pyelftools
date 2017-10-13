@@ -136,6 +136,9 @@ class ELFFile(object):
         """
         end = start + size
         for seg in self.iter_segments():
+            # consider LOAD only to prevent same address being yielded twice
+            if seg['p_type'] != 'PT_LOAD':
+                continue
             if (start >= seg['p_vaddr'] and
                 end <= seg['p_vaddr'] + seg['p_filesz']):
                 yield start - seg['p_vaddr'] + seg['p_offset']

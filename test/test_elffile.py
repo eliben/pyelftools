@@ -15,8 +15,9 @@ class TestMap(unittest.TestCase):
             __init__ = object.__init__
             def iter_segments(self):
                 return iter((
-                    dict(p_vaddr=0x10200, p_filesz=0x200, p_offset=0x100),
-                    dict(p_vaddr=0x10100, p_filesz=0x100, p_offset=0x400),
+                    dict(p_type='PT_PHDR', p_vaddr=0x10100, p_filesz=0x100, p_offset=0x400),
+                    dict(p_type='PT_LOAD', p_vaddr=0x10200, p_filesz=0x200, p_offset=0x100),
+                    dict(p_type='PT_LOAD', p_vaddr=0x10100, p_filesz=0x100, p_offset=0x400),
                 ))
 
         elf = MockELF()
