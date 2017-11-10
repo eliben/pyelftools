@@ -89,7 +89,7 @@ class ELFStructs(object):
         self._create_gnu_abi()
         self._create_note(elftype)
         self._create_stabs()
-        self._create_attributes()
+        self._create_attribute()
 
     #-------------------------------- PRIVATE --------------------------------#
 
@@ -355,11 +355,12 @@ class ELFStructs(object):
             self.Elf_word('n_value'),
         )
 
-    def _create_attributes(self):
+    def _create_attribute(self):
         self.Elf_Attribute = Struct('Elf_Attribute',
                                     self.Elf_uleb128('tag'),
                                     self.Elf_uleb128('value'),
         )
+
 
 def _LEB128_reader():
     """ Read LEB128 variable-length data from the stream. The data is terminated
