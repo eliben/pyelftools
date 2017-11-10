@@ -253,6 +253,7 @@ class NoteSection(Section):
         """
         return iter_notes(self.elffile, self['sh_offset'], self['sh_size'])
 
+
 class StabSection(Section):
     """ ELF stab section.
     """
@@ -272,3 +273,9 @@ class StabSection(Section):
             self.stream.seek(offset)
             yield stabs
 
+
+class ARMAttributesSection(Section):
+    """ ELF .ARM.attributes section.
+    """
+    def __init__(self):
+        pass

@@ -12,6 +12,7 @@ from ..construct import (
     ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt32, SLInt32, SBInt64, SLInt64,
     Struct, Array, Enum, Padding, BitStruct, BitField, Value, String, CString,
+    Rename, RepeatUntil, Adapter, Field
     )
 
 from .enums import *
@@ -69,6 +70,7 @@ class ELFStructs(object):
             self.Elf_xword = UBInt32 if self.elfclass == 32 else UBInt64
             self.Elf_sxword = SBInt32 if self.elfclass == 32 else SBInt64
         self._create_ehdr()
+        self._create_leb128()
 
     def create_advanced_structs(self, elftype=None):
         """ Create all ELF structs except the ehdr. They may possibly depend
@@ -87,6 +89,7 @@ class ELFStructs(object):
         self._create_gnu_abi()
         self._create_note(elftype)
         self._create_stabs()
+        self._create_attributes()
 
     #-------------------------------- PRIVATE --------------------------------#
 
@@ -115,6 +118,10 @@ class ELFStructs(object):
             self.Elf_half('e_shnum'),
             self.Elf_half('e_shstrndx'),
         )
+
+    def _create_leb128(self):
+        self.Elf_uleb128 = _ULEB128
+        self.Elf_sleb128 = _SLEB128
 
     def _create_phdr(self):
         if self.elfclass == 32:
@@ -347,3 +354,52 @@ class ELFStructs(object):
             self.Elf_half('n_desc'),
             self.Elf_word('n_value'),
         )
+
+    def _create_attributes(self):
+        self.Elf_Attribute = Struct('Elf_Attribute',
+                                    self.Elf_uleb128('tag'),
+                                    self.Elf_uleb128('value'),
+        )
+
+def _LEB128_reader():
+    """ Read LEB128 variable-length data from the stream. The data is terminated
+        by a byte with 0 in its highest bit.
+    """
+    return RepeatUntil(
+                lambda obj, ctx: ord(obj) < 0x80,
+                Field(None, 1))
+
+
+class _ULEB128Adapter(Adapter):
+    """ An adapter for ULEB128, given a sequence of bytes in a sub-construct.
+    """
+    def _decode(self, obj, context):
+        value = 0
+        for b in reversed(obj):
+            value = (value << 7) + (ord(b) & 0x7F)
+        return value
+
+
+class _SLEB128Adapter(Adapter):
+    """ An adapter for SLEB128, given a sequence of bytes in a sub-construct.
+    """
+    def _decode(self, obj, context):
+        value = 0
+        for b in reversed(obj):
+            value = (value << 7) + (ord(b) & 0x7F)
+        if ord(obj[-1]) & 0x40:
+            # negative -> sign extend
+            value |= - (1 << (7 * len(obj)))
+        return value
+
+
+def _ULEB128(name):
+    """ A construct creator for ULEB128 encoding.
+    """
+    return Rename(name, _ULEB128Adapter(_LEB128_reader()))
+
+
+def _SLEB128(name):
+    """ A construct creator for SLEB128 encoding.
+    """
+    return Rename(name, _SLEB128Adapter(_LEB128_reader()))

@@ -16,6 +16,7 @@ ENUM_EI_CLASS = dict(
     ELFCLASS64=2
 )
 
+
 # e_ident[EI_DATA] in the ELF header
 ENUM_EI_DATA = dict(
     ELFDATANONE=0,
@@ -23,12 +24,14 @@ ENUM_EI_DATA = dict(
     ELFDATA2MSB=2
 )
 
+
 # e_version in the ELF header
 ENUM_E_VERSION = dict(
     EV_NONE=0,
     EV_CURRENT=1,
     _default_=Pass,
 )
+
 
 # e_ident[EI_OSABI] in the ELF header
 ENUM_EI_OSABI = dict(
@@ -56,6 +59,7 @@ ENUM_EI_OSABI = dict(
     _default_=Pass,
 )
 
+
 # e_type in the ELF header
 ENUM_E_TYPE = dict(
     ET_NONE=0,
@@ -67,6 +71,7 @@ ENUM_E_TYPE = dict(
     ET_HIPROC=0xffff,
     _default_=Pass,
 )
+
 
 # e_machine in the ELF header
 ENUM_E_MACHINE = dict(
@@ -266,6 +271,7 @@ ENUM_E_MACHINE = dict(
     _default_=Pass,
 )
 
+
 # sh_type in the section header
 ENUM_SH_TYPE = dict(
     SHT_NULL=0,
@@ -342,6 +348,7 @@ ENUM_SH_TYPE = dict(
     _default_=Pass,
 )
 
+
 ENUM_ELFCOMPRESS_TYPE = dict(
     ELFCOMPRESS_ZLIB=1,
     ELFCOMPRESS_LOOS=0x60000000,
@@ -350,6 +357,7 @@ ENUM_ELFCOMPRESS_TYPE = dict(
     ELFCOMPRESS_HIPROC=0x7fffffff,
     _default_=Pass,
 )
+
 
 # p_type in the program header
 # some values scavenged from the ELF headers in binutils-2.21
@@ -376,6 +384,7 @@ ENUM_P_TYPE = dict(
     _default_=Pass,
 )
 
+
 # st_info bindings in the symbol header
 ENUM_ST_INFO_BIND = dict(
     STB_LOCAL=0,
@@ -388,6 +397,7 @@ ENUM_ST_INFO_BIND = dict(
     STB_HIPROC=15,
     _default_=Pass,
 )
+
 
 # st_info type in the symbol header
 ENUM_ST_INFO_TYPE = dict(
@@ -408,6 +418,7 @@ ENUM_ST_INFO_TYPE = dict(
     _default_=Pass,
 )
 
+
 # visibility from st_other
 ENUM_ST_VISIBILITY = dict(
     STV_DEFAULT=0,
@@ -420,6 +431,7 @@ ENUM_ST_VISIBILITY = dict(
     _default_=Pass,
 )
 
+
 # st_shndx
 ENUM_ST_SHNDX = dict(
     SHN_UNDEF=0,
@@ -427,6 +439,7 @@ ENUM_ST_SHNDX = dict(
     SHN_COMMON=0xfff2,
     _default_=Pass,
 )
+
 
 # d_tag
 ENUM_D_TAG = dict(
@@ -539,6 +552,7 @@ ENUM_D_TAG = dict(
     _default_=Pass,
 )
 
+
 ENUM_RELOC_TYPE_MIPS = dict(
     R_MIPS_NONE=0,
     R_MIPS_16=1,
@@ -594,6 +608,7 @@ ENUM_RELOC_TYPE_MIPS = dict(
     _default_=Pass,
 )
 
+
 ENUM_RELOC_TYPE_i386 = dict(
     R_386_NONE=0,
     R_386_32=1,
@@ -641,6 +656,7 @@ ENUM_RELOC_TYPE_i386 = dict(
     _default_=Pass,
 )
 
+
 ENUM_RELOC_TYPE_x64 = dict(
     R_X86_64_NONE=0,
     R_X86_64_64=1,
@@ -683,6 +699,7 @@ ENUM_RELOC_TYPE_x64 = dict(
     _default_=Pass,
 )
 
+
 # Sunw Syminfo Bound To special values
 ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_SELF=0xffff,
@@ -691,6 +708,7 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_EXTERN=0xfffc,
     _default_=Pass,
 )
+
 
 # Versym section, version dependency index
 ENUM_VERSYM = dict(
@@ -700,6 +718,8 @@ ENUM_VERSYM = dict(
     VER_NDX_ELIMINATE=0xff01,
     _default_=Pass,
 )
+
+
 # Sunw Syminfo Bound To special values
 ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_SELF=0xffff,
@@ -709,6 +729,7 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     _default_=Pass,
 )
 
+
 # PT_NOTE section types for all ELF types except ET_CORE
 ENUM_NOTE_N_TYPE = dict(
     NT_GNU_ABI_TAG=1,
@@ -717,6 +738,7 @@ ENUM_NOTE_N_TYPE = dict(
     NT_GNU_GOLD_VERSION=4,
     _default_=Pass,
 )
+
 
 # PT_NOTE section types for ET_CORE
 ENUM_CORE_NOTE_N_TYPE = dict(
@@ -730,6 +752,7 @@ ENUM_CORE_NOTE_N_TYPE = dict(
     _default_=Pass,
 )
 
+
 # Values in GNU .note.ABI-tag notes (n_type=='NT_GNU_ABI_TAG')
 ENUM_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_LINUX=0,
@@ -740,6 +763,7 @@ ENUM_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_SYLLABLE=5,
     _default_=Pass,
 )
+
 
 ENUM_RELOC_TYPE_ARM = dict(
     R_ARM_NONE=0,
@@ -873,6 +897,7 @@ ENUM_RELOC_TYPE_ARM = dict(
     R_ARM_IRELATIVE=140,
 )
 
+
 ENUM_RELOC_TYPE_AARCH64 = dict(
     R_AARCH64_NONE=256,
     R_AARCH64_ABS64=257,
@@ -983,3 +1008,216 @@ ENUM_RELOC_TYPE_AARCH64 = dict(
     R_AARCH64_TLS_DTPMOD32=1032,
     R_AARCH64_TLS_TPREL32=1033,
 )
+
+
+ENUM_ATTR_TAG_ARM = dict(
+    TAG_FILE=1,
+    TAG_SECTION=2,
+    TAG_SYMBOL=3,
+    TAG_CPU_RAW_NAME=4,
+    TAG_CPU_NAME=5,
+    TAG_CPU_ARCH=6,
+    TAG_CPU_ARCH_PROFILE=7,
+    TAG_ARM_ISA_USE=8,
+    TAG_THUMB_ISA_USE=9,
+    TAG_FP_ARCH=10,
+    TAG_WMMX_ARCH=11,
+    TAG_ADVANCED_SIMD_ARCH=12,
+    TAG_ABI_PCS_CONFIG=13,
+    TAG_ABI_PCS_R9_USE=14,
+    TAG_ABI_PCS_RW_DATA=15,
+    TAG_ABI_PCS_RO_DATA=16,
+    TAG_ABI_PCS_GOT_USE=17,
+    TAG_ABI_PCS_WCHAR_T=18,
+    TAG_ABI_FP_ROUNDING=19,
+    TAG_ABI_FP_DENORMAL=20,
+    TAG_ABI_FP_EXCEPTIONS=21,
+    TAG_ABI_FP_USER_EXCEPTIONS=22,
+    TAG_ABI_FP_NUMBER_MODEL=23,
+    TAG_ABI_ALIGN_NEEDED=24,
+    TAG_ABI_ALIGN_PRESERVED=25,
+    TAG_ABI_ENUM_SIZE=26,
+    TAG_ABI_HARDFP_USE=27,
+    TAG_ABI_VFP_ARGS=28,
+    TAG_ABI_WMMX_ARGS=29,
+    TAG_ABI_OPTIMIZATION_GOALS=30,
+    TAG_ABI_FP_OPTIMIZATION_GOALS=31,
+    TAG_COMPATIBILITY=32,
+    TAG_CPU_UNALIGNED_ACCESS=34,
+    TAG_FP_HP_EXTENSION=36,
+    TAG_ABI_FP_16BIT_FORMAT=38,
+    TAG_MPEXTENSION_USE=42,
+    TAG_DIV_USE=44,
+    TAG_NODEFAULTS=64,
+    TAG_ALSO_COMPATIBLE_WITH=65,
+    TAG_T2EE_USE=66,
+    TAG_CONFORMANCE=67,
+    TAG_VIRTUALIZATION_USE=68,
+    TAG_MPEXTENSION_USE_OLD=70,
+}
+
+
+ENUM_TAG_CPU_ARCH_ARM = dict(
+    ARM_PRE_V4=0,
+    ARM_V4=1,
+    ARM_V4T=2,
+    ARM_V5T=3,
+    ARM_V5TE=4,
+    ARM_V5TEJ=5,
+    ARM_V6=6,
+    ARM_V6KZ=7,
+    ARM_V6T2=8,
+    ARM_V6K=9,
+    ARM_V7=10,
+    ARM_V6_M=11,
+    ARM_V6S_M=12,
+    ARM_V7E_M=13,
+    ARM_V8_A=14,
+    ARM_V8_R=15,
+    ARM_V8_M_BASE=16,
+    ARM_V8_M_MAIN=17,
+}
+
+
+ENUM_TAG_CPU_ARCH_PROFILE_ARM = dict(
+    NOT_APPLICABLE=0,
+    APPLICATION_PROFILE=0x41,
+    REAL_TIME_PROFILE=0x52,
+    MICROCONTROLLER_PROFILE=0x4D,
+    A_OR_R_PROFILE=0x53,
+}
+
+
+ENUM_TAG_OTHER_ARM = dict(
+    # TAG_ARM_ISA_USE & other tags
+    NOT_PERMITTED=0,
+    PERMITTED=1,
+
+    # TAG_THUMB_ISA_USE
+    THUMB_32_PERMITTED=2,
+    THUMB_DERIVED_PERMITTED=3,
+
+    # TAG_FP_ARCH
+    FPV2_PERMITTED=2,
+    FPV3A_PERMITTED=3,
+    FPV3B_PERMITTED=4,
+    FPV4A_PERMITTED=5,
+    FPV4B_PERMITTED=6,
+    FPARMV8A_PERMITTED=7,
+    FPARMV8B_PERMITTED=8,
+
+    # TAG_WMMX_ARCH
+    WMMXV1_PERMITTED=1,
+    WMMXV2_PERMITTED=2,
+
+    # TAG_ADVANCED_SIMD_ARCH
+    NEON_PERMITTED=1,
+    NEON2_PERMITTED=2,
+    NEONARMV8_PERMITTED=3,
+    NEONARMV8_1A_PERMITTED=4,
+
+    # TAG_PCS_CONFIG
+    NO_CONF=0,
+    BARE_METAL_CONF=1,
+    LINUX_APP_CONF=2,
+    LINUX_DSO_CONF=3,
+    PALM_OS_CONF=4,
+    RESERVED_PALM_CONF=5,
+    SYMBIAN_OS_CONF=6,
+    RESERVED_SYMBIAN_CONF=7,
+
+    # TAG_ABI_PCS_R9_USE
+    R9_V6=0,
+    R9_SB=1,
+    R9_TLS_POINTER=2,
+    R9_RESERVED=3,
+
+    # TAG_ABI_PCS_RW_DATA
+    RW_ABS=0,
+    RW_PC_REL=1,
+    RW_SB_REL=2,
+    RW_NOT_PERMITTED=2,
+
+    # TAG_ABI_PCS_RO_DATA
+    RO_ABS=0,
+    RO_PC_REL=1,
+    RO_NOT_PERMITTED=2,
+
+    # TAG_ABI_PCS_GOT_USE
+    ADDR_DIRECT=1,
+    ADDR_GOT=2,
+
+    # TAG_ABI_PCS_WCHAR_T
+    WCHAR_2BYTES=2,
+    WCHAR_4BYTES=4,
+
+    # TAG_ABI_FP_ROUNDING
+    NEAREST_ROUNDING=0,
+    CUSTOM_ROUNDING=1,
+
+    # TAG_ABI_FP_DENORMAL
+    POSITIVE_ZERO=0,
+    IEEE_DENORMALS=1,
+    PRESERVE_FP_SIGN=2,
+
+    # TAG_ABI_FP_NUMBER_MODEL
+    IEEE_NORMAL=1,
+    RTABI=2,
+    IEEE_754=2,
+
+    # TAG_ABI_ENUM_SIZE
+    ALIGN_8BYTES=1,
+    ALIGN_4BYTES=2,
+    ALIGN_RESERVED=3,
+
+    # TAG_ABI_ALIGN_PRESERVED
+    PRESERVE_8BYTES=1,
+    PRESERVE_ALL=2,
+    PRESERVE_RESERVED=3,
+
+    # TAG_ABI_ENUM_SIZE
+    SMALLEST_CONTAINER=1,
+    32BIT_CONTAINER=2,
+    32BIT_OR_NOT=3,
+
+    # TAG_ABI_HARDFP_USE
+    HARDFP_IMPLIED=0,
+    HARDFP_SINGLE_PRECISION=1,
+    HARDFP_RESERVED=2,
+
+    # TAG_ABI_VFP_ARGS
+    BASE_AAPCS=0,
+    VFP_AAPCS=1,
+    SPECIFIC=2,
+    BASE_AND_VFP=3,
+
+    # TAG_ABI_WMMX_ARGS
+    INTEL_WMMX=1,
+
+    # TAG_ABI_OPTIMIZATION_GOALS
+    NONE=0,
+    SPEED=1,
+    AGGRESSIVELY_SPEED=2,
+    SMALL_SIZE=3,
+    AGGRESSIVELY_SMALL_SIZE=4,
+    DEBUG=5,
+    AGGRESSIVELY_DEBUG=6,
+
+    # TAG_ABI_FP_OPTIMIZATION_GOALS
+    ACCURACY=5,
+    AGGRESSIVELY_ACCURACY=6,
+
+    # TAG_ABI_FP_16BIT_FORMAT
+    IEEE_16BIT=1,
+    VFPV3_16BIT=2,
+
+    # TAG_DIV_USE
+    USED_IF_EXIST=0,
+    NOT_USED=1,
+    USED=2,
+
+    # TAG_VIRTUALIZATION_USE
+    TZ_PERMITTED=1,
+    VIRTUALIZATION_PERMITTED=2,
+    TZ_VIRTUALIZATION_PERMITTED=3,
+}
