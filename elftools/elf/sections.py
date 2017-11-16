@@ -274,8 +274,204 @@ class StabSection(Section):
             yield stabs
 
 
+class ARMAttribute(object):
+    """ ARM attribute object - representing a build attribute of ARM ELF files.
+    """
+    def __init__(self, structs, stream):
+        self._tag = struct_parse(structs.Elf_Attribute_Tag, stream)
+        self.extra = None
+
+        if self.tag in ('TAG_FILE',
+                        'TAG_SECTION',
+                        'TAG_SYMBOL'):
+            self.value = struct_parse(structs.Elf_word('value'), stream)
+
+        elif self.tag in ('TAG_CPU_RAW_NAME',
+                          'TAG_CPU_NAME',
+                          'TAG_CONFORMANCE'):
+            self.value = struct_parse(structs.Elf_ntbs('value'), stream)
+
+        elif self.tag == 'TAG_COMPATIBILITY':
+            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
+            self.extra = struct_parse(structs.Elf_ntbs('vendor_name'), stream)
+
+        elif self.tag == 'TAG_ALSO_COMPATIBLE_WITH':
+            self.value = ARMAttribute(structs, stream)
+
+            if type(self.value.value) is not str:
+                nul = struct_parse(structs.Elf_byte('nul'), stream)
+                elf_assert(null_byte == 0, 
+                           "Invalid terminating byte %r, expecting NUL." % nul)
+
+        else:
+            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
+
+        print self.tag, type(self.value), self.value
+
+    @property
+    def tag(self):
+        return self._tag['tag']
+
+    def __repr__(self):
+        string = '<ARMAttribute (%s): %r>' % (self.tag, self.value) 
+        string += ' %s' % self.extra if self.extra is not None else ''
+
+        return string
+
+
+class ARMAttributesSubsubsection(object):
+    """ Subsubsection of an ELF .ARM.attributes section's subsection.
+    """
+    def __init__(self, stream, structs, offset):
+        self.stream = stream
+        self.offset = offset
+        self.structs = structs
+
+        self.header = ARMAttribute(self.structs, self.stream)
+
+        self.attr_start = self.stream.tell()
+
+        self.s_numbers = []
+
+        self.attributes = self._make_attributes()
+
+    def iter_attributes(self, tag=None):
+        """ Yield all attributes (limit to |tag| if specified).
+        """
+        for attribute in self.attributes + [self.header]:
+            if tag is None or attribute.tag == tag:
+                yield attribute
+
+    @property
+    def num_attributes(self):
+        """ Number of attributes in the subsubsection.
+        """
+        return sum(1 for _ in self.iter_attributes())
+
+    def _make_attributes(self):
+        """ Create all attributes for this subsubsection.
+        """
+        attributes = []
+
+        end = self.offset + self.header.value
+
+        self.stream.seek(self.attr_start)
+
+        if self.header.tag in ('TAG_SECTION', 'TAG_SYMBOL'):
+            s_number = struct_parse(self.structs.Elf_uleb128('s_number'),
+                                    self.stream
+                       )
+
+            while s_number != 0:
+                self.s_numbers.append(s_number)
+                s_number = struct_parse(self.structs.Elf_uleb128('s_number'),
+                                        self.stream
+                           )
+
+        while self.stream.tell() != end:
+            attributes.append(ARMAttribute(self.structs, self.stream))
+
+        return attributes
+
+
+class ARMAttributesSubsection(object):
+    """ Subsection of an ELF .ARM.attributes section.
+    """
+    def __init__(self, stream, structs, offset):
+        self.stream = stream
+        self.offset = offset
+        self.structs = structs
+
+        self.header = struct_parse(self.structs.Elf_Attr_Subsection_Header,
+                                   self.stream,
+                                   self.offset
+                      )
+
+        self.subsubsec_start = self.stream.tell()
+
+        self.subsubsections = self._make_subsubsections()
+
+    def iter_subsubsections(self, scope=None):
+        """ Yield all subsubsections (limit to |scope| if specified).
+        """
+        for subsubsec in self.subsubsections:
+            if scope is None or subsubsec.header.tag == scope:
+                yield subsubsec
+
+    @property
+    def num_subsubsections(self):
+        """ Number of subsubsections in the subsection.
+        """
+        return len(self.subsubsections)
+
+    def _make_subsubsections(self):
+        """ Create all subsubsections for this subsection.
+        """
+        subsubsections = []
+        end = self.offset + self['length']
+
+        self.stream.seek(self.subsubsec_start)
+
+        while self.stream.tell() != end:
+            subsubsections.append(ARMAttributesSubsubsection(self.stream,
+                                                             self.structs,
+                                                             self.stream.tell()
+
+            ))
+
+        return subsubsections
+
+    def __getitem__(self, name):
+        """ Implement dict-like access to header entries.
+        """
+        return self.header[name]
+
+
 class ARMAttributesSection(Section):
     """ ELF .ARM.attributes section.
     """
-    def __init__(self):
-        pass
+    def __init__(self, header, name, elffile):
+        super(ARMAttributesSection, self).__init__(header, name, elffile)
+
+        fv = struct_parse(self.structs.Elf_byte('format_version'),
+                          self.stream,
+                          self['sh_offset']
+             )
+
+        elf_assert(chr(fv) == 'A',
+                   "Unknown attributes version %s, expecting 'A'." % chr(fv)
+        )
+
+        self.subsec_start = self.stream.tell()
+
+        self.subsections = self._make_subsections()
+
+    def iter_subsections(self, vendor_name=None):
+        """ Yield all subsections (limit to |vendor_name| if specified).
+        """
+        for subsec in self.subsections:
+            if vendor_name is None or subsec['vendor_name'] == vendor_name:
+                yield subsec
+
+    @property
+    def num_subsections(self):
+        """ Number of subsections in the section.
+        """
+        return len(self.subsections)
+
+    def _make_subsections(self):
+        """ Create all subsections for this section.
+        """
+        subsections = []
+
+        end = self['sh_offset'] + self.data_size
+
+        self.stream.seek(self.subsec_start)
+
+        while self.stream.tell() != end:
+            subsections.append(ARMAttributesSubsection(self.stream,
+                                                       self.structs,
+                                                       self.stream.tell()
+            ))
+
+        return subsections

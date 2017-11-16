@@ -71,6 +71,7 @@ class ELFStructs(object):
             self.Elf_sxword = SBInt32 if self.elfclass == 32 else SBInt64
         self._create_ehdr()
         self._create_leb128()
+        self._create_ntbs()
 
     def create_advanced_structs(self, elftype=None):
         """ Create all ELF structs except the ehdr. They may possibly depend
@@ -89,7 +90,7 @@ class ELFStructs(object):
         self._create_gnu_abi()
         self._create_note(elftype)
         self._create_stabs()
-        self._create_attribute()
+        self._create_arm_attributes()
 
     #-------------------------------- PRIVATE --------------------------------#
 
@@ -122,6 +123,9 @@ class ELFStructs(object):
     def _create_leb128(self):
         self.Elf_uleb128 = _ULEB128
         self.Elf_sleb128 = _SLEB128
+
+    def _create_ntbs(self):
+        self.Elf_ntbs = CString
 
     def _create_phdr(self):
         if self.elfclass == 32:
@@ -355,10 +359,19 @@ class ELFStructs(object):
             self.Elf_word('n_value'),
         )
 
-    def _create_attribute(self):
-        self.Elf_Attribute = Struct('Elf_Attribute',
-                                    self.Elf_uleb128('tag'),
-                                    self.Elf_uleb128('value'),
+    def _create_arm_attributes(self):
+        # Structure of a build attributes subsection header. A subsection is
+        # either public to all tools that process the ELF file or private to
+        # the vendor's tools.
+        self.Elf_Attr_Subsection_Header = Struct('Elf_Attr_Subsection',
+                                                 self.Elf_word('length'),
+                                                 self.Elf_ntbs('vendor_name'),
+        )
+
+        # Structure of a build attribute tag.
+        self.Elf_Attribute_Tag = Struct('Elf_Attribute_Tag',
+                                        Enum(self.Elf_uleb128('tag'),
+                                             **ENUM_ATTR_TAG_ARM)
         )
 
 

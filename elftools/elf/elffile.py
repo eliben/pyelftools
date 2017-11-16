@@ -25,7 +25,7 @@ from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection,
         SUNWSyminfoTableSection, NullSection, NoteSection,
-        StabSection)
+        StabSection, ARMAttributesSection)
 from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
 from .gnuversions import (
@@ -324,6 +324,8 @@ class ELFFile(object):
             return NoteSection(section_header, name, self)
         elif sectype == 'SHT_PROGBITS' and name == '.stab':
             return StabSection(section_header, name, self)
+        elif sectype == 'SHT_ARM_ATTRIBUTES':
+            return ARMAttributesSection(section_header, name, self)
         else:
             return Section(section_header, name, self)
 
