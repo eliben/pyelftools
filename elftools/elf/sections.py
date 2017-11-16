@@ -11,6 +11,7 @@ from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
 from collections import defaultdict
 from .constants import SH_FLAGS
 from .notes import iter_notes
+
 import zlib
 
 
@@ -281,14 +282,22 @@ class ARMAttribute(object):
         self._tag = struct_parse(structs.Elf_Attribute_Tag, stream)
         self.extra = None
 
-        if self.tag in ('TAG_FILE',
-                        'TAG_SECTION',
-                        'TAG_SYMBOL'):
+        if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
             self.value = struct_parse(structs.Elf_word('value'), stream)
 
-        elif self.tag in ('TAG_CPU_RAW_NAME',
-                          'TAG_CPU_NAME',
-                          'TAG_CONFORMANCE'):
+            if self.tag != 'TAG_FILE':
+                self.extra = []
+                s_number = struct_parse(self.structs.Elf_uleb128('s_number'),
+                                        self.stream
+                           )
+
+                while s_number != 0:
+                    self.extra.append(s_number)
+                    s_number = struct_parse(self.structs.Elf_uleb128('s_number'),
+                                            self.stream
+                               )
+
+        elif self.tag in ('TAG_CPU_RAW_NAME', 'TAG_CPU_NAME', 'TAG_CONFORMANCE'):
             self.value = struct_parse(structs.Elf_ntbs('value'), stream)
 
         elif self.tag == 'TAG_COMPATIBILITY':
@@ -306,17 +315,14 @@ class ARMAttribute(object):
         else:
             self.value = struct_parse(structs.Elf_uleb128('value'), stream)
 
-        print self.tag, type(self.value), self.value
-
     @property
     def tag(self):
         return self._tag['tag']
 
     def __repr__(self):
-        string = '<ARMAttribute (%s): %r>' % (self.tag, self.value) 
-        string += ' %s' % self.extra if self.extra is not None else ''
-
-        return string
+        s = '<ARMAttribute (%s): %r>' % (self.tag, self.value) 
+        s += ' %s' % self.extra if self.extra is not None else ''
+        return s
 
 
 class ARMAttributesSubsubsection(object):
@@ -331,14 +337,10 @@ class ARMAttributesSubsubsection(object):
 
         self.attr_start = self.stream.tell()
 
-        self.s_numbers = []
-
-        self.attributes = self._make_attributes()
-
     def iter_attributes(self, tag=None):
         """ Yield all attributes (limit to |tag| if specified).
         """
-        for attribute in self.attributes + [self.header]:
+        for attribute in self._make_attributes():
             if tag is None or attribute.tag == tag:
                 yield attribute
 
@@ -349,29 +351,19 @@ class ARMAttributesSubsubsection(object):
         return sum(1 for _ in self.iter_attributes())
 
     def _make_attributes(self):
-        """ Create all attributes for this subsubsection.
+        """ Create all attributes for this subsubsection except the first one
+            which is the header.
         """
-        attributes = []
-
         end = self.offset + self.header.value
 
         self.stream.seek(self.attr_start)
 
-        if self.header.tag in ('TAG_SECTION', 'TAG_SYMBOL'):
-            s_number = struct_parse(self.structs.Elf_uleb128('s_number'),
-                                    self.stream
-                       )
-
-            while s_number != 0:
-                self.s_numbers.append(s_number)
-                s_number = struct_parse(self.structs.Elf_uleb128('s_number'),
-                                        self.stream
-                           )
-
         while self.stream.tell() != end:
-            attributes.append(ARMAttribute(self.structs, self.stream))
+            yield ARMAttribute(self.structs, self.stream)
 
-        return attributes
+    def __repr__(self):
+        s = "<ARMAttributesSubsubsection (%s): %d bytes>" 
+        return s % (self.header.tag[4:], self.header.value)
 
 
 class ARMAttributesSubsection(object):
@@ -389,12 +381,10 @@ class ARMAttributesSubsection(object):
 
         self.subsubsec_start = self.stream.tell()
 
-        self.subsubsections = self._make_subsubsections()
-
     def iter_subsubsections(self, scope=None):
         """ Yield all subsubsections (limit to |scope| if specified).
         """
-        for subsubsec in self.subsubsections:
+        for subsubsec in self._make_subsubsections():
             if scope is None or subsubsec.header.tag == scope:
                 yield subsubsec
 
@@ -402,29 +392,30 @@ class ARMAttributesSubsection(object):
     def num_subsubsections(self):
         """ Number of subsubsections in the subsection.
         """
-        return len(self.subsubsections)
+        return sum(1 for _ in self.iter_subsubsections())
 
     def _make_subsubsections(self):
         """ Create all subsubsections for this subsection.
         """
-        subsubsections = []
         end = self.offset + self['length']
 
         self.stream.seek(self.subsubsec_start)
 
         while self.stream.tell() != end:
-            subsubsections.append(ARMAttributesSubsubsection(self.stream,
-                                                             self.structs,
-                                                             self.stream.tell()
-
-            ))
-
-        return subsubsections
+            subsubsec = ARMAttributesSubsubsection(self.stream,
+                                                   self.structs,
+                                                   self.stream.tell())
+            self.stream.seek(self.subsubsec_start + subsubsec.header.value)
+            yield subsubsec
 
     def __getitem__(self, name):
         """ Implement dict-like access to header entries.
         """
         return self.header[name]
+
+    def __repr__(self):
+        s = "<ARMAttributesSubsection (%s): %d bytes>"
+        return s  % (self.header['vendor_name'], self.header['length'])
 
 
 class ARMAttributesSection(Section):
@@ -444,12 +435,10 @@ class ARMAttributesSection(Section):
 
         self.subsec_start = self.stream.tell()
 
-        self.subsections = self._make_subsections()
-
     def iter_subsections(self, vendor_name=None):
         """ Yield all subsections (limit to |vendor_name| if specified).
         """
-        for subsec in self.subsections:
+        for subsec in self._make_subsections():
             if vendor_name is None or subsec['vendor_name'] == vendor_name:
                 yield subsec
 
@@ -457,21 +446,18 @@ class ARMAttributesSection(Section):
     def num_subsections(self):
         """ Number of subsections in the section.
         """
-        return len(self.subsections)
+        return sum(1 for _ in self.iter_subsections())
 
     def _make_subsections(self):
         """ Create all subsections for this section.
         """
-        subsections = []
-
         end = self['sh_offset'] + self.data_size
 
         self.stream.seek(self.subsec_start)
 
         while self.stream.tell() != end:
-            subsections.append(ARMAttributesSubsection(self.stream,
-                                                       self.structs,
-                                                       self.stream.tell()
-            ))
-
-        return subsections
+            subsec = ARMAttributesSubsection(self.stream,
+                                             self.structs,
+                                             self.stream.tell())
+            self.stream.seek(self.subsec_start + subsec['length'])
+            yield subsec

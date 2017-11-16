@@ -37,7 +37,7 @@ from elftools.elf.descriptions import (
     describe_sh_type, describe_sh_flags,
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
-    describe_ver_flags, describe_note
+    describe_ver_flags, describe_note, describe_attr_tag_arm
     )
 from elftools.elf.constants import E_FLAGS
 from elftools.dwarf.dwarfinfo import DWARFInfo
@@ -588,6 +588,12 @@ class ReadElf(object):
                         vernaux_offset += vernaux['vna_next']
 
                     offset += verneed['vn_next']
+
+    def display_arch_specific(self):
+        """ Display the architecture-specific info contained in the file.
+        """
+        if self.elffile['e_machine'] == 'EM_ARM':
+            self._display_arch_specific_arm()
 
     def display_hex_dump(self, section_spec):
         """ Display a hex dump of a section. section_spec is either a section
@@ -1192,6 +1198,21 @@ class ReadElf(object):
                     self._dwarfinfo.debug_frame_sec,
                     self._dwarfinfo.CFI_entries())
 
+    def _display_arch_specific_arm(self):
+        """ Display the ARM architecture-specific info contained in the file.
+        """
+        attr_sec = self.elffile.get_section_by_name('.ARM.attributes')
+
+        for s in attr_sec.iter_subsections():
+            self._emitline("Attribute Section: %s" % s.header['vendor_name'])
+            for ss in s.iter_subsubsections():
+                h_val = "" if ss.header.extra is None else ", ".join("%d" % x for x in ss.header.extra)
+                self._emitline(describe_attr_tag_arm(ss.header.tag, h_val))
+
+                for attr in ss.iter_attributes():
+                    self._emit('  ')
+                    self._emitline(describe_attr_tag_arm(attr.tag, attr.value))
+
     def _emit(self, s=''):
         """ Emit an object to output
         """
@@ -1251,6 +1272,9 @@ def main(stream=None):
     optparser.add_option('-V', '--version-info',
             action='store_true', dest='show_version_info',
             help='Display the version sections (if present)')
+    optparser.add_option('-A', '--arch-specific',
+            action='store_true', dest='show_arch_specific',
+            help='Display the architecture-specific information (if present)')
     optparser.add_option('--debug-dump',
             action='store', dest='debug_dump_what', metavar='<what>',
             help=(
@@ -1291,6 +1315,8 @@ def main(stream=None):
                 readelf.display_relocations()
             if options.show_version_info:
                 readelf.display_version_info()
+            if options.show_arch_specific:
+                readelf.display_arch_specific()
             if options.show_hex_dump:
                 readelf.display_hex_dump(options.show_hex_dump)
             if options.show_string_dump:
