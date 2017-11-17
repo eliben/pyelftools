@@ -298,11 +298,15 @@ class ARMAttribute(object):
                                )
 
         elif self.tag in ('TAG_CPU_RAW_NAME', 'TAG_CPU_NAME', 'TAG_CONFORMANCE'):
-            self.value = struct_parse(structs.Elf_ntbs('value'), stream)
+            self.value = struct_parse(structs.Elf_ntbs('value',
+                                                       encoding='ascii'),
+                                      stream)
 
         elif self.tag == 'TAG_COMPATIBILITY':
             self.value = struct_parse(structs.Elf_uleb128('value'), stream)
-            self.extra = struct_parse(structs.Elf_ntbs('vendor_name'), stream)
+            self.extra = struct_parse(structs.Elf_ntbs('vendor_name',
+                                                       encoding='ascii'),
+                                      stream)
 
         elif self.tag == 'TAG_ALSO_COMPATIBLE_WITH':
             self.value = ARMAttribute(structs, stream)

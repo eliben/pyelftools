@@ -365,7 +365,8 @@ class ELFStructs(object):
         # the vendor's tools.
         self.Elf_Attr_Subsection_Header = Struct('Elf_Attr_Subsection',
                                                  self.Elf_word('length'),
-                                                 self.Elf_ntbs('vendor_name'),
+                                                 self.Elf_ntbs('vendor_name',
+                                                               encoding='ascii')
         )
 
         # Structure of a build attribute tag.

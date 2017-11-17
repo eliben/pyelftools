@@ -41,7 +41,7 @@ class TestARMSupport(unittest.TestCase):
             for i in subsubsec.iter_attributes('TAG_CPU_NAME'):
                 self.assertEqual(i.value, 'ARM7TDMI-S')
 
-            for i in  subsubsec.iter_attributes('TAG_CPU_ARCH'):
+            for i in subsubsec.iter_attributes('TAG_CPU_ARCH'):
                 self.assertEqual(i.value, 2)
 
     def test_DWARF_indirect_forms(self):
