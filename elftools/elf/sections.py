@@ -348,7 +348,13 @@ class ARMAttributesSubsubsection(object):
     def num_attributes(self):
         """ Number of attributes in the subsubsection.
         """
-        return sum(1 for _ in self.iter_attributes())
+        return sum(1 for _ in self.iter_attributes()) + 1
+
+    @property
+    def attributes(self):
+        """ List of all attributes in the subsubsection.
+        """
+        return [self.header] + list(self.iter_attributes())
 
     def _make_attributes(self):
         """ Create all attributes for this subsubsection except the first one
@@ -393,6 +399,12 @@ class ARMAttributesSubsection(object):
         """ Number of subsubsections in the subsection.
         """
         return sum(1 for _ in self.iter_subsubsections())
+
+    @property
+    def subsubsections(self):
+        """ List of all subsubsections in the subsection.
+        """
+        return list(self.iter_subsubsections())
 
     def _make_subsubsections(self):
         """ Create all subsubsections for this subsection.
@@ -447,6 +459,12 @@ class ARMAttributesSection(Section):
         """ Number of subsections in the section.
         """
         return sum(1 for _ in self.iter_subsections())
+
+    @property
+    def subsections(self):
+        """ List of all subsections in the section.
+        """
+        return list(self.iter_subsections())
 
     def _make_subsections(self):
         """ Create all subsections for this section.
