@@ -16,7 +16,6 @@ ENUM_EI_CLASS = dict(
     ELFCLASS64=2
 )
 
-
 # e_ident[EI_DATA] in the ELF header
 ENUM_EI_DATA = dict(
     ELFDATANONE=0,
@@ -24,14 +23,12 @@ ENUM_EI_DATA = dict(
     ELFDATA2MSB=2
 )
 
-
 # e_version in the ELF header
 ENUM_E_VERSION = dict(
     EV_NONE=0,
     EV_CURRENT=1,
     _default_=Pass,
 )
-
 
 # e_ident[EI_OSABI] in the ELF header
 ENUM_EI_OSABI = dict(
@@ -59,7 +56,6 @@ ENUM_EI_OSABI = dict(
     _default_=Pass,
 )
 
-
 # e_type in the ELF header
 ENUM_E_TYPE = dict(
     ET_NONE=0,
@@ -71,7 +67,6 @@ ENUM_E_TYPE = dict(
     ET_HIPROC=0xffff,
     _default_=Pass,
 )
-
 
 # e_machine in the ELF header
 ENUM_E_MACHINE = dict(
@@ -271,7 +266,6 @@ ENUM_E_MACHINE = dict(
     _default_=Pass,
 )
 
-
 # sh_type in the section header
 ENUM_SH_TYPE = dict(
     SHT_NULL=0,
@@ -348,7 +342,6 @@ ENUM_SH_TYPE = dict(
     _default_=Pass,
 )
 
-
 ENUM_ELFCOMPRESS_TYPE = dict(
     ELFCOMPRESS_ZLIB=1,
     ELFCOMPRESS_LOOS=0x60000000,
@@ -357,7 +350,6 @@ ENUM_ELFCOMPRESS_TYPE = dict(
     ELFCOMPRESS_HIPROC=0x7fffffff,
     _default_=Pass,
 )
-
 
 # p_type in the program header
 # some values scavenged from the ELF headers in binutils-2.21
@@ -384,7 +376,6 @@ ENUM_P_TYPE = dict(
     _default_=Pass,
 )
 
-
 # st_info bindings in the symbol header
 ENUM_ST_INFO_BIND = dict(
     STB_LOCAL=0,
@@ -397,7 +388,6 @@ ENUM_ST_INFO_BIND = dict(
     STB_HIPROC=15,
     _default_=Pass,
 )
-
 
 # st_info type in the symbol header
 ENUM_ST_INFO_TYPE = dict(
@@ -418,7 +408,6 @@ ENUM_ST_INFO_TYPE = dict(
     _default_=Pass,
 )
 
-
 # visibility from st_other
 ENUM_ST_VISIBILITY = dict(
     STV_DEFAULT=0,
@@ -431,7 +420,6 @@ ENUM_ST_VISIBILITY = dict(
     _default_=Pass,
 )
 
-
 # st_shndx
 ENUM_ST_SHNDX = dict(
     SHN_UNDEF=0,
@@ -439,7 +427,6 @@ ENUM_ST_SHNDX = dict(
     SHN_COMMON=0xfff2,
     _default_=Pass,
 )
-
 
 # d_tag
 ENUM_D_TAG = dict(
@@ -552,7 +539,6 @@ ENUM_D_TAG = dict(
     _default_=Pass,
 )
 
-
 ENUM_RELOC_TYPE_MIPS = dict(
     R_MIPS_NONE=0,
     R_MIPS_16=1,
@@ -608,7 +594,6 @@ ENUM_RELOC_TYPE_MIPS = dict(
     _default_=Pass,
 )
 
-
 ENUM_RELOC_TYPE_i386 = dict(
     R_386_NONE=0,
     R_386_32=1,
@@ -656,7 +641,6 @@ ENUM_RELOC_TYPE_i386 = dict(
     _default_=Pass,
 )
 
-
 ENUM_RELOC_TYPE_x64 = dict(
     R_X86_64_NONE=0,
     R_X86_64_64=1,
@@ -699,7 +683,6 @@ ENUM_RELOC_TYPE_x64 = dict(
     _default_=Pass,
 )
 
-
 # Sunw Syminfo Bound To special values
 ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_SELF=0xffff,
@@ -708,7 +691,6 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_EXTERN=0xfffc,
     _default_=Pass,
 )
-
 
 # Versym section, version dependency index
 ENUM_VERSYM = dict(
@@ -719,7 +701,6 @@ ENUM_VERSYM = dict(
     _default_=Pass,
 )
 
-
 # Sunw Syminfo Bound To special values
 ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_SELF=0xffff,
@@ -729,7 +710,6 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     _default_=Pass,
 )
 
-
 # PT_NOTE section types for all ELF types except ET_CORE
 ENUM_NOTE_N_TYPE = dict(
     NT_GNU_ABI_TAG=1,
@@ -738,7 +718,6 @@ ENUM_NOTE_N_TYPE = dict(
     NT_GNU_GOLD_VERSION=4,
     _default_=Pass,
 )
-
 
 # PT_NOTE section types for ET_CORE
 ENUM_CORE_NOTE_N_TYPE = dict(
@@ -752,7 +731,6 @@ ENUM_CORE_NOTE_N_TYPE = dict(
     _default_=Pass,
 )
 
-
 # Values in GNU .note.ABI-tag notes (n_type=='NT_GNU_ABI_TAG')
 ENUM_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_LINUX=0,
@@ -763,7 +741,6 @@ ENUM_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_SYLLABLE=5,
     _default_=Pass,
 )
-
 
 ENUM_RELOC_TYPE_ARM = dict(
     R_ARM_NONE=0,
@@ -897,7 +874,6 @@ ENUM_RELOC_TYPE_ARM = dict(
     R_ARM_IRELATIVE=140,
 )
 
-
 ENUM_RELOC_TYPE_AARCH64 = dict(
     R_AARCH64_NONE=256,
     R_AARCH64_ABS64=257,
@@ -1008,7 +984,6 @@ ENUM_RELOC_TYPE_AARCH64 = dict(
     R_AARCH64_TLS_DTPMOD32=1032,
     R_AARCH64_TLS_TPREL32=1033,
 )
-
 
 ENUM_ATTR_TAG_ARM = dict(
     TAG_FILE=1,

@@ -6,7 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import Subconstruct, ConstructError, ArrayError
+from ..construct import (
+    Subconstruct, ConstructError, ArrayError, Adapter, Field, RepeatUntil,
+    Rename
+    )
 
 
 class RepeatUntilExcluding(Subconstruct):
@@ -42,3 +45,47 @@ class RepeatUntilExcluding(Subconstruct):
         raise NotImplementedError('no building')
     def _sizeof(self, context):
         raise SizeofError("can't calculate size")
+
+
+def _LEB128_reader():
+    """ Read LEB128 variable-length data from the stream. The data is terminated
+        by a byte with 0 in its highest bit.
+    """
+    return RepeatUntil(
+                lambda obj, ctx: ord(obj) < 0x80,
+                Field(None, 1))
+
+
+class _ULEB128Adapter(Adapter):
+    """ An adapter for ULEB128, given a sequence of bytes in a sub-construct.
+    """
+    def _decode(self, obj, context):
+        value = 0
+        for b in reversed(obj):
+            value = (value << 7) + (ord(b) & 0x7F)
+        return value
+
+
+class _SLEB128Adapter(Adapter):
+    """ An adapter for SLEB128, given a sequence of bytes in a sub-construct.
+    """
+    def _decode(self, obj, context):
+        value = 0
+        for b in reversed(obj):
+            value = (value << 7) + (ord(b) & 0x7F)
+        if ord(obj[-1]) & 0x40:
+            # negative -> sign extend
+            value |= - (1 << (7 * len(obj)))
+        return value
+
+
+def ULEB128(name):
+    """ A construct creator for ULEB128 encoding.
+    """
+    return Rename(name, _ULEB128Adapter(_LEB128_reader()))
+
+
+def SLEB128(name):
+    """ A construct creator for SLEB128 encoding.
+    """
+    return Rename(name, _SLEB128Adapter(_LEB128_reader()))
