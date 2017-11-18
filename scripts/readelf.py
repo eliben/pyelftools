@@ -1206,12 +1206,14 @@ class ReadElf(object):
         for s in attr_sec.iter_subsections():
             self._emitline("Attribute Section: %s" % s.header['vendor_name'])
             for ss in s.iter_subsubsections():
-                h_val = "" if ss.header.extra is None else ", ".join("%d" % x for x in ss.header.extra)
-                self._emitline(describe_attr_tag_arm(ss.header.tag, h_val))
+                h_val = "" if ss.header.extra is None else " ".join("%d" % x for x in ss.header.extra)
+                self._emitline(describe_attr_tag_arm(ss.header.tag, h_val, None))
 
                 for attr in ss.iter_attributes():
                     self._emit('  ')
-                    self._emitline(describe_attr_tag_arm(attr.tag, attr.value))
+                    self._emitline(describe_attr_tag_arm(attr.tag,
+                                                         attr.value,
+                                                         attr.extra))
 
     def _emit(self, s=''):
         """ Emit an object to output

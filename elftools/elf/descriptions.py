@@ -165,12 +165,29 @@ def describe_note(x):
     return '%s (%s)%s' % (note_type, note_type_desc, desc)
 
 
-def describe_attr_tag_arm(tag, val):
+def describe_attr_tag_arm(tag, val, extra):
     idx = ENUM_ATTR_TAG_ARM[tag] - 1
     d_entry = _DESCR_ATTR_VAL_ARM[idx]
 
     if d_entry is None:
-        return _DESCR_ATTR_TAG_ARM[tag] + str(val)
+        if tag == 'TAG_COMPATIBILITY':
+            return (_DESCR_ATTR_TAG_ARM[tag]
+                    + 'flag = %d, vendor = %s' % (val, extra))
+
+        elif tag == 'TAG_ALSO_COMPATIBLE_WITH':
+            if val.tag == 'TAG_CPU_ARCH':
+                return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
+
+            else:
+                return _DESCR_ATTR_TAG_ARM[tag] + '??? (%d)' % val.tag
+
+        elif tag == 'TAG_NODEFAULTS':
+            return _DESCR_ATTR_TAG_ARM[tag] + 'True'
+            
+        s = _DESCR_ATTR_TAG_ARM[tag]
+        s += '"%s"' % val if val else ''
+        return s
+
     else:
         return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
 
@@ -470,8 +487,8 @@ _DESCR_D_TAG = dict(
 
 _DESCR_ATTR_TAG_ARM = dict(
     TAG_FILE='File Attributes',
-    TAG_SECTION='Section Attributes: ',
-    TAG_SYMBOL='Symbol Attributes: ',
+    TAG_SECTION='Section Attributes:',
+    TAG_SYMBOL='Symbol Attributes:',
     TAG_CPU_RAW_NAME='Tag_CPU_raw_name: ',
     TAG_CPU_NAME='Tag_CPU_name: ',
     TAG_CPU_ARCH='Tag_CPU_arch: ',
@@ -492,8 +509,8 @@ _DESCR_ATTR_TAG_ARM = dict(
     TAG_ABI_FP_EXCEPTIONS='Tag_ABI_FP_exceptions: ',
     TAG_ABI_FP_USER_EXCEPTIONS='Tag_ABI_FP_user_exceptions: ',
     TAG_ABI_FP_NUMBER_MODEL='Tag_ABI_FP_number_model: ',
-    TAG_ABI_ALIGN_NEEDED='Tag_ABI_FP_align_needed: ',
-    TAG_ABI_ALIGN_PRESERVED='Tag_ABI_FP_align_preserved: ',
+    TAG_ABI_ALIGN_NEEDED='Tag_ABI_align_needed: ',
+    TAG_ABI_ALIGN_PRESERVED='Tag_ABI_align_preserved: ',
     TAG_ABI_ENUM_SIZE='Tag_ABI_enum_size: ',
     TAG_ABI_HARDFP_USE='Tag_ABI_HardFP_use: ',
     TAG_ABI_VFP_ARGS='Tag_ABI_VFP_args: ',
@@ -522,73 +539,74 @@ _DESCR_ATTR_VAL_ARM = [
     None, #4
     None, #5
     { #6 TAG_CPU_ARCH
-        0 : 'ARM pre v4',
-        1 : 'ARMv4',
-        2 : 'ARMv4T',
-        3 : 'ARMv5T',
-        4 : 'ARMv5TE',
-        5 : 'ARMv5TEJ',
-        6 : 'ARMv6',
-        7 : 'ARMv6KZ',
-        8 : 'ARMv6T2',
-        9 : 'ARMv6K',
-        10: 'ARMv7',
-        11: 'ARMv6-M',
-        12: 'ARMv6S-M',
-        13: 'ARMv7E-M',
-        14: 'ARMv8-A',
-        15: 'ARMv8-R',
-        16: 'ARMv8-M base',
-        17: 'ARMv8-M main',
+        0 : 'Pre-v4',
+        1 : 'v4',
+        2 : 'v4T',
+        3 : 'v5T',
+        4 : 'v5TE',
+        5 : 'v5TEJ',
+        6 : 'v6',
+        7 : 'v6KZ',
+        8 : 'v6T2',
+        9 : 'v6K',
+        10: 'v7',
+        11: 'v6-M',
+        12: 'v6S-M',
+        13: 'v7E-M',
+        14: 'v8',
+        15: 'v8-R',
+        16: 'v8-M.baseline',
+        17: 'v8-M.mainline',
     },
     { #7 TAG_CPU_ARCH_PROFILE
-        0x00: 'Not Applicable',
-        0x41: 'Application Profile',
-        0x52: 'Real Time Profile',
-        0x4D: 'Microcontroller Profile',
-        0x53: 'Application or Real Time Profile',
+        0x00: 'None',
+        0x41: 'Application',
+        0x52: 'Realtime',
+        0x4D: 'Microcontroller',
+        0x53: 'Application or Realtime',
     },
-    { #8 TAG
-        0: 'Not Permitted',
-        1: 'Permitted',
+    { #8 TAG_ARM_ISA
+        0: 'No',
+        1: 'Yes',
     },
     { #9 TAG_THUMB_ISA
-        0: 'Not Permitted',
+        0: 'No',
         1: 'Thumb-1',
         2: 'Thumb-2',
+        3: 'Yes',
     },
     { #10 TAG_FP_ARCH
-        0: 'Not Permitted',
-        1: 'VFP v1',
-        2: 'VFP v2 ',
-        3: 'VFP v3',
-        4: 'VFP v3 D16',
-        5: 'VFP v4',
-        6: 'VFP v4 D16',
-        7: 'VFP ARM v8A',
-        8: 'VFP ARM v8A D16',
+        0: 'No',
+        1: 'VFPv1',
+        2: 'VFPv2 ',
+        3: 'VFPv3',
+        4: 'VFPv3-D16',
+        5: 'VFPv4',
+        6: 'VFPv4-D16',
+        7: 'FP ARM v8',
+        8: 'FPv5/FP-D16 for ARMv8',
     },
     { #11 TAG_WMMX_ARCH
-        0: 'Not Permitted',
-        1: 'WMMX v1',
-        2: 'WMMX v2',
+        0: 'No',
+        1: 'WMMXv1',
+        2: 'WMMXv2',
     },
     { #12 TAG_ADVANCED_SIMD_ARCH
-        0: 'Not Permitted',
-        1: 'NEON v1',
-        2: 'NEON v2',
-        3: 'NEON ARM v8A',
-        4: 'NEON ARM v8A 1',
+        0: 'No',
+        1: 'NEONv1',
+        2: 'NEONv1 with Fused-MAC',
+        3: 'NEON for ARMv8',
+        4: 'NEON for ARMv8.1',
     },
     { #13 TAG_PCS_CONFIG
         0: 'None',
-        1: 'Bare Platform',
-        2: 'Linux Application',
+        1: 'Bare platform',
+        2: 'Linux application',
         3: 'Linux DSO',
         4: 'PalmOS 2004',
-        5: 'Reserved PalmOS',
+        5: 'PalmOS (reserved)',
         6: 'SymbianOS 2004',
-        7: 'Reserved SymbianOS',
+        7: 'SymbianOS (reserved)',
     },
     { #14 TAG_ABI_PCS_R9_USE
         0: 'v6',
@@ -598,88 +616,91 @@ _DESCR_ATTR_VAL_ARM = [
     },
     { #15 TAG_ABI_PCS_RW_DATA
         0: 'Absolute',
-        1: 'PC Relative',
-        2: 'SB Relative',
-        3: 'Not Permitted',
+        1: 'PC-relative',
+        2: 'SB-relative',
+        3: 'None',
     },
     { #16 TAG_ABI_PCS_RO_DATA
         0: 'Absolute',
-        1: 'PC Relative',
-        2: 'Not Permitted',
+        1: 'PC-relative',
+        2: 'None',
     },
     { #17 TAG_ABI_PCS_GOT_USE
-        0: 'Not Permitted',
-        1: 'Direct',
-        2: 'GOT Indirect',
+        0: 'None',
+        1: 'direct',
+        2: 'GOT-indirect',
     },
     { #18 TAG_ABI_PCS_WCHAR_T
-        0: 'Not Permitted',
-        2: '2 bytes wchar_t',
-        4: '4 bytes wchar_t',
+        0: 'None',
+        1: '??? 1',
+        2: '2',
+        3: '??? 3',
+        4: '4',
     },
     { #19 TAG_ABI_FP_ROUNDING
-        0: 'Nearest Rounding',
-        1: 'Custom Rounding',
+        0: 'Unused',
+        1: 'Needed',
     },
     { #20 TAG_ABI_FP_DENORMAL
-        0: 'Positive Zero',
-        1: 'IEEE Denormals',
-        2: 'Preserve FP Sign',
+        0: 'Unused',
+        1: 'Needed',
+        2: 'Sign only',
     },
     { #21 TAG_ABI_FP_EXCEPTIONS
-        0: 'Not Permitted',
-        1: 'Permitted',
+        0: 'Unused',
+        1: 'Needed',
     },
     { #22 TAG_ABI_FP_USER_EXCEPTIONS
-        0: 'Not Permitted',
-        1: 'permitted',
+        0: 'Unused',
+        1: 'Needed',
     },
     { #23 TAG_ABI_FP_NUMBER_MODEL
-        0: 'Not Permitted',
-        1: 'IEEE normal',
+        0: 'Unused',
+        1: 'Finite',
         2: 'RTABI',
         3: 'IEEE 754',
     },
     { #24 TAG_ABI_ALIGN_NEEDED
-        0: 'Not Permitted',
-        1: 'Align 8 bytes',
-        2: 'Align 4 bytes',
-        3: 'Align Reserved',
+        0: 'None',
+        1: '8-byte',
+        2: '4-byte',
+        3: '??? 3',
     },
     { #25 TAG_ABI_ALIGN_PRESERVED
-        0: 'Not Permitted',
-        1: 'Preserve 8 bytes',
-        2: 'Preserve All',
-        3: 'Preserve Reserved',
+        0: 'None',
+        1: '8-byte, except leaf SP',
+        2: '8-byte',
+        3: '??? 3',
     },
     { #26 TAG_ABI_ENUM_SIZE
         0: 'Unused',
-        1: 'Small',
+        1: 'small',
         2: 'int',
-        3: 'Forced to int',
+        3: 'forced to int',
     },
     { #27 TAG_ABI_HARDFP_USE
-        0: 'As TAG FP ARCH',
-        1: 'SP',
+        0: 'As Tag_FP_arch',
+        1: 'SP only',
         2: 'Reserved',
+        3: 'Deprecated',
     },
     { #28 TAG_ABI_VFP_ARGS
-        0: 'Base AAPCS',
-        1: 'VFP AAPCS',
-        2: 'Custom',
-        3: 'Compatible',
+        0: 'AAPCS',
+        1: 'VFP registers',
+        2: 'custom',
+        3: 'compatible',
     },
     { #29 TAG_ABI_WMMX_ARGS
-        0: 'Base AAPCS',
-        1: 'Custom',
-        2: 'Specific',
+        0: 'AAPCS',
+        1: 'WMMX registers',
+        2: 'custom',
     },
     { #30 TAG_ABI_OPTIMIZATION_GOALS
         0: 'None',
         1: 'Prefer Speed',
         2: 'Aggressive Speed',
-        3: 'Prefer Small Size',
-        4: 'Aggressive Small Size',
+        3: 'Prefer Size',
+        4: 'Aggressive Size',
         5: 'Prefer Debug',
         6: 'Aggressive Debug',
     },
@@ -687,43 +708,43 @@ _DESCR_ATTR_VAL_ARM = [
         0: 'None',
         1: 'Prefer Speed',
         2: 'Aggressive Speed',
-        3: 'Prefer Small Size',
-        4: 'Aggressive Small Size',
+        3: 'Prefer Size',
+        4: 'Aggressive Size',
         5: 'Prefer Accuracy',
         6: 'Aggressive Accuracy',
     },
     { #32 TAG_COMPATIBILITY
-        0: 'Not Required',
-        1: 'Required',
+        0: 'No',
+        1: 'Yes',
     },
     None, #33
     { #34 TAG_CPU_UNALIGNED_ACCESS
-        0: 'Not Permitted',
+        0: 'None',
         1: 'v6',
     },
     None, #35
     { #36 TAG_FP_HP_EXTENSION
-        0: 'Used if Available',
-        1: 'Permitted',
+        0: 'Not Allowed',
+        1: 'Allowed',
     },
     None, #37
     { #38 TAG_ABI_FP_16BIT_FORMAT
-        0: 'Not Permitted',
-        1: 'IEEE 16bit',
-        2: 'VFPv3 16bit',
+        0: 'None',
+        1: 'IEEE 754',
+        2: 'Alternative Format',
     },
     None, #39
     None, #40
     None, #41
     { #42 TAG_MPEXTENSION_USE
-        0: 'Not Permitted',
-        1: 'Permitted',
+        0: 'Not Allowed',
+        1: 'Allowed',
     },
     None, #43
     { #44 TAG_DIV_USE
-        0: 'Permitted in Thumb v7R v7M',
-        1: 'Not Permitted',
-        2: 'Permitted in v7A with Integer Division Extension',
+        0: 'Allowed in Thumb-ISA, v7-R or v7-M',
+        1: 'Not allowed',
+        2: 'Allowed in v7-A with integer division extension',
     },
     None, #45
     None, #46
@@ -747,19 +768,19 @@ _DESCR_ATTR_VAL_ARM = [
     None, #64
     None, #65
     { #66 TAG_FP_HP_EXTENSION
-        0: 'Not Permitted',
-        1: 'Permitted',
+        0: 'Not Allowed',
+        1: 'Allowed',
     },
     None, #67
     { #68 TAG_VIRTUALIZATION_USE
-        0: 'Not Permitted',
+        0: 'Not Allowed',
         1: 'TrustZone',
-        2: 'Virtualization',
-        3: 'TrustZone and Virtualization',
+        2: 'Virtualization Extensions',
+        3: 'TrustZone and Virtualization Extensions',
     },
     None, #69
     { #70 TAG_MPEXTENSION_USE_OLD
-        0: 'Not Permitted',
-        1: 'Permitted',
+        0: 'Not Allowed',
+        1: 'Allowed',
     },
 ]
