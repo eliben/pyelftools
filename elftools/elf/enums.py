@@ -262,7 +262,7 @@ ENUM_E_MACHINE = dict(
     # reserved  145-159 Reserved for future use
     # reserved  182     Reserved for future Intel use
     # reserved  184     Reserved for future ARM use
-    # unknown/reserve?  225 - 242   
+    # unknown/reserve?  225 - 242
     _default_=Pass,
 )
 
