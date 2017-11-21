@@ -9,7 +9,8 @@
 from .enums import (
     ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE, ENUM_SH_TYPE,
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
-    ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_MIPS)
+    ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_MIPS,
+    ENUM_ATTR_TAG_ARM)
 from .constants import P_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS
 from ..common.py3compat import iteritems
 
@@ -17,8 +18,10 @@ from ..common.py3compat import iteritems
 def describe_ei_class(x):
     return _DESCR_EI_CLASS.get(x, _unknown)
 
+
 def describe_ei_data(x):
     return _DESCR_EI_DATA.get(x, _unknown)
+
 
 def describe_ei_version(x):
     s = '%d' % ENUM_E_VERSION[x]
@@ -26,17 +29,22 @@ def describe_ei_version(x):
         s += ' (current)'
     return s
 
+
 def describe_ei_osabi(x):
     return _DESCR_EI_OSABI.get(x, _unknown)
+
 
 def describe_e_type(x):
     return _DESCR_E_TYPE.get(x, _unknown)
 
+
 def describe_e_machine(x):
     return _DESCR_E_MACHINE.get(x, _unknown)
 
+
 def describe_e_version_numeric(x):
     return '0x%x' % ENUM_E_VERSION[x]
+
 
 def describe_p_type(x):
     if x in _DESCR_P_TYPE:
@@ -46,11 +54,13 @@ def describe_p_type(x):
     else:
         return _unknown
 
+
 def describe_p_flags(x):
     s = ''
     for flag in (P_FLAGS.PF_R, P_FLAGS.PF_W, P_FLAGS.PF_X):
         s += _DESCR_P_FLAGS[flag] if (x & flag) else ' '
     return s
+
 
 def describe_sh_type(x):
     if x in _DESCR_SH_TYPE:
@@ -59,6 +69,7 @@ def describe_sh_type(x):
         return 'loos+%lx' % (x - ENUM_SH_TYPE['SHT_LOOS'])
     else:
         return _unknown
+
 
 def describe_sh_flags(x):
     s = ''
@@ -70,17 +81,22 @@ def describe_sh_flags(x):
         s += _DESCR_SH_FLAGS[flag] if (x & flag) else ''
     return s
 
+
 def describe_symbol_type(x):
     return _DESCR_ST_INFO_TYPE.get(x, _unknown)
+
 
 def describe_symbol_bind(x):
     return _DESCR_ST_INFO_BIND.get(x, _unknown)
 
+
 def describe_symbol_visibility(x):
     return _DESCR_ST_VISIBILITY.get(x, _unknown)
 
+
 def describe_symbol_shndx(x):
     return _DESCR_ST_SHNDX.get(x, '%3s' % x)
+
 
 def describe_reloc_type(x, elffile):
     arch = elffile.get_machine_arch()
@@ -96,6 +112,7 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_MIPS.get(x, _unknown)
     else:
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
+
 
 def describe_dyn_tag(x):
     return _DESCR_D_TAG.get(x, _unknown)
@@ -114,14 +131,17 @@ def describe_syminfo_flags(x):
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_INTERPOSE,
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED) if x & flag)
 
+
 def describe_symbol_boundto(x):
     return _DESCR_SYMINFO_BOUNDTO.get(x, '%3s' % x)
+
 
 def describe_ver_flags(x):
     return ' | '.join(_DESCR_VER_FLAGS[flag] for flag in (
         VER_FLAGS.VER_FLG_WEAK,
         VER_FLAGS.VER_FLG_BASE,
         VER_FLAGS.VER_FLG_INFO) if x & flag)
+
 
 def describe_note(x):
     n_desc = x['n_desc']
@@ -144,6 +164,34 @@ def describe_note(x):
                       _DESCR_NOTE_N_TYPE.get(x['n_type'], _unknown))
     return '%s (%s)%s' % (note_type, note_type_desc, desc)
 
+
+def describe_attr_tag_arm(tag, val, extra):
+    idx = ENUM_ATTR_TAG_ARM[tag] - 1
+    d_entry = _DESCR_ATTR_VAL_ARM[idx]
+
+    if d_entry is None:
+        if tag == 'TAG_COMPATIBILITY':
+            return (_DESCR_ATTR_TAG_ARM[tag]
+                    + 'flag = %d, vendor = %s' % (val, extra))
+
+        elif tag == 'TAG_ALSO_COMPATIBLE_WITH':
+            if val.tag == 'TAG_CPU_ARCH':
+                return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
+
+            else:
+                return _DESCR_ATTR_TAG_ARM[tag] + '??? (%d)' % val.tag
+
+        elif tag == 'TAG_NODEFAULTS':
+            return _DESCR_ATTR_TAG_ARM[tag] + 'True'
+            
+        s = _DESCR_ATTR_TAG_ARM[tag]
+        s += '"%s"' % val if val else ''
+        return s
+
+    else:
+        return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
+
+
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
 
@@ -154,11 +202,13 @@ _DESCR_EI_CLASS = dict(
     ELFCLASS64='ELF64',
 )
 
+
 _DESCR_EI_DATA = dict(
     ELFDATANONE='none',
     ELFDATA2LSB="2's complement, little endian",
     ELFDATA2MSB="2's complement, big endian",
 )
+
 
 _DESCR_EI_OSABI = dict(
     ELFOSABI_SYSV='UNIX - System V',
@@ -184,6 +234,7 @@ _DESCR_EI_OSABI = dict(
     ELFOSABI_STANDALONE='Standalone App',
 )
 
+
 _DESCR_E_TYPE = dict(
     ET_NONE='NONE (None)',
     ET_REL='REL (Relocatable file)',
@@ -192,6 +243,7 @@ _DESCR_E_TYPE = dict(
     ET_CORE='CORE (Core file)',
     PROC_SPECIFIC='Processor Specific',
 )
+
 
 _DESCR_E_MACHINE = dict(
     EM_NONE='None',
@@ -213,6 +265,7 @@ _DESCR_E_MACHINE = dict(
     RESERVED='RESERVED',
 )
 
+
 _DESCR_P_TYPE = dict(
     PT_NULL='NULL',
     PT_LOAD='LOAD',
@@ -230,11 +283,13 @@ _DESCR_P_TYPE = dict(
     PT_AARCH64_UNWIND='AARCH64_UNWIND',
 )
 
+
 _DESCR_P_FLAGS = {
     P_FLAGS.PF_X: 'E',
     P_FLAGS.PF_R: 'R',
     P_FLAGS.PF_W: 'W',
 }
+
 
 _DESCR_SH_TYPE = dict(
     SHT_NULL='NULL',
@@ -301,6 +356,7 @@ _DESCR_SH_TYPE = dict(
     SHT_MIPS_PDR_EXCEPTION='MIPS_PDR_EXCEPTION',
 )
 
+
 _DESCR_SH_FLAGS = {
     SH_FLAGS.SHF_WRITE: 'W',
     SH_FLAGS.SHF_ALLOC: 'A',
@@ -315,6 +371,7 @@ _DESCR_SH_FLAGS = {
     SH_FLAGS.SHF_EXCLUDE: 'E',
 }
 
+
 _DESCR_ST_INFO_TYPE = dict(
     STT_NOTYPE='NOTYPE',
     STT_OBJECT='OBJECT',
@@ -328,11 +385,13 @@ _DESCR_ST_INFO_TYPE = dict(
     STT_SRELC='SRELC',
 )
 
+
 _DESCR_ST_INFO_BIND = dict(
     STB_LOCAL='LOCAL',
     STB_GLOBAL='GLOBAL',
     STB_WEAK='WEAK',
 )
+
 
 _DESCR_ST_VISIBILITY = dict(
     STV_DEFAULT='DEFAULT',
@@ -344,11 +403,13 @@ _DESCR_ST_VISIBILITY = dict(
     STV_ELIMINATE='ELIMINATE',
 )
 
+
 _DESCR_ST_SHNDX = dict(
     SHN_UNDEF='UND',
     SHN_ABS='ABS',
     SHN_COMMON='COM',
 )
+
 
 _DESCR_SYMINFO_FLAGS = {
     SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECT: 'D',
@@ -363,12 +424,14 @@ _DESCR_SYMINFO_FLAGS = {
     SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED: 'P',
 }
 
+
 _DESCR_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_SELF='<self>',
     SYMINFO_BT_PARENT='<parent>',
     SYMINFO_BT_NONE='',
     SYMINFO_BT_EXTERN='<extern>',
 )
+
 
 _DESCR_VER_FLAGS = {
     0: '',
@@ -377,6 +440,7 @@ _DESCR_VER_FLAGS = {
     VER_FLAGS.VER_FLG_INFO: 'INFO',
 }
 
+
 # PT_NOTE section types
 _DESCR_NOTE_N_TYPE = dict(
     NT_GNU_ABI_TAG='ABI version tag',
@@ -384,6 +448,7 @@ _DESCR_NOTE_N_TYPE = dict(
     NT_GNU_BUILD_ID='unique build ID bitstring',
     NT_GNU_GOLD_VERSION='gold version',
 )
+
 
 # Values in GNU .note.ABI-tag notes (n_type=='NT_GNU_ABI_TAG')
 _DESCR_NOTE_ABI_TAG_OS = dict(
@@ -395,20 +460,327 @@ _DESCR_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_SYLLABLE='Syllable',
 )
 
+
 _DESCR_RELOC_TYPE_i386 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_i386))
+
 
 _DESCR_RELOC_TYPE_x64 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_x64))
 
+
 _DESCR_RELOC_TYPE_ARM = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_ARM))
+
 
 _DESCR_RELOC_TYPE_AARCH64 = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_AARCH64))
 
+
 _DESCR_RELOC_TYPE_MIPS = dict(
         (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_MIPS))
 
+
 _DESCR_D_TAG = dict(
         (v, k) for k, v in iteritems(ENUM_D_TAG))
+
+
+_DESCR_ATTR_TAG_ARM = dict(
+    TAG_FILE='File Attributes',
+    TAG_SECTION='Section Attributes:',
+    TAG_SYMBOL='Symbol Attributes:',
+    TAG_CPU_RAW_NAME='Tag_CPU_raw_name: ',
+    TAG_CPU_NAME='Tag_CPU_name: ',
+    TAG_CPU_ARCH='Tag_CPU_arch: ',
+    TAG_CPU_ARCH_PROFILE='Tag_CPU_arch_profile: ',
+    TAG_ARM_ISA_USE='Tag_ARM_ISA_use: ',
+    TAG_THUMB_ISA_USE='Tag_Thumb_ISA_use: ',
+    TAG_FP_ARCH='Tag_FP_arch: ',
+    TAG_WMMX_ARCH='Tag_WMMX_arch: ',
+    TAG_ADVANCED_SIMD_ARCH='Tag_Advanced_SIMD_arch: ',
+    TAG_PCS_CONFIG='Tag_PCS_config: ',
+    TAG_ABI_PCS_R9_USE='Tag_ABI_PCS_R9_use: ',
+    TAG_ABI_PCS_RW_DATA='Tag_ABI_PCS_RW_use: ',
+    TAG_ABI_PCS_RO_DATA='Tag_ABI_PCS_RO_use: ',
+    TAG_ABI_PCS_GOT_USE='Tag_ABI_PCS_GOT_use: ',
+    TAG_ABI_PCS_WCHAR_T='Tag_ABI_PCS_wchar_t: ',
+    TAG_ABI_FP_ROUNDING='Tag_ABI_FP_rounding: ',
+    TAG_ABI_FP_DENORMAL='Tag_ABI_FP_denormal: ',
+    TAG_ABI_FP_EXCEPTIONS='Tag_ABI_FP_exceptions: ',
+    TAG_ABI_FP_USER_EXCEPTIONS='Tag_ABI_FP_user_exceptions: ',
+    TAG_ABI_FP_NUMBER_MODEL='Tag_ABI_FP_number_model: ',
+    TAG_ABI_ALIGN_NEEDED='Tag_ABI_align_needed: ',
+    TAG_ABI_ALIGN_PRESERVED='Tag_ABI_align_preserved: ',
+    TAG_ABI_ENUM_SIZE='Tag_ABI_enum_size: ',
+    TAG_ABI_HARDFP_USE='Tag_ABI_HardFP_use: ',
+    TAG_ABI_VFP_ARGS='Tag_ABI_VFP_args: ',
+    TAG_ABI_WMMX_ARGS='Tag_ABI_WMMX_args: ',
+    TAG_ABI_OPTIMIZATION_GOALS='Tag_ABI_optimization_goals: ',
+    TAG_ABI_FP_OPTIMIZATION_GOALS='Tag_ABI_FP_optimization_goals: ',
+    TAG_COMPATIBILITY='Tag_compatibility: ',
+    TAG_CPU_UNALIGNED_ACCESS='Tag_CPU_unaligned_access: ',
+    TAG_FP_HP_EXTENSION='Tag_FP_HP_extension: ',
+    TAG_ABI_FP_16BIT_FORMAT='Tag_ABI_FP_16bit_format: ',
+    TAG_MPEXTENSION_USE='Tag_MPextension_use: ',
+    TAG_DIV_USE='Tag_DIV_use: ',
+    TAG_NODEFAULTS='Tag_nodefaults: ',
+    TAG_ALSO_COMPATIBLE_WITH='Tag_also_compatible_with: ',
+    TAG_T2EE_USE='Tag_T2EE_use: ',
+    TAG_CONFORMANCE='Tag_conformance: ',
+    TAG_VIRTUALIZATION_USE='Tag_Virtualization_use: ',
+    TAG_MPEXTENSION_USE_OLD='Tag_MPextension_use_old: ',
+)
+
+
+_DESCR_ATTR_VAL_ARM = [
+    None, #1
+    None, #2
+    None, #3
+    None, #4
+    None, #5
+    { #6 TAG_CPU_ARCH
+        0 : 'Pre-v4',
+        1 : 'v4',
+        2 : 'v4T',
+        3 : 'v5T',
+        4 : 'v5TE',
+        5 : 'v5TEJ',
+        6 : 'v6',
+        7 : 'v6KZ',
+        8 : 'v6T2',
+        9 : 'v6K',
+        10: 'v7',
+        11: 'v6-M',
+        12: 'v6S-M',
+        13: 'v7E-M',
+        14: 'v8',
+        15: 'v8-R',
+        16: 'v8-M.baseline',
+        17: 'v8-M.mainline',
+    },
+    { #7 TAG_CPU_ARCH_PROFILE
+        0x00: 'None',
+        0x41: 'Application',
+        0x52: 'Realtime',
+        0x4D: 'Microcontroller',
+        0x53: 'Application or Realtime',
+    },
+    { #8 TAG_ARM_ISA
+        0: 'No',
+        1: 'Yes',
+    },
+    { #9 TAG_THUMB_ISA
+        0: 'No',
+        1: 'Thumb-1',
+        2: 'Thumb-2',
+        3: 'Yes',
+    },
+    { #10 TAG_FP_ARCH
+        0: 'No',
+        1: 'VFPv1',
+        2: 'VFPv2 ',
+        3: 'VFPv3',
+        4: 'VFPv3-D16',
+        5: 'VFPv4',
+        6: 'VFPv4-D16',
+        7: 'FP ARM v8',
+        8: 'FPv5/FP-D16 for ARMv8',
+    },
+    { #11 TAG_WMMX_ARCH
+        0: 'No',
+        1: 'WMMXv1',
+        2: 'WMMXv2',
+    },
+    { #12 TAG_ADVANCED_SIMD_ARCH
+        0: 'No',
+        1: 'NEONv1',
+        2: 'NEONv1 with Fused-MAC',
+        3: 'NEON for ARMv8',
+        4: 'NEON for ARMv8.1',
+    },
+    { #13 TAG_PCS_CONFIG
+        0: 'None',
+        1: 'Bare platform',
+        2: 'Linux application',
+        3: 'Linux DSO',
+        4: 'PalmOS 2004',
+        5: 'PalmOS (reserved)',
+        6: 'SymbianOS 2004',
+        7: 'SymbianOS (reserved)',
+    },
+    { #14 TAG_ABI_PCS_R9_USE
+        0: 'v6',
+        1: 'SB',
+        2: 'TLS',
+        3: 'Unused',
+    },
+    { #15 TAG_ABI_PCS_RW_DATA
+        0: 'Absolute',
+        1: 'PC-relative',
+        2: 'SB-relative',
+        3: 'None',
+    },
+    { #16 TAG_ABI_PCS_RO_DATA
+        0: 'Absolute',
+        1: 'PC-relative',
+        2: 'None',
+    },
+    { #17 TAG_ABI_PCS_GOT_USE
+        0: 'None',
+        1: 'direct',
+        2: 'GOT-indirect',
+    },
+    { #18 TAG_ABI_PCS_WCHAR_T
+        0: 'None',
+        1: '??? 1',
+        2: '2',
+        3: '??? 3',
+        4: '4',
+    },
+    { #19 TAG_ABI_FP_ROUNDING
+        0: 'Unused',
+        1: 'Needed',
+    },
+    { #20 TAG_ABI_FP_DENORMAL
+        0: 'Unused',
+        1: 'Needed',
+        2: 'Sign only',
+    },
+    { #21 TAG_ABI_FP_EXCEPTIONS
+        0: 'Unused',
+        1: 'Needed',
+    },
+    { #22 TAG_ABI_FP_USER_EXCEPTIONS
+        0: 'Unused',
+        1: 'Needed',
+    },
+    { #23 TAG_ABI_FP_NUMBER_MODEL
+        0: 'Unused',
+        1: 'Finite',
+        2: 'RTABI',
+        3: 'IEEE 754',
+    },
+    { #24 TAG_ABI_ALIGN_NEEDED
+        0: 'None',
+        1: '8-byte',
+        2: '4-byte',
+        3: '??? 3',
+    },
+    { #25 TAG_ABI_ALIGN_PRESERVED
+        0: 'None',
+        1: '8-byte, except leaf SP',
+        2: '8-byte',
+        3: '??? 3',
+    },
+    { #26 TAG_ABI_ENUM_SIZE
+        0: 'Unused',
+        1: 'small',
+        2: 'int',
+        3: 'forced to int',
+    },
+    { #27 TAG_ABI_HARDFP_USE
+        0: 'As Tag_FP_arch',
+        1: 'SP only',
+        2: 'Reserved',
+        3: 'Deprecated',
+    },
+    { #28 TAG_ABI_VFP_ARGS
+        0: 'AAPCS',
+        1: 'VFP registers',
+        2: 'custom',
+        3: 'compatible',
+    },
+    { #29 TAG_ABI_WMMX_ARGS
+        0: 'AAPCS',
+        1: 'WMMX registers',
+        2: 'custom',
+    },
+    { #30 TAG_ABI_OPTIMIZATION_GOALS
+        0: 'None',
+        1: 'Prefer Speed',
+        2: 'Aggressive Speed',
+        3: 'Prefer Size',
+        4: 'Aggressive Size',
+        5: 'Prefer Debug',
+        6: 'Aggressive Debug',
+    },
+    { #31 TAG_ABI_FP_OPTIMIZATION_GOALS
+        0: 'None',
+        1: 'Prefer Speed',
+        2: 'Aggressive Speed',
+        3: 'Prefer Size',
+        4: 'Aggressive Size',
+        5: 'Prefer Accuracy',
+        6: 'Aggressive Accuracy',
+    },
+    { #32 TAG_COMPATIBILITY
+        0: 'No',
+        1: 'Yes',
+    },
+    None, #33
+    { #34 TAG_CPU_UNALIGNED_ACCESS
+        0: 'None',
+        1: 'v6',
+    },
+    None, #35
+    { #36 TAG_FP_HP_EXTENSION
+        0: 'Not Allowed',
+        1: 'Allowed',
+    },
+    None, #37
+    { #38 TAG_ABI_FP_16BIT_FORMAT
+        0: 'None',
+        1: 'IEEE 754',
+        2: 'Alternative Format',
+    },
+    None, #39
+    None, #40
+    None, #41
+    { #42 TAG_MPEXTENSION_USE
+        0: 'Not Allowed',
+        1: 'Allowed',
+    },
+    None, #43
+    { #44 TAG_DIV_USE
+        0: 'Allowed in Thumb-ISA, v7-R or v7-M',
+        1: 'Not allowed',
+        2: 'Allowed in v7-A with integer division extension',
+    },
+    None, #45
+    None, #46
+    None, #47
+    None, #48
+    None, #49
+    None, #50
+    None, #51
+    None, #52
+    None, #53
+    None, #54
+    None, #55
+    None, #56
+    None, #57
+    None, #58
+    None, #59
+    None, #60
+    None, #61
+    None, #62
+    None, #63
+    None, #64
+    None, #65
+    { #66 TAG_FP_HP_EXTENSION
+        0: 'Not Allowed',
+        1: 'Allowed',
+    },
+    None, #67
+    { #68 TAG_VIRTUALIZATION_USE
+        0: 'Not Allowed',
+        1: 'TrustZone',
+        2: 'Virtualization Extensions',
+        3: 'TrustZone and Virtualization Extensions',
+    },
+    None, #69
+    { #70 TAG_MPEXTENSION_USE_OLD
+        0: 'Not Allowed',
+        1: 'Allowed',
+    },
+]

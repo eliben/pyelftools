@@ -11,9 +11,9 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt32, SLInt32, SBInt64, SLInt64,
-    Struct, Array, Enum, Padding, BitStruct, BitField, Value, String, CString,
+    Struct, Array, Enum, Padding, BitStruct, BitField, Value, String, CString
     )
-
+from ..common.construct_utils import ULEB128
 from .enums import *
 
 
@@ -69,6 +69,8 @@ class ELFStructs(object):
             self.Elf_xword = UBInt32 if self.elfclass == 32 else UBInt64
             self.Elf_sxword = SBInt32 if self.elfclass == 32 else SBInt64
         self._create_ehdr()
+        self._create_leb128()
+        self._create_ntbs()
 
     def create_advanced_structs(self, elftype=None):
         """ Create all ELF structs except the ehdr. They may possibly depend
@@ -87,6 +89,7 @@ class ELFStructs(object):
         self._create_gnu_abi()
         self._create_note(elftype)
         self._create_stabs()
+        self._create_arm_attributes()
 
     #-------------------------------- PRIVATE --------------------------------#
 
@@ -115,6 +118,12 @@ class ELFStructs(object):
             self.Elf_half('e_shnum'),
             self.Elf_half('e_shstrndx'),
         )
+
+    def _create_leb128(self):
+        self.Elf_uleb128 = ULEB128
+
+    def _create_ntbs(self):
+        self.Elf_ntbs = CString
 
     def _create_phdr(self):
         if self.elfclass == 32:
@@ -346,4 +355,20 @@ class ELFStructs(object):
             self.Elf_byte('n_other'),
             self.Elf_half('n_desc'),
             self.Elf_word('n_value'),
+        )
+
+    def _create_arm_attributes(self):
+        # Structure of a build attributes subsection header. A subsection is
+        # either public to all tools that process the ELF file or private to
+        # the vendor's tools.
+        self.Elf_Attr_Subsection_Header = Struct('Elf_Attr_Subsection',
+                                                 self.Elf_word('length'),
+                                                 self.Elf_ntbs('vendor_name',
+                                                               encoding='ascii')
+        )
+
+        # Structure of a build attribute tag.
+        self.Elf_Attribute_Tag = Struct('Elf_Attribute_Tag',
+                                        Enum(self.Elf_uleb128('tag'),
+                                             **ENUM_ATTR_TAG_ARM)
         )

@@ -10,11 +10,10 @@
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
-    Adapter, Struct, ConstructError, If, RepeatUntil, Field, Rename, Enum,
-    Array, PrefixedArray, CString, Embed, StaticField
+    Adapter, Struct, ConstructError, If, Enum, Array, PrefixedArray,
+    CString, Embed, StaticField
     )
-from ..common.construct_utils import RepeatUntilExcluding
-
+from ..common.construct_utils import RepeatUntilExcluding, ULEB128, SLEB128
 from .enums import *
 
 
@@ -148,8 +147,8 @@ class DWARFStructs(object):
         self.Dwarf_initial_length = _InitialLength
 
     def _create_leb128(self):
-        self.Dwarf_uleb128 = _ULEB128
-        self.Dwarf_sleb128 = _SLEB128
+        self.Dwarf_uleb128 = ULEB128
+        self.Dwarf_sleb128 = SLEB128
 
     def _create_cu_header(self):
         self.Dwarf_CU_header = Struct('Dwarf_CU_header',
@@ -303,47 +302,3 @@ class _InitialLengthAdapter(Adapter):
             else:
                 raise ConstructError("Failed decoding initial length for %X" % (
                     obj.first))
-
-
-def _LEB128_reader():
-    """ Read LEB128 variable-length data from the stream. The data is terminated
-        by a byte with 0 in its highest bit.
-    """
-    return RepeatUntil(
-                lambda obj, ctx: ord(obj) < 0x80,
-                Field(None, 1))
-
-
-class _ULEB128Adapter(Adapter):
-    """ An adapter for ULEB128, given a sequence of bytes in a sub-construct.
-    """
-    def _decode(self, obj, context):
-        value = 0
-        for b in reversed(obj):
-            value = (value << 7) + (ord(b) & 0x7F)
-        return value
-
-
-class _SLEB128Adapter(Adapter):
-    """ An adapter for SLEB128, given a sequence of bytes in a sub-construct.
-    """
-    def _decode(self, obj, context):
-        value = 0
-        for b in reversed(obj):
-            value = (value << 7) + (ord(b) & 0x7F)
-        if ord(obj[-1]) & 0x40:
-            # negative -> sign extend
-            value |= - (1 << (7 * len(obj)))
-        return value
-
-
-def _ULEB128(name):
-    """ A construct creator for ULEB128 encoding.
-    """
-    return Rename(name, _ULEB128Adapter(_LEB128_reader()))
-
-
-def _SLEB128(name):
-    """ A construct creator for SLEB128 encoding.
-    """
-    return Rename(name, _SLEB128Adapter(_LEB128_reader()))
