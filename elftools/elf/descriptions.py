@@ -262,6 +262,7 @@ _DESCR_E_MACHINE = dict(
     EM_ARM='ARM',
     EM_AARCH64='AArch64',
     EM_BLAFKIN='Analog Devices Blackfin',
+    EM_PPC='PowerPC',
     RESERVED='RESERVED',
 )
 
@@ -281,6 +282,7 @@ _DESCR_P_TYPE = dict(
     PT_ARM_EXIDX='ARM_EXIDX',
     PT_AARCH64_ARCHEXT='AARCH64_ARCHEXT',
     PT_AARCH64_UNWIND='AARCH64_UNWIND',
+    PT_TLS='TLS'
 )
 
 
