@@ -139,10 +139,10 @@ class ReadElf(object):
         elif self.elffile['e_machine'] == "EM_MIPS":
             if flags & E_FLAGS.EF_MIPS_NOREORDER:
                 description += ", noreorder"
-            if flags & E_FLAGS.EF_MIPS_CPIC:
-                description += ", cpic"
             if flags & E_FLAGS.EF_MIPS_PIC:
                 description += ", pic"
+            if flags & E_FLAGS.EF_MIPS_CPIC:
+                description += ", cpic"
             if not (flags & E_FLAGS.EF_MIPS_ABI2) and not (flags & E_FLAGS.EF_MIPS_ABI_ON32):
                 description += ", o32"
             if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_1:
