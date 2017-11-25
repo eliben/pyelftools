@@ -209,7 +209,7 @@ class ReadElf(object):
                     describe_p_flags(segment['p_flags']),
                     # lead0x set to False for p_align, to mimic readelf.
                     # No idea why the difference from 32-bit mode :-|
-                    self._format_hex(segment['p_align'], lead0x=False)))
+                    self._format_hex(segment['p_align'], lead0x=True)))
 
             if isinstance(segment, InterpSegment):
                 self._emitline('      [Requesting program interpreter: %s]' %
