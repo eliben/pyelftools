@@ -40,6 +40,7 @@ from elftools.elf.descriptions import (
     describe_ver_flags, describe_note, describe_attr_tag_arm
     )
 from elftools.elf.constants import E_FLAGS
+from elftools.elf.constants import E_FLAGS_MASKS
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
     describe_reg_name, describe_attr_value, set_global_machine_arch,
@@ -134,7 +135,7 @@ class ReadElf(object):
                 if flags:
                     description += ', <unknown>'
             else:
-                desrciption += ', <unrecognized EABI>'
+                description += ', <unrecognized EABI>'
 
         elif self.elffile['e_machine'] == "EM_MIPS":
             if flags & E_FLAGS.EF_MIPS_NOREORDER:
@@ -143,10 +144,36 @@ class ReadElf(object):
                 description += ", pic"
             if flags & E_FLAGS.EF_MIPS_CPIC:
                 description += ", cpic"
-            if not (flags & E_FLAGS.EF_MIPS_ABI2) and not (flags & E_FLAGS.EF_MIPS_ABI_ON32):
+            if (flags & E_FLAGS.EF_MIPS_ABI2):
+                description += ", abi2"
+            if (flags & E_FLAGS.EF_MIPS_32BITMODE):
+                description += ", 32bitmode"
+            if (flags & E_FLAGS_MASKS.EFM_MIPS_ABI_O32):
                 description += ", o32"
+            elif (flags & E_FLAGS_MASKS.EFM_MIPS_ABI_O64):
+                description += ", o64"
+            elif (flags & E_FLAGS_MASKS.EFM_MIPS_ABI_EABI32):
+                description += ", eabi32"
+            elif (flags & E_FLAGS_MASKS.EFM_MIPS_ABI_EABI64):
+                description += ", eabi64"
             if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_1:
                 description += ", mips1"
+            if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_2:
+                description += ", mips2"
+            if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_3:
+                description += ", mips3"
+            if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_4:
+                description += ", mips4"
+            if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_5:
+                description += ", mips5"
+            if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_32R2:
+                description += ", mips32r2"
+            if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_64R2:
+                description += ", mips64r2"
+            if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_32:
+                description += ", mips32"
+            if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_64:
+                description += ", mips64"
 
         return description
 
