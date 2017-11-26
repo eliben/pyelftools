@@ -34,6 +34,7 @@ class E_FLAGS(object):
     EF_MIPS_64BIT_WHIRL=16
     EF_MIPS_ABI2=32
     EF_MIPS_ABI_ON32=64
+    EF_MIPS_32BITMODE = 256
     EF_MIPS_NAN2008=1024
     EF_MIPS_ARCH=0xf0000000
     EF_MIPS_ARCH_1=0x00000000
@@ -45,6 +46,20 @@ class E_FLAGS(object):
     EF_MIPS_ARCH_64=0x60000000
     EF_MIPS_ARCH_32R2=0x70000000
     EF_MIPS_ARCH_64R2=0x80000000
+
+
+class E_FLAGS_MASKS(object):
+    """Masks to be used for convenience when working with E_FLAGS
+
+    This is a simplified approach that is also used by GNU binutils
+    readelf
+    """
+    EFM_MIPS_ABI = 0x0000F000
+    EFM_MIPS_ABI_O32 = 0x00001000
+    EFM_MIPS_ABI_O64 = 0x00002000
+    EFM_MIPS_ABI_EABI32 = 0x00003000
+    EFM_MIPS_ABI_EABI64 = 0x00004000
+
 
 class SHN_INDICES(object):
     """ Special section indices
