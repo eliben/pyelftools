@@ -564,9 +564,11 @@ class CFIEntry(object):
                 else:
                     cur_line.pop(instr.args[0], None)
             elif name == 'DW_CFA_remember_state':
-                line_stack.append(cur_line)
+                line_stack.append(copy.deepcopy(cur_line))
             elif name == 'DW_CFA_restore_state':
+                pc = cur_line['pc']
                 cur_line = line_stack.pop()
+                cur_line['pc'] = pc
 
         # The current line is appended to the table after all instructions
         # have ended, in any case (even if there were no instructions).
