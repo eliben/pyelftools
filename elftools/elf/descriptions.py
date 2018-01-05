@@ -463,30 +463,28 @@ _DESCR_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_SYLLABLE='Syllable',
 )
 
+def _reverse_dict(d, low_priority=()):
+    out = {}
+    for k, v in iteritems(d):
+        if v in out and k in low_priority:
+            continue
+        out[v] = k
+    return out
 
-_DESCR_RELOC_TYPE_i386 = dict(
-        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_i386))
-
-
-_DESCR_RELOC_TYPE_x64 = dict(
-        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_x64))
-
-
-_DESCR_RELOC_TYPE_ARM = dict(
-        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_ARM))
-
-
-_DESCR_RELOC_TYPE_AARCH64 = dict(
-        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_AARCH64))
-
-
-_DESCR_RELOC_TYPE_MIPS = dict(
-        (v, k) for k, v in iteritems(ENUM_RELOC_TYPE_MIPS))
-
-
-_DESCR_D_TAG = dict(
-        (v, k) for k, v in iteritems(ENUM_D_TAG))
-
+_DESCR_RELOC_TYPE_i386 = _reverse_dict(ENUM_RELOC_TYPE_i386)
+_DESCR_RELOC_TYPE_x64 = _reverse_dict(ENUM_RELOC_TYPE_x64)
+_DESCR_RELOC_TYPE_ARM = _reverse_dict(ENUM_RELOC_TYPE_ARM)
+_DESCR_RELOC_TYPE_AARCH64 = _reverse_dict(ENUM_RELOC_TYPE_AARCH64)
+_DESCR_RELOC_TYPE_MIPS = _reverse_dict(ENUM_RELOC_TYPE_MIPS)
+_DESCR_D_TAG = _reverse_dict(ENUM_D_TAG, (
+    # these are 'meta-tags' marking semantics of numeric ranges of the enum
+    # they should not override other tags with the same numbers
+    'DT_LOOS',
+    'DT_HIOS',
+    'DT_LOPROC',
+    'DT_HIPROC',
+    'DT_ENCODING',
+))
 
 _DESCR_ATTR_TAG_ARM = dict(
     TAG_FILE='File Attributes',
