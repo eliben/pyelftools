@@ -10,6 +10,8 @@ import os
 from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
 from elftools.elf.dynamic import DynamicTag
+from elftools.elf.enums import ENUM_D_TAG
+from elftools.elf.descriptions import _DESCR_D_TAG, _low_priority_D_TAG
 
 
 class TestDynamicTag(unittest.TestCase):
@@ -18,6 +20,17 @@ class TestDynamicTag(unittest.TestCase):
     def test_requires_stringtable(self):
         with self.assertRaises(ELFError):
             dt = DynamicTag('', None)
+
+    def test_tag_priority(self):
+        for tag in _low_priority_D_TAG:
+            val = ENUM_D_TAG[tag]
+            # if the low priority tag is present in the descriptions,
+            # assert that it has not overridden any other tag
+            if _DESCR_D_TAG[val] == tag:
+                for tag2 in ENUM_D_TAG:
+                    if tag2 == tag:
+                        continue
+                    self.assertNotEqual(ENUM_D_TAG[tag2], val)
 
 
 class TestDynamic(unittest.TestCase):

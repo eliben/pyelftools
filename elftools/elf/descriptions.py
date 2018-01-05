@@ -484,7 +484,8 @@ _DESCR_RELOC_TYPE_x64 = _reverse_dict(ENUM_RELOC_TYPE_x64)
 _DESCR_RELOC_TYPE_ARM = _reverse_dict(ENUM_RELOC_TYPE_ARM)
 _DESCR_RELOC_TYPE_AARCH64 = _reverse_dict(ENUM_RELOC_TYPE_AARCH64)
 _DESCR_RELOC_TYPE_MIPS = _reverse_dict(ENUM_RELOC_TYPE_MIPS)
-_DESCR_D_TAG = _reverse_dict(ENUM_D_TAG, low_priority=(
+
+_low_priority_D_TAG = (
     # these are 'meta-tags' marking semantics of numeric ranges of the enum
     # they should not override other tags with the same numbers
     # see https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-42444.html
@@ -493,7 +494,8 @@ _DESCR_D_TAG = _reverse_dict(ENUM_D_TAG, low_priority=(
     'DT_LOPROC',
     'DT_HIPROC',
     'DT_ENCODING',
-))
+)
+_DESCR_D_TAG = _reverse_dict(ENUM_D_TAG, low_priority=_low_priority_D_TAG)
 
 _DESCR_ATTR_TAG_ARM = dict(
     TAG_FILE='File Attributes',
