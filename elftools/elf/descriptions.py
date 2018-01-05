@@ -464,6 +464,14 @@ _DESCR_NOTE_ABI_TAG_OS = dict(
 )
 
 def _reverse_dict(d, low_priority=()):
+    """
+    This is a tiny helper function to "reverse" the keys/values of a dictionary
+    provided in the first argument, i.e. {k: v} becomes {v: k}.
+
+    The second argument (optional) provides primitive control over what to do in
+    the case of conflicting values - if a value is present in this list, it will
+    not override any other entries of the same value.
+    """
     out = {}
     for k, v in iteritems(d):
         if v in out and k in low_priority:
@@ -476,9 +484,10 @@ _DESCR_RELOC_TYPE_x64 = _reverse_dict(ENUM_RELOC_TYPE_x64)
 _DESCR_RELOC_TYPE_ARM = _reverse_dict(ENUM_RELOC_TYPE_ARM)
 _DESCR_RELOC_TYPE_AARCH64 = _reverse_dict(ENUM_RELOC_TYPE_AARCH64)
 _DESCR_RELOC_TYPE_MIPS = _reverse_dict(ENUM_RELOC_TYPE_MIPS)
-_DESCR_D_TAG = _reverse_dict(ENUM_D_TAG, (
+_DESCR_D_TAG = _reverse_dict(ENUM_D_TAG, low_priority=(
     # these are 'meta-tags' marking semantics of numeric ranges of the enum
     # they should not override other tags with the same numbers
+    # see https://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-42444.html
     'DT_LOOS',
     'DT_HIOS',
     'DT_LOPROC',
