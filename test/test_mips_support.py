@@ -9,6 +9,7 @@ import os
 
 from elftools.elf.elffile import ELFFile
 
+
 class TestMIPSSupport(unittest.TestCase):
     def test_hello(self):
         with open(os.path.join('test', 'testfiles_for_unittests',
@@ -20,6 +21,7 @@ class TestMIPSSupport(unittest.TestCase):
             self.assertEqual(elf['e_entry'], 0x0)
             self.assertEqual(elf.num_sections(), 25)
             self.assertEqual(elf.num_segments(), 0)
+
 
 if __name__ == '__main__':
     unittest.main()

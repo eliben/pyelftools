@@ -207,7 +207,6 @@ class ELFFile(object):
                 debug_ranges_sec=debug_sections[debug_ranges_sec_name],
                 debug_line_sec=debug_sections[debug_line_sec_name])
 
-
     def get_machine_arch(self):
         """ Return the machine architecture, as detected from the ELF header.
             Not all architectures are supported at the moment.

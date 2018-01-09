@@ -151,5 +151,6 @@ class TestSymbolVersioning(unittest.TestCase):
                         verdaux_iter, ref_verdef['verdaux']):
                     self.assertEqual(verdaux.name, ref_verdaux['name'])
 
+
 if __name__ == '__main__':
     unittest.main()

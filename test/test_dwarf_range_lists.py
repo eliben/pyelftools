@@ -9,6 +9,7 @@ import unittest
 
 from elftools.elf.elffile import ELFFile
 
+
 class TestRangeLists(unittest.TestCase):
     # Test the absence of .debug_ranges section
     def test_range_list_absence(self):
@@ -25,6 +26,7 @@ class TestRangeLists(unittest.TestCase):
             elffile = ELFFile(f)
             self.assertTrue(elffile.has_dwarf_info())
             self.assertIsNotNone(elffile.get_dwarf_info().range_lists())
+
 
 if __name__ == '__main__':
     unittest.main()
