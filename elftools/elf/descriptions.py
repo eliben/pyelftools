@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from .enums import (
-    ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE, ENUM_SH_TYPE,
+    ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE, ENUM_SH_TYPE_BASE,
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_MIPS,
     ENUM_ATTR_TAG_ARM)
@@ -65,8 +65,9 @@ def describe_p_flags(x):
 def describe_sh_type(x):
     if x in _DESCR_SH_TYPE:
         return _DESCR_SH_TYPE.get(x)
-    elif x >= ENUM_SH_TYPE['SHT_LOOS'] and x < ENUM_SH_TYPE['SHT_GNU_versym']:
-        return 'loos+%lx' % (x - ENUM_SH_TYPE['SHT_LOOS'])
+    elif (x >= ENUM_SH_TYPE_BASE['SHT_LOOS'] and
+          x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']):
+        return 'loos+%lx' % (x - ENUM_SH_TYPE_BASE['SHT_LOOS'])
     else:
         return _unknown
 

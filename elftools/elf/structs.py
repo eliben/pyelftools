@@ -72,12 +72,12 @@ class ELFStructs(object):
         self._create_leb128()
         self._create_ntbs()
 
-    def create_advanced_structs(self, elftype=None):
+    def create_advanced_structs(self, e_type=None, e_machine=None):
         """ Create all ELF structs except the ehdr. They may possibly depend
-            on provided #elftype previously parsed from ehdr.
+            on provided e_type and/or e_machine parsed from ehdr.
         """
         self._create_phdr()
-        self._create_shdr()
+        self._create_shdr(e_machine)
         self._create_chdr()
         self._create_sym()
         self._create_rel()
@@ -87,7 +87,7 @@ class ELFStructs(object):
         self._create_gnu_verdef()
         self._create_gnu_versym()
         self._create_gnu_abi()
-        self._create_note(elftype)
+        self._create_note(e_type)
         self._create_stabs()
         self._create_arm_attributes()
 
@@ -149,10 +149,22 @@ class ELFStructs(object):
                 self.Elf_xword('p_align'),
             )
 
-    def _create_shdr(self):
+    def _create_shdr(self, e_machine=None):
+        """Section header parsing.
+
+        Depends on e_machine because of machine-specific values in sh_type.
+        """
+        sh_type_dict = ENUM_SH_TYPE_BASE
+        if e_machine == 'EM_ARM':
+            sh_type_dict = ENUM_SH_TYPE_ARM
+        elif e_machine == 'EM_X86_64':
+            sh_type_dict = ENUM_SH_TYPE_AMD64
+        elif e_machine == 'EM_MIPS':
+            sh_type_dict = ENUM_SH_TYPE_MIPS
+
         self.Elf_Shdr = Struct('Elf_Shdr',
             self.Elf_word('sh_name'),
-            Enum(self.Elf_word('sh_type'), **ENUM_SH_TYPE),
+            Enum(self.Elf_word('sh_type'), **sh_type_dict),
             self.Elf_xword('sh_flags'),
             self.Elf_addr('sh_addr'),
             self.Elf_offset('sh_offset'),
@@ -300,13 +312,13 @@ class ELFStructs(object):
             self.Elf_word('abi_tiny'),
         )
 
-    def _create_note(self, elftype=None):
+    def _create_note(self, e_type=None):
         # Structure of "PT_NOTE" section
         self.Elf_Nhdr = Struct('Elf_Nhdr',
             self.Elf_word('n_namesz'),
             self.Elf_word('n_descsz'),
             Enum(self.Elf_word('n_type'),
-                 **(ENUM_NOTE_N_TYPE if elftype != "ET_CORE"
+                 **(ENUM_NOTE_N_TYPE if e_type != "ET_CORE"
                     else ENUM_CORE_NOTE_N_TYPE)),
         )
 

@@ -28,7 +28,7 @@ if PY3:
 
     def iterbytes(b):
         """Return an iterator over the elements of a bytes object.
-        
+
         For example, for b'abc' yields b'a', b'b' and then b'c'.
         """
         for i in range(len(b)):
