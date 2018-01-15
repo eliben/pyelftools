@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from .enums import (
-    ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE, ENUM_SH_TYPE_BASE,
+    ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE_BASE, ENUM_SH_TYPE_BASE,
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_MIPS,
     ENUM_ATTR_TAG_ARM)
@@ -49,8 +49,8 @@ def describe_e_version_numeric(x):
 def describe_p_type(x):
     if x in _DESCR_P_TYPE:
         return _DESCR_P_TYPE.get(x)
-    elif x >= ENUM_P_TYPE['PT_LOOS'] and x <= ENUM_P_TYPE['PT_HIOS']:
-        return 'LOOS+%lx' % (x - ENUM_P_TYPE['PT_LOOS'])
+    elif x >= ENUM_P_TYPE_BASE['PT_LOOS'] and x <= ENUM_P_TYPE_BASE['PT_HIOS']:
+        return 'LOOS+%lx' % (x - ENUM_P_TYPE_BASE['PT_LOOS'])
     else:
         return _unknown
 

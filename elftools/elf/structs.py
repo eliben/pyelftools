@@ -76,7 +76,7 @@ class ELFStructs(object):
         """ Create all ELF structs except the ehdr. They may possibly depend
             on provided e_type and/or e_machine parsed from ehdr.
         """
-        self._create_phdr()
+        self._create_phdr(e_machine)
         self._create_shdr(e_machine)
         self._create_chdr()
         self._create_sym()
@@ -125,10 +125,18 @@ class ELFStructs(object):
     def _create_ntbs(self):
         self.Elf_ntbs = CString
 
-    def _create_phdr(self):
+    def _create_phdr(self, e_machine=None):
+        p_type_dict = ENUM_P_TYPE_BASE
+        if e_machine == 'EM_ARM':
+            p_type_dict = ENUM_P_TYPE_ARM
+        elif e_machine == 'EM_AARCH64':
+            p_type_dict = ENUM_P_TYPE_AARCH64
+        elif e_machine == 'EM_MIPS':
+            p_type_dict = ENUM_P_TYPE_MIPS
+
         if self.elfclass == 32:
             self.Elf_Phdr = Struct('Elf_Phdr',
-                Enum(self.Elf_word('p_type'), **ENUM_P_TYPE),
+                Enum(self.Elf_word('p_type'), **p_type_dict),
                 self.Elf_offset('p_offset'),
                 self.Elf_addr('p_vaddr'),
                 self.Elf_addr('p_paddr'),
@@ -139,7 +147,7 @@ class ELFStructs(object):
             )
         else: # 64
             self.Elf_Phdr = Struct('Elf_Phdr',
-                Enum(self.Elf_word('p_type'), **ENUM_P_TYPE),
+                Enum(self.Elf_word('p_type'), **p_type_dict),
                 self.Elf_word('p_flags'),
                 self.Elf_offset('p_offset'),
                 self.Elf_addr('p_vaddr'),

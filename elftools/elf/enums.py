@@ -268,6 +268,11 @@ ENUM_E_MACHINE = dict(
 )
 
 # sh_type in the section header
+#
+# This is the "base" dict that doesn't hold processor-specific values; from it
+# we later create per-processor dicts that use the LOPROC...HIPROC range to
+# define processor-specific values. The proper dict should be used based on the
+# machine the ELF header refers to.
 ENUM_SH_TYPE_BASE = dict(
     SHT_NULL=0,
     SHT_PROGBITS=1,
@@ -295,8 +300,8 @@ ENUM_SH_TYPE_BASE = dict(
     SHT_GNU_verneed=0x6ffffffe, # also SHT_SUNW_verneed
     SHT_GNU_versym=0x6fffffff,  # also SHT_SUNW_versym, SHT_HIOS
 
-    # These are commented out because they carry no semantic meaning in themselves and 
-    # may be overridden by target-specific enums.
+    # These are commented out because they carry no semantic meaning in
+    # themselves and may be overridden by target-specific enums.
     #SHT_LOPROC=0x70000000,
     #SHT_HIPROC=0x7fffffff,
 
@@ -369,7 +374,9 @@ ENUM_ELFCOMPRESS_TYPE = dict(
 
 # p_type in the program header
 # some values scavenged from the ELF headers in binutils-2.21
-ENUM_P_TYPE = dict(
+#
+# Using the same base + per-processor augmentation technique as in sh_type.
+ENUM_P_TYPE_BASE = dict(
     PT_NULL=0,
     PT_LOAD=1,
     PT_DYNAMIC=2,
@@ -380,18 +387,33 @@ ENUM_P_TYPE = dict(
     PT_TLS=7,
     PT_LOOS=0x60000000,
     PT_HIOS=0x6fffffff,
-    PT_LOPROC=0x70000000,
-    PT_HIPROC=0x7fffffff,
+
+    # These are commented out because they carry no semantic meaning in
+    # themselves and may be overridden by target-specific enums.
+    #PT_LOPROC=0x70000000,
+    #PT_HIPROC=0x7fffffff,
+
     PT_GNU_EH_FRAME=0x6474e550,
     PT_GNU_STACK=0x6474e551,
     PT_GNU_RELRO=0x6474e552,
-    PT_ARM_ARCHEXT=0x70000000,
-    PT_ARM_EXIDX=0x70000001,
-    PT_AARCH64_ARCHEXT=0x70000000,
-    PT_AARCH64_UNWIND=0x70000001,
-    PT_MIPS_ABIFLAGS=0x70000003,
     _default_=Pass,
 )
+
+ENUM_P_TYPE_ARM = merge_dicts(
+        ENUM_P_TYPE_BASE,
+        dict(
+            PT_ARM_ARCHEXT=0x70000000,
+            PT_ARM_EXIDX=0x70000001))
+
+ENUM_P_TYPE_AARCH64 = merge_dicts(
+        ENUM_P_TYPE_BASE,
+        dict(
+            PT_AARCH64_ARCHEXT=0x70000000,
+            PT_AARCH64_UNWIND=0x70000001))
+
+ENUM_P_TYPE_MIPS = merge_dicts(
+        ENUM_P_TYPE_BASE,
+        dict(PT_MIPS_ABIFLAGS=0x70000003))
 
 # st_info bindings in the symbol header
 ENUM_ST_INFO_BIND = dict(
