@@ -12,6 +12,14 @@ from .py3compat import int2byte
 from ..construct import ConstructError
 
 
+def merge_dicts(*dicts):
+    "Given any number of dicts, merges them into a new one."""
+    result = {}
+    for d in dicts:
+        result.update(d)
+    return result
+
+
 def bytelist2string(bytelist):
     """ Convert a list of byte values (e.g. [0x10 0x20 0x00]) to a bytes object
         (e.g. b'\x10\x20\x00').

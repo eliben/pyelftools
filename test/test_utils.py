@@ -8,7 +8,7 @@ import unittest
 from random import randint
 
 from elftools.common.py3compat import int2byte, BytesIO
-from elftools.common.utils import (parse_cstring_from_stream,
+from elftools.common.utils import (parse_cstring_from_stream, merge_dicts,
         preserve_stream_pos)
 
 
@@ -52,6 +52,16 @@ class Test_preserve_stream_pos(unittest.TestCase):
         with preserve_stream_pos(sio):
             sio.seek(0)
         self.assertEqual(sio.tell(), 5)
+
+
+class Test_merge_dicts(unittest.TestCase):
+    def test_basic(self):
+        md = merge_dicts({10: 20, 20: 30}, {30: 40, 50: 60})
+        self.assertEqual(md, {10: 20, 20: 30, 30: 40, 50: 60})
+
+    def test_keys_resolve(self):
+        md = merge_dicts({10: 20, 20: 30}, {20: 40, 50: 60})
+        self.assertEqual(md, {10: 20, 20: 40, 50: 60})
 
 
 if __name__ == '__main__':
