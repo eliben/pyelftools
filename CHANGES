@@ -3,6 +3,9 @@ Changelog
 
 + Version 0.25 (??)
 
+  - Make parsing of SH_TYPE and PT_TYPE fields dependent on the machine
+    (e_machine header field), making it possible to support conflicting type
+    enums between different machines (#71 and #121).
   - Don't attempt to hex/string dump SHT_NOBITS sections in readelf (#119).
   - Add Python 3.5 testing to the tox file.
   - Minor bugfixes (#118)
