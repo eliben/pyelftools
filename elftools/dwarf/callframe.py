@@ -475,8 +475,11 @@ class CFIEntry(object):
             # line that serves as the base (first) line in the FDE's table.
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
-            last_line_in_CIE = copy.copy(cie_decoded_table.table[-1])
-            cur_line = copy.copy(last_line_in_CIE)
+            if len(cie_decoded_table.table) > 0:
+                last_line_in_CIE = copy.copy(cie_decoded_table.table[-1])
+                cur_line = copy.copy(last_line_in_CIE)
+            else:
+                cur_line = dict(cfa=None)
             cur_line['pc'] = self['initial_location']
             reg_order = copy.copy(cie_decoded_table.reg_order)
 
@@ -569,8 +572,10 @@ class CFIEntry(object):
                 cur_line = line_stack.pop()
 
         # The current line is appended to the table after all instructions
-        # have ended, in any case (even if there were no instructions).
-        table.append(cur_line)
+        # have ended, if there were instructions.
+        if cur_line['cfa'] is not None or len(cur_line) > 2:
+            table.append(cur_line)
+
         return DecodedCallFrameTable(table=table, reg_order=reg_order)
 
 
@@ -669,7 +674,3 @@ _OPCODE_NAME_MAP = {}
 for name in list(iterkeys(globals())):
     if name.startswith('DW_CFA'):
         _OPCODE_NAME_MAP[globals()[name]] = name
-
-
-
-

@@ -1171,13 +1171,17 @@ class ReadElf(object):
                 self._emitline('\n%08x ZERO terminator' % entry.offset)
                 continue
 
+            # Decode the table.
+            decoded_table = entry.get_decoded()
+            if len(decoded_table.table) == 0:
+                continue
 
             # Print the heading row for the decoded table
             self._emit('   LOC')
             self._emit('  ' if entry.structs.address_size == 4 else '          ')
             self._emit(' CFA      ')
 
-            # Decode the table and look at the registers it describes.
+            # Look at the registers the decoded table describes.
             # We build reg_order here to match readelf's order. In particular,
             # registers are sorted by their number, and the register matching
             # ra_regnum is always listed last with a special heading.
@@ -1201,7 +1205,12 @@ class ReadElf(object):
             for line in decoded_table.table:
                 self._emit(self._format_hex(
                     line['pc'], fullhex=True, lead0x=False))
-                self._emit(' %-9s' % describe_CFI_CFA_rule(line['cfa']))
+
+                if line['cfa'] is not None:
+                    s = describe_CFI_CFA_rule(line['cfa'])
+                else:
+                    s = 'u'
+                self._emit(' %-9s' % s)
 
                 for regnum in reg_order:
                     if regnum in line:
