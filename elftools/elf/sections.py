@@ -137,7 +137,7 @@ class StringTableSection(Section):
         """
         table_offset = self['sh_offset']
         s = parse_cstring_from_stream(self.stream, table_offset + offset)
-        return s.decode('ascii') if s else ''
+        return s.decode('utf-8') if s else ''
 
 
 class SymbolTableSection(Section):
@@ -299,13 +299,13 @@ class ARMAttribute(object):
 
         elif self.tag in ('TAG_CPU_RAW_NAME', 'TAG_CPU_NAME', 'TAG_CONFORMANCE'):
             self.value = struct_parse(structs.Elf_ntbs('value',
-                                                       encoding='ascii'),
+                                                       encoding='utf-8'),
                                       stream)
 
         elif self.tag == 'TAG_COMPATIBILITY':
             self.value = struct_parse(structs.Elf_uleb128('value'), stream)
             self.extra = struct_parse(structs.Elf_ntbs('vendor_name',
-                                                       encoding='ascii'),
+                                                       encoding='utf-8'),
                                       stream)
 
         elif self.tag == 'TAG_ALSO_COMPATIBLE_WITH':
