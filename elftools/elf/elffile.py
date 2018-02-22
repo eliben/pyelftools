@@ -71,7 +71,10 @@ class ELFFile(object):
 
         self.structs.create_basic_structs()
         self.header = self._parse_elf_header()
-        self.structs.create_advanced_structs(self['e_type'], self['e_machine'], self['e_ident']['EI_OSABI'])
+        self.structs.create_advanced_structs(
+                self['e_type'],
+                self['e_machine'],
+                self['e_ident']['EI_OSABI'])
         self.stream.seek(0)
         self.e_ident_raw = self.stream.read(16)
 

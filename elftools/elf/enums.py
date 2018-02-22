@@ -468,7 +468,7 @@ ENUM_ST_SHNDX = dict(
 )
 
 # d_tag
-ENUM_D_TAG = dict(
+ENUM_D_TAG_COMMON = dict(
     DT_NULL=0,
     DT_NEEDED=1,
     DT_PLTRELSZ=2,
@@ -543,6 +543,9 @@ ENUM_D_TAG = dict(
     _default_=Pass,
 )
 
+# Above are the dynamic tags which are valid always.
+# Below are the dynamic tags which are only valid in certain contexts.
+
 ENUM_D_TAG_SOLARIS = dict(
     DT_SUNW_AUXILIARY=0x6000000d,
     DT_SUNW_RTLDINF=0x6000000e,
@@ -584,12 +587,23 @@ ENUM_D_TAG_MIPS = dict(
     DT_MIPS_RLD_MAP_REL=0x70000035,
 )
 
+# Here is the mapping from e_machine enum to the extra dynamic tags which it
+# validates. Solaris is missing from this list because its inclusion is not
+# controlled by e_machine but rather e_ident[EI_OSABI].
+# TODO: add the rest of the machine-specific dynamic tags, not just mips and
+# solaris
+
 ENUMMAP_EXTRA_D_TAG_MACHINE = dict(
     EM_MIPS=ENUM_D_TAG_MIPS,
     EM_MIPS_RS3_LE=ENUM_D_TAG_MIPS,
-    # TODO: add the rest
-    # solaris doesn't go here because what matters is e_ident[EI_OSABI] == ELFOSABI_SOLARIS
 )
+
+# Here is the full combined mapping from tag name to value
+
+ENUM_D_TAG = dict(ENUM_D_TAG_COMMON)
+ENUM_D_TAG.update(ENUM_D_TAG_SOLARIS)
+for k in ENUMMAP_EXTRA_D_TAG_MACHINE:
+    ENUM_D_TAG.update(ENUMMAP_EXTRA_D_TAG_MACHINE[k])
 
 ENUM_RELOC_TYPE_MIPS = dict(
     R_MIPS_NONE=0,
