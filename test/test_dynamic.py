@@ -68,6 +68,26 @@ class TestDynamic(unittest.TestCase):
         exp = [b'', b'__libc_start_main', b'__gmon_start__', b'abort']
         self.assertEqual(symbol_names, exp)
 
+    def test_sunw_tags(self):
+        def extract_sunw(filename):
+            with open(filename, 'rb') as f:
+                elf = ELFFile(f)
+                dyn = elf.get_section_by_name('.dynamic')
+
+                seen = set()
+                for tag in dyn.iter_tags():
+                    if type(tag.entry.d_tag) is str and \
+                            tag.entry.d_tag.startswith("DT_SUNW"):
+                        seen.add(tag.entry.d_tag)
+
+            return seen
+
+        f1 = extract_sunw(os.path.join('test', 'testfiles_for_unittests',
+            'exe_solaris32_cc.sparc.elf'))
+        f2 = extract_sunw(os.path.join('test', 'testfiles_for_unittests',
+            'android_dyntags.elf'))
+        self.assertEqual(f1, {'DT_SUNW_STRPAD', 'DT_SUNW_LDMACH'})
+        self.assertEqual(f2, set())
 
 if __name__ == '__main__':
     unittest.main()
