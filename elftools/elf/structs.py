@@ -72,7 +72,7 @@ class ELFStructs(object):
         self._create_leb128()
         self._create_ntbs()
 
-    def create_advanced_structs(self, e_type=None, e_machine=None):
+    def create_advanced_structs(self, e_type=None, e_machine=None, e_ident_osabi=None):
         """ Create all ELF structs except the ehdr. They may possibly depend
             on provided e_type and/or e_machine parsed from ehdr.
         """
@@ -81,7 +81,7 @@ class ELFStructs(object):
         self._create_chdr()
         self._create_sym()
         self._create_rel()
-        self._create_dyn()
+        self._create_dyn(e_machine, e_ident_osabi)
         self._create_sunw_syminfo()
         self._create_gnu_verneed()
         self._create_gnu_verdef()
@@ -225,9 +225,15 @@ class ELFStructs(object):
             self.Elf_sxword('r_addend'),
         )
 
-    def _create_dyn(self):
+    def _create_dyn(self, e_machine=None, e_ident_osabi=None):
+        d_tag_dict = dict(ENUM_D_TAG)
+        if e_machine in ENUMMAP_EXTRA_D_TAG_MACHINE:
+            d_tag_dict.update(ENUMMAP_EXTRA_D_TAG_MACHINE[e_machine])
+        elif e_ident_osabi == 'ELFOSABI_SOLARIS':
+            d_tag_dict.update(ENUM_D_TAG_SOLARIS)
+
         self.Elf_Dyn = Struct('Elf_Dyn',
-            Enum(self.Elf_sxword('d_tag'), **ENUM_D_TAG),
+            Enum(self.Elf_sxword('d_tag'), **d_tag_dict),
             self.Elf_xword('d_val'),
             Value('d_ptr', lambda ctx: ctx['d_val']),
         )
