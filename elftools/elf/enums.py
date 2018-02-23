@@ -468,7 +468,7 @@ ENUM_ST_SHNDX = dict(
 )
 
 # d_tag
-ENUM_D_TAG = dict(
+ENUM_D_TAG_COMMON = dict(
     DT_NULL=0,
     DT_NEEDED=1,
     DT_PLTRELSZ=2,
@@ -505,24 +505,6 @@ ENUM_D_TAG = dict(
     DT_PREINIT_ARRAYSZ=33,
     DT_NUM=34,
     DT_LOOS=0x6000000d,
-    DT_SUNW_AUXILIARY=0x6000000d,
-    DT_SUNW_RTLDINF=0x6000000e,
-    DT_SUNW_FILTER=0x6000000f,
-    DT_SUNW_CAP=0x60000010,
-    DT_SUNW_SYMTAB=0x60000011,
-    DT_SUNW_SYMSZ=0x60000012,
-    DT_SUNW_ENCODING=0x60000013,
-    DT_SUNW_SORTENT=0x60000013,
-    DT_SUNW_SYMSORT=0x60000014,
-    DT_SUNW_SYMSORTSZ=0x60000015,
-    DT_SUNW_TLSSORT=0x60000016,
-    DT_SUNW_TLSSORTSZ=0x60000017,
-    DT_SUNW_CAPINFO=0x60000018,
-    DT_SUNW_STRPAD=0x60000019,
-    DT_SUNW_CAPCHAIN=0x6000001a,
-    DT_SUNW_LDMACH=0x6000001b,
-    DT_SUNW_CAPCHAINENT=0x6000001d,
-    DT_SUNW_CAPCHAINSZ=0x6000001f,
     DT_HIOS=0x6ffff000,
     DT_LOPROC=0x70000000,
     DT_HIPROC=0x7fffffff,
@@ -556,6 +538,36 @@ ENUM_D_TAG = dict(
     DT_VERDEFNUM=0x6ffffffd,
     DT_VERNEED=0x6ffffffe,
     DT_VERNEEDNUM=0x6fffffff,
+    DT_AUXILIARY=0x7ffffffd,
+    DT_FILTER=0x7fffffff,
+    _default_=Pass,
+)
+
+# Above are the dynamic tags which are valid always.
+# Below are the dynamic tags which are only valid in certain contexts.
+
+ENUM_D_TAG_SOLARIS = dict(
+    DT_SUNW_AUXILIARY=0x6000000d,
+    DT_SUNW_RTLDINF=0x6000000e,
+    DT_SUNW_FILTER=0x6000000f,
+    DT_SUNW_CAP=0x60000010,
+    DT_SUNW_SYMTAB=0x60000011,
+    DT_SUNW_SYMSZ=0x60000012,
+    DT_SUNW_ENCODING=0x60000013,
+    DT_SUNW_SORTENT=0x60000013,
+    DT_SUNW_SYMSORT=0x60000014,
+    DT_SUNW_SYMSORTSZ=0x60000015,
+    DT_SUNW_TLSSORT=0x60000016,
+    DT_SUNW_TLSSORTSZ=0x60000017,
+    DT_SUNW_CAPINFO=0x60000018,
+    DT_SUNW_STRPAD=0x60000019,
+    DT_SUNW_CAPCHAIN=0x6000001a,
+    DT_SUNW_LDMACH=0x6000001b,
+    DT_SUNW_CAPCHAINENT=0x6000001d,
+    DT_SUNW_CAPCHAINSZ=0x6000001f,
+)
+
+ENUM_D_TAG_MIPS = dict(
     DT_MIPS_RLD_VERSION=0x70000001,
     DT_MIPS_TIME_STAMP=0x70000002,
     DT_MIPS_ICHECKSUM=0x70000003,
@@ -573,10 +585,25 @@ ENUM_D_TAG = dict(
     DT_MIPS_HIPAGENO=0x70000014,
     DT_MIPS_RLD_MAP=0x70000016,
     DT_MIPS_RLD_MAP_REL=0x70000035,
-    DT_AUXILIARY=0x7ffffffd,
-    DT_FILTER=0x7fffffff,
-    _default_=Pass,
 )
+
+# Here is the mapping from e_machine enum to the extra dynamic tags which it
+# validates. Solaris is missing from this list because its inclusion is not
+# controlled by e_machine but rather e_ident[EI_OSABI].
+# TODO: add the rest of the machine-specific dynamic tags, not just mips and
+# solaris
+
+ENUMMAP_EXTRA_D_TAG_MACHINE = dict(
+    EM_MIPS=ENUM_D_TAG_MIPS,
+    EM_MIPS_RS3_LE=ENUM_D_TAG_MIPS,
+)
+
+# Here is the full combined mapping from tag name to value
+
+ENUM_D_TAG = dict(ENUM_D_TAG_COMMON)
+ENUM_D_TAG.update(ENUM_D_TAG_SOLARIS)
+for k in ENUMMAP_EXTRA_D_TAG_MACHINE:
+    ENUM_D_TAG.update(ENUMMAP_EXTRA_D_TAG_MACHINE[k])
 
 ENUM_RELOC_TYPE_MIPS = dict(
     R_MIPS_NONE=0,
