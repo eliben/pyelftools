@@ -384,7 +384,7 @@ class ELFStructs(object):
         self.Elf_Attr_Subsection_Header = Struct('Elf_Attr_Subsection',
                                                  self.Elf_word('length'),
                                                  self.Elf_ntbs('vendor_name',
-                                                               encoding='ascii')
+                                                               encoding='utf-8')
         )
 
         # Structure of a build attribute tag.
