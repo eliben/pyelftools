@@ -104,7 +104,8 @@ def describe_CFI_instructions(entry):
         elif name == 'DW_CFA_def_cfa_expression':
             expr_dumper = ExprDumper(entry.structs)
             expr_dumper.process_expr(instr.args[0])
-            s += '  %s: (%s)\n' % (name, expr_dumper.get_str())
+            # readelf output is missing a colon for DW_CFA_def_cfa_expression
+            s += '  %s (%s)\n' % (name, expr_dumper.get_str())
         elif name == 'DW_CFA_expression':
             expr_dumper = ExprDumper(entry.structs)
             expr_dumper.process_expr(instr.args[1])
