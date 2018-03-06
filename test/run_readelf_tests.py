@@ -8,11 +8,13 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import argparse
-import os, sys, platform
+import os
+import sys
 import re
 from difflib import SequenceMatcher
 import logging
 import platform
+import time
 from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
 
 # Make it possible to run this file from the root dir of pyelftools without
@@ -72,13 +74,17 @@ def run_test_on_file(filename, verbose=False):
             args = [option, filename]
             if verbose: testlog.info("....executing: '%s %s'" % (
                 exe_path, ' '.join(args)))
+            t1 = time.time()
             rc, stdout = run_exe(exe_path, args)
+            testlog.info("....elapsed: %s" % (time.time() - t1,))
             if rc != 0:
                 testlog.error("@@ aborting - '%s' returned '%s'" % (exe_path, rc))
                 return False
             stdouts.append(stdout)
         if verbose: testlog.info('....comparing output...')
+        t1 = time.time()
         rc, errmsg = compare_output(*stdouts)
+        testlog.info("....elapsed: %s" % (time.time() - t1,))
         if rc:
             if verbose: testlog.info('.......................SUCCESS')
         else:
