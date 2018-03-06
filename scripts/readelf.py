@@ -7,8 +7,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import argparse
 import os, sys
-from optparse import OptionParser
 import string
 
 # For running from development directory. It should take precedence over the
@@ -1265,76 +1265,80 @@ class ReadElf(object):
 
 
 SCRIPT_DESCRIPTION = 'Display information about the contents of ELF format files'
-VERSION_STRING = '%%prog: based on pyelftools %s' % __version__
+VERSION_STRING = '%%(prog)s: based on pyelftools %s' % __version__
 
 
 def main(stream=None):
     # parse the command-line arguments and invoke ReadElf
-    optparser = OptionParser(
-            usage='usage: %prog [options] <elf-file>',
+    argparser = argparse.ArgumentParser(
+            usage='usage: %(prog)s [options] <elf-file>',
             description=SCRIPT_DESCRIPTION,
-            add_help_option=False, # -h is a real option of readelf
-            prog='readelf.py',
-            version=VERSION_STRING)
-    optparser.add_option('-d', '--dynamic',
+            add_help=False, # -h is a real option of readelf
+            prog='readelf.py')
+    argparser.add_argument('file',
+            nargs='?', default=None,
+            help='ELF file to parse')
+    argparser.add_argument('-v', '--version',
+            action='version', version=VERSION_STRING)
+    argparser.add_argument('-d', '--dynamic',
             action='store_true', dest='show_dynamic_tags',
             help='Display the dynamic section')
-    optparser.add_option('-H', '--help',
+    argparser.add_argument('-H', '--help',
             action='store_true', dest='help',
             help='Display this information')
-    optparser.add_option('-h', '--file-header',
+    argparser.add_argument('-h', '--file-header',
             action='store_true', dest='show_file_header',
             help='Display the ELF file header')
-    optparser.add_option('-l', '--program-headers', '--segments',
+    argparser.add_argument('-l', '--program-headers', '--segments',
             action='store_true', dest='show_program_header',
             help='Display the program headers')
-    optparser.add_option('-S', '--section-headers', '--sections',
+    argparser.add_argument('-S', '--section-headers', '--sections',
             action='store_true', dest='show_section_header',
             help="Display the sections' headers")
-    optparser.add_option('-e', '--headers',
+    argparser.add_argument('-e', '--headers',
             action='store_true', dest='show_all_headers',
             help='Equivalent to: -h -l -S')
-    optparser.add_option('-s', '--symbols', '--syms',
+    argparser.add_argument('-s', '--symbols', '--syms',
             action='store_true', dest='show_symbols',
             help='Display the symbol table')
-    optparser.add_option('-n', '--notes',
+    argparser.add_argument('-n', '--notes',
             action='store_true', dest='show_notes',
             help='Display the core notes (if present)')
-    optparser.add_option('-r', '--relocs',
+    argparser.add_argument('-r', '--relocs',
             action='store_true', dest='show_relocs',
             help='Display the relocations (if present)')
-    optparser.add_option('-x', '--hex-dump',
+    argparser.add_argument('-x', '--hex-dump',
             action='store', dest='show_hex_dump', metavar='<number|name>',
             help='Dump the contents of section <number|name> as bytes')
-    optparser.add_option('-p', '--string-dump',
+    argparser.add_argument('-p', '--string-dump',
             action='store', dest='show_string_dump', metavar='<number|name>',
             help='Dump the contents of section <number|name> as strings')
-    optparser.add_option('-V', '--version-info',
+    argparser.add_argument('-V', '--version-info',
             action='store_true', dest='show_version_info',
             help='Display the version sections (if present)')
-    optparser.add_option('-A', '--arch-specific',
+    argparser.add_argument('-A', '--arch-specific',
             action='store_true', dest='show_arch_specific',
             help='Display the architecture-specific information (if present)')
-    optparser.add_option('--debug-dump',
+    argparser.add_argument('--debug-dump',
             action='store', dest='debug_dump_what', metavar='<what>',
             help=(
                 'Display the contents of DWARF debug sections. <what> can ' +
                 'one of {info,decodedline,frames,frames-interp}'))
 
-    options, args = optparser.parse_args()
+    args = argparser.parse_args()
 
-    if options.help or len(args) == 0:
-        optparser.print_help()
+    if args.help or not args.file:
+        argparser.print_help()
         sys.exit(0)
 
-    if options.show_all_headers:
+    if args.show_all_headers:
         do_file_header = do_section_header = do_program_header = True
     else:
-        do_file_header = options.show_file_header
-        do_section_header = options.show_section_header
-        do_program_header = options.show_program_header
+        do_file_header = args.show_file_header
+        do_section_header = args.show_section_header
+        do_program_header = args.show_program_header
 
-    with open(args[0], 'rb') as file:
+    with open(args.file, 'rb') as file:
         try:
             readelf = ReadElf(file, stream or sys.stdout)
             if do_file_header:
@@ -1345,24 +1349,24 @@ def main(stream=None):
             if do_program_header:
                 readelf.display_program_headers(
                         show_heading=not do_file_header)
-            if options.show_dynamic_tags:
+            if args.show_dynamic_tags:
                 readelf.display_dynamic_tags()
-            if options.show_symbols:
+            if args.show_symbols:
                 readelf.display_symbol_tables()
-            if options.show_notes:
+            if args.show_notes:
                 readelf.display_notes()
-            if options.show_relocs:
+            if args.show_relocs:
                 readelf.display_relocations()
-            if options.show_version_info:
+            if args.show_version_info:
                 readelf.display_version_info()
-            if options.show_arch_specific:
+            if args.show_arch_specific:
                 readelf.display_arch_specific()
-            if options.show_hex_dump:
-                readelf.display_hex_dump(options.show_hex_dump)
-            if options.show_string_dump:
-                readelf.display_string_dump(options.show_string_dump)
-            if options.debug_dump_what:
-                readelf.display_debug_dump(options.debug_dump_what)
+            if args.show_hex_dump:
+                readelf.display_hex_dump(args.show_hex_dump)
+            if args.show_string_dump:
+                readelf.display_string_dump(args.show_string_dump)
+            if args.debug_dump_what:
+                readelf.display_debug_dump(args.debug_dump_what)
         except ELFError as ex:
             sys.stderr.write('ELF error: %s\n' % ex)
             sys.exit(1)
