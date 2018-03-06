@@ -9,6 +9,7 @@ Changelog
   - Don't attempt to hex/string dump SHT_NOBITS sections in readelf (#119).
   - Add Python 3.5 testing to the tox file.
   - Minor bugfixes (#118)
+  - Cleanup: Use argparse instead of optparse
 
 + Version 0.24 (04.08.2016)
 
