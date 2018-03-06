@@ -7,10 +7,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import argparse
 import os, sys, platform
 import re
 from difflib import SequenceMatcher
-from optparse import OptionParser
 import logging
 import platform
 from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
@@ -176,41 +176,43 @@ def main():
         testlog.error('Error: Please run me from the root dir of pyelftools!')
         return 1
 
-    optparser = OptionParser(
-        usage='usage: %prog [options] [file] [file] ...',
+    argparser = argparse.ArgumentParser(
+        usage='usage: %(prog)s [options] [file] [file] ...',
         prog='run_readelf_tests.py')
-    optparser.add_option('-V', '--verbose',
-        action='store_true', dest='verbose',
-        help='Verbose output')
-    optparser.add_option('-k', '--keep-going',
+    argparser.add_argument('files', nargs='*', help='files to run tests on')
+    argparser.add_argument('-V', '--verbose',
+                           action='store_true', dest='verbose',
+                           help='Verbose output')
+    argparser.add_argument(
+        '-k', '--keep-going',
         action='store_true', dest='keep_going',
         help="Run all tests, don't stop at the first failure")
-    options, args = optparser.parse_args()
+    args = argparser.parse_args()
 
-    if options.verbose:
+    if args.verbose:
         testlog.info('Running in verbose mode')
         testlog.info('Python executable = %s' % sys.executable)
         testlog.info('readelf path = %s' % READELF_PATH)
-        testlog.info('Given list of files: %s' % args)
+        testlog.info('Given list of files: %s' % args.files)
 
     # If file names are given as command-line arguments, only these files
     # are taken as inputs. Otherwise, autodiscovery is performed.
-    if len(args) > 0:
-        filenames = args
+    if len(args.files) > 0:
+        filenames = args.files
     else:
         filenames = sorted(discover_testfiles('test/testfiles_for_readelf'))
 
     failures = 0
     for filename in filenames:
-        if not run_test_on_file(filename, verbose=options.verbose):
+        if not run_test_on_file(filename, verbose=args.verbose):
             failures += 1
-            if not options.keep_going:
+            if not args.keep_going:
                 break
 
     if failures == 0:
         testlog.info('\nConclusion: SUCCESS')
         return 0
-    elif options.keep_going:
+    elif args.keep_going:
         testlog.info('\nConclusion: FAIL ({}/{})'.format(
             failures, len(filenames)))
         return 1
