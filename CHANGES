@@ -10,6 +10,8 @@ Changelog
   - Add Python 3.5 testing to the tox file.
   - Minor bugfixes (#118)
   - Cleanup: Use argparse instead of optparse
+  - Make readelf comparison tests run in parallel using multiprocessing; cuts
+    testing time 3-5x
 
 + Version 0.24 (04.08.2016)
 
