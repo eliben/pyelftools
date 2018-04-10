@@ -124,9 +124,9 @@ class DWARFInfo(object):
             AbbrevTable objects are cached internally (two calls for the same
             offset will return the same object).
         """
-        dwarf_assert(
-            offset < self.debug_abbrev_sec.size,
-            "Offset '0x%x' to abbrev table out of section bounds" % offset)
+        #dwarf_assert(
+        #    offset < self.debug_abbrev_sec.size,
+        #    "Offset '0x%x' to abbrev table out of section bounds" % offset)
         if offset not in self._abbrevtable_cache:
             self._abbrevtable_cache[offset] = AbbrevTable(
                 structs=self.structs,
