@@ -190,8 +190,8 @@ class DWARFInfo(object):
             the DWARF data, or None if the section doesn't exist
         """
         if self.debug_aranges_sec:
-            return ARanges(self.debug_aranges_sec.stream, 
-                self.debug_aranges_sec.size, 
+            return ARanges(self.debug_aranges_sec.stream,
+                self.debug_aranges_sec.size,
                 self.structs)
         else:
             return None
