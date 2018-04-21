@@ -225,6 +225,9 @@ class DWARFInfo(object):
         offset = 0
         while offset < self.debug_info_sec.size:
             cu = self._parse_CU_at_offset(offset)
+            if not cu:
+                return
+
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.
@@ -266,6 +269,11 @@ class DWARFInfo(object):
                 little_endian=self.config.little_endian,
                 dwarf_format=dwarf_format,
                 address_size=8)
+
+        # PE file must have a section size with a given multiple, so the unused portion
+        # may be filled with zeros.
+        if cu_header['version'] == 0:
+            return None
 
         cu_die_offset = self.debug_info_sec.stream.tell()
         dwarf_assert(
