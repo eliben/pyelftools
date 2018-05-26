@@ -124,9 +124,9 @@ class DWARFInfo(object):
             AbbrevTable objects are cached internally (two calls for the same
             offset will return the same object).
         """
-        dwarf_assert(
-            offset < self.debug_abbrev_sec.size,
-            "Offset '0x%x' to abbrev table out of section bounds" % offset)
+        #dwarf_assert(
+        #    offset < self.debug_abbrev_sec.size,
+        #    "Offset '0x%x' to abbrev table out of section bounds" % offset)
         if offset not in self._abbrevtable_cache:
             self._abbrevtable_cache[offset] = AbbrevTable(
                 structs=self.structs,
@@ -190,8 +190,8 @@ class DWARFInfo(object):
             the DWARF data, or None if the section doesn't exist
         """
         if self.debug_aranges_sec:
-            return ARanges(self.debug_aranges_sec.stream, 
-                self.debug_aranges_sec.size, 
+            return ARanges(self.debug_aranges_sec.stream,
+                self.debug_aranges_sec.size,
                 self.structs)
         else:
             return None
@@ -225,6 +225,9 @@ class DWARFInfo(object):
         offset = 0
         while offset < self.debug_info_sec.size:
             cu = self._parse_CU_at_offset(offset)
+            if not cu:
+                return
+
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.
@@ -266,6 +269,11 @@ class DWARFInfo(object):
                 little_endian=self.config.little_endian,
                 dwarf_format=dwarf_format,
                 address_size=8)
+
+        # PE file must have a section size with a given multiple, so the unused portion
+        # may be filled with zeros.
+        if cu_header['version'] == 0:
+            return None
 
         cu_die_offset = self.debug_info_sec.stream.tell()
         dwarf_assert(
