@@ -134,6 +134,8 @@ class ReadElf(object):
                 description += ', Version5 EABI'
                 if flags & E_FLAGS.EF_ARM_ABI_FLOAT_SOFT:
                     description += ", soft-float ABI"
+                elif flags & E_FLAGS.EF_ARM_ABI_FLOAT_HARD:
+                    description += ", hard-float ABI"
                 if flags:
                     description += ', <unknown>'
             else:
