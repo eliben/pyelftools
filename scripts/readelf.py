@@ -131,12 +131,17 @@ class ReadElf(object):
                 flags &= ~E_FLAGS.EF_ARM_RELEXEC
 
             if eabi == E_FLAGS.EF_ARM_EABI_VER5:
+                EF_ARM_KNOWN_FLAGS = E_FLAGS.EF_ARM_ABI_FLOAT_SOFT|E_FLAGS.EF_ARM_ABI_FLOAT_HARD|E_FLAGS.EF_ARM_LE8|E_FLAGS.EF_ARM_BE8
                 description += ', Version5 EABI'
                 if flags & E_FLAGS.EF_ARM_ABI_FLOAT_SOFT:
                     description += ", soft-float ABI"
                 elif flags & E_FLAGS.EF_ARM_ABI_FLOAT_HARD:
                     description += ", hard-float ABI"
-                if flags:
+
+                if flags & E_FLAGS.EF_ARM_BE8:
+                    description += ", BE8"
+
+                if flags & ~EF_ARM_KNOWN_FLAGS:
                     description += ', <unknown>'
             else:
                 description += ', <unrecognized EABI>'
