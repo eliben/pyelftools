@@ -140,6 +140,8 @@ class ReadElf(object):
 
                 if flags & E_FLAGS.EF_ARM_BE8:
                     description += ", BE8"
+                elif flags & E_FLAGS.EF_ARM_LE8:
+                    description += ", LE8"
 
                 if flags & ~EF_ARM_KNOWN_FLAGS:
                     description += ', <unknown>'
