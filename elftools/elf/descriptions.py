@@ -154,17 +154,17 @@ def describe_ver_flags(x):
         VER_FLAGS.VER_FLG_INFO) if x & flag)
 
 
-def describe_note(x):
+def describe_note(x, wide=False):
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
-        desc = '\n    OS: %s, ABI: %d.%d.%d' % (
+        desc = '    OS: %s, ABI: %d.%d.%d' % (
             _DESCR_NOTE_ABI_TAG_OS.get(n_desc['abi_os'], _unknown),
             n_desc['abi_major'], n_desc['abi_minor'], n_desc['abi_tiny'])
     elif x['n_type'] == 'NT_GNU_BUILD_ID':
-        desc = '\n    Build ID: %s' % (n_desc)
+        desc = '    Build ID: %s' % (n_desc)
     else:
-        desc = '\n    description data: {}'.format(' '.join(
+        desc = '    description data: {}'.format(' '.join(
             '{:02x}'.format(ord(byte)) for byte in n_desc
         ))
 
@@ -173,7 +173,7 @@ def describe_note(x):
     note_type_desc = ('0x%.8x' % x['n_type']
                       if isinstance(x['n_type'], int) else
                       _DESCR_NOTE_N_TYPE.get(x['n_type'], _unknown))
-    return '%s (%s)%s' % (note_type, note_type_desc, desc)
+    return '%s (%s)%s%s' % (note_type, note_type_desc, '\n' if not wide else '\t', desc)
 
 
 def describe_attr_tag_arm(tag, val, extra):

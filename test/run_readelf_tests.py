@@ -70,33 +70,34 @@ def run_test_on_file(filename, verbose=False):
                 testlog.info('.......................SKIPPED')
             continue
 
-        # stdouts will be a 2-element list: output of readelf and output
-        # of scripts/readelf.py
-        stdouts = []
-        for exe_path in [READELF_PATH, 'scripts/readelf.py']:
-            args = [option, filename]
-            if verbose: testlog.info("....executing: '%s %s'" % (
-                exe_path, ' '.join(args)))
+        for do_wide in [[], ['--wide']]:
+            # stdouts will be a 2-element list: output of readelf and output
+            # of scripts/readelf.py
+            stdouts = []
+            for exe_path in [READELF_PATH, 'scripts/readelf.py']:
+                args = do_wide + [option, filename]
+                if verbose: testlog.info("....executing: '%s %s'" % (
+                    exe_path, ' '.join(args)))
+                t1 = time.time()
+                rc, stdout = run_exe(exe_path, args)
+                if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
+                if rc != 0:
+                    testlog.error("@@ aborting - '%s' returned '%s'" % (exe_path, rc))
+                    return False
+                stdouts.append(stdout)
+            if verbose: testlog.info('....comparing output...')
             t1 = time.time()
-            rc, stdout = run_exe(exe_path, args)
+            rc, errmsg = compare_output(*stdouts)
             if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
-            if rc != 0:
-                testlog.error("@@ aborting - '%s' returned '%s'" % (exe_path, rc))
-                return False
-            stdouts.append(stdout)
-        if verbose: testlog.info('....comparing output...')
-        t1 = time.time()
-        rc, errmsg = compare_output(*stdouts)
-        if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
-        if rc:
-            if verbose: testlog.info('.......................SUCCESS')
-        else:
-            success = False
-            testlog.info('.......................FAIL')
-            testlog.info('....for option "%s"' % option)
-            testlog.info('....Output #1 is readelf, Output #2 is pyelftools')
-            testlog.info('@@ ' + errmsg)
-            dump_output_to_temp_files(testlog, *stdouts)
+            if rc:
+                if verbose: testlog.info('.......................SUCCESS')
+            else:
+                success = False
+                testlog.info('.......................FAIL')
+                testlog.info('....for option "%s"' % option)
+                testlog.info('....Output #1 is readelf, Output #2 is pyelftools')
+                testlog.info('@@ ' + errmsg)
+                dump_output_to_temp_files(testlog, *stdouts)
     return success
 
 
@@ -199,6 +200,7 @@ def main():
         '-k', '--keep-going',
         action='store_true', dest='keep_going',
         help="Run all tests, don't stop at the first failure")
+
     args = argparser.parse_args()
 
     if args.parallel:
