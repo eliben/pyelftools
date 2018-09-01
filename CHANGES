@@ -6,12 +6,18 @@ Changelog
   - Make parsing of SH_TYPE and PT_TYPE fields dependent on the machine
     (e_machine header field), making it possible to support conflicting type
     enums between different machines (#71 and #121).
+  - Add parsing and readelf dumping for .eh_frame (#155)
+  - Support compressed sections (#152)
+  - Better support for parsing core dumps (#147)
+  - More comprehensive handling of ARM relocations (#121)
+  - Convert all ascii encoding to utf-8 encoding (#182)
   - Don't attempt to hex/string dump SHT_NOBITS sections in readelf (#119).
-  - Add Python 3.5 testing to the tox file.
+  - Test with Python 3.6
   - Minor bugfixes (#118)
   - Cleanup: Use argparse instead of optparse
   - Make readelf comparison tests run in parallel using multiprocessing; cuts
     testing time 3-5x
+  - Improvements in MIPS flags handling (#165)
 
 + Version 0.24 (04.08.2016)
 

@@ -33,6 +33,9 @@ recent version of the code. This can be done by downloading the `master zip
 file <https://github.com/eliben/pyelftools/archive/master.zip>`_ or just
 cloning the Git repository.
 
+Since **pyelftools** has no external dependencies, it's also easy to use it
+without installing, by locally adjusting ``PYTHONPATH``.
+
 How to use it?
 --------------
 
