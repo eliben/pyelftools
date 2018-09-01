@@ -4,4 +4,4 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-__version__ = '0.24'
+__version__ = '0.25'

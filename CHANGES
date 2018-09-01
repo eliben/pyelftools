@@ -1,7 +1,7 @@
 Changelog
 =========
 
-+ Version 0.25 (??)
++ Version 0.25 (2018.09.01)
 
   - Make parsing of SH_TYPE and PT_TYPE fields dependent on the machine
     (e_machine header field), making it possible to support conflicting type
@@ -19,7 +19,7 @@ Changelog
     testing time 3-5x
   - Improvements in MIPS flags handling (#165)
 
-+ Version 0.24 (04.08.2016)
++ Version 0.24 (2016.08.04)
 
   - Retrieve symbols by name - get_symbol_by_name (#58).
   - Symbol/section names are strings internally now, not bytestrings (this may
@@ -35,7 +35,7 @@ Changelog
   - Support for zlib-compressed debug sections (#102)
   - Support for DWARF v4 line programs (#82)
 
-+ Version 0.23 (08.11.2014)
++ Version 0.23 (2014.11.08)
 
   - Minimal Python 2.x version raised to 2.7
   - Basic support for MIPS (contributed by Karl Vogel).
@@ -43,7 +43,7 @@ Changelog
   - Support for parsing symbol table in dynamic segment
     (contributed by Nam T. Nguyen).
 
-+ Version 0.22 (30.03.2014)
++ Version 0.22 (2014.03.30)
 
   - pyelftools repository moved to https://github.com/eliben/pyelftools
   - Support for version sections - contributed by Yann Rouillard.
@@ -56,7 +56,7 @@ Changelog
     file name / path (based on pull request #16 by Shaheed Haque).
   - Set up Travis CI integration.
 
-+ Version 0.21 (17.04.2013)
++ Version 0.21 (2013.04.17)
 
   - Added new example: dwarf_decode_address - decode function name and
     file & line information from an address.
@@ -69,11 +69,11 @@ Changelog
   - Output of scripts/readelf.py now matches that of binutils 2.23.52.
   - Added more machine EM_ values to ENUM_E_TYPE.
 
-+ Version 0.20 (27.01.2012)
++ Version 0.20 (2012.01.27)
 
   - Python 3 support
   - Fixed some problems with running tests
   - Issue #2: made all examples run (and test/run_examples_test.py pass)
     on Windows.
 
-+ Version 0.10 - Initial public release (06.01.2012)
++ Version 0.10 - Initial public release (2012.01.06)
