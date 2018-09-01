@@ -1,7 +1,7 @@
 recursive-include elftools *.py
 recursive-include scripts *.py
 recursive-include examples *.py *.elf *.out
-recursive-include test *.py *.elf *.arm *.mips
+recursive-include test *.py *.elf *.arm *.mips *.o
 include README
 include LICENSE
 include CHANGES
