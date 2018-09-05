@@ -220,7 +220,7 @@ class RelocationHandler(object):
         return sym_value + addend - offset
 
     def _arm_reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
-        return sym_value / 4 + value - offset / 4
+        return sym_value // 4 + value - offset // 4
 
     _RELOCATION_RECIPES_ARM = {
         ENUM_RELOC_TYPE_ARM['R_ARM_ABS32']: _RELOCATION_RECIPE_TYPE(
