@@ -10,6 +10,7 @@
 #-------------------------------------------------------------------------------
 import os
 import sys
+import unittest
 
 from elftools.common.py3compat import BytesIO
 from elftools.elf.elffile import ELFFile
@@ -25,11 +26,12 @@ def do_relocation(rel_elf):
 
     rel = rel_elf.get_section_by_name('.rel.text')
     rh.apply_section_relocations(stream, rel)
+    return data.getvalue()
 
-    stream.seek(0)
-    data = stream.readlines()
+    #stream.seek(0)
+    #data = stream.readlines()
 
-    return data
+    #return data
 
 
 class TestARMRElocation(unittest.TestCase):
@@ -41,5 +43,5 @@ class TestARMRElocation(unittest.TestCase):
             elf = ELFFile(f)
 
             # Comparison of '.text' section data
-            self.assertEquals(do_relocation(rel_elf).pop(),
+            self.assertEquals(do_relocation(rel_elf),
                               elf.get_section_by_name('.text').data())
