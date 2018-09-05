@@ -35,8 +35,8 @@ def do_relocation(rel_elf):
 class TestARMRElocation(unittest.TestCase):
     def test_reloc(self):
         test_dir = os.path.joinjoin('test', 'testfiles_for_unittests')
-        with open(join(test_dir, 'reloc_simple_arm_llvm.o'), 'rb') as rel_f, \
-                open(join(test_dir, 'simple_arm_llvm.elf'), 'rb') as f:
+        with open(join(test_dir, 'arm_reloc_unrelocated.o'), 'rb') as rel_f, \
+                open(join(test_dir, 'arm_reloc_relocated.elf'), 'rb') as f:
             rel_elf = ELFFile(rel_f)
             elf = ELFFile(f)
 
