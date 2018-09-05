@@ -219,10 +219,16 @@ class RelocationHandler(object):
     def _reloc_calc_sym_plus_addend_pcrel(value, sym_value, offset, addend=0):
         return sym_value + addend - offset
 
+    def _arm_reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
+        return sym_value / 4 + value - offset / 4
+
     _RELOCATION_RECIPES_ARM = {
         ENUM_RELOC_TYPE_ARM['R_ARM_ABS32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False,
             calc_func=_reloc_calc_sym_plus_value),
+        ENUM_RELOC_TYPE_ARM['R_ARM_CALL']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False,
+            calc_func=_arm_reloc_calc_sym_plus_value_pcrel),
     }
 
     # https://dmz-portal.mips.com/wiki/MIPS_relocation_types
