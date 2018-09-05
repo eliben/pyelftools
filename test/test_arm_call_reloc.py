@@ -26,22 +26,20 @@ def do_relocation(rel_elf):
 
     rel = rel_elf.get_section_by_name('.rel.text')
     rh.apply_section_relocations(stream, rel)
-    return data.getvalue()
-
-    #stream.seek(0)
-    #data = stream.readlines()
-
-    #return data
+    return stream.getvalue()
 
 
 class TestARMRElocation(unittest.TestCase):
     def test_reloc(self):
-        test_dir = os.path.joinjoin('test', 'testfiles_for_unittests')
-        with open(join(test_dir, 'arm_reloc_unrelocated.o'), 'rb') as rel_f, \
-                open(join(test_dir, 'arm_reloc_relocated.elf'), 'rb') as f:
+        test_dir = os.path.join('test', 'testfiles_for_unittests')
+        with open(os.path.join(test_dir, 'arm_reloc_unrelocated.o'), 'rb') as rel_f, \
+             open(os.path.join(test_dir, 'arm_reloc_relocated.elf'), 'rb') as f:
             rel_elf = ELFFile(rel_f)
             elf = ELFFile(f)
 
             # Comparison of '.text' section data
             self.assertEquals(do_relocation(rel_elf),
                               elf.get_section_by_name('.text').data())
+
+if __name__ == '__main__':
+    unittest.main()
