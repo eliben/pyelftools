@@ -37,7 +37,8 @@ from elftools.elf.descriptions import (
     describe_sh_type, describe_sh_flags,
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
-    describe_ver_flags, describe_note, describe_attr_tag_arm
+    describe_dt_flags, describe_dt_flags_1, describe_ver_flags, describe_note,
+    describe_attr_tag_arm
     )
 from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import E_FLAGS_MASKS
@@ -425,6 +426,10 @@ class ReadElf(object):
                     parsed = 'Library soname: [%s]' % tag.soname
                 elif tag.entry.d_tag.endswith(('SZ', 'ENT')):
                     parsed = '%i (bytes)' % tag['d_val']
+                elif tag.entry.d_tag == 'DT_FLAGS':
+                    parsed = describe_dt_flags(tag.entry.d_val)
+                elif tag.entry.d_tag == 'DT_FLAGS_1':
+                    parsed = 'Flags: %s' % describe_dt_flags_1(tag.entry.d_val)
                 elif tag.entry.d_tag.endswith(('NUM', 'COUNT')):
                     parsed = '%i' % tag['d_val']
                 elif tag.entry.d_tag == 'DT_PLTREL':

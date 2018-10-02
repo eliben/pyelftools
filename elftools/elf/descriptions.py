@@ -10,7 +10,7 @@ from .enums import (
     ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE_BASE, ENUM_SH_TYPE_BASE,
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_MIPS,
-    ENUM_ATTR_TAG_ARM)
+    ENUM_ATTR_TAG_ARM, ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
 from .constants import P_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS
 from ..common.py3compat import iteritems
 
@@ -117,6 +117,16 @@ def describe_reloc_type(x, elffile):
 
 def describe_dyn_tag(x):
     return _DESCR_D_TAG.get(x, _unknown)
+
+
+def describe_dt_flags(x):
+    return ' '.join(key[3:] for key, val in
+        sorted(ENUM_DT_FLAGS.items(), key=lambda t: t[1]) if x & val)
+
+
+def describe_dt_flags_1(x):
+    return ' '.join(key[5:] for key, val in
+        sorted(ENUM_DT_FLAGS_1.items(), key=lambda t: t[1]) if x & val)
 
 
 def describe_syminfo_flags(x):
