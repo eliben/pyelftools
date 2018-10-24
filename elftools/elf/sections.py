@@ -287,14 +287,12 @@ class ARMAttribute(object):
 
             if self.tag != 'TAG_FILE':
                 self.extra = []
-                s_number = struct_parse(self.structs.Elf_uleb128('s_number'),
-                                        self.stream
-                           )
+                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
 
                 while s_number != 0:
                     self.extra.append(s_number)
-                    s_number = struct_parse(self.structs.Elf_uleb128('s_number'),
-                                            self.stream
+                    s_number = struct_parse(structs.Elf_uleb128('s_number'),
+                                            stream
                                )
 
         elif self.tag in ('TAG_CPU_RAW_NAME', 'TAG_CPU_NAME', 'TAG_CONFORMANCE'):
@@ -313,7 +311,7 @@ class ARMAttribute(object):
 
             if type(self.value.value) is not str:
                 nul = struct_parse(structs.Elf_byte('nul'), stream)
-                elf_assert(null_byte == 0, 
+                elf_assert(nul == 0,
                            "Invalid terminating byte %r, expecting NUL." % nul)
 
         else:
