@@ -116,7 +116,7 @@ def compare_output(s1, s2):
         to replicate. Read the documentation for more details.
     """
     def prepare_lines(s):
-        return [line for line in s.lower().splitlines() if line.strip() != '']
+        return [line for line in s.splitlines() if line.strip() != '']
 
     lines1 = prepare_lines(s1)
     lines2 = prepare_lines(s2)
