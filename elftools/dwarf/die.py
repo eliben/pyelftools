@@ -170,9 +170,7 @@ class DIE(object):
             self.size = self.stream.tell() - self.offset
             return
 
-        with preserve_stream_pos(self.stream):
-            abbrev_decl = self.cu.get_abbrev_table().get_abbrev(
-                self.abbrev_code)
+        abbrev_decl = self.cu.get_abbrev_table().get_abbrev(self.abbrev_code)
         self.tag = abbrev_decl['tag']
         self.has_children = abbrev_decl.has_children()
 
