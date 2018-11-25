@@ -397,10 +397,7 @@ class ELFFile(object):
             'EM_RISCV'         : 'RISC-V'
         }
 
-        if self['e_machine'] in architectures:
-            return architectures[self['e_machine']]
-        else:
-            return '<unknown>'
+        return architectures.get(self['e_machine'], '<unknown>')
 
     #-------------------------------- PRIVATE --------------------------------#
 
