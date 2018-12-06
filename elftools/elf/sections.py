@@ -413,13 +413,14 @@ class ARMAttributesSubsection(object):
         """
         end = self.offset + self['length']
 
-        self.stream.seek(self.subsubsec_start)
-
-        while self.stream.tell() != end:
+        cur_subsubsec_start = self.subsubsec_start
+        while cur_subsubsec_start != end:
+            self.stream.seek(cur_subsubsec_start)
             subsubsec = ARMAttributesSubsubsection(self.stream,
                                                    self.structs,
-                                                   self.stream.tell())
-            self.stream.seek(self.subsubsec_start + subsubsec.header.value)
+                                                   cur_subsubsec_start)
+            cur_subsubsec_start += subsubsec.header.value
+
             yield subsubsec
 
     def __getitem__(self, name):
@@ -473,11 +474,12 @@ class ARMAttributesSection(Section):
         """
         end = self['sh_offset'] + self.data_size
 
-        self.stream.seek(self.subsec_start)
-
-        while self.stream.tell() != end:
+        cur_subsec_start = self.subsec_start
+        while cur_subsec_start != end:
+            self.stream.seek(cur_subsec_start)
             subsec = ARMAttributesSubsection(self.stream,
                                              self.structs,
-                                             self.stream.tell())
-            self.stream.seek(self.subsec_start + subsec['length'])
+                                             cur_subsec_start)
+            cur_subsec_start += subsec['length']
+            
             yield subsec
