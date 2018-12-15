@@ -34,6 +34,9 @@ class DWARFStructs(object):
             Dwarf_offset:
                 32-bit or 64-bit word, depending on dwarf_format
 
+            Dwarf_length:
+                32-bit or 64-bit word, depending on dwarf_format
+
             Dwarf_target_addr:
                 32-bit or 64-bit word, depending on address size
 
@@ -105,6 +108,7 @@ class DWARFStructs(object):
             self.Dwarf_uint32 = ULInt32
             self.Dwarf_uint64 = ULInt64
             self.Dwarf_offset = ULInt32 if self.dwarf_format == 32 else ULInt64
+            self.Dwarf_length = ULInt32 if self.dwarf_format == 32 else ULInt64
             self.Dwarf_target_addr = (
                 ULInt32 if self.address_size == 4 else ULInt64)
             self.Dwarf_int8 = SLInt8
@@ -117,6 +121,7 @@ class DWARFStructs(object):
             self.Dwarf_uint32 = UBInt32
             self.Dwarf_uint64 = UBInt64
             self.Dwarf_offset = UBInt32 if self.dwarf_format == 32 else UBInt64
+            self.Dwarf_length = UBInt32 if self.dwarf_format == 32 else UBInt64
             self.Dwarf_target_addr = (
                 UBInt32 if self.address_size == 4 else UBInt64)
             self.Dwarf_int8 = SBInt8
@@ -132,6 +137,7 @@ class DWARFStructs(object):
         self._create_lineprog_header()
         self._create_callframe_entry_headers()
         self._create_aranges_header()
+        self._create_nameLUT_header()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -216,6 +222,14 @@ class DWARFStructs(object):
             self.Dwarf_offset('debug_info_offset'), # a little tbd
             self.Dwarf_uint8('address_size'),
             self.Dwarf_uint8('segment_size')
+            )
+
+    def _create_nameLUT_header(self):
+        self.Dwarf_nameLUT_header = Struct("Dwarf_nameLUT_header",
+            self.Dwarf_initial_length('unit_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_offset('debug_info_offset'), 
+            self.Dwarf_length('debug_info_length')
             )
 
     def _create_lineprog_header(self):

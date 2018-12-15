@@ -19,6 +19,7 @@ from .callframe import CallFrameInfo
 from .locationlists import LocationLists
 from .ranges import RangeLists
 from .aranges import ARanges
+from .namelut import NameLUT
 
 
 # Describes a debug section
@@ -67,7 +68,9 @@ class DWARFInfo(object):
             debug_str_sec,
             debug_loc_sec,
             debug_ranges_sec,
-            debug_line_sec):
+            debug_line_sec,
+            debug_pubtypes_sec,
+            debug_pubnames_sec):
         """ config:
                 A DwarfConfig object
 
@@ -86,6 +89,8 @@ class DWARFInfo(object):
         self.debug_loc_sec = debug_loc_sec
         self.debug_ranges_sec = debug_ranges_sec
         self.debug_line_sec = debug_line_sec
+        self.debug_pubtypes_sec = debug_pubtypes_sec
+        self.debug_pubnames_sec = debug_pubnames_sec
 
         # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
@@ -184,6 +189,38 @@ class DWARFInfo(object):
             base_structs=self.structs,
             for_eh_frame=True)
         return cfi.get_entries()
+
+    def get_pubtypes(self):
+        """
+        Returns a NameLUT object that contains information read from the
+        .debug_pubtypes section in the ELF file.
+
+        NameLUT is essentially a dictionary containing the CU/DIE offsets of
+        each symbol. See the NameLUT doc string for more details.
+        """
+
+        if self.debug_pubtypes_sec:
+            return NameLUT(self.debug_pubtypes_sec.stream,
+                    self.debug_pubtypes_sec.size,
+                    self.structs)
+        else:
+            return None
+
+    def get_pubnames(self):
+        """
+        Returns a NameLUT object that contains information read from the
+        .debug_pubnames section in the ELF file.
+
+        NameLUT is essentially a dictionary containing the CU/DIE offsets of
+        each symbol. See the NameLUT doc string for more details.
+        """
+
+        if self.debug_pubnames_sec:
+            return NameLUT(self.debug_pubnames_sec.stream,
+                    self.debug_pubnames_sec.size,
+                    self.structs)
+        else:
+            return None
 
     def get_aranges(self):
         """ Get an ARanges object representing the .debug_aranges section of
