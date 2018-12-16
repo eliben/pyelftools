@@ -83,7 +83,11 @@ def decode_file_line(dwarfinfo, address):
         prevstate = None
         for entry in lineprog.get_entries():
             # We're interested in those entries where a new state is assigned
-            if entry.state is None or entry.state.end_sequence:
+            if entry.state is None:
+                continue
+            if entry.state.end_sequence:
+                # if the line number sequence ends, clear prevstate.
+                prevstate = None
                 continue
             # Looking for a range of addresses in two consecutive states that
             # contain the required address.
