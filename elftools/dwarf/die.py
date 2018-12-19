@@ -87,6 +87,9 @@ class DIE(object):
         self.abbrev_code = None
         self.size = 0
         self._children = []
+        # Null DIE terminator. It can be used to obtain offset range occupied
+        # by this DIE including its whole subtree.
+        self._terminator = None
         self._parent = None
 
         self._parse_DIE()
@@ -117,9 +120,9 @@ class DIE(object):
         return os.path.join(comp_dir, fname)
 
     def iter_children(self):
-        """ Yield all children of this DIE
+        """ Iterates all children of this DIE
         """
-        return iter(self._children)
+        return self.cu.iter_DIE_children(self)
 
     def iter_siblings(self):
         """ Yield all siblings of this DIE
