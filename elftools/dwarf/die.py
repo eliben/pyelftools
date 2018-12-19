@@ -86,7 +86,6 @@ class DIE(object):
         self.has_children = None
         self.abbrev_code = None
         self.size = 0
-        self._children = []
         # Null DIE terminator. It can be used to obtain offset range occupied
         # by this DIE including its whole subtree.
         self._terminator = None
@@ -137,8 +136,6 @@ class DIE(object):
     # The following methods are used while creating the DIE and should not be
     # interesting to consumers
     #
-    def add_child(self, die):
-        self._children.append(die)
 
     def set_parent(self, die):
         self._parent = die

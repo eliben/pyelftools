@@ -182,34 +182,3 @@ class CompileUnit(object):
             self._dielist.append(die)
             dm.append(die_offset)
             die_offset += die.size
-
-        # Second pass - unflatten the DIE tree
-        self._unflatten_tree()
-
-    def _unflatten_tree(self):
-        """ "Unflatten" the DIE tree from it serial representation, by setting
-            the child/sibling/parent links of DIEs.
-
-            Assumes self._dielist was already populated by a linear list of DIEs
-            read from the stream section
-        """
-        # the first DIE in the list is the root node
-        root = self._dielist[0]
-        parentstack = [root]
-
-        for die in self._dielist[1:]:
-            if not die.is_null():
-                cur_parent = parentstack[-1]
-                # This DIE is a child of the current parent
-                cur_parent.add_child(die)
-                die.set_parent(cur_parent)
-                if die.has_children:
-                    parentstack.append(die)
-            else:
-                # parentstack should not be really empty here. However, some
-                # compilers generate DWARF that has extra NULLs in the end and
-                # we don't want pyelftools to fail parsing them just because of
-                # this.
-                if len(parentstack) > 0:
-                    # end of children for the current parent
-                    parentstack.pop()
