@@ -6,6 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from bisect import bisect_left
 from .die import DIE
 
 
@@ -83,6 +84,64 @@ class CompileUnit(object):
         """
         self._parse_DIEs()
         return iter(self._dielist)
+
+    def iter_DIE_children(self, die):
+        """ Given a DIE, yields either its children, without null DIE list
+            terminator, or nothing, if that DIE have no children.
+
+            The null DIE terminator is saved in that DIE when iteration ended.
+        """
+        if not die.has_children:
+            return
+
+        dm = self._diemap
+        dl = self._dielist
+        s = die.stream
+        cu_off = self.cu_offset
+
+        cur_offset = die.offset + die.size
+
+        while True:
+            i = bisect_left(dm, cur_offset)
+            # Note that `dm` cannot be empty because a `die`, the argument,
+            # is already parsed.
+            if i < len(dm) and cur_offset == dm[i]:
+                child = dl[i]
+            else:
+                child = DIE(
+                        cu = self,
+                        stream = s,
+                        offset = cur_offset)
+                dl.insert(i, child)
+                dm.insert(i, cur_offset)
+
+            child.set_parent(die)
+
+            if child.is_null():
+                die._terminator = child
+                return
+
+            yield child
+
+            if not child.has_children:
+                cur_offset += child.size
+            elif "DW_AT_sibling" in child.attributes:
+                sibling = child.attributes["DW_AT_sibling"]
+                cur_offset = sibling.value + cu_off
+            else:
+                # If no DW_AT_sibling attribute is provided by the producer
+                # then the whole child subtree must be parsed to find its next
+                # sibling. There is one zero byte representing null DIE
+                # terminating children list. It is used to locate child subtree
+                # bounds.
+
+                # If children are not parsed yet, this instruction will manage
+                # to recursive call of this function which will result in
+                # setting of `_terminator` attribute of the `child`.
+                if child._terminator is None:
+                    for _ in self.iter_DIE_children(child): pass
+
+                cur_offset = child._terminator.offset + child._terminator.size
 
     #------ PRIVATE ------#
 
