@@ -33,7 +33,7 @@ class AbbrevTable(object):
         """ Get the AbbrevDecl for a given code. Raise KeyError if no
             declaration for this code exists.
         """
-        return AbbrevDecl(code, self._abbrev_map[code])
+        return self._abbrev_map[code]
 
     def _parse_abbrev_table(self):
         """ Parse the abbrev table from the stream
@@ -49,7 +49,7 @@ class AbbrevTable(object):
             declaration = struct_parse(
                 struct=self.structs.Dwarf_abbrev_declaration,
                 stream=self.stream)
-            map[decl_code] = declaration
+            map[decl_code] = AbbrevDecl(decl_code, declaration)
         return map
 
 
