@@ -17,6 +17,7 @@ import sys
 sys.path[0:0] = ['.', '..']
 
 from elftools.elf.elffile import ELFFile
+from elftools.common.py3compat import bytes2str
 
 def process_file(filename):
     print('Processing file:', filename)
@@ -55,7 +56,8 @@ def process_file(filename):
                     if cu.cu_offset == entry.cu_ofs:
                         for die in cu.iter_DIEs():
                             if die.offset == entry.die_ofs:
-                                print(die)
+                                print('Die Name: %s' % 
+                                        bytes2str(die.attributes['DW_AT_name'].value))
         
             # dump all entries in .debug_pubnames section.
             print('Dumping .debug_pubnames table ...')
@@ -89,7 +91,8 @@ def process_file(filename):
                     if cu.cu_offset == entry.cu_ofs:
                         for die in cu.iter_DIEs():
                             if die.offset == entry.die_ofs:
-                                print(die)
+                                print('Die Name: %s' % 
+                                        bytes2str(die.attributes['DW_AT_name'].value))
         
             # dump all entries in .debug_pubtypes section.
             print('Dumping .debug_pubtypes table ...')

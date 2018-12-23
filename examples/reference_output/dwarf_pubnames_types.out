@@ -3,18 +3,7 @@ Processing file: ./examples/sample_exe64.elf
 Trying pubnames example ...
 main: cu_ofs = 258, die_ofs = 303
 Fetching the actual die for main ...
-DIE DW_TAG_subprogram, size=37, has_children=True
-    |DW_AT_external    :  AttributeValue(name='DW_AT_external', form='DW_FORM_flag', value=True, raw_value=1, offset=304)
-    |DW_AT_name        :  AttributeValue(name='DW_AT_name', form='DW_FORM_strp', value='main', raw_value=200, offset=305)
-    |DW_AT_decl_file   :  AttributeValue(name='DW_AT_decl_file', form='DW_FORM_data1', value=1, raw_value=1, offset=309)
-    |DW_AT_decl_line   :  AttributeValue(name='DW_AT_decl_line', form='DW_FORM_data1', value=2, raw_value=2, offset=310)
-    |DW_AT_prototyped  :  AttributeValue(name='DW_AT_prototyped', form='DW_FORM_flag', value=True, raw_value=1, offset=311)
-    |DW_AT_type        :  AttributeValue(name='DW_AT_type', form='DW_FORM_ref4', value=111, raw_value=111, offset=312)
-    |DW_AT_low_pc      :  AttributeValue(name='DW_AT_low_pc', form='DW_FORM_addr', value=4195564, raw_value=4195564, offset=316)
-    |DW_AT_high_pc     :  AttributeValue(name='DW_AT_high_pc', form='DW_FORM_addr', value=4195607, raw_value=4195607, offset=324)
-    |DW_AT_frame_base  :  AttributeValue(name='DW_AT_frame_base', form='DW_FORM_data4', value=0, raw_value=0, offset=332)
-    |DW_AT_sibling     :  AttributeValue(name='DW_AT_sibling', form='DW_FORM_ref4', value=111, raw_value=111, offset=336)
-
+Die Name: main
 Dumping .debug_pubnames table ...
 ------------------------------------------------------------------
                                             Symbol  CU_OFS DIE_OFS
