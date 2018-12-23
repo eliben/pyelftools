@@ -58,7 +58,9 @@ def run_test_on_file(filename, verbose=False):
             '-e', '-d', '-s', '-n', '-r', '-x.text', '-p.shstrtab', '-V',
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp',
-            '--debug-dump=aranges']:
+            '--debug-dump=aranges', '--debug-dump=pubtypes',
+            '--debug-dump=pubnames'
+            ]:
         if verbose: testlog.info("..option='%s'" % option)
 
         # TODO(zlobober): this is a dirty hack to make tests work for ELF core

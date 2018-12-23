@@ -59,12 +59,12 @@ def process_file(filename):
         
             # dump all entries in .debug_pubnames section.
             print('Dumping .debug_pubnames table ...')
-            print('-'*66)
+            print('-' * 66)
             print('%50s%8s%8s' % ('Symbol', 'CU_OFS', 'DIE_OFS'))
-            print('-'*66)
+            print('-' * 66)
             for (name, entry) in pubnames.items():
                 print('%50s%8d%8d' % (name, entry.cu_ofs, entry.die_ofs))
-            print('-'*66)
+            print('-' * 66)
 
         # get .debug_pubtypes section.
         pubtypes = dwarfinfo.get_pubtypes()
@@ -93,12 +93,12 @@ def process_file(filename):
         
             # dump all entries in .debug_pubtypes section.
             print('Dumping .debug_pubtypes table ...')
-            print('-'*66)
+            print('-' * 66)
             print('%50s%8s%8s' % ('Symbol', 'CU_OFS', 'DIE_OFS'))
-            print('-'*66)
+            print('-' * 66)
             for (name, entry) in pubtypes.items():
                 print('%50s%8d%8d' % (name, entry.cu_ofs, entry.die_ofs))
-            print('-'*66)
+            print('-' * 66)
 
 if __name__ == '__main__':
     if sys.argv[1] == '--test':

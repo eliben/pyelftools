@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# elftools: dwarf/aranges.py
+# elftools: dwarf/namelut.py
 #
 # DWARF pubtypes/pubnames section decoding (.debug_pubtypes, .debug_pubnames)
 #
@@ -14,24 +14,24 @@ from bisect import bisect_right
 import math
 from ..construct import CString, Struct
 
-NameLUTEntry = collections.namedtuple('NameLUTEntry',
-        'cu_ofs die_ofs')
+NameLUTEntry = collections.namedtuple('NameLUTEntry', 'cu_ofs die_ofs')
 
 class NameLUT(collections.Mapping):
     """ 
-    A "Name LUT" holds any of the tables specified by .debug_pubtypes or .debug_pubnames
-    sections. This is basically a dictionary where the key is the symbol name (either
-    a public variable, function or a type), and the value is the tuple (cu_offset, die_offset)
-    corresponding to the variable. The die_offset is an absolute offset (meaning, it can be
-    used to search the CU by iterating until a match is obtained).
+    A "Name LUT" holds any of the tables specified by .debug_pubtypes or
+    .debug_pubnames sections. This is basically a dictionary where the key is
+    the symbol name (either a public variable, function or a type), and the
+    value is the tuple (cu_offset, die_offset) corresponding to the variable.
+    The die_offset is an absolute offset (meaning, it can be used to search the
+    CU by iterating until a match is obtained).
 
-    An ordered dictionary is used to preserve the CU order (i.e, items are stored on a per-CU
-    basis (as it was originally in the .debug_* section).
+    An ordered dictionary is used to preserve the CU order (i.e, items are
+    stored on a per-CU basis (as it was originally in the .debug_* section).
 
     Usage:
 
-    The NameLUT walks and talks like a dictionary and hence it can be used as such. Some
-    examples below:
+    The NameLUT walks and talks like a dictionary and hence it can be used as
+    such. Some examples below:
 
     # get the pubnames (a NameLUT from DWARF info).
     pubnames = dwarf_info.get_pubnames()
@@ -67,22 +67,24 @@ class NameLUT(collections.Mapping):
         self._structs = structs
         # entries are lazily loaded on demand.
         self._entries = None
+        # CU headers (for readelf).
+        self._cu_headers = None
 
     def get_entries(self):
         """
-        Returns the parsed NameLUT entries. The returned object is a
-        dictionary with the symbol name as the key and NameLUTEntry(cu_ofs,
-        die_ofs) as the value.
+        Returns the parsed NameLUT entries. The returned object is a dictionary
+        with the symbol name as the key and NameLUTEntry(cu_ofs, die_ofs) as
+        the value.
 
         This is useful when dealing with very large ELF files with millions of
         entries. The returned entries can be pickled to a file and restored by
         calling set_entries on subsequent loads.
         """
         if self._entries is None: 
-            self._entries = self._get_entries()
+            self._entries, self._cu_headers = self._get_entries()
         return self._entries
 
-    def set_entries(self, entries):
+    def set_entries(self, entries, cu_headers):
         """
         Set the NameLUT entries from an external source. The input is a
         dictionary with the symbol name as the key and NameLUTEntry(cu_ofs,
@@ -93,13 +95,14 @@ class NameLUT(collections.Mapping):
         file and can be restored via this function on subsequent loads.
         """
         self._entries = entries
+        self._cu_headers = cu_headers
 
     def __len__(self):
         """
         Returns the number of entries in the NameLUT.
         """
         if self._entries is None: 
-            self._entries = self._get_entries()
+            self._entries, self._cu_headers = self._get_entries()
         return len(self._entries)
 
     def __getitem__(self, name):
@@ -108,7 +111,7 @@ class NameLUT(collections.Mapping):
         to the given symbol name.
         """
         if self._entries is None: 
-            self._entries = self._get_entries()
+            self._entries, self._cu_headers = self._get_entries()
         return self._entries.get(name)
 
     def __iter__(self):
@@ -116,7 +119,7 @@ class NameLUT(collections.Mapping):
         Returns an iterator to the NameLUT dictionary.
         """
         if self._entries is None: 
-            self._entries = self._get_entries()
+            self._entries, self._cu_headers = self._get_entries()
         return iter(self._entries)
 
     def items(self):
@@ -124,7 +127,7 @@ class NameLUT(collections.Mapping):
         Returns the NameLUT dictionary items.
         """
         if self._entries is None: 
-            self._entries = self._get_entries()
+            self._entries, self._cu_headers = self._get_entries()
         return self._entries.items()
 
     def get(self, name, default=None):
@@ -133,8 +136,17 @@ class NameLUT(collections.Mapping):
         None if the symbol does not exist in the corresponding section.
         """
         if self._entries is None: 
-            self._entries = self._get_entries()
+            self._entries, self._cu_headers = self._get_entries()
         return self._entries.get(name, default)
+
+    def get_cu_headers(self):
+        """
+        Returns all CU headers. Mainly required for readelf.
+        """
+        if self._cu_headers is None: 
+            self._entries, self._cu_headers = self._get_entries()
+        
+        return self._cu_headers
 
     def _get_entries(self):
         """
@@ -144,6 +156,7 @@ class NameLUT(collections.Mapping):
 
         self._stream.seek(0)
         entries = OrderedDict()
+        cu_headers = []
         offset = 0
         entry_struct = Struct("Dwarf_offset_name_pair",
                 self._structs.Dwarf_offset('die_ofs'),
@@ -156,6 +169,7 @@ class NameLUT(collections.Mapping):
             # read the header for this CU.
             namelut_hdr = struct_parse(self._structs.Dwarf_nameLUT_header,
                     self._stream, offset)
+            cu_headers.append(namelut_hdr)
             # compute the next offset.
             offset = (offset + namelut_hdr.unit_length +
                      self._structs.initial_length_field_size())
@@ -168,7 +182,7 @@ class NameLUT(collections.Mapping):
             entry = struct_parse(entry_struct,
                     self._stream)
             # while die_ofs of the entry is non-zero (which indicates the end) ...
-            while entry.die_ofs != 0:
+            while True:
                 # add this entry to the look-up dictionary.
                 entries[entry.name.decode('utf-8')] = NameLUTEntry(
                         cu_ofs = hdr_cu_ofs,
@@ -185,4 +199,4 @@ class NameLUT(collections.Mapping):
                     entry.die_ofs = die_ofs
 
         # return the entries parsed so far.
-        return entries
+        return (entries, cu_headers)
