@@ -10,6 +10,13 @@
 import argparse
 import os, sys
 import string
+import itertools
+# Note: zip has different behaviour between Python 2.x and 3.x.
+# - Using izip ensures compatibility.
+try:
+    from itertools import izip
+except:
+    izip = zip
 
 # For running from development directory. It should take precedence over the
 # installed pyelftools.
@@ -457,7 +464,7 @@ class ReadElf(object):
                 for note in section.iter_notes():
                       self._emitline("\nDisplaying notes found in: {}".format(
                           section.name))
-                      self._emitline('  Owner                 Data size	Description')
+                      self._emitline('  Owner                 Data size Description')
                       self._emitline('  %s %s\t%s' % (
                           note['n_name'].ljust(20),
                           self._format_hex(note['n_descsz'], fieldsize=8),
@@ -753,6 +760,8 @@ class ReadElf(object):
             self._dump_debug_frames_interp()
         elif dump_what == 'aranges':
             self._dump_debug_aranges()
+        elif dump_what in { 'pubtypes', 'pubnames' }:
+            self._dump_debug_namelut(dump_what)
         else:
             self._emitline('debug dump not yet supported for "%s"' % dump_what)
 
@@ -1105,6 +1114,40 @@ class ReadElf(object):
             self._dump_frames_info(
                     self._dwarfinfo.debug_frame_sec,
                     self._dwarfinfo.CFI_entries())
+
+    def _dump_debug_namelut(self, what):
+        """
+        Dump the debug pubnames section.
+        """
+        if what == 'pubnames':
+            namelut = self._dwarfinfo.get_pubnames()
+            section = self._dwarfinfo.debug_pubnames_sec
+        else:
+            namelut = self._dwarfinfo.get_pubtypes()
+            section = self._dwarfinfo.debug_pubtypes_sec
+
+        # readelf prints nothing if the section is not present.
+        if namelut is None or len(namelut) == 0:    
+            return
+        
+        self._emitline('Contents of the %s section:' % section.name)
+        self._emitline()
+        
+        cu_headers = namelut.get_cu_headers()
+
+        # go over CU-by-CU first and item-by-item next.
+        for (cu_hdr, (cu_ofs, items)) in izip(cu_headers, itertools.groupby(
+            namelut.items(), key = lambda x: x[1].cu_ofs)):
+
+            self._emitline('  Length:                              %d'   % cu_hdr.unit_length)
+            self._emitline('  Version:                             %d'   % cu_hdr.version)
+            self._emitline('  Offset into .debug_info section:     0x%x' % cu_hdr.debug_info_offset)
+            self._emitline('  Size of area in .debug_info section: %d'   % cu_hdr.debug_info_length) 
+            self._emitline()
+            self._emitline('    Offset  Name')
+            for item in items:
+                self._emitline('    %x          %s' % (item[1].die_ofs - cu_ofs, item[0]))
+        self._emitline()
 
     def _dump_debug_aranges(self):
         """ Dump the aranges table
