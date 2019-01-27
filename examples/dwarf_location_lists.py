@@ -58,7 +58,7 @@ def process_file(filename):
                 # AttributeValue object (from elftools.dwarf.die), which we
                 # can examine.
                 for attr in itervalues(DIE.attributes):
-                    if attribute_has_location_list(attr):
+                    if attribute_has_location_list(attr, CU['version']):
                         # This is a location list. Its value is an offset into
                         # the .debug_loc section, so we can use the location
                         # lists object to decode it.
@@ -86,7 +86,7 @@ def show_loclist(loclist, dwarfinfo, indent):
     return '\n'.join(indent + s for s in d)
 
 
-def attribute_has_location_list(attr):
+def attribute_has_location_list(attr, dwarf_version):
     """ Only some attributes can have location list values, if they have the
         required DW_FORM (loclistptr "class" in DWARF spec v3)
     """
@@ -95,7 +95,8 @@ def attribute_has_location_list(attr):
                         'DW_AT_data_member_location', 'DW_AT_frame_base',
                         'DW_AT_segment', 'DW_AT_static_link',
                         'DW_AT_use_location', 'DW_AT_vtable_elem_location')):
-        if attr.form in ('DW_FORM_data4', 'DW_FORM_data8'):
+        if (dwarf_version < 4 and attr.form in ('DW_FORM_data4', 'DW_FORM_data8') or
+            attr.form == 'DW_FORM_sec_offset'):
             return True
     return False
 
