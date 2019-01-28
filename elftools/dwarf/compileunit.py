@@ -76,14 +76,26 @@ class CompileUnit(object):
         """ Get the top DIE (which is either a DW_TAG_compile_unit or
             DW_TAG_partial_unit) of this CU
         """
-        return self._get_DIE(0)
+        dm = self._diemap
+
+        # Note that a top DIE always has minimal offset, no bisect required.
+        if dm and dm[0] == self.cu_die_offset:
+            return self._dielist[0]
+        top = DIE(
+                cu=self,
+                stream=self.dwarfinfo.debug_info_sec.stream,
+                offset = self.cu_die_offset)
+
+        self._dielist.insert(0, top)
+        dm.insert(0, self.cu_die_offset)
+
+        return top
 
     def iter_DIEs(self):
         """ Iterate over all the DIEs in the CU, in order of their appearance.
             Note that null DIEs will also be returned.
         """
-        self._parse_DIEs()
-        return iter(self._dielist)
+        return self._iter_DIE_subtree(self.get_top_DIE())
 
     def iter_DIE_children(self, die):
         """ Given a DIE, yields either its children, without null DIE list
@@ -150,35 +162,13 @@ class CompileUnit(object):
         """
         return self.header[name]
 
-    def _get_DIE(self, index):
-        """ Get the DIE at the given index
+    def _iter_DIE_subtree(self, die):
+        """ Given a DIE, this yields it with its subtree including null DIEs
+            (child list terminators).
         """
-        self._parse_DIEs()
-        return self._dielist[index]
-
-    def _parse_DIEs(self):
-        """ Parse all the DIEs pertaining to this CU from the stream and shove
-            them sequentially into self._dielist.
-            Also set the child/sibling/parent links in the DIEs according
-            (unflattening the prefix-order of the DIE tree).
-        """
-        if len(self._dielist) > 0:
-            return
-
-        # Compute the boundary (one byte past the bounds) of this CU in the
-        # stream
-        cu_boundary = ( self.cu_offset +
-                        self['unit_length'] +
-                        self.structs.initial_length_field_size())
-
-        # First pass: parse all DIEs and place them into self._dielist
-        die_offset = self.cu_die_offset
-        dm = self._diemap
-        while die_offset < cu_boundary:
-            die = DIE(
-                    cu=self,
-                    stream=self.dwarfinfo.debug_info_sec.stream,
-                    offset=die_offset)
-            self._dielist.append(die)
-            dm.append(die_offset)
-            die_offset += die.size
+        yield die
+        if die.has_children:
+            for c in die.iter_children():
+                for d in self._iter_DIE_subtree(c):
+                    yield d
+            yield die._terminator
