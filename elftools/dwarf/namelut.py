@@ -12,7 +12,7 @@ from collections import OrderedDict
 from ..common.utils import struct_parse
 from bisect import bisect_right
 import math
-from ..construct import CString, Struct
+from ..construct import CString, Struct, If
 
 NameLUTEntry = collections.namedtuple('NameLUTEntry', 'cu_ofs die_ofs')
 
@@ -158,11 +158,14 @@ class NameLUT(collections.Mapping):
         entries = OrderedDict()
         cu_headers = []
         offset = 0
+        # According to 6.1.1. of DWARFv4, each set of names is terminated by
+        # an offset field containing zero (and no following string). Because
+        # of sequential parsing, every next entry may be that terminator.
+        # So, field "name" is conditional.
         entry_struct = Struct("Dwarf_offset_name_pair",
                 self._structs.Dwarf_offset('die_ofs'),
-                CString('name'))
-        die_ofs_struct = self._structs.Dwarf_offset('die_ofs')
-                
+                If(lambda ctx: ctx['die_ofs'],CString('name')))
+
         # each run of this loop will fetch one CU worth of entries.
         while offset < self._size:
 
@@ -178,25 +181,18 @@ class NameLUT(collections.Mapping):
             # before inner loop, latch data that will be used in the inner
             # loop to avoid attribute access and other computation.
             hdr_cu_ofs = namelut_hdr.debug_info_offset
-            # read the first tuple for this CU.
-            entry = struct_parse(entry_struct,
-                    self._stream)
+
             # while die_ofs of the entry is non-zero (which indicates the end) ...
             while True:
+                entry = struct_parse(entry_struct, self._stream)
+
+                # if it is zero, then we done.
+                if entry.die_ofs == 0:
+                    break
                 # add this entry to the look-up dictionary.
                 entries[entry.name.decode('utf-8')] = NameLUTEntry(
                         cu_ofs = hdr_cu_ofs,
                         die_ofs = hdr_cu_ofs + entry.die_ofs)
-                # get the DIE offset entry alone.
-                die_ofs = struct_parse(die_ofs_struct, self._stream)
-                # if it is zero, then we done.
-                if die_ofs == 0:
-                    break
-                else:
-                    # else this is a valid DIE, get the name as well and 
-                    # construct the entry
-                    entry.name = struct_parse(CString('name'), self._stream)
-                    entry.die_ofs = die_ofs
 
         # return the entries parsed so far.
         return (entries, cu_headers)
