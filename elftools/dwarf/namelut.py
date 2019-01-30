@@ -177,7 +177,6 @@ class NameLUT(collections.Mapping):
             offset = (offset + namelut_hdr.unit_length +
                      self._structs.initial_length_field_size())
 
-            bytes_read = 0
             # before inner loop, latch data that will be used in the inner
             # loop to avoid attribute access and other computation.
             hdr_cu_ofs = namelut_hdr.debug_info_offset
