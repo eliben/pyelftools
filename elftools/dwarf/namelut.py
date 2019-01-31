@@ -17,7 +17,7 @@ from ..construct import CString, Struct, If
 NameLUTEntry = collections.namedtuple('NameLUTEntry', 'cu_ofs die_ofs')
 
 class NameLUT(collections.Mapping):
-    """ 
+    """
     A "Name LUT" holds any of the tables specified by .debug_pubtypes or
     .debug_pubnames sections. This is basically a dictionary where the key is
     the symbol name (either a public variable, function or a type), and the
@@ -48,10 +48,10 @@ class NameLUT(collections.Mapping):
 
     # iterate over items on a per-CU basis.
     import itertools
-    for cu_ofs, item_list in itertools.groupby(pubnames.items(), 
+    for cu_ofs, item_list in itertools.groupby(pubnames.items(),
         key = lambda x: x[1].cu_ofs):
       # items are now grouped by cu_ofs.
-      # item_list is an iterator yeilding NameLUTEntry'ies belonging 
+      # item_list is an iterator yeilding NameLUTEntry'ies belonging
       # to cu_ofs.
       # We can parse the CU at cu_offset and use the parsed CU results
       # to parse the pubname DIEs in the CU listed by item_list.
@@ -80,7 +80,7 @@ class NameLUT(collections.Mapping):
         entries. The returned entries can be pickled to a file and restored by
         calling set_entries on subsequent loads.
         """
-        if self._entries is None: 
+        if self._entries is None:
             self._entries, self._cu_headers = self._get_entries()
         return self._entries
 
@@ -89,7 +89,7 @@ class NameLUT(collections.Mapping):
         Set the NameLUT entries from an external source. The input is a
         dictionary with the symbol name as the key and NameLUTEntry(cu_ofs,
         die_ofs) as the value.
-        
+
         This option is useful when dealing with very large ELF files with
         millions of entries. The entries can be parsed once and pickled to a
         file and can be restored via this function on subsequent loads.
@@ -101,7 +101,7 @@ class NameLUT(collections.Mapping):
         """
         Returns the number of entries in the NameLUT.
         """
-        if self._entries is None: 
+        if self._entries is None:
             self._entries, self._cu_headers = self._get_entries()
         return len(self._entries)
 
@@ -110,7 +110,7 @@ class NameLUT(collections.Mapping):
         Returns a namedtuple - NameLUTEntry(cu_ofs, die_ofs) - that corresponds
         to the given symbol name.
         """
-        if self._entries is None: 
+        if self._entries is None:
             self._entries, self._cu_headers = self._get_entries()
         return self._entries.get(name)
 
@@ -118,7 +118,7 @@ class NameLUT(collections.Mapping):
         """
         Returns an iterator to the NameLUT dictionary.
         """
-        if self._entries is None: 
+        if self._entries is None:
             self._entries, self._cu_headers = self._get_entries()
         return iter(self._entries)
 
@@ -126,7 +126,7 @@ class NameLUT(collections.Mapping):
         """
         Returns the NameLUT dictionary items.
         """
-        if self._entries is None: 
+        if self._entries is None:
             self._entries, self._cu_headers = self._get_entries()
         return self._entries.items()
 
@@ -135,7 +135,7 @@ class NameLUT(collections.Mapping):
         Returns NameLUTEntry(cu_ofs, die_ofs) for the provided symbol name or
         None if the symbol does not exist in the corresponding section.
         """
-        if self._entries is None: 
+        if self._entries is None:
             self._entries, self._cu_headers = self._get_entries()
         return self._entries.get(name, default)
 
@@ -143,9 +143,9 @@ class NameLUT(collections.Mapping):
         """
         Returns all CU headers. Mainly required for readelf.
         """
-        if self._cu_headers is None: 
+        if self._cu_headers is None:
             self._entries, self._cu_headers = self._get_entries()
-        
+
         return self._cu_headers
 
     def _get_entries(self):
@@ -164,7 +164,7 @@ class NameLUT(collections.Mapping):
         # So, field "name" is conditional.
         entry_struct = Struct("Dwarf_offset_name_pair",
                 self._structs.Dwarf_offset('die_ofs'),
-                If(lambda ctx: ctx['die_ofs'],CString('name')))
+                If(lambda ctx: ctx['die_ofs'], CString('name')))
 
         # each run of this loop will fetch one CU worth of entries.
         while offset < self._size:
@@ -185,7 +185,7 @@ class NameLUT(collections.Mapping):
             while True:
                 entry = struct_parse(entry_struct, self._stream)
 
-                # if it is zero, then we done.
+                # if it is zero, this is the terminating record.
                 if entry.die_ofs == 0:
                     break
                 # add this entry to the look-up dictionary.
