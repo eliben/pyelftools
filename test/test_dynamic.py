@@ -49,7 +49,7 @@ class TestDynamic(unittest.TestCase):
 
                 for t in segment.iter_tags():
                     if t.entry.d_tag == 'DT_NEEDED':
-                        libs.append(t.needed.decode('utf-8'))
+                        libs.append(t.needed)
 
         exp = ['libc.so.6']
         self.assertEqual(libs, exp)
@@ -65,7 +65,7 @@ class TestDynamic(unittest.TestCase):
 
                 symbol_names = [x.name for x in segment.iter_symbols()]
 
-        exp = [b'', b'__libc_start_main', b'__gmon_start__', b'abort']
+        exp = ['', '__libc_start_main', '__gmon_start__', 'abort']
         self.assertEqual(symbol_names, exp)
 
     def test_sunw_tags(self):
