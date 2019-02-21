@@ -8,6 +8,7 @@
 #-------------------------------------------------------------------------------
 import itertools
 
+from .hash import HashSection, GNUHashSection
 from .sections import Section, Symbol
 from .enums import ENUM_D_TAG
 from .segments import Segment
@@ -239,33 +240,56 @@ class DynamicSegment(Segment, Dynamic):
 
         symbol_size = self.elfstructs.Elf_Sym.sizeof()
 
-        # Find closest higher pointer than tab_ptr. We'll use that to mark the
-        # end of the symbol table.
-        nearest_ptr = None
-        for tag in self.iter_tags():
-            tag_ptr = tag['d_ptr']
-            if tag['d_tag'] == 'DT_SYMENT':
-                if symbol_size != tag['d_val']:
-                    # DT_SYMENT is the size of one symbol entry. It must be the
-                    # same as returned by Elf_Sym.sizeof.
-                    raise ELFError('DT_SYMENT (%d) != Elf_Sym (%d).' %
-                                   (tag['d_val'], symbol_size))
-            if (tag_ptr > tab_ptr and
-                    (nearest_ptr is None or nearest_ptr > tag_ptr)):
-                nearest_ptr = tag_ptr
+        end_ptr = None
 
-        if nearest_ptr is None:
-            # Use the end of segment that contains DT_SYMTAB.
-            for segment in self.elffile.iter_segments():
-                if (segment['p_vaddr'] <= tab_ptr and
-                        tab_ptr <= (segment['p_vaddr'] + segment['p_filesz'])):
-                    nearest_ptr = segment['p_vaddr'] + segment['p_filesz']
+        # Check if a DT_GNU_HASH tag exists and recover the number of symbols
+        # from the corresponding section
+        _, gnu_hash_offset = self.get_table_offset('DT_GNU_HASH')
+        if gnu_hash_offset is not None:
+            hash_section = GNUHashSection(self.stream, gnu_hash_offset,
+                                          self.elffile)
+            end_ptr = tab_ptr + \
+                hash_section.get_number_of_symbols() * symbol_size
 
-        if nearest_ptr is None:
+        # If DT_GNU_HASH did not exist, maybe we can use DT_HASH
+        if end_ptr is None:
+            _, hash_offset = self.get_table_offset('DT_HASH')
+            if hash_offset is not None:
+                hash_section = HashSection(self.stream, hash_offset,
+                                           self.elffile)
+                end_ptr = tab_ptr + \
+                    hash_section.get_number_of_symbols() * symbol_size
+
+        if end_ptr is None:
+            # Find closest higher pointer than tab_ptr. We'll use that to mark
+            # the end of the symbol table.
+            nearest_ptr = None
+            for tag in self.iter_tags():
+                tag_ptr = tag['d_ptr']
+                if tag['d_tag'] == 'DT_SYMENT':
+                    if symbol_size != tag['d_val']:
+                        # DT_SYMENT is the size of one symbol entry. It must be
+                        # the same as returned by Elf_Sym.sizeof.
+                        raise ELFError('DT_SYMENT (%d) != Elf_Sym (%d).' %
+                                    (tag['d_val'], symbol_size))
+                if (tag_ptr > tab_ptr and
+                        (nearest_ptr is None or nearest_ptr > tag_ptr)):
+                    nearest_ptr = tag_ptr
+
+            if nearest_ptr is None:
+                # Use the end of segment that contains DT_SYMTAB.
+                for segment in self.elffile.iter_segments():
+                    if (segment['p_vaddr'] <= tab_ptr and
+                            tab_ptr <= (segment['p_vaddr'] + segment['p_filesz'])):
+                        nearest_ptr = segment['p_vaddr'] + segment['p_filesz']
+
+            end_ptr = nearest_ptr
+
+        if end_ptr is None:
             raise ELFError('Cannot determine the end of DT_SYMTAB.')
 
         string_table = self._get_stringtable()
-        for i in range((nearest_ptr - tab_ptr) // symbol_size):
+        for i in range((end_ptr - tab_ptr) // symbol_size):
             symbol = struct_parse(self.elfstructs.Elf_Sym, self._stream,
                                   i * symbol_size + tab_offset)
             symbol_name = string_table.get_string(symbol['st_name'])

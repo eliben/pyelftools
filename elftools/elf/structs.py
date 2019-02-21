@@ -90,6 +90,8 @@ class ELFStructs(object):
         self._create_note(e_type)
         self._create_stabs()
         self._create_arm_attributes()
+        self._create_elf_hash()
+        self._create_gnu_hash()
 
     #-------------------------------- PRIVATE --------------------------------#
 
@@ -398,3 +400,29 @@ class ELFStructs(object):
                                         Enum(self.Elf_uleb128('tag'),
                                              **ENUM_ATTR_TAG_ARM)
         )
+
+    def _create_elf_hash(self):
+        # Structure of the old SYSV-style hash table header. It is documented
+        # in the Oracle "Linker and Libraries Guide", Part IV ELF Application
+        # Binary Interface, Chapter 14 Object File Format, Section Hash Table
+        # Section:
+        # https://docs.oracle.com/cd/E53394_01/html/E54813/chapter6-48031.html
+
+        self.Elf_Hash = Struct('Elf_Hash',
+                               self.Elf_word('nbuckets'),
+                               self.Elf_word('nchains'),
+                               Array(lambda ctx: ctx['nbuckets'], self.Elf_word('buckets')),
+                               Array(lambda ctx: ctx['nchains'], self.Elf_word('chains')))
+
+    def _create_gnu_hash(self):
+        # Structure of the GNU-style hash table header. Documentation for this
+        # table is mostly in the GLIBC source code, a good explanation of the
+        # format can be found in this blog post:
+        # https://flapenguin.me/2017/05/10/elf-lookup-dt-gnu-hash/
+        self.Gnu_Hash = Struct('Gnu_Hash',
+                               self.Elf_word('nbuckets'),
+                               self.Elf_word('symoffset'),
+                               self.Elf_word('bloom_size'),
+                               self.Elf_word('bloom_shift'),
+                               Array(lambda ctx: ctx['bloom_size'], self.Elf_xword('bloom')),
+                               Array(lambda ctx: ctx['nbuckets'], self.Elf_word('buckets')))

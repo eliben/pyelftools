@@ -54,8 +54,9 @@ class TestDynamic(unittest.TestCase):
         exp = ['libc.so.6']
         self.assertEqual(libs, exp)
 
-    def test_reading_symbols(self):
-        """Verify we can read symbol table without SymbolTableSection"""
+    def test_reading_symbols_elf_hash(self):
+        """ Verify we can read symbol table without SymbolTableSection but with
+            a SYSV-style symbol hash table"""
         with open(os.path.join('test', 'testfiles_for_unittests',
                                'aarch64_super_stripped.elf'), 'rb') as f:
             elf = ELFFile(f)
@@ -67,6 +68,30 @@ class TestDynamic(unittest.TestCase):
 
         exp = ['', '__libc_start_main', '__gmon_start__', 'abort']
         self.assertEqual(symbol_names, exp)
+
+    def test_reading_symbols_gnu_hash(self):
+        """ Verify we can read symbol table without SymbolTableSection but with
+            a GNU symbol hash table"""
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'android_dyntags.elf'), 'rb') as f:
+            elf = ELFFile(f)
+            for segment in elf.iter_segments():
+                if segment.header.p_type != 'PT_DYNAMIC':
+                    continue
+
+                num_symbols = segment.num_symbols()
+                symbol_names = [x.name for x in segment.iter_symbols()]
+                symbol_at_index_3 = segment.get_symbol(3)
+                symbols_atfork = segment.get_symbol_by_name('__register_atfork')
+
+        self.assertEqual(num_symbols, 212)
+        exp = ['', '__cxa_finalize' , '__cxa_atexit', '__register_atfork',
+               '__stack_chk_fail', '_ZNK7android7RefBase9decStrongEPKv',
+               '_ZN7android7RefBaseD2Ev', '_ZdlPv', 'pthread_mutex_lock']
+        self.assertEqual(symbol_names[:9], exp)
+        self.assertEqual(symbol_at_index_3.name, '__register_atfork')
+        self.assertIsNotNone(symbols_atfork)
+        self.assertEqual(symbols_atfork[0], symbol_at_index_3)
 
     def test_sunw_tags(self):
         def extract_sunw(filename):
