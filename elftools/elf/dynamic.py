@@ -8,6 +8,7 @@
 #-------------------------------------------------------------------------------
 import itertools
 
+from collections import defaultdict
 from .hash import HashSection, GNUHashSection
 from .sections import Section, Symbol
 from .enums import ENUM_D_TAG
@@ -227,6 +228,36 @@ class DynamicSegment(Segment, Dynamic):
                 break
         Segment.__init__(self, header, stream)
         Dynamic.__init__(self, stream, elffile, stringtable, self['p_offset'])
+        self._symbol_list = None
+        self._symbol_name_map = None
+
+    def num_symbols(self):
+        """ Number of symbols in the table recovered from DT_SYMTAB
+        """
+        if self._symbol_list is None:
+            self._symbol_list = list(self.iter_symbols())
+        return len(self._symbol_list)
+
+    def get_symbol(self, index):
+        """ Get the symbol at index #index from the table (Symbol object)
+        """
+        if self._symbol_list is None:
+            self._symbol_list = list(self.iter_symbols())
+        return self._symbol_list[index]
+
+    def get_symbol_by_name(self, name):
+        """ Get a symbol(s) by name. Return None if no symbol by the given name
+            exists.
+        """
+        # The first time this method is called, construct a name to number
+        # mapping
+        #
+        if self._symbol_name_map is None:
+            self._symbol_name_map = defaultdict(list)
+            for i, sym in enumerate(self.iter_symbols()):
+                self._symbol_name_map[sym.name].append(i)
+        symnums = self._symbol_name_map.get(name)
+        return [self.get_symbol(i) for i in symnums] if symnums else None
 
     def iter_symbols(self):
         """ Yield all symbols in this dynamic segment. The symbols are usually

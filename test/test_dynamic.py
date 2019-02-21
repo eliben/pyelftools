@@ -64,10 +64,17 @@ class TestDynamic(unittest.TestCase):
                 if segment.header.p_type != 'PT_DYNAMIC':
                     continue
 
+                num_symbols = segment.num_symbols()
                 symbol_names = [x.name for x in segment.iter_symbols()]
+                symbol_at_index_3 = segment.get_symbol(3)
+                symbols_abort = segment.get_symbol_by_name('abort')
 
+        self.assertEqual(num_symbols, 4)
         exp = ['', '__libc_start_main', '__gmon_start__', 'abort']
         self.assertEqual(symbol_names, exp)
+        self.assertEqual(symbol_at_index_3.name, 'abort')
+        self.assertIsNotNone(symbols_abort)
+        self.assertEqual(symbols_abort[0], symbol_at_index_3)
 
     def test_reading_symbols_gnu_hash(self):
         """ Verify we can read symbol table without SymbolTableSection but with
