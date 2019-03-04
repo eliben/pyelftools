@@ -372,6 +372,17 @@ class ELFStructs(object):
                 String('pr_psargs', 80),
             )
 
+        self.Elf_Nt_File = Struct('Elf_Nt_File',
+                                  self.Elf_xword("num_map_entries"),
+                                  self.Elf_xword("page_size"),
+                                  Array(lambda ctx: ctx.num_map_entries,
+                                        Struct('Elf_Nt_File_Entry',
+                                             self.Elf_addr('vm_start'),
+                                             self.Elf_addr('vm_end'),
+                                             self.Elf_offset('page_offset'))),
+                                  Array(lambda ctx: ctx.num_map_entries,
+                                        CString('filename')))
+
     def _create_stabs(self):
         # Structure of one stabs entry, see binutils/bfd/stabs.c
         # Names taken from https://sourceware.org/gdb/current/onlinedocs/stabs.html#Overview

@@ -40,6 +40,10 @@ def iter_notes(elffile, offset, size):
             note['n_desc'] = struct_parse(elffile.structs.Elf_Prpsinfo,
                                           elffile.stream,
                                           offset)
+        elif note['n_type'] == 'NT_FILE':
+            note['n_desc'] = struct_parse(elffile.structs.Elf_Nt_File,
+                                          elffile.stream,
+                                          offset)
         else:
             note['n_desc'] = desc_data
         offset += roundup(note['n_descsz'], 2)
