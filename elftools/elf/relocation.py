@@ -105,42 +105,6 @@ class RelocationSection(Section, RelocationTable):
                 header['sh_type'], self.entry_size))
 
 
-def get_dynamic_reloc_tables(elffile, dynamic):
-    """ Load all available relocation tables from a DYNAMIC section or segment.
-
-    elffile: ELFFile to parse
-    dynamic: DYNAMIC section or segment to parse.
-    """
-
-    result = {}
-
-    if list(dynamic.iter_tags('DT_REL')):
-        result['REL'] = RelocationTable(elffile,
-            dynamic.get_table_offset('DT_REL')[1],
-            next(dynamic.iter_tags('DT_RELSZ'))['d_val'], False)
-
-        relentsz = next(dynamic.iter_tags('DT_RELENT'))['d_val']
-        elf_assert(result['REL'].entry_size == relentsz,
-            'Expected DT_RELENT to be %s' % relentsz)
-
-    if list(dynamic.iter_tags('DT_RELA')):
-        result['RELA'] = RelocationTable(elffile,
-            dynamic.get_table_offset('DT_RELA')[1],
-            next(dynamic.iter_tags('DT_RELASZ'))['d_val'], True)
-
-        relentsz = next(dynamic.iter_tags('DT_RELAENT'))['d_val']
-        elf_assert(result['RELA'].entry_size == relentsz,
-            'Expected DT_RELAENT to be %s' % relentsz)
-
-    if list(dynamic.iter_tags('DT_JMPREL')):
-        result['JMPREL'] = RelocationTable(elffile,
-            dynamic.get_table_offset('DT_JMPREL')[1],
-            next(dynamic.iter_tags('DT_PLTRELSZ'))['d_val'],
-            next(dynamic.iter_tags('DT_PLTREL'))['d_val'] == ENUM_D_TAG['DT_RELA'])
-
-    return result
-
-
 class RelocationHandler(object):
     """ Handles the logic of relocations in ELF files.
     """
