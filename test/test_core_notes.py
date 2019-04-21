@@ -1,9 +1,9 @@
-# -----------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # elftools tests
 #
 # Maxim Akhmedov (max42@yandex-team.ru)
 # This code is in the public domain
-# -----------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 import unittest
 import os
 
@@ -15,11 +15,11 @@ class TestCoreNotes(unittest.TestCase):
     """ This test makes sure than core dump specific
         sections are properly analyzed.
     """
-
-    def setUp(self):
-        self._core_file = open(os.path.join('test',
-                               'testfiles_for_unittests', 'core_linux64.elf'),
-                               'rb')
+    @classmethod
+    def setUpClass(cls):
+        cls._core_file = open(os.path.join('test',
+                              'testfiles_for_unittests', 'core_linux64.elf'),
+                              'rb')
 
     def test_core_prpsinfo(self):
         elf = ELFFile(self._core_file)
@@ -82,12 +82,14 @@ class TestCoreNotes(unittest.TestCase):
         ...
         """
         elf = ELFFile(self._core_file)
+        nt_file_found = False
         for segment in elf.iter_segments():
             if not isinstance(segment, NoteSegment):
                 continue
             for note in segment.iter_notes():
                 if note['n_type'] != 'NT_FILE':
                     continue
+                nt_file_found = True
                 desc = note['n_desc']
                 self.assertEqual(desc['num_map_entries'], 10)
                 self.assertEqual(desc['page_size'], 4096)
@@ -173,6 +175,7 @@ class TestCoreNotes(unittest.TestCase):
                                             0x00026000)
                 self.assertEqual(desc['filename'][9],
                                  b"/lib/x86_64-linux-gnu/ld-2.23.so")
+        self.assertTrue(nt_file_found)
 
     def validate_nt_file_entry(self,
                                entry,
@@ -184,5 +187,6 @@ class TestCoreNotes(unittest.TestCase):
         self.assertEqual(entry.vm_end, expected_vm_end)
         self.assertEqual(entry.page_offset * page_size, expected_page_offset)
 
-    def tearDown(self):
-        self._core_file.close()
+    @classmethod
+    def tearDownClass(cls):
+        cls._core_file.close()

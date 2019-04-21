@@ -372,6 +372,10 @@ class ELFStructs(object):
                 String('pr_psargs', 80),
             )
 
+        # A PT_NOTE of type NT_FILE matching the definition in
+        # https://chromium.googlesource.com/
+        # native_client/nacl-binutils/+/upstream/master/binutils/readelf.c
+        # Line 15121
         self.Elf_Nt_File = Struct('Elf_Nt_File',
                                   self.Elf_xword("num_map_entries"),
                                   self.Elf_xword("page_size"),
