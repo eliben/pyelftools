@@ -6,6 +6,11 @@
 import sys
 PY3 = sys.version_info[0] == 3
 
+try:
+    from collections.abc import MutableMapping  # python >= 3.3
+except ImportError:
+    from collections import MutableMapping  # python < 3.3
+
 
 if PY3:
     import io
