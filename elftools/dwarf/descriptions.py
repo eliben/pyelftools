@@ -314,7 +314,6 @@ _DESCR_DW_LANG = {
     DW_LANG_D: '(D)',
     DW_LANG_Python: '(Python)',
     DW_LANG_Mips_Assembler: '(MIPS assembler)',
-    DW_LANG_Upc: '(nified Parallel C)',
     DW_LANG_HP_Bliss: '(HP Bliss)',
     DW_LANG_HP_Basic91: '(HP Basic 91)',
     DW_LANG_HP_Pascal91: '(HP Pascal 91)',
