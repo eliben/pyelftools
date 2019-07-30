@@ -467,7 +467,7 @@ class CFIEntry(object):
         if isinstance(self, CIE):
             # For a CIE, initialize cur_line to an "empty" line
             cie = self
-            cur_line = dict(pc=0, cfa=None)
+            cur_line = dict(pc=0, cfa=CFARule(reg=None, offset=0))
             reg_order = []
         else: # FDE
             # For a FDE, we need to decode the attached CIE first, because its
@@ -479,7 +479,7 @@ class CFIEntry(object):
                 last_line_in_CIE = copy.copy(cie_decoded_table.table[-1])
                 cur_line = copy.copy(last_line_in_CIE)
             else:
-                cur_line = dict(cfa=None)
+                cur_line = dict(cfa=CFARule(reg=None, offset=0))
             cur_line['pc'] = self['initial_location']
             reg_order = copy.copy(cie_decoded_table.reg_order)
 
@@ -575,7 +575,7 @@ class CFIEntry(object):
 
         # The current line is appended to the table after all instructions
         # have ended, if there were instructions.
-        if cur_line['cfa'] is not None or len(cur_line) > 2:
+        if cur_line['cfa'].reg is not None or len(cur_line) > 2:
             table.append(cur_line)
 
         return DecodedCallFrameTable(table=table, reg_order=reg_order)

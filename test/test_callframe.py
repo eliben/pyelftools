@@ -9,10 +9,12 @@ import unittest
 from elftools.common.py3compat import BytesIO
 from elftools.dwarf.callframe import (
     CallFrameInfo, CIE, FDE, instruction_name, CallFrameInstruction,
-    RegisterRule)
+    RegisterRule, DecodedCallFrameTable, CFARule)
 from elftools.dwarf.structs import DWARFStructs
 from elftools.dwarf.descriptions import (describe_CFI_instructions,
     set_global_machine_arch)
+from elftools.elf.elffile import ELFFile
+from os.path import join
 
 
 class TestCallFrame(unittest.TestCase):
@@ -145,6 +147,25 @@ class TestCallFrame(unittest.TestCase):
             (   '  DW_CFA_def_cfa: r7 (edi) ofs 2\n' +
                 '  DW_CFA_expression: r2 (edx) (DW_OP_addr: 201; DW_OP_deref; DW_OP_deref)\n'))
 
+    def test_CFIEntry_get_decoded(self):
+        oracle_decoded = DecodedCallFrameTable(
+            table = [
+                {'pc': 0, 'cfa': CFARule(reg = 29, offset = 0, expr = None)}
+            ],
+            reg_order = []
+        )
+
+        test_dir = join('test', 'testfiles_for_unittests')
+        with open(join(test_dir, 'simple_mipsel.elf'), 'rb') as f:
+            elf = ELFFile(f)
+            di = elf.get_dwarf_info()
+            entries = di.CFI_entries()
+            decoded = entries[0].get_decoded()
+            self.assertEqual(oracle_decoded.table[0]['cfa'].reg,
+                decoded.table[0]['cfa'].reg
+            )
+            self.assertEqual(oracle_decoded.table[0]['cfa'].offset,
+                decoded.table[0]['cfa'].offset)
 
 if __name__ == '__main__':
     unittest.main()
