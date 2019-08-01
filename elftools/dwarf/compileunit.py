@@ -55,6 +55,8 @@ class CompileUnit(object):
 
         # A list of DIEs belonging to this CU. Lazily parsed.
         self._dielist = []
+        # A map of section offsets to corresponding DIEs belonging to this CU
+        self._diemap = {}
 
     def dwarf_format(self):
         """ Get the DWARF format (32 or 64) for this CU
@@ -74,6 +76,12 @@ class CompileUnit(object):
             DW_TAG_partial_unit) of this CU
         """
         return self._get_DIE(0)
+
+    def die_from_offset(self, offset):
+        """ Get the DIE at specified offset within this CU. Raise KeyError if
+            offset does not point to the beginning of a known DIE entry.
+        """
+        return self._diemap[offset]
 
     def iter_DIEs(self):
         """ Iterate over all the DIEs in the CU, in order of their appearance.
@@ -118,6 +126,7 @@ class CompileUnit(object):
                     stream=self.dwarfinfo.debug_info_sec.stream,
                     offset=die_offset)
             self._dielist.append(die)
+            self._diemap[die_offset] = die
             die_offset += die.size
 
         # Second pass - unflatten the DIE tree
