@@ -11,10 +11,9 @@ from collections import namedtuple
 
 from ..common.utils import struct_parse
 
-
+LocationExpr = namedtuple('LocationExpr', 'loc_expr')
 LocationEntry = namedtuple('LocationEntry', 'begin_offset end_offset loc_expr')
 BaseAddressEntry = namedtuple('BaseAddressEntry', 'base_address')
-
 
 class LocationLists(object):
     """ A single location list is a Python list consisting of LocationEntry or
@@ -69,3 +68,56 @@ class LocationLists(object):
                     end_offset=end_offset,
                     loc_expr=loc_expr))
         return lst
+
+class LocationParser(object):
+    """ A parser for location information in DIEs.
+        Handles both location information contained within the attribute
+        itself (represented as a LocationExpr object) and references to
+        location lists in the .debug_loc section (represented as a
+        list).
+    """
+    def __init__(self, location_lists):
+        self.location_lists = location_lists
+
+    @staticmethod
+    def attribute_has_location(attr, dwarf_version):
+        """ Checks if a DIE attribute contains location information.
+        """
+        return (LocationParser._attribute_is_loclistptr_class(attr) and
+                (LocationParser._attribute_has_loc_expr(attr, dwarf_version) or
+                 LocationParser._attribute_has_loc_list(attr, dwarf_version)))
+
+    def parse_from_attribute(self, attr, dwarf_version):
+        """ Parses a DIE attribute and returns either a LocationExpr or
+            a list.
+        """
+        if self.attribute_has_location(attr, dwarf_version):
+            if self._attribute_has_loc_expr(attr, dwarf_version):
+                return LocationExpr(attr.value)
+            elif self._attribute_has_loc_list(attr, dwarf_version):
+                return self.location_lists.get_location_list_at_offset(
+                    attr.value)
+        else:
+            raise ValueError("Attribute does not have location information")
+
+    #------ PRIVATE ------#
+
+    @staticmethod
+    def _attribute_has_loc_expr(attr, dwarf_version):
+        return (dwarf_version < 4 and attr.form == 'DW_FORM_block1' or
+                attr.form == 'DW_FORM_exprloc')
+
+    @staticmethod
+    def _attribute_has_loc_list(attr, dwarf_version):
+        return ((dwarf_version < 4 and
+                 attr.form in ('DW_FORM_data4', 'DW_FORM_data8')) or
+                attr.form == 'DW_FORM_sec_offset')
+
+    @staticmethod
+    def _attribute_is_loclistptr_class(attr):
+        return (attr.name in ( 'DW_AT_location', 'DW_AT_string_length',
+                               'DW_AT_const_value', 'DW_AT_return_addr',
+                               'DW_AT_data_member_location',
+                               'DW_AT_frame_base', 'DW_AT_segment',
+                               'DW_AT_static_link', 'DW_AT_use_location',
+                               'DW_AT_vtable_elem_location'))

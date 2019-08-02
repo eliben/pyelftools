@@ -1,8 +1,20 @@
 #-------------------------------------------------------------------------------
-# elftools example: dwarf_location_lists.py
+# elftools example: dwarf_location_info.py
 #
-# Examine DIE entries which have location list values, and decode these
-# location lists.
+# Examine DIE entries which have either location list values or location
+# expression values and decode that information.
+#
+# Location information can either be completely contained within a DIE
+# (using 'DW_FORM_exprloc' in DWARFv4 or 'DW_FORM_block1' in earlier
+# versions) or be a reference to a location list contained within
+# the .debug_loc section (using 'DW_FORM_sec_offset' in DWARFv4 or
+# 'DW_FORM_data4' / 'DW_FORM_data8' in earlier versions).
+#
+# The LocationParser object parses the DIE attributes and handles both
+# formats.
+#
+# The directory 'test/testfiles_for_location_info' contains test files with
+# location information represented in both DWARFv4 and DWARFv2 forms.
 #
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
@@ -14,13 +26,12 @@ import sys
 # examples/ dir of the source distribution.
 sys.path[0:0] = ['.', '..']
 
-
 from elftools.common.py3compat import itervalues
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf.descriptions import (
     describe_DWARF_expr, set_global_machine_arch)
-from elftools.dwarf.locationlists import LocationEntry
-
+from elftools.dwarf.locationlists import (
+    LocationEntry, LocationExpr, LocationParser)
 
 def process_file(filename):
     print('Processing file:', filename)
@@ -43,6 +54,10 @@ def process_file(filename):
         # register names contained in DWARF expressions.
         set_global_machine_arch(elffile.get_machine_arch())
 
+        # Create a LocationParser object that parses the DIE attributes and
+        # creates objects representing the actual location information.
+        loc_parser = LocationParser(location_lists)
+
         for CU in dwarfinfo.iter_CUs():
             # DWARFInfo allows to iterate over the compile units contained in
             # the .debug_info section. CU is a CompileUnit object, with some
@@ -58,18 +73,23 @@ def process_file(filename):
                 # AttributeValue object (from elftools.dwarf.die), which we
                 # can examine.
                 for attr in itervalues(DIE.attributes):
-                    if attribute_has_location_list(attr, CU['version']):
-                        # This is a location list. Its value is an offset into
-                        # the .debug_loc section, so we can use the location
-                        # lists object to decode it.
-                        loclist = location_lists.get_location_list_at_offset(
-                            attr.value)
-
-                        print('   DIE %s. attr %s.\n%s' % (
-                            DIE.tag,
-                            attr.name,
-                            show_loclist(loclist, dwarfinfo, indent='      ')))
-
+                    # Check if this attribute contains location information
+                    if loc_parser.attribute_has_location(attr, CU['version']):
+                        print('   DIE %s. attr %s.' % (DIE.tag, attr.name))
+                        loc = loc_parser.parse_from_attribute(attr,
+                                                              CU['version'])
+                        # We either get a list (in case the attribute is a
+                        # reference to the .debug_loc section) or a LocationExpr
+                        # object (in case the attribute itself contains location
+                        # information).
+                        if isinstance(loc, LocationExpr):
+                            print('      %s' % (
+                                describe_DWARF_expr(loc.loc_expr,
+                                                    dwarfinfo.structs)))
+                        elif isinstance(loc, list):
+                            print(show_loclist(loc,
+                                               dwarfinfo,
+                                               indent='      '))
 
 def show_loclist(loclist, dwarfinfo, indent):
     """ Display a location list nicely, decoding the DWARF expressions
@@ -84,22 +104,6 @@ def show_loclist(loclist, dwarfinfo, indent):
         else:
             d.append(str(loc_entity))
     return '\n'.join(indent + s for s in d)
-
-
-def attribute_has_location_list(attr, dwarf_version):
-    """ Only some attributes can have location list values, if they have the
-        required DW_FORM (loclistptr "class" in DWARF spec v3)
-    """
-    if (attr.name in (  'DW_AT_location', 'DW_AT_string_length',
-                        'DW_AT_const_value', 'DW_AT_return_addr',
-                        'DW_AT_data_member_location', 'DW_AT_frame_base',
-                        'DW_AT_segment', 'DW_AT_static_link',
-                        'DW_AT_use_location', 'DW_AT_vtable_elem_location')):
-        if (dwarf_version < 4 and attr.form in ('DW_FORM_data4', 'DW_FORM_data8') or
-            attr.form == 'DW_FORM_sec_offset'):
-            return True
-    return False
-
 
 if __name__ == '__main__':
     if sys.argv[1] == '--test':

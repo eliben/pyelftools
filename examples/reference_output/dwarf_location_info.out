@@ -1,12 +1,22 @@
 Processing file: ./examples/sample_exe64.elf
   Found a compile unit at offset 0, length 115
   Found a compile unit at offset 119, length 135
+   DIE DW_TAG_variable. attr DW_AT_location.
+      (DW_OP_addr: 400608)
   Found a compile unit at offset 258, length 156
    DIE DW_TAG_subprogram. attr DW_AT_frame_base.
       LocationEntry(begin_offset=0, end_offset=1, loc_expr=[119, 8]) <<(DW_OP_breg7 (rsp): 8)>>
       LocationEntry(begin_offset=1, end_offset=4, loc_expr=[119, 16]) <<(DW_OP_breg7 (rsp): 16)>>
       LocationEntry(begin_offset=4, end_offset=43, loc_expr=[118, 16]) <<(DW_OP_breg6 (rbp): 16)>>
+   DIE DW_TAG_formal_parameter. attr DW_AT_location.
+      (DW_OP_fbreg: -20)
+   DIE DW_TAG_formal_parameter. attr DW_AT_location.
+      (DW_OP_fbreg: -32)
+   DIE DW_TAG_variable. attr DW_AT_location.
+      (DW_OP_addr: 601018)
   Found a compile unit at offset 418, length 300
+   DIE DW_TAG_subprogram. attr DW_AT_frame_base.
+      (DW_OP_breg7 (rsp): 8)
    DIE DW_TAG_subprogram. attr DW_AT_frame_base.
       LocationEntry(begin_offset=16, end_offset=64, loc_expr=[119, 8]) <<(DW_OP_breg7 (rsp): 8)>>
       LocationEntry(begin_offset=64, end_offset=153, loc_expr=[119, 192, 0]) <<(DW_OP_breg7 (rsp): 64)>>
