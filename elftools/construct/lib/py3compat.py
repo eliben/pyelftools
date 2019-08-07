@@ -11,6 +11,11 @@ try:
 except ImportError:
     from collections import MutableMapping  # python < 3.3
 
+try:
+    from collections.abc import Mapping  # python >= 3.3
+except ImportError:
+    from collections import Mapping  # python < 3.3
+
 
 if PY3:
     import io
