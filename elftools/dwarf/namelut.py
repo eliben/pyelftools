@@ -10,13 +10,14 @@ import os
 import collections
 from collections import OrderedDict
 from ..common.utils import struct_parse
+from ..common.py3compat import Mapping
 from bisect import bisect_right
 import math
 from ..construct import CString, Struct, If
 
 NameLUTEntry = collections.namedtuple('NameLUTEntry', 'cu_ofs die_ofs')
 
-class NameLUT(collections.Mapping):
+class NameLUT(Mapping):
     """
     A "Name LUT" holds any of the tables specified by .debug_pubtypes or
     .debug_pubnames sections. This is basically a dictionary where the key is

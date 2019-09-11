@@ -64,3 +64,8 @@ def itervalues(d):
 def iteritems(d):
     """Return an iterator over the items of a dictionary."""
     return getattr(d, 'items' if PY3 else 'iteritems')()
+
+try:
+    from collections.abc import Mapping  # python >= 3.3
+except ImportError:
+    from collections import Mapping  # python < 3.3
