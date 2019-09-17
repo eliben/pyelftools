@@ -70,6 +70,16 @@ DW_OP_name2opcode = dict(
     DW_OP_bit_piece=0x9d,
     DW_OP_implicit_value=0x9e,
     DW_OP_stack_value=0x9f,
+    DW_OP_implicit_pointer=0xa0,
+    DW_OP_addrx=0xa1,
+    DW_OP_constx=0xa2,
+    DW_OP_entry_value=0xa3,
+    DW_OP_const_type=0xa4,
+    DW_OP_regval_type=0xa5,
+    DW_OP_deref_type=0xa6,
+    DW_OP_xderef_type=0xa7,
+    DW_OP_convert=0xa8,
+    DW_OP_reinterpret=0xa9,
 )
 
 def _generate_dynamic_values(map, prefix, index_start, index_end, value_start):
