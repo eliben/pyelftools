@@ -305,11 +305,11 @@ ENUM_DW_FORM = dict(
     DW_FORM_addrx3              = 0x2b,
     DW_FORM_addrx4              = 0x2c,
 
-    DW_FORM_GNU_addr_index  = 0x1f01,
-    DW_FORM_GNU_str_index   = 0x1f02,
-    DW_FORM_GNU_ref_alt     = 0x1f20,
-    DW_FORM_GNU_strp_alt    = 0x1f21,
-    _default_               = Pass,
+    DW_FORM_GNU_addr_index      = 0x1f01,
+    DW_FORM_GNU_str_index       = 0x1f02,
+    DW_FORM_GNU_ref_alt         = 0x1f20,
+    DW_FORM_GNU_strp_alt        = 0x1f21,
+    _default_                   = Pass,
 )
 
 # Inverse mapping for ENUM_DW_FORM
