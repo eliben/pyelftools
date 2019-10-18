@@ -19,7 +19,7 @@ class TestAttrFormFlagPresent(unittest.TestCase):
 
             dwarf = elffile.get_dwarf_info()
             for cu in dwarf.iter_CUs():
-                for die in dwarf.iter_DIEs():
+                for die in cu.iter_DIEs():
                     for _, attr in die.attributes.items():
                         if attr.form == "DW_FORM_flag_present":
                             self.assertTrue(attr.value)
