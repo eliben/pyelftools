@@ -23,4 +23,3 @@ class TestAttrFormFlagPresent(unittest.TestCase):
                     for _, attr in die.attributes.items():
                         if attr.form == "DW_FORM_flag_present":
                             self.assertTrue(attr.value)
-            self.assertIsNone(elffile.get_dwarf_info().range_lists())
