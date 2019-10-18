@@ -199,6 +199,8 @@ class DIE(object):
                 value = self.dwarfinfo.get_string_from_table(raw_value)
         elif form == 'DW_FORM_flag':
             value = not raw_value == 0
+        elif form == 'DW_FORM_flag_present':
+            value = True
         elif form == 'DW_FORM_indirect':
             try:
                 form = DW_FORM_raw2name[raw_value]
