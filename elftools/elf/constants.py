@@ -71,6 +71,7 @@ class SHN_INDICES(object):
     SHN_ABS=0xfff1
     SHN_COMMON=0xfff2
     SHN_HIRESERVE=0xffff
+    SHN_XINDEX=0xffff
 
 
 class SH_FLAGS(object):
