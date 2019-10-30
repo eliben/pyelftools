@@ -54,9 +54,12 @@ class CompileUnit(object):
         # requested.
         self._abbrev_table = None
 
-        # A list of DIEs belonging to this CU. Lazily parsed.
+        # A list of DIEs belonging to this CU.
+        # This list is lazily constructed as DIEs are iterated over.
         self._dielist = []
         # A list of corresponding DIE offsets.
+        # This list is used to determine where to insert a DIE
+        # within `self._diemap` during iteration for future memoization.
         self._diemap = []
 
     def dwarf_format(self):
