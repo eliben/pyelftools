@@ -76,18 +76,17 @@ class CompileUnit(object):
         """ Get the top DIE (which is either a DW_TAG_compile_unit or
             DW_TAG_partial_unit) of this CU
         """
-        dm = self._diemap
 
         # Note that a top DIE always has minimal offset, no bisect required.
-        if dm and dm[0] == self.cu_die_offset:
+        if self._diemap and self._diemap[0] == self.cu_die_offset:
             return self._dielist[0]
         top = DIE(
                 cu=self,
                 stream=self.dwarfinfo.debug_info_sec.stream,
-                offset = self.cu_die_offset)
+                offset=self.cu_die_offset)
 
         self._dielist.insert(0, top)
-        dm.insert(0, self.cu_die_offset)
+        self._diemap.insert(0, self.cu_die_offset)
 
         return top
 
@@ -106,26 +105,23 @@ class CompileUnit(object):
         if not die.has_children:
             return
 
-        dm = self._diemap
-        dl = self._dielist
-        s = die.stream
         cu_off = self.cu_offset
 
         cur_offset = die.offset + die.size
 
         while True:
-            i = bisect_left(dm, cur_offset)
-            # Note that `dm` cannot be empty because a `die`, the argument,
+            i = bisect_left(self._diemap, cur_offset)
+            # Note that `self._diemap` cannot be empty because a `die`, the argument,
             # is already parsed.
-            if i < len(dm) and cur_offset == dm[i]:
-                child = dl[i]
+            if i < len(self._diemap) and cur_offset == self._diemap[i]:
+                child = self._dielist[i]
             else:
                 child = DIE(
-                        cu = self,
-                        stream = s,
-                        offset = cur_offset)
-                dl.insert(i, child)
-                dm.insert(i, cur_offset)
+                        cu=self,
+                        stream=die.stream,
+                        offset=cur_offset)
+                self._dielist.insert(i, child)
+                self._diemap.insert(i, cur_offset)
 
             child.set_parent(die)
 
@@ -151,7 +147,8 @@ class CompileUnit(object):
                 # to recursive call of this function which will result in
                 # setting of `_terminator` attribute of the `child`.
                 if child._terminator is None:
-                    for _ in self.iter_DIE_children(child): pass
+                    for _ in self.iter_DIE_children(child):
+                        pass
 
                 cur_offset = child._terminator.offset + child._terminator.size
 
