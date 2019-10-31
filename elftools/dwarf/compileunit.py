@@ -59,7 +59,7 @@ class CompileUnit(object):
         self._dielist = []
         # A list of corresponding DIE offsets.
         # This list is used to determine where to insert a DIE
-        # within `self._diemap` during iteration for future memoization.
+        # within `self._dielist` during iteration for future memoization.
         self._diemap = []
 
     def dwarf_format(self):
@@ -80,9 +80,11 @@ class CompileUnit(object):
             DW_TAG_partial_unit) of this CU
         """
 
-        # Note that a top DIE always has minimal offset, no bisect required.
-        if self._diemap and self._diemap[0] == self.cu_die_offset:
+        # Note that a top DIE always has minimal offset and is therefore
+        # at the beginning of our lists, so no bisect is required.
+        if len(self._diemap) > 0:
             return self._dielist[0]
+
         top = DIE(
                 cu=self,
                 stream=self.dwarfinfo.debug_info_sec.stream,
