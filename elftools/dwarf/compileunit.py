@@ -57,9 +57,12 @@ class CompileUnit(object):
         # A list of DIEs belonging to this CU.
         # This list is lazily constructed as DIEs are iterated over.
         self._dielist = []
-        # A list of corresponding DIE offsets.
-        # This list is used to determine where to insert a DIE
-        # within `self._dielist` during iteration for future memoization.
+        # A list of file offsets, corresponding (by index) to the DIEs
+        # in `self._dielist`. This list exists separately from
+        # `self._dielist` to make it binary searchable, enabling the
+        # DIE population strategy used in `iter_DIE_children`.
+        # Like `self._dielist`, this list is lazily constructed
+        # as DIEs are iterated over.
         self._diemap = []
 
     def dwarf_format(self):
