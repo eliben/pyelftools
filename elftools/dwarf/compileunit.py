@@ -113,6 +113,10 @@ class CompileUnit(object):
         if not die.has_children:
             return
 
+        # `cur_offset` tracks the offset past our current DIE as we iterate
+        # over children, providing the pivot as we bisect `self._diemap`
+        # and ensuring that we insert our children (and child offsets)
+        # in the correct order within both `self._dielist` and `self._diemap`.
         cur_offset = die.offset + die.size
 
         while True:
