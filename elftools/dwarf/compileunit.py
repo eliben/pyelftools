@@ -106,14 +106,12 @@ class CompileUnit(object):
 
     def iter_DIE_children(self, die):
         """ Given a DIE, yields either its children, without null DIE list
-            terminator, or nothing, if that DIE have no children.
+            terminator, or nothing, if that DIE has no children.
 
             The null DIE terminator is saved in that DIE when iteration ended.
         """
         if not die.has_children:
             return
-
-        cu_off = self.cu_offset
 
         cur_offset = die.offset + die.size
 
@@ -143,7 +141,7 @@ class CompileUnit(object):
                 cur_offset += child.size
             elif "DW_AT_sibling" in child.attributes:
                 sibling = child.attributes["DW_AT_sibling"]
-                cur_offset = sibling.value + cu_off
+                cur_offset = sibling.value + self.cu_offset
             else:
                 # If no DW_AT_sibling attribute is provided by the producer
                 # then the whole child subtree must be parsed to find its next
