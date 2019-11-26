@@ -213,6 +213,8 @@ class DIE(object):
                 self.cu.structs.Dwarf_dw_form[form], self.stream)
             # Let's hope this doesn't get too deep :-)
             return self._translate_attr_value(form, raw_value)
+        elif form in ['DW_FORM_ref1', 'DW_FORM_ref2', 'DW_FORM_ref4', 'DW_FORM_ref8']:
+            value = self.cu.cu_offset + raw_value        
         else:
             value = raw_value
         return value
