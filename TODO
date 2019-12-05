@@ -17,7 +17,10 @@ future.
 Distribution
 ------------
 
-python setup.py build sdist bdist_wheel upload
+1. First install Twine (https://packaging.python.org/tutorials/packaging-projects/)
+2. python3 -m twine upload dist/*
+
+Credentials for PyPI are stored in ~/.pypirc
 
 Preparing a new release
 -----------------------
