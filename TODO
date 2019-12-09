@@ -14,14 +14,6 @@ Theoretically, I can remove construct from pyelftools and use it as a dependency
 instead. I don't really have time to play with this now, but may do so in the
 future.
 
-Distribution
-------------
-
-1. First install Twine (https://packaging.python.org/tutorials/packaging-projects/)
-2. python3 -m twine upload dist/*
-
-Credentials for PyPI are stored in ~/.pypirc
-
 Preparing a new release
 -----------------------
 
@@ -32,3 +24,12 @@ Preparing a new release
   everything looks ok
 * Now build with upload to send it to PyPi
 * Test with pip install from some new virtualenv
+
+Distribution
+------------
+
+1. First install Twine (https://packaging.python.org/tutorials/packaging-projects/)
+2. python3 -m twine upload dist/*, but make sure ``setup.py`` was already run
+   and the updated whl and tarbal are in dist/.
+
+Credentials for PyPI are stored in ~/.pypirc
