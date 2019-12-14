@@ -875,7 +875,7 @@ class ReadElf(object):
 
             if self._versioninfo['type'] == 'GNU':
                 # In GNU versioning mode, the highest bit is used to
-                # store wether the symbol is hidden or not
+                # store whether the symbol is hidden or not
                 if index & 0x8000:
                     index &= ~0x8000
                     symbol_version['hidden'] = True
