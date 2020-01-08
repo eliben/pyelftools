@@ -133,7 +133,7 @@ class DIE(object):
         else:
             raise StopIteration()
 
-    def resolve_reference(self, attr_name)
+    def resolve_reference(self, attr_name):
         attr = self.attributes[attr_name]
         if attr.form in ('DW_FORM_ref1', 'DW_FORM_ref2', 'DW_FORM_ref4', 'DW_FORM_ref8'):
             return DIE(cu=self.cu, stream=self.stream, offset=self.cu.cu_offset + attr.value)
