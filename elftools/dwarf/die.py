@@ -133,6 +133,15 @@ class DIE(object):
         else:
             raise StopIteration()
 
+    def resolve_reference(self, attr_name)
+        attr = self.attributes[attr_name]
+        if attr.form in ('DW_FORM_ref1', 'DW_FORM_ref2', 'DW_FORM_ref4', 'DW_FORM_ref8'):
+            return DIE(cu=self.cu, stream=self.stream, offset=self.cu.cu_offset + attr.value)
+        else if attr.form in ('DW_FORM_ref_addr', 'DW_FORM_ref_sig8', 'DW_FORM_ref_sup4', 'DW_FORM_ref_sup8'):
+            raise NotImplementedError("DIE reference format not supported: " + attr.form)
+        else:
+            raise ValueError("DIE attribute is not a reference: " + attr_name)    
+
     # The following methods are used while creating the DIE and should not be
     # interesting to consumers
     #
