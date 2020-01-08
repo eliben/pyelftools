@@ -81,6 +81,8 @@ DW_OP_name2opcode = dict(
     DW_OP_convert=0xa8,
     DW_OP_reinterpret=0xa9,
     DW_OP_lo_user=0xe0,
+    DW_OP_GNU_entry_value=0xf3,
+    DW_OP_GNU_implicit_pointer=0xf2,
     DW_OP_hi_user=0xff,
 )
 
@@ -168,6 +170,17 @@ class GenericExprVisitor(object):
     def _visit_OP_addr(self, opcode, opcode_name):
         self._cur_args = [
                 struct_parse(self.structs.Dwarf_target_addr(''), self.stream)]
+
+    def _visit_OP_nestedexpr(self, opcode, opcode_name):
+        size = struct_parse(self.structs.Dwarf_uleb128(''), self.stream)
+        nested_expr_blob = self.stream.read(size)
+        nested_expr = []
+
+        class Nested(GenericExprVisitor):
+            def _after_visit(self, opcode, opcode_name, args):
+                nested_expr.append((opcode, opcode_name, args))
+        Nested(self.structs).process_expr(nested_expr_blob)
+        self._cur_args = [nested_expr] # The one argument is a list of operations
 
     def _make_visitor_arg_struct(self, struct_arg):
         """ Create a visitor method for an opcode that that accepts a single
@@ -267,5 +280,11 @@ class GenericExprVisitor(object):
             self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
         add('DW_OP_call_ref',
             self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
+        add('DW_OP_GNU_entry_value',
+            self._visit_OP_nestedexpr)
+        add('DW_OP_GNU_implicit_pointer',
+            self._make_visitor_arg_struct2(
+                self.structs.Dwarf_offset(''),
+                self.structs.Dwarf_sleb128('')))
 
 
