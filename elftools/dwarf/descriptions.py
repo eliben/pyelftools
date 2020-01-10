@@ -9,7 +9,7 @@
 from collections import defaultdict
 
 from .constants import *
-from .dwarf_expr import GenericExprVisitor
+from .dwarf_expr import GenericExprDumper
 from .die import DIE
 from ..common.utils import preserve_stream_pos, dwarf_assert
 from ..common.py3compat import bytes2str
@@ -531,7 +531,7 @@ _REG_NAMES_x64 = [
 ]
 
 
-class ExprDumper(GenericExprVisitor):
+class ExprDumper(GenericExprDumper):
     """ A concrete visitor for DWARF expressions that dumps a textual
         representation of the complete expression.
 
@@ -539,7 +539,7 @@ class ExprDumper(GenericExprVisitor):
         semicolon-delimited string representation of the decoded expression.
     """
     def __init__(self, structs):
-        super(ExprDumper, self).__init__(structs)
+        super(GenericExprDumper, self).__init__(structs)
         self._init_lookups()
 
     def get_str(self):
