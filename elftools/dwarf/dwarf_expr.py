@@ -9,7 +9,6 @@
 from ..common.py3compat import BytesIO, iteritems
 from ..common.utils import struct_parse, bytelist2string
 
-
 # DWARF expression opcodes. name -> opcode mapping
 DW_OP_name2opcode = dict(
     DW_OP_addr=0x03,
@@ -81,8 +80,12 @@ DW_OP_name2opcode = dict(
     DW_OP_convert=0xa8,
     DW_OP_reinterpret=0xa9,
     DW_OP_lo_user=0xe0,
-    DW_OP_GNU_entry_value=0xf3,
     DW_OP_GNU_implicit_pointer=0xf2,
+    DW_OP_GNU_entry_value=0xf3,
+    DW_OP_GNU_const_type=0xf4,
+    DW_OP_GNU_regval_type=0xf5,
+    DW_OP_GNU_parameter_ref=0xfa,
+    DW_OP_GNU_convert=0xf7,
     DW_OP_hi_user=0xff,
 )
 
@@ -171,16 +174,26 @@ class GenericExprVisitor(object):
         self._cur_args = [
                 struct_parse(self.structs.Dwarf_target_addr(''), self.stream)]
 
+    # ULEB128, then an expression of that length
     def _visit_OP_nestedexpr(self, opcode, opcode_name):
         size = struct_parse(self.structs.Dwarf_uleb128(''), self.stream)
         nested_expr_blob = self.stream.read(size)
-        nested_expr = []
+        dumper = GenericExprDumper(self.structs)
+        # If used from a dumper context, reuse the outer operation formatter
+        if '_dump_to_string' in dir(self):
+            dumper._dump_to_string = self._dump_to_string
+        self._cur_args = [dumper.dump(nested_expr_blob)]
 
-        class Nested(GenericExprVisitor):
-            def _after_visit(self, opcode, opcode_name, args):
-                nested_expr.append((opcode, opcode_name, args))
-        Nested(self.structs).process_expr(nested_expr_blob)
-        self._cur_args = [nested_expr] # The one argument is a list of operations
+    # ULEB128, then a blob of that size
+    def _visit_OP_blob(self, opcode, opcode_name):
+        size = struct_parse(self.structs.Dwarf_uleb128(''), self.stream)
+        self._cur_args = [self.stream.read(size)]
+
+    # ULEB128 with datatype DIE offset, then byte, then a blob of that size
+    def _visit_OP_typedblob(self, opcode, opcode_name):
+        type_offset = struct_parse(self.structs.Dwarf_uleb128(''), self.stream)
+        size = struct_parse(self.structs.Dwarf_uint8(''), self.stream)
+        self._cur_args = [type_offset, self.stream.read(size)]        
 
     def _make_visitor_arg_struct(self, struct_arg):
         """ Create a visitor method for an opcode that that accepts a single
@@ -280,11 +293,44 @@ class GenericExprVisitor(object):
             self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
         add('DW_OP_call_ref',
             self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
+        add('DW_OP_implicit_value',
+            self._visit_OP_blob)
         add('DW_OP_GNU_entry_value',
             self._visit_OP_nestedexpr)
+        add('DW_OP_GNU_const_type',
+            self._visit_OP_typedblob)
+        add('DW_OP_GNU_regval_type',
+            self._make_visitor_arg_struct2(
+                self.structs.Dwarf_uleb128(''),
+                self.structs.Dwarf_uleb128('')))
         add('DW_OP_GNU_implicit_pointer',
             self._make_visitor_arg_struct2(
                 self.structs.Dwarf_offset(''),
                 self.structs.Dwarf_sleb128('')))
+        add('DW_OP_GNU_parameter_ref',
+            self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
+        add('DW_OP_GNU_convert',
+            self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
 
+class GenericExprDumper(GenericExprVisitor):
+    """ Unites an expression into a list of objects,
+        each object corresponding to an operation.
+    """
+    def __init__(self, structs):
+        super(GenericExprDumper, self).__init__(structs)
+        self._str_parts = []
 
+    def dump(self, expr):
+        self.clear()
+        self.process_expr(expr)
+        return self._str_parts
+
+    def clear(self):
+        self._str_parts = []
+
+    def _after_visit(self, opcode, opcode_name, args):
+        self._str_parts.append(self._dump_to_string(opcode, opcode_name, args))
+
+    # The binary formatter implementation, to be overridden in ExprDumper
+    def _dump_to_string(self, opcode, opcode_name, args):
+        return (opcode, opcode_name, args)

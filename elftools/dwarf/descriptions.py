@@ -541,10 +541,6 @@ class ExprDumper(GenericExprVisitor):
     def __init__(self, structs):
         super(ExprDumper, self).__init__(structs)
         self._init_lookups()
-        self._str_parts = []
-
-    def clear(self):
-        self._str_parts = []
 
     def get_str(self):
         return '; '.join(self._str_parts)
@@ -565,9 +561,6 @@ class ExprDumper(GenericExprVisitor):
 
         self._ops_with_hex_arg = set(
             ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
-
-    def _after_visit(self, opcode, opcode_name, args):
-        self._str_parts.append(self._dump_to_string(opcode, opcode_name, args))
 
     def _dump_to_string(self, opcode, opcode_name, args):
         if len(args) == 0:
