@@ -22,6 +22,8 @@ class CompileUnit(object):
         Serves as a container and context to DIEs that describe objects and code
         belonging to a compilation unit.
 
+        This class is used for all Unit types, including DWARF v4 Type Units
+
         CU header entries can be accessed as dict keys from this object, i.e.
            cu = CompileUnit(...)
            cu['version']  # version field of the CU header
@@ -29,12 +31,16 @@ class CompileUnit(object):
         To get the top-level DIE describing the compilation unit, call the
         get_top_DIE method.
     """
-    def __init__(self, header, dwarfinfo, structs, cu_offset, cu_die_offset):
+    def __init__(self, header, dwarfinfo, structs, stream, cu_offset,
+                 cu_die_offset):
         """ header:
                 CU header for this compile unit
 
             dwarfinfo:
                 The DWARFInfo context object which created this one
+
+            stream:
+                The stream for this compile unit, with its DIEs
 
             structs:
                 A DWARFStructs instance suitable for this compile unit
@@ -44,10 +50,12 @@ class CompileUnit(object):
 
             cu_die_offset:
                 Offset in the stream of the top DIE of this CU
+
         """
         self.dwarfinfo = dwarfinfo
         self.header = header
         self.structs = structs
+        self.stream = stream
         self.cu_offset = cu_offset
         self.cu_die_offset = cu_die_offset
 
@@ -83,17 +91,12 @@ class CompileUnit(object):
         """ Get the top DIE (which is either a DW_TAG_compile_unit or
             DW_TAG_partial_unit) of this CU
         """
-
         # Note that a top DIE always has minimal offset and is therefore
         # at the beginning of our lists, so no bisect is required.
         if len(self._diemap) > 0:
             return self._dielist[0]
 
-        top = DIE(
-                cu=self,
-                stream=self.dwarfinfo.debug_info_sec.stream,
-                offset=self.cu_die_offset)
-
+        top = DIE(cu=self, stream=self.stream, offset=self.cu_die_offset)
         self._dielist.insert(0, top)
         self._diemap.insert(0, self.cu_die_offset)
 

@@ -165,7 +165,8 @@ class ELFFile(object):
         # present.
         # Sections that aren't found will be passed as None to DWARFInfo.
 
-        section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev',
+        section_names = ('.debug_info', '.debug_types',
+                         '.debug_aranges', '.debug_abbrev',
                          '.debug_str', '.debug_line', '.debug_frame',
                          '.debug_loc', '.debug_ranges', '.debug_pubtypes',
                          '.debug_pubnames')
@@ -177,7 +178,8 @@ class ELFFile(object):
         # As it is loaded in the process image, .eh_frame cannot be compressed
         section_names += ('.eh_frame', )
 
-        (debug_info_sec_name, debug_aranges_sec_name, debug_abbrev_sec_name,
+        (debug_info_sec_name, debug_types_sec_name,
+         debug_aranges_sec_name, debug_abbrev_sec_name,
          debug_str_sec_name, debug_line_sec_name, debug_frame_sec_name,
          debug_loc_sec_name, debug_ranges_sec_name, debug_pubtypes_name,
          debug_pubnames_name, eh_frame_sec_name) = section_names
@@ -201,6 +203,7 @@ class ELFFile(object):
                     default_address_size=self.elfclass // 8,
                     machine_arch=self.get_machine_arch()),
                 debug_info_sec=debug_sections[debug_info_sec_name],
+                debug_types_sec=debug_sections[debug_types_sec_name],
                 debug_aranges_sec=debug_sections[debug_aranges_sec_name],
                 debug_abbrev_sec=debug_sections[debug_abbrev_sec_name],
                 debug_frame_sec=debug_sections[debug_frame_sec_name],

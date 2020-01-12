@@ -34,6 +34,7 @@ class TestRefAddrOnDWARFv2With64BitTarget(unittest.TestCase):
         di = DWARFInfo(
             config = DwarfConfig(little_endian = True, default_address_size = 8, machine_arch = "ARM64"),
             debug_info_sec = DebugSectionDescriptor(io.BytesIO(info), '__debug_info', None, len(info), 0),
+            debug_types_sec = None,
             debug_aranges_sec = None,
             debug_abbrev_sec = DebugSectionDescriptor(io.BytesIO(abbrev), '__debug_abbrev', None, len(abbrev), 0),
             debug_frame_sec = None,

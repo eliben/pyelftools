@@ -778,7 +778,8 @@ class ReadElf(object):
         set_global_machine_arch(self.elffile.get_machine_arch())
 
         if dump_what == 'info':
-            self._dump_debug_info()
+            self._dump_debug_info(dump_types=False)
+            self._dump_debug_info(dump_types=True)
         elif dump_what == 'decodedline':
             self._dump_debug_line_programs()
         elif dump_what == 'frames':
@@ -961,17 +962,28 @@ class ReadElf(object):
         else:
             self._dwarfinfo = None
 
-    def _dump_debug_info(self):
+    def _dump_debug_info(self, dump_types=False):
         """ Dump the debugging info section.
         """
         if not self._dwarfinfo.has_debug_info:
             return
-        self._emitline('Contents of the %s section:\n' % self._dwarfinfo.debug_info_sec.name)
+
+        if dump_types:
+            debug_sec = self._dwarfinfo.debug_types_sec
+            unit_iter = self._dwarfinfo.iter_TUs
+        else:
+            debug_sec = self._dwarfinfo.debug_info_sec
+            unit_iter = self._dwarfinfo.iter_CUs
+
+        if debug_sec is None:
+            return
+
+        self._emitline('Contents of the %s section:\n' % debug_sec.name)
 
         # Offset of the .debug_info section in the stream
-        section_offset = self._dwarfinfo.debug_info_sec.global_offset
+        section_offset = debug_sec.global_offset
 
-        for cu in self._dwarfinfo.iter_CUs():
+        for cu in unit_iter():
             self._emitline('  Compilation Unit @ offset %s:' %
                 self._format_hex(cu.cu_offset))
             self._emitline('   Length:        %s (%s)' % (
@@ -981,6 +993,12 @@ class ReadElf(object):
             self._emitline('   Abbrev Offset: %s' % (
                 self._format_hex(cu['debug_abbrev_offset']))),
             self._emitline('   Pointer Size:  %s' % cu['address_size'])
+            if 'type_signature' in cu.header:
+                    self._emitline('   Signature:     %s' % (
+                        self._format_hex(cu['type_signature']))),
+            if 'type_offset' in cu.header:
+                    self._emitline('   Type Offset:   %s' % (
+                        self._format_hex(cu['type_offset']))),
 
             # The nesting depth of each DIE within the tree of DIEs must be
             # displayed. To implement this, a counter is incremented each time

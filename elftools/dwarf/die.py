@@ -113,8 +113,7 @@ class DIE(object):
         elif attr.form in ('DW_FORM_refaddr'):
             return self.cu.dwarfinfo.get_DIE_from_refaddr(attr.raw_value)
         elif attr.form in ('DW_FORM_ref_sig8'):
-            # Implement search type units for matching signature
-            raise NotImplementedError('%s (type unit by signature)' % attr.form)
+            return self.cu.dwarfinfo.get_DIE_by_sig8(attr.raw_value)
         elif attr.form in ('DW_FORM_ref_sup4', 'DW_FORM_ref_sup8'):
             raise NotImplementedError('%s to dwo' % attr.form)
         else:

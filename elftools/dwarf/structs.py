@@ -50,6 +50,9 @@ class DWARFStructs(object):
             Dwarf_CU_header (+):
                 Compilation unit header
 
+            Dwarf_TU_header (+):
+                Type unit header
+
             Dwarf_abbrev_declaration (+):
                 Abbreviation table declaration - doesn't include the initial
                 code, only the contents.
@@ -131,7 +134,7 @@ class DWARFStructs(object):
 
         self._create_initial_length()
         self._create_leb128()
-        self._create_cu_header()
+        self._create_unit_headers()
         self._create_abbrev_declaration()
         self._create_dw_form()
         self._create_lineprog_header()
@@ -156,12 +159,19 @@ class DWARFStructs(object):
         self.Dwarf_uleb128 = ULEB128
         self.Dwarf_sleb128 = SLEB128
 
-    def _create_cu_header(self):
+    def _create_unit_headers(self):
         self.Dwarf_CU_header = Struct('Dwarf_CU_header',
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
             self.Dwarf_offset('debug_abbrev_offset'),
             self.Dwarf_uint8('address_size'))
+        self.Dwarf_TU_header = Struct('Dwarf_TU_header',
+            self.Dwarf_initial_length('unit_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_offset('debug_abbrev_offset'),
+            self.Dwarf_uint8('address_size'),
+            self.Dwarf_uint64('type_signature'),
+            self.Dwarf_offset('type_offset'))
 
     def _create_abbrev_declaration(self):
         self.Dwarf_abbrev_declaration = Struct('Dwarf_abbrev_entry',
