@@ -342,7 +342,7 @@ class _InitialLengthAdapter(Adapter):
         as a struct with one or two values (first, second).
     """
     def _decode(self, obj, context):
-        if obj.first < 0xFFFFFF00:
+        if obj.first < 0xFFFFFFF0:
             return obj.first
         else:
             if obj.first == 0xFFFFFFFF:
