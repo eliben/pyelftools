@@ -169,7 +169,7 @@ class ELFFile(object):
                          '.debug_aranges', '.debug_abbrev',
                          '.debug_str', '.debug_line', '.debug_frame',
                          '.debug_loc', '.debug_ranges', '.debug_pubtypes',
-                         '.debug_pubnames')
+                         '.debug_pubnames', '.debug_macinfo')
 
         compressed = bool(self.get_section_by_name('.zdebug_info'))
         if compressed:
@@ -182,7 +182,8 @@ class ELFFile(object):
          debug_aranges_sec_name, debug_abbrev_sec_name,
          debug_str_sec_name, debug_line_sec_name, debug_frame_sec_name,
          debug_loc_sec_name, debug_ranges_sec_name, debug_pubtypes_name,
-         debug_pubnames_name, eh_frame_sec_name) = section_names
+         debug_pubnames_name, debug_macinfo_sec_name,
+         eh_frame_sec_name) = section_names
 
         debug_sections = {}
         for secname in section_names:
@@ -213,7 +214,8 @@ class ELFFile(object):
                 debug_ranges_sec=debug_sections[debug_ranges_sec_name],
                 debug_line_sec=debug_sections[debug_line_sec_name],
                 debug_pubtypes_sec = debug_sections[debug_pubtypes_name],
-                debug_pubnames_sec = debug_sections[debug_pubnames_name]
+                debug_pubnames_sec = debug_sections[debug_pubnames_name],
+                debug_macinfo_sec=debug_sections[debug_macinfo_sec_name]
                 )
 
     def get_machine_arch(self):

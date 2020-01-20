@@ -21,6 +21,7 @@ from .locationlists import LocationLists
 from .ranges import RangeLists
 from .aranges import ARanges
 from .namelut import NameLUT
+from .macro import MacInfo
 
 
 # Describes a debug section
@@ -72,7 +73,8 @@ class DWARFInfo(object):
             debug_ranges_sec,
             debug_line_sec,
             debug_pubtypes_sec,
-            debug_pubnames_sec):
+            debug_pubnames_sec,
+            debug_macinfo_sec):
         """ config:
                 A DwarfConfig object
 
@@ -94,6 +96,7 @@ class DWARFInfo(object):
         self.debug_line_sec = debug_line_sec
         self.debug_pubtypes_sec = debug_pubtypes_sec
         self.debug_pubnames_sec = debug_pubnames_sec
+        self.debug_macinfo_sec = debug_macinfo_sec
 
         # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
@@ -378,6 +381,26 @@ class DWARFInfo(object):
             return RangeLists(self.debug_ranges_sec.stream, self.structs)
         else:
             return None
+
+    def get_macinfo(self):
+        if self.debug_macinfo_sec:
+            return MacInfo(self.debug_macinfo_sec, self.structs)
+        else:
+            return None
+
+    def macro_info_for_CU(self, cu):
+        top = cu.get_top_DIE()
+        if not 'DW_AT_macro_info' in top.attributes:
+            return None
+        offset = top.attributes['DW_AT_macro_info'].value
+        macinfo = self.get_macinfo()
+        dwarf_assert(
+            macinfo,
+            "Attribute DW_AT_macro_info found but no .debug_macinfo section")
+        dwarf_assert(
+            offset < self.debug_macinfo_sec.size,
+            "Attribute DW_AT_macro_info found but no .debug_macinfo section")
+        return macinfo.get_UnitMacInfo_at_offset(offset)
 
     #------ PRIVATE ------#
 

@@ -11,7 +11,7 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, Enum, Array, PrefixedArray,
-    CString, Embed, StaticField
+    CString, Embed, StaticField, Switch
     )
 from ..common.construct_utils import RepeatUntilExcluding, ULEB128, SLEB128
 from .enums import *
@@ -56,6 +56,9 @@ class DWARFStructs(object):
             Dwarf_abbrev_declaration (+):
                 Abbreviation table declaration - doesn't include the initial
                 code, only the contents.
+
+            Dwarf_MacInfo_Entry (+):
+                Parse a MacInfo entry
 
             Dwarf_dw_form (+):
                 A dictionary mapping 'DW_FORM_*' keys into construct Structs
@@ -141,6 +144,7 @@ class DWARFStructs(object):
         self._create_callframe_entry_headers()
         self._create_aranges_header()
         self._create_nameLUT_header()
+        self._create_macro_entries()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -304,6 +308,26 @@ class DWARFStructs(object):
             self.Dwarf_offset('CIE_pointer'),
             self.Dwarf_target_addr('initial_location'),
             self.Dwarf_target_addr('address_range'))
+
+    def _create_macro_entries(self):
+        self.Dwarf_MacInfo_Entry = Struct('Dwarf_MacInfo_Entry',
+            Enum(self.Dwarf_uint8('type'), **ENUM_DW_MACINFO),
+            Switch('', lambda ctx: ctx.type, {
+                0 : Pass,                       # End of MACINFO Entries for CU
+                'DW_MACINFO_define' : Embed(Struct('',
+                    self.Dwarf_uleb128('lineno'),
+                    CString('macro'))),
+                'DW_MACINFO_undef' : Embed(Struct('',
+                    self.Dwarf_uleb128('lineno'),
+                    CString('macro'))),
+                'DW_MACINFO_start_file' : Embed(Struct('',
+                    self.Dwarf_uleb128('lineno'),
+                    self.Dwarf_uleb128('filenum'))),
+                'DW_MACINFO_end_file' : Pass,
+                'DW_MACINFO_vendor_ext' : Embed(Struct('',
+                    self.Dwarf_uleb128('constant'),
+                    CString('string')))
+                    }, default = Pass))
 
     def _make_block_struct(self, length_field):
         """ Create a struct for DW_FORM_block<size>

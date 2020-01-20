@@ -792,6 +792,8 @@ class ReadElf(object):
             self._dump_debug_namelut(dump_what)
         elif dump_what == 'loc':
             self._dump_debug_locations()
+        elif dump_what == 'macro':
+            self._dump_debug_macinfo()
         else:
             self._emitline('debug dump not yet supported for "%s"' % dump_what)
 
@@ -1419,6 +1421,35 @@ class ReadElf(object):
                 last_len += 2 + len(last.loc_expr)
             self._emitline("    %08x <End of list>" % (last.entry_offset + last_len))
 
+    def _dump_debug_macinfo(self):
+        """ Dump the .debug_macinfo section
+        """
+        macinfo = self._dwarfinfo.get_macinfo()
+        if macinfo == None:
+            return
+
+        if macinfo.section.size == 0:
+            self._emitline()
+            self._emitline("Section '.debug_macinfo' has no debugging data.")
+            return
+
+        self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_macinfo_sec.name)
+        self._emitline()
+        for u in macinfo.iter_MacInfo_units():
+            for e in u.get_entries():
+                if str(e.type) in ('DW_MACINFO_define' 'DW_MACINFO_undef'):
+                    self._emitline(('%s - lineno : %s macro : %s') % (
+                        e.type, e.lineno, e.macro))
+                elif e.type == 'DW_MACINFO_start_file':
+                    self._emitline(('%s - lineno : %s filenum : %s') % (
+                        e.type, e.lineno, e.filenum))
+                elif e.type == 'DW_MACINFO_end_file':
+                    self._emitline(('%s') % (e.type))
+                elif e.type == 'DW_MACINFO_vendor_ext':
+                    self._emitline(('%s - constant : %s string : %s') % (
+                        e.type, e.constant, e.string))
+            self._emitline();
+
     def _display_arch_specific_arm(self):
         """ Display the ARM architecture-specific info contained in the file.
         """
@@ -1505,8 +1536,8 @@ def main(stream=None):
     argparser.add_argument('--debug-dump',
             action='store', dest='debug_dump_what', metavar='<what>',
             help=(
-                'Display the contents of DWARF debug sections. <what> can ' +
-                'one of {info,decodedline,frames,frames-interp,aranges,pubtypes,pubnames,loc}'))
+                'Display the contents of DWARF debug sections. <what> is one ' +
+                'of {info,decodedline,frames,frames-interp,aranges,pubtypes,pubnames,loc,macro}'))
     argparser.add_argument('--traceback',
                            action='store_true', dest='show_traceback',
                            help='Dump the Python traceback on ELFError'

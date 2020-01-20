@@ -300,6 +300,15 @@ ENUM_DW_AT = dict(
     _default_ = Pass,
 )
 
+ENUM_DW_MACINFO = dict(
+    DW_MACINFO_define = 1,
+    DW_MACINFO_undef = 2,
+    DW_MACINFO_start_file = 3,
+    DW_MACINFO_end_file = 4,
+    DW_MACINFO_vendor_ext = 255,
+
+    _default_ = Pass,
+)
 
 ENUM_DW_FORM = dict(
     DW_FORM_null                = 0x00,
