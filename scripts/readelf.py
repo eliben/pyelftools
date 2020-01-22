@@ -1036,6 +1036,8 @@ class ReadElf(object):
 
         for cu in self._dwarfinfo.iter_CUs():
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
+            if lineprogram is None:
+                continue
 
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
             if len(lineprogram['include_directory']) > 0:
