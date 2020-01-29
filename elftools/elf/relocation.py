@@ -110,6 +110,8 @@ class RelocationHandler(object):
     """
     def __init__(self, elffile):
         self.elffile = elffile
+        # Cache machine_arch in order to speed up _do_apply_relocation()
+        self.machine_arch = self.elffile.get_machine_arch()
 
     def find_relocations_for_section(self, section):
         """ Given a section, find the relocation section for it in the ELF
@@ -152,22 +154,22 @@ class RelocationHandler(object):
         reloc_type = reloc['r_info_type']
         recipe = None
 
-        if self.elffile.get_machine_arch() == 'x86':
+        if self.machine_arch == 'x86':
             if reloc.is_RELA():
                 raise ELFRelocationError(
                     'Unexpected RELA relocation for x86: %s' % reloc)
             recipe = self._RELOCATION_RECIPES_X86.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'x64':
+        elif self.machine_arch == 'x64':
             if not reloc.is_RELA():
                 raise ELFRelocationError(
                     'Unexpected REL relocation for x64: %s' % reloc)
             recipe = self._RELOCATION_RECIPES_X64.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'MIPS':
+        elif self.machine_arch == 'MIPS':
             if reloc.is_RELA():
                 raise ELFRelocationError(
                     'Unexpected RELA relocation for MIPS: %s' % reloc)
             recipe = self._RELOCATION_RECIPES_MIPS.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'ARM':
+        elif self.machine_arch == 'ARM':
             if reloc.is_RELA():
                 raise ELFRelocationError(
                     'Unexpected RELA relocation for ARM: %s' % reloc)
