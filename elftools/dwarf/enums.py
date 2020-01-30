@@ -85,6 +85,9 @@ ENUM_DW_TAG = dict(
     DW_TAG_GNU_formal_parameter_pack   = 0x4108,
     DW_TAG_GNU_call_site               = 0x4109,
     DW_TAG_GNU_call_site_parameter     = 0x410a,
+
+    DW_TAG_APPLE_property              = 0x4200,
+
     DW_TAG_hi_user                     = 0xffff,
 
     _default_                          = Pass,
@@ -235,6 +238,7 @@ ENUM_DW_AT = dict(
     DW_AT_GNU_all_source_call_sites         = 0x2118,
     DW_AT_GNU_macros                        = 0x2119,
     DW_AT_GNU_deleted                       = 0x211a,
+    DW_AT_GNU_dwo_id                        = 0x2131,
 
     DW_AT_LLVM_include_path  = 0x3e00,
     DW_AT_LLVM_config_macros = 0x3e01,
