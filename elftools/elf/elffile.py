@@ -167,7 +167,7 @@ class ELFFile(object):
 
         section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev',
                          '.debug_str', '.debug_line', '.debug_frame',
-                         '.debug_loc', '.debug_ranges', '.debug_pubtypes', 
+                         '.debug_loc', '.debug_ranges', '.debug_pubtypes',
                          '.debug_pubnames')
 
         compressed = bool(self.get_section_by_name('.zdebug_info'))
