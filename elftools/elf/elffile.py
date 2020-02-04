@@ -150,7 +150,7 @@ class ELFFile(object):
             We assume that if it has the .debug_info or .zdebug_info section, it
             has all the other required sections as well.
         """
-        return (self.get_section_by_name('.debug_info') or
+        return bool(self.get_section_by_name('.debug_info') or
             self.get_section_by_name('.zdebug_info') or
             self.get_section_by_name('.eh_frame'))
 
