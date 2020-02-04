@@ -40,15 +40,23 @@ class Segment(object):
         sectype = section['sh_type']
         secflags = section['sh_flags']
 
-        # Only PT_LOAD, PT_GNU_RELR0 and PT_TLS segments can contain SHF_TLS
+        # Only PT_LOAD, PT_GNU_RELRO and PT_TLS segments can contain SHF_TLS
         # sections
         if (    secflags & SH_FLAGS.SHF_TLS and
-                segtype in ('PT_TLS', 'PT_GNU_RELR0', 'PT_LOAD')):
-            return False
+                segtype in ('PT_TLS', 'PT_GNU_RELRO', 'PT_LOAD')):
+            pass
         # PT_TLS segment contains only SHF_TLS sections, PT_PHDR no sections
         # at all
-        elif (  (secflags & SH_FLAGS.SHF_TLS) != 0 and
+        elif (  (secflags & SH_FLAGS.SHF_TLS) == 0 and
                 segtype not in ('PT_TLS', 'PT_PHDR')):
+            pass
+        else:
+            return False
+
+        # PT_LOAD and similar segments only have SHF_ALLOC sections.
+        if (    (secflags & SH_FLAGS.SHF_ALLOC) == 0 and
+                segtype in ('PT_LOAD', 'PT_DYNAMIC', 'PT_GNU_EH_FRAME',
+                            'PT_GNU_RELRO', 'PT_GNU_STACK')):
             return False
 
         # In ELF_SECTION_IN_SEGMENT_STRICT the flag check_vma is on, so if
