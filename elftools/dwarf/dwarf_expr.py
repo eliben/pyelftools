@@ -268,4 +268,27 @@ class GenericExprVisitor(object):
         add('DW_OP_call_ref',
             self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
 
+class GenericExprDumper(GenericExprVisitor):
+    """ Unites an expression into a list of objects,
+        each object corresponding to an operation.
+        _dump_to_string, which was in ExprDumper all along,
+        is used to process the operation record for insertion into the list.
+    """
+    def __init__(self, structs):
+        super(GenericExprDumper, self).__init__(structs)
+        self._str_parts = []
 
+    def dump(self, expr):
+        self.clear()
+        self.process_expr(expr)
+        return self._str_parts
+
+    def clear(self):
+        self._str_parts = []
+
+    def _after_visit(self, opcode, opcode_name, args):
+        self._str_parts.append(self._dump_to_string(opcode, opcode_name, args))
+
+    # The binary formatter implementation, to be overridden in ExprDumper
+    def _dump_to_string(self, opcode, opcode_name, args):
+        return (opcode, opcode_name, args)
