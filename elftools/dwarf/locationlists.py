@@ -111,7 +111,8 @@ class LocationParser(object):
     @staticmethod
     def _attribute_has_loc_list(attr, dwarf_version):
         return ((dwarf_version < 4 and
-                 attr.form in ('DW_FORM_data4', 'DW_FORM_data8')) or
+                 attr.form in ('DW_FORM_data4', 'DW_FORM_data8') and
+                 not attr.name == 'DW_AT_const_value') or
                 attr.form == 'DW_FORM_sec_offset')
 
     @staticmethod

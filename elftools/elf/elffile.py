@@ -150,7 +150,7 @@ class ELFFile(object):
             We assume that if it has the .debug_info or .zdebug_info section, it
             has all the other required sections as well.
         """
-        return (self.get_section_by_name('.debug_info') or
+        return bool(self.get_section_by_name('.debug_info') or
             self.get_section_by_name('.zdebug_info') or
             self.get_section_by_name('.eh_frame'))
 
@@ -167,7 +167,7 @@ class ELFFile(object):
 
         section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev',
                          '.debug_str', '.debug_line', '.debug_frame',
-                         '.debug_loc', '.debug_ranges', '.debug_pubtypes', 
+                         '.debug_loc', '.debug_ranges', '.debug_pubtypes',
                          '.debug_pubnames')
 
         compressed = bool(self.get_section_by_name('.zdebug_info'))
