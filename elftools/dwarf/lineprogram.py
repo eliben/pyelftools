@@ -131,6 +131,7 @@ class LineProgram(object):
             # After adding, clear some state registers.
             entries.append(LineProgramEntry(
                 cmd, is_extended, args, copy.copy(state)))
+            state.discriminator = 0
             state.basic_block = False
             state.prologue_end = False
             state.epilogue_begin = False
