@@ -13,7 +13,7 @@ from elftools.elf.elffile import ELFFile
 class TestEmptyPubtypes(unittest.TestCase):
     def test_empty_pubtypes(self):
         test_dir = os.path.join('test', 'testfiles_for_unittests')
-        with open(os.path.join(test_dir, 'empty_pubtypes', 'main'), 'rb') as f:
+        with open(os.path.join(test_dir, 'empty_pubtypes', 'main.elf'), 'rb') as f:
             elf = ELFFile(f)
 
             # This test targets `ELFParseError` caused by buggy handling
