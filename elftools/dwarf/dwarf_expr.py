@@ -179,6 +179,8 @@ class GenericExprVisitor(object):
     def _visit_OP_nestedexpr(self, opcode, opcode_name):
         size = struct_parse(self.structs.Dwarf_uleb128(''), self.stream)
         nested_expr_blob = self.stream.read(size)
+        if isinstance(nested_expr_blob, str): # Python 2 patch. In Py3, it comes as bytes.
+            nested_expr_blob = [ord(b) for b in nested_expr_blob]
         dumper = GenericExprDumper(self.structs)
         # If used from a dumper context, reuse the outer operation formatter
         if '_dump_to_string' in dir(self):
