@@ -41,7 +41,7 @@ def process_file(filename):
                 print('  DWARF info is missing a line program for this CU')
                 continue
 
-            # Print a reverse mapping of filename -> [entries]
+            # Print a reverse mapping of filename -> #entries
             line_entry_mapping(line_program)
 
 
