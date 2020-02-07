@@ -1,4 +1,4 @@
-Processing file: sample_exe64.elf
+Processing file: ./examples/sample_exe64.elf
   Found a compile unit at offset 0, length 115
     filename=../sysdeps/x86_64/elf/start.S -> 13 entries
   Found a compile unit at offset 119, length 135
