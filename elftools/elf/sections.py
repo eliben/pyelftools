@@ -74,6 +74,10 @@ class Section(object):
         Note that data is decompressed if the stored section data is
         compressed.
         """
+        # If this section is NOBITS, there is no data. provide a dummy answer
+        if self.header['sh_type'] == 'SHT_NOBITS':
+            return b'\0'*self.data_size
+
         # If this section is compressed, deflate it
         if self.compressed:
             c_type = self._compression_type
