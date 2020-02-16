@@ -141,7 +141,7 @@ class StringTableSection(Section):
         """
         table_offset = self['sh_offset']
         s = parse_cstring_from_stream(self.stream, table_offset + offset)
-        return s.decode('utf-8') if s else ''
+        return s.decode('utf-8', errors='replace') if s else ''
 
 
 class SymbolTableSection(Section):
