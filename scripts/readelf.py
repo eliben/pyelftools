@@ -49,6 +49,7 @@ from elftools.elf.descriptions import (
     )
 from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import E_FLAGS_MASKS
+from elftools.elf.constants import SH_FLAGS
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
     describe_reg_name, describe_attr_value, set_global_machine_arch,
@@ -277,6 +278,9 @@ class ReadElf(object):
 
             for section in self.elffile.iter_sections():
                 if (    not section.is_null() and
+                        not ((section['sh_flags'] & SH_FLAGS.SHF_TLS) != 0 and
+                             section['sh_type'] == 'SHT_NOBITS' and
+                             segment['p_type'] != 'PT_TLS') and
                         segment.section_in_segment(section)):
                     self._emit('%s ' % section.name)
 
