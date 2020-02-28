@@ -271,7 +271,7 @@ class StabSection(Section):
         while offset < end:
             stabs = struct_parse(
                 self.structs.Elf_Stabs,
-                self.elffile.stream,
+                self.stream,
                 stream_pos=offset)
             stabs['n_offset'] = offset
             offset += self.structs.Elf_Stabs.sizeof()
