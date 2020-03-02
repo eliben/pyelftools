@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 from ..construct import (
     Subconstruct, ConstructError, ArrayError, Adapter, Field, RepeatUntil,
-    Rename
+    Rename, SizeofError
     )
 
 
