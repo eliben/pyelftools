@@ -12,6 +12,7 @@ from ..construct import (
     ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt32, SLInt32, SBInt64, SLInt64,
     Struct, Array, Enum, Padding, BitStruct, BitField, Value,
+    Adapter, Rename, RepeatUntil, Field
     )
 
 from .enums import *
@@ -78,6 +79,8 @@ class ELFStructs(object):
         self._create_gnu_verdef()
         self._create_gnu_versym()
         self._create_note()
+        self._create_leb128()
+        self._create_stack_size()
 
     def _create_ehdr(self):
         self.Elf_Ehdr = Struct('Elf_Ehdr',
@@ -269,3 +272,57 @@ class ELFStructs(object):
             self.Elf_word('abi_minor'),
             self.Elf_word('abi_tiny'),
         )
+
+    def _create_stack_size(self):
+        # Structure of .stack_size section
+        self.Stack_Size_Record = Struct('Stack_Size_Record',
+            self.Elf_xword('ss_symbol'),
+            self.Elf_uleb128('ss_size')
+        )
+
+    def _create_leb128(self):
+        self.Elf_uleb128 = _ULEB128
+        self.Elf_sleb128 = _SLEB128
+
+def _LEB128_reader():
+    """ Read LEB128 variable-length data from the stream. The data is terminated
+        by a byte with 0 in its highest bit.
+    """
+    return RepeatUntil(
+                lambda obj, ctx: ord(obj) < 0x80,
+                Field(None, 1))
+
+class _ULEB128Adapter(Adapter):
+    """ An adapter for ULEB128, given a sequence of bytes in a sub-construct.
+    """
+    def _decode(self, obj, context):
+        value = 0
+        for b in reversed(obj):
+            value = (value << 7) + (ord(b) & 0x7F)
+        return value
+
+class _SLEB128Adapter(Adapter):
+    """ An adapter for SLEB128, given a sequence of bytes in a sub-construct.
+    """
+    def _decode(self, obj, context):
+        value = 0
+        for b in reversed(obj):
+            value = (value << 7) + (ord(b) & 0x7F)
+        if ord(obj[-1]) & 0x40:
+            # negative -> sign extend
+            #
+            value |= - (1 << (7 * len(obj)))
+        return value
+
+
+def _ULEB128(name):
+    """ A construct creator for ULEB128 encoding.
+    """
+    return Rename(name, _ULEB128Adapter(_LEB128_reader()))
+
+
+def _SLEB128(name):
+    """ A construct creator for SLEB128 encoding.
+    """
+    return Rename(name, _SLEB128Adapter(_LEB128_reader()))
+

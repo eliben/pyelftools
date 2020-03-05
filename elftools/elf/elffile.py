@@ -13,7 +13,7 @@ from ..construct import ConstructError
 from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection,
-        SUNWSyminfoTableSection, NullSection)
+        SUNWSyminfoTableSection, NullSection, StackSizeSection)
 from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
 from .gnuversions import (
@@ -259,7 +259,6 @@ class ELFFile(object):
         """
         name = self._get_section_name(section_header)
         sectype = section_header['sh_type']
-
         if sectype == 'SHT_STRTAB':
             return StringTableSection(section_header, name, self.stream)
         elif sectype == 'SHT_NULL':
@@ -279,6 +278,8 @@ class ELFFile(object):
                 section_header, name, self.stream, self)
         elif sectype == 'SHT_DYNAMIC':
             return DynamicSection(section_header, name, self.stream, self)
+        elif name == '.stack_sizes':
+            return StackSizeSection(section_header, name, self.stream, self)
         else:
             return Section(section_header, name, self.stream)
 
