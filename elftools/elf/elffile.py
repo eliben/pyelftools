@@ -25,7 +25,7 @@ from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection,
         SUNWSyminfoTableSection, NullSection, NoteSection,
-        StabSection, ARMAttributesSection)
+        StabSection, ARMAttributesSection, StackSizeSection)
 from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
 from .gnuversions import (
@@ -479,7 +479,6 @@ class ELFFile(object):
         """
         name = self._get_section_name(section_header)
         sectype = section_header['sh_type']
-
         if sectype == 'SHT_STRTAB':
             return StringTableSection(section_header, name, self)
         elif sectype == 'SHT_NULL':
@@ -508,6 +507,8 @@ class ELFFile(object):
             return self._make_elf_hash_section(section_header, name)
         elif sectype == 'SHT_GNU_HASH':
             return self._make_gnu_hash_section(section_header, name)
+        elif sectype == 'SHT_PROGBITS' and name == '.stack_sizes':
+            return StackSizeSection(section_header, name, self.stream, self)
         else:
             return Section(section_header, name, self)
 

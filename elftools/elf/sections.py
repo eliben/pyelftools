@@ -485,3 +485,18 @@ class ARMAttributesSection(Section):
                                              self.stream.tell())
             self.stream.seek(self.subsec_start + subsec['length'])
             yield subsec
+class StackSizeSection(Section):
+    """ ELF .stack_size_section
+    """
+    def __init__(self, header, name, stream, elffile):
+        super(StackSizeSection, self).__init__(header, name, stream)
+        self.elffile = elffile
+        self.elfstructs = elffile.structs
+
+    def iter_stack_sizes(self):
+        offset = self['sh_offset']
+        end = offset + self['sh_size']
+        while offset < end:
+            record = struct_parse(self.elfstructs.Stack_Size_Record, self.stream, stream_pos=offset)
+            offset = self.stream.tell()
+            yield record
