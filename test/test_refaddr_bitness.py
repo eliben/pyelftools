@@ -8,8 +8,6 @@
 import unittest
 import os, sys, io
 
-# sys.path.insert(1, os.getcwd())
-
 from elftools.dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 
 class TestRefAddrOnDWARFv2With64BitTarget(unittest.TestCase):
