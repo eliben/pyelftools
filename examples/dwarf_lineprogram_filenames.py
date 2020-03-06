@@ -74,7 +74,6 @@ def lpe_filename(line_program, file_index):
     # join the (base) filename from the file_entry to the directory
     # name to get the absolute filename.
     lp_header = line_program.header
-
     file_entries = lp_header["file_entry"]
 
     # File and directory indices are 1-indexed.
@@ -87,7 +86,6 @@ def lpe_filename(line_program, file_index):
         return file_entry.name.decode()
 
     directory = lp_header["include_directory"][dir_index - 1]
-
     return os.path.join(directory, file_entry.name).decode()
 
 
