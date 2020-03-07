@@ -200,7 +200,7 @@ class DWARFStructs(object):
             DW_FORM_ref4=self.Dwarf_uint32(''),
             DW_FORM_ref8=self.Dwarf_uint64(''),
             DW_FORM_ref_udata=self.Dwarf_uleb128(''),
-            DW_FORM_ref_addr=self.Dwarf_offset(''),
+            DW_FORM_ref_addr=self.Dwarf_target_addr('') if self.dwarf_version == 2 else self.Dwarf_offset(''),
 
             DW_FORM_indirect=self.Dwarf_uleb128(''),
 
