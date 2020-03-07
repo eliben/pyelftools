@@ -4,15 +4,15 @@
 # Seva Alekseyev (sevaa@sprynet.com)
 # This code is in the public domain
 #
-# The error that motivated this fix was in an iOS binary in Mach-O format.
-# It had v2 DWARF data, but it was targeting a 64 bit architecture.
-# Before the fix, pyelftools would assume that DW_FORM_ref_addr attribute took 4 bytes
-# and misparse the DWARF data in the binary.
+# The error that motivated this fix was in an iOS binary in Mach-O format. It
+# had v2 DWARF data, but it was targeting a 64 bit architecture. Before the fix,
+# pyelftools would assume that DW_FORM_ref_addr attribute took 4 bytes and
+# misparse the DWARF data in the binary.
 #
-# Since pyelftools doesn't work with Mach-O files, I've taken a sample binary apart,
-# and saved the three relevant sections - info, abbrev, and str as flat files.
-# The metadata (the fact that it's targeting ARM64) is hard-coded, since the Mach-O header
-# isn't preserved.
+# Since pyelftools doesn't work with Mach-O files, I've taken a sample binary
+# apart, and saved the three relevant sections - info, abbrev, and str as flat
+# files. The metadata (the fact that it's targeting ARM64) is hard-coded, since
+# the Mach-O header isn't preserved.
 #------------------------------------------------------------------------------
 
 import unittest
@@ -28,7 +28,7 @@ class TestRefAddrOnDWARFv2With64BitTarget(unittest.TestCase):
         with open(os.path.join('test', 'testfiles_for_unittests', 'arm64_on_dwarfv2.abbrev.dat'), 'rb') as f:
             abbrev = f.read()
         with open(os.path.join('test', 'testfiles_for_unittests', 'arm64_on_dwarfv2.str.dat'), 'rb') as f:
-            str = f.read()            
+            str = f.read()
 
         # Parse the DWARF info
         di = DWARFInfo(
