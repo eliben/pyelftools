@@ -506,6 +506,10 @@ class ReadElf(object):
                         rel['r_info_type'], self.elffile)))
 
                 if rel['r_info_sym'] == 0:
+                    if section.is_RELA():
+                        fieldsize = 8 if self.elffile.elfclass == 32 else 16
+                        addend = self._format_hex(rel['r_addend'], lead0x=False)
+                        self._emit(' %s   %s' % (' ' * fieldsize, addend))
                     self._emitline()
                     continue
 
