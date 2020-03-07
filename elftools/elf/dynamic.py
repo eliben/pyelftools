@@ -75,12 +75,22 @@ class Dynamic(object):
     """
     def __init__(self, stream, elffile, stringtable, position, empty):
         """
-        :param stream:          The file-like object from which to load data
-        :param elffile:         The parent elffile object
-        :param stringtable:     A stringtable reference to use for parsing string references in entries
-        :param position:        The file offset of the dynamic segment/section
-        :param empty:           Whether this is a degenerate case with zero entries. Normally, every dynamic table
-                                will have at least one entry, the DT_NULL terminator.
+        stream:         
+            The file-like object from which to load data
+
+        elffile:         
+            The parent elffile object
+
+        stringtable:     
+            A stringtable reference to use for parsing string references in
+            entries
+
+        position:        
+            The file offset of the dynamic segment/section
+
+        empty:           
+            Whether this is a degenerate case with zero entries. Normally, every
+            dynamic table will have at least one entry, the DT_NULL terminator.
         """
         self.elffile = elffile
         self.elfstructs = elffile.structs

@@ -9,8 +9,7 @@ from elftools.dwarf.callframe import ZERO
 
 class TestDBGFile(unittest.TestCase):
     def test_dynamic_segment(self):
-        """
-        Test that the degenerate case for the dynamic segment does not crash
+        """ Test that the degenerate case for the dynamic segment does not crash
         """
         with open(os.path.join('test', 'testfiles_for_unittests',
                                'debug_info.elf'), 'rb') as f:
@@ -18,18 +17,15 @@ class TestDBGFile(unittest.TestCase):
 
             seen_dynamic_segment = False
             for segment in elf.iter_segments():
-                if segment.header.p_type != 'PT_DYNAMIC':
-                    continue
-
-                self.assertEqual(segment.num_tags(), 0, "The dynamic segment in this file should be empty")
-                seen_dynamic_segment = True
-                break
+                if segment.header.p_type == 'PT_DYNAMIC':
+                    self.assertEqual(segment.num_tags(), 0, "The dynamic segment in this file should be empty")
+                    seen_dynamic_segment = True
+                    break
 
             self.assertTrue(seen_dynamic_segment, "There should be a dynamic segment in this file")
 
     def test_dynamic_section(self):
-        """
-        Test that the degenerate case for the dynamic section does not crash
+        """ Test that the degenerate case for the dynamic section does not crash
         """
         with open(os.path.join('test', 'testfiles_for_unittests',
                                'debug_info.elf'), 'rb') as f:
@@ -39,8 +35,7 @@ class TestDBGFile(unittest.TestCase):
             self.assertEqual(section.num_tags(), 0, "The dynamic section in this file should be empty")
 
     def test_eh_frame(self):
-        """
-        Test that parsing .eh_frame with SHT_NOBITS does not crash
+        """ Test that parsing .eh_frame with SHT_NOBITS does not crash
         """
         with open(os.path.join('test', 'testfiles_for_unittests',
                                'debug_info.elf'), 'rb') as f:
