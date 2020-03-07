@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# elftools example: dwarf_lpe_filenames.py
+# elftools example: dwarf_lineprogram_filenames.py
 #
 # In the .debug_line section, the Dwarf line program generates a matrix
 # of address-source references. This example demonstrates accessing the state
