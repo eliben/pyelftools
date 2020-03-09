@@ -80,6 +80,8 @@ def describe_sh_flags(x):
             SH_FLAGS.SHF_LINK_ORDER, SH_FLAGS.SHF_OS_NONCONFORMING,
             SH_FLAGS.SHF_GROUP, SH_FLAGS.SHF_TLS, SH_FLAGS.SHF_EXCLUDE):
         s += _DESCR_SH_FLAGS[flag] if (x & flag) else ''
+    if x & SH_FLAGS.SHF_MASKPROC:
+        s += 'p'
     return s
 
 
