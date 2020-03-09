@@ -17,13 +17,11 @@ from elftools.dwarf.locationlists import LocationParser
 class TestConstWithData4IsntLocation(unittest.TestCase):
     def _test_file(self, filename):
         filepath = os.path.join('test', 'testfiles_for_unittests', filename)
-        print('Reading %s...' % (filename))
         with open(filepath, 'rb') as f:
             elffile = ELFFile(f)
             dwarfinfo = elffile.get_dwarf_info()
             locparser = LocationParser(dwarfinfo.location_lists())
             for CU in dwarfinfo.iter_CUs():
-                print("Compile unit %s..." % CU.get_top_DIE().attributes['DW_AT_name'].value.decode('utf-8'))
                 ver = CU['version']
                 for DIE in CU.iter_DIEs():
                     for key in DIE.attributes:
@@ -36,4 +34,4 @@ class TestConstWithData4IsntLocation(unittest.TestCase):
         self._test_file('pascalenum.o')
 
 if __name__ == '__main__':
-    unittest.main()    
+    unittest.main()
