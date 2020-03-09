@@ -11,7 +11,8 @@ from .enums import (
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_MIPS,
     ENUM_ATTR_TAG_ARM, ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
-from .constants import P_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS
+from .constants import (
+    P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
 from ..common.py3compat import iteritems
 
 
@@ -62,6 +63,22 @@ def describe_p_flags(x):
     return s
 
 
+def describe_rh_flags(x):
+    return ' '.join(
+        _DESCR_RH_FLAGS[flag]
+        for flag in (RH_FLAGS.RHF_NONE, RH_FLAGS.RHF_QUICKSTART,
+                     RH_FLAGS.RHF_NOTPOT, RH_FLAGS.RHF_NO_LIBRARY_REPLACEMENT,
+                     RH_FLAGS.RHF_NO_MOVE, RH_FLAGS.RHF_SGI_ONLY,
+                     RH_FLAGS.RHF_GUARANTEE_INIT,
+                     RH_FLAGS.RHF_DELTA_C_PLUS_PLUS,
+                     RH_FLAGS.RHF_GUARANTEE_START_INIT, RH_FLAGS.RHF_PIXIE,
+                     RH_FLAGS.RHF_DEFAULT_DELAY_LOAD,
+                     RH_FLAGS.RHF_REQUICKSTART, RH_FLAGS.RHF_REQUICKSTARTED,
+                     RH_FLAGS.RHF_CORD, RH_FLAGS.RHF_NO_UNRES_UNDEF,
+                     RH_FLAGS.RHF_RLD_ORDER_SAFE)
+        if x & flag)
+
+
 def describe_sh_type(x):
     if x in _DESCR_SH_TYPE:
         return _DESCR_SH_TYPE.get(x)
@@ -80,6 +97,8 @@ def describe_sh_flags(x):
             SH_FLAGS.SHF_LINK_ORDER, SH_FLAGS.SHF_OS_NONCONFORMING,
             SH_FLAGS.SHF_GROUP, SH_FLAGS.SHF_TLS, SH_FLAGS.SHF_EXCLUDE):
         s += _DESCR_SH_FLAGS[flag] if (x & flag) else ''
+    if x & SH_FLAGS.SHF_MASKPROC:
+        s += 'p'
     return s
 
 
@@ -163,6 +182,8 @@ def describe_note(x):
             n_desc['abi_major'], n_desc['abi_minor'], n_desc['abi_tiny'])
     elif x['n_type'] == 'NT_GNU_BUILD_ID':
         desc = '\n    Build ID: %s' % (n_desc)
+    elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
+        desc = '\n    Version: %s' % (n_desc)
     else:
         desc = '\n    description data: {}'.format(' '.join(
             '{:02x}'.format(ord(byte)) for byte in n_desc
@@ -368,6 +389,7 @@ _DESCR_SH_TYPE = dict(
     SHT_MIPS_EH_REGION='MIPS_EH_REGION',
     SHT_MIPS_XLATE_OLD='MIPS_XLATE_OLD',
     SHT_MIPS_PDR_EXCEPTION='MIPS_PDR_EXCEPTION',
+    SHT_MIPS_ABIFLAGS='MIPS_ABIFLAGS',
 )
 
 
@@ -383,6 +405,26 @@ _DESCR_SH_FLAGS = {
     SH_FLAGS.SHF_GROUP: 'G',
     SH_FLAGS.SHF_TLS: 'T',
     SH_FLAGS.SHF_EXCLUDE: 'E',
+}
+
+
+_DESCR_RH_FLAGS = {
+    RH_FLAGS.RHF_NONE: 'NONE',
+    RH_FLAGS.RHF_QUICKSTART: 'QUICKSTART',
+    RH_FLAGS.RHF_NOTPOT: 'NOTPOT',
+    RH_FLAGS.RHF_NO_LIBRARY_REPLACEMENT: 'NO_LIBRARY_REPLACEMENT',
+    RH_FLAGS.RHF_NO_MOVE: 'NO_MOVE',
+    RH_FLAGS.RHF_SGI_ONLY: 'SGI_ONLY',
+    RH_FLAGS.RHF_GUARANTEE_INIT: 'GUARANTEE_INIT',
+    RH_FLAGS.RHF_DELTA_C_PLUS_PLUS: 'DELTA_C_PLUS_PLUS',
+    RH_FLAGS.RHF_GUARANTEE_START_INIT: 'GUARANTEE_START_INIT',
+    RH_FLAGS.RHF_PIXIE: 'PIXIE',
+    RH_FLAGS.RHF_DEFAULT_DELAY_LOAD: 'DEFAULT_DELAY_LOAD',
+    RH_FLAGS.RHF_REQUICKSTART: 'REQUICKSTART',
+    RH_FLAGS.RHF_REQUICKSTARTED: 'REQUICKSTARTED',
+    RH_FLAGS.RHF_CORD: 'CORD',
+    RH_FLAGS.RHF_NO_UNRES_UNDEF: 'NO_UNRES_UNDEF',
+    RH_FLAGS.RHF_RLD_ORDER_SAFE: 'RLD_ORDER_SAFE',
 }
 
 
