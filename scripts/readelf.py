@@ -450,6 +450,9 @@ class ReadElf(object):
                     parsed = '%s' % s
                 elif tag.entry.d_tag == 'DT_MIPS_FLAGS':
                     parsed = describe_rh_flags(tag.entry.d_val)
+                elif tag.entry.d_tag in ('DT_MIPS_SYMTABNO',
+                                         'DT_MIPS_LOCAL_GOTNO'):
+                    parsed = str(tag.entry.d_val)
                 else:
                     parsed = '%#x' % tag['d_val']
 
