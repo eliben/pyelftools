@@ -1445,6 +1445,7 @@ def main(stream=None):
             if args.debug_dump_what:
                 readelf.display_debug_dump(args.debug_dump_what)
         except ELFError as ex:
+            sys.stdout.flush()
             sys.stderr.write('ELF error: %s\n' % ex)
             if args.show_traceback:
                 traceback.print_exc()
