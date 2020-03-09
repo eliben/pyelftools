@@ -215,31 +215,61 @@ class ELFStructs(object):
         self.Elf_Chdr = Struct('Elf_Chdr', *fields)
 
     def _create_rel(self):
-        # r_info is also taken apart into r_info_sym and r_info_type.
-        # This is done in Value to avoid endianity issues while parsing.
+        r_info = self.Elf_xword('r_info')
+
+        # r_info is also taken apart into r_info_sym and r_info_type, plus
+        # r_info_type2 and r_info_type3 on ELF64 MIPS. This is done in Value
+        # to avoid endianity issues while parsing.
         if self.elfclass == 32:
-            r_info_sym = Value('r_info_sym',
-                lambda ctx: (ctx['r_info'] >> 8) & 0xFFFFFF)
-            r_info_type = Value('r_info_type',
-                lambda ctx: ctx['r_info'] & 0xFF)
-        else: # 64
-            r_info_sym = Value('r_info_sym',
-                lambda ctx: (ctx['r_info'] >> 32) & 0xFFFFFFFF)
-            r_info_type = Value('r_info_type',
-                lambda ctx: ctx['r_info'] & 0xFFFFFFFF)
+            fields = [Value('r_info_sym',
+                            lambda ctx: (ctx['r_info'] >> 8) & 0xFFFFFF),
+                      Value('r_info_type',
+                            lambda ctx: ctx['r_info'] & 0xFF)]
+        elif self.e_machine == 'EM_MIPS': # ELF64 MIPS
+            # The r_info field in MIPS ELF64 binaries (called r_raw_info, here)
+            # isn't a 64-bit field, but rather two 32-bit fields (the symbol
+            # index, then three bytes for relocation types). See the
+            # specification:
+            # <https://www.linux-mips.org/pub/linux/mips/doc/ABI/elf64-2.4.pdf>
+            # Note that the specification describes the fields more directly,
+            # but here we stick to the general "r_info" field to be compatible
+            # with other architectures and simplify testing.
+
+            def compute_r_info(ctx):
+                raw = ctx['r_raw_info']
+                return (((raw & 0xffffffff) << 32)
+                        | ((raw >> 56) & 0xff)
+                        | ((raw >> 40) & 0xff00)
+                        | ((raw >> 24) & 0xff0000)
+                        | ((raw >> 8) & 0xff000000))
+
+            r_info = self.Elf_xword('r_raw_info')
+            fields = [
+                Value('r_info', compute_r_info),
+                Value('r_info_sym',
+                      lambda ctx: (ctx['r_info'] >> 32) & 0xFFFFFFFF),
+                Value('r_info_type3',
+                      lambda ctx: (ctx['r_info'] >> 16) & 0xFF),
+                Value('r_info_type2',
+                      lambda ctx: (ctx['r_info'] >> 8) & 0xFF),
+                Value('r_info_type',
+                      lambda ctx: ctx['r_info'] & 0xFF)
+            ]
+        else: # Other 64 ELFs
+            fields = [Value('r_info_sym',
+                            lambda ctx: (ctx['r_info'] >> 32) & 0xFFFFFFFF),
+                      Value('r_info_type',
+                            lambda ctx: ctx['r_info'] & 0xFFFFFFFF)]
 
         self.Elf_Rel = Struct('Elf_Rel',
             self.Elf_addr('r_offset'),
-            self.Elf_xword('r_info'),
-            r_info_sym,
-            r_info_type,
+            r_info,
+            *fields
         )
         self.Elf_Rela = Struct('Elf_Rela',
             self.Elf_addr('r_offset'),
-            self.Elf_xword('r_info'),
-            r_info_sym,
-            r_info_type,
-            self.Elf_sxword('r_addend'),
+            r_info,
+            *(fields + [self.Elf_sxword('r_addend')])
         )
 
     def _create_dyn(self):
