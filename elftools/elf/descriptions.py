@@ -182,6 +182,8 @@ def describe_note(x):
             n_desc['abi_major'], n_desc['abi_minor'], n_desc['abi_tiny'])
     elif x['n_type'] == 'NT_GNU_BUILD_ID':
         desc = '\n    Build ID: %s' % (n_desc)
+    elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
+        desc = '\n    Version: %s' % (n_desc)
     else:
         desc = '\n    description data: {}'.format(' '.join(
             '{:02x}'.format(ord(byte)) for byte in n_desc
