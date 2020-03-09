@@ -10,6 +10,7 @@
 import argparse
 import os, sys
 import string
+import traceback
 import itertools
 # Note: zip has different behaviour between Python 2.x and 3.x.
 # - Using izip ensures compatibility.
@@ -1396,6 +1397,10 @@ def main(stream=None):
             help=(
                 'Display the contents of DWARF debug sections. <what> can ' +
                 'one of {info,decodedline,frames,frames-interp}'))
+    argparser.add_argument('--traceback',
+                           action='store_true', dest='show_traceback',
+                           help='Dump the Python traceback on ELFError'
+                                ' exceptions from elftools')
 
     args = argparser.parse_args()
 
@@ -1441,6 +1446,8 @@ def main(stream=None):
                 readelf.display_debug_dump(args.debug_dump_what)
         except ELFError as ex:
             sys.stderr.write('ELF error: %s\n' % ex)
+            if args.show_traceback:
+                traceback.print_exc()
             sys.exit(1)
 
 
