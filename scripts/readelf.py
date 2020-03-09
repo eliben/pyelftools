@@ -41,7 +41,7 @@ from elftools.elf.descriptions import (
     describe_ei_class, describe_ei_data, describe_ei_version,
     describe_ei_osabi, describe_e_type, describe_e_machine,
     describe_e_version_numeric, describe_p_type, describe_p_flags,
-    describe_sh_type, describe_sh_flags,
+    describe_rh_flags, describe_sh_type, describe_sh_flags,
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
     describe_dt_flags, describe_dt_flags_1, describe_ver_flags, describe_note,
@@ -448,6 +448,8 @@ class ReadElf(object):
                     if s.startswith('DT_'):
                         s = s[3:]
                     parsed = '%s' % s
+                elif tag.entry.d_tag == 'DT_MIPS_FLAGS':
+                    parsed = describe_rh_flags(tag.entry.d_val)
                 else:
                     parsed = '%#x' % tag['d_val']
 
