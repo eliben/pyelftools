@@ -517,35 +517,47 @@ class ReadElf(object):
                         addend = self._format_hex(rel['r_addend'], lead0x=False)
                         self._emit(' %s   %s' % (' ' * fieldsize, addend))
                     self._emitline()
-                    continue
 
-                symbol = symtable.get_symbol(rel['r_info_sym'])
-                # Some symbols have zero 'st_name', so instead what's used is
-                # the name of the section they point at. Truncate symbol names
-                # (excluding version info) to 22 chars, similarly to readelf.
-                if symbol['st_name'] == 0:
-                    symsec = self.elffile.get_section(symbol['st_shndx'])
-                    symbol_name = symsec.name
-                    version = ''
                 else:
-                    symbol_name = symbol.name
-                    version = self._symbol_version(rel['r_info_sym'])
-                    version = (version['name']
-                               if version and version['name'] else '')
-                symbol_name = '%.22s' % symbol_name
-                if version:
-                    symbol_name += '@' + version
+                    symbol = symtable.get_symbol(rel['r_info_sym'])
+                    # Some symbols have zero 'st_name', so instead what's used
+                    # is the name of the section they point at. Truncate symbol
+                    # names (excluding version info) to 22 chars, similarly to
+                    # readelf.
+                    if symbol['st_name'] == 0:
+                        symsec = self.elffile.get_section(symbol['st_shndx'])
+                        symbol_name = symsec.name
+                        version = ''
+                    else:
+                        symbol_name = symbol.name
+                        version = self._symbol_version(rel['r_info_sym'])
+                        version = (version['name']
+                                   if version and version['name'] else '')
+                    symbol_name = '%.22s' % symbol_name
+                    if version:
+                        symbol_name += '@' + version
 
-                self._emit(' %s %s' % (
-                    self._format_hex(
-                        symbol['st_value'],
-                        fullhex=True, lead0x=False),
-                    symbol_name))
-                if section.is_RELA():
-                    self._emit(' %s %x' % (
-                        '+' if rel['r_addend'] >= 0 else '-',
-                        abs(rel['r_addend'])))
-                self._emitline()
+                    self._emit(' %s %s' % (
+                        self._format_hex(
+                            symbol['st_value'],
+                            fullhex=True, lead0x=False),
+                        symbol_name))
+                    if section.is_RELA():
+                        self._emit(' %s %x' % (
+                            '+' if rel['r_addend'] >= 0 else '-',
+                            abs(rel['r_addend'])))
+                    self._emitline()
+
+                # Emit the two additional relocation types for ELF64 MIPS
+                # binaries.
+                if (self.elffile.elfclass == 64 and
+                    self.elffile['e_machine'] == 'EM_MIPS'):
+                    for i in (2, 3):
+                        rtype = rel['r_info_type%s' % i]
+                        self._emit('                    Type%s: %s' % (
+                                   i,
+                                   describe_reloc_type(rtype, self.elffile)))
+                        self._emitline()
 
         if not has_relocation_sections:
             self._emitline('\nThere are no relocations in this file.')

@@ -375,9 +375,7 @@ class CallFrameInfo(object):
         """
         return {
             DW_EH_encoding_flags['DW_EH_PE_absptr']:
-                entry_structs.Dwarf_uint32
-                if entry_structs.dwarf_format == 32 else
-                entry_structs.Dwarf_uint64,
+                entry_structs.Dwarf_target_addr,
             DW_EH_encoding_flags['DW_EH_PE_uleb128']:
                 entry_structs.Dwarf_uleb128,
             DW_EH_encoding_flags['DW_EH_PE_udata2']:
