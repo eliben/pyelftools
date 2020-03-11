@@ -7,7 +7,7 @@ from elftools.elf.sections import StackSizeSection
 
 class TestStackSizes(unittest.TestCase):
     def test_32bit_lsb_stack_sizes(self):
-        test_dir = os.path.join('/scratch/daveb/benchmark/pyelftools/test', 'testfiles_for_unittests')
+        test_dir = os.path.join('test', 'testfiles_for_unittests')
 
         encodings = ['lsb', 'msb']
         bits = ['32', '64']
