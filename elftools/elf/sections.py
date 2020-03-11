@@ -488,8 +488,8 @@ class ARMAttributesSection(Section):
 class StackSizeSection(Section):
     """ ELF .stack_size_section
     """
-    def __init__(self, header, name, stream, elffile):
-        super(StackSizeSection, self).__init__(header, name, stream)
+    def __init__(self, header, name, elffile):
+        super(StackSizeSection, self).__init__(header, name, elffile)
         self.elffile = elffile
         self.elfstructs = elffile.structs
 

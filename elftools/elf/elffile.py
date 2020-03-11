@@ -508,7 +508,7 @@ class ELFFile(object):
         elif sectype == 'SHT_GNU_HASH':
             return self._make_gnu_hash_section(section_header, name)
         elif sectype == 'SHT_PROGBITS' and name == '.stack_sizes':
-            return StackSizeSection(section_header, name, self.stream, self)
+            return StackSizeSection(section_header, name, self)
         else:
             return Section(section_header, name, self)
 
