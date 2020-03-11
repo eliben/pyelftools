@@ -74,6 +74,10 @@ class Section(object):
         Note that data is decompressed if the stored section data is
         compressed.
         """
+        # If this section is NOBITS, there is no data. provide a dummy answer
+        if self.header['sh_type'] == 'SHT_NOBITS':
+            return b'\0'*self.data_size
+
         # If this section is compressed, deflate it
         if self.compressed:
             c_type = self._compression_type
@@ -137,7 +141,7 @@ class StringTableSection(Section):
         """
         table_offset = self['sh_offset']
         s = parse_cstring_from_stream(self.stream, table_offset + offset)
-        return s.decode('utf-8') if s else ''
+        return s.decode('utf-8', errors='replace') if s else ''
 
 
 class SymbolTableSection(Section):
@@ -267,7 +271,7 @@ class StabSection(Section):
         while offset < end:
             stabs = struct_parse(
                 self.structs.Elf_Stabs,
-                self.elffile.stream,
+                self.stream,
                 stream_pos=offset)
             stabs['n_offset'] = offset
             offset += self.structs.Elf_Stabs.sizeof()

@@ -104,13 +104,15 @@ class LocationParser(object):
 
     @staticmethod
     def _attribute_has_loc_expr(attr, dwarf_version):
-        return (dwarf_version < 4 and attr.form == 'DW_FORM_block1' or
-                attr.form == 'DW_FORM_exprloc')
+        return ((dwarf_version < 4 and attr.form == 'DW_FORM_block1' and
+            not attr.name == 'DW_AT_const_value') or
+            attr.form == 'DW_FORM_exprloc')
 
     @staticmethod
     def _attribute_has_loc_list(attr, dwarf_version):
         return ((dwarf_version < 4 and
-                 attr.form in ('DW_FORM_data4', 'DW_FORM_data8')) or
+                 attr.form in ('DW_FORM_data4', 'DW_FORM_data8') and
+                 not attr.name == 'DW_AT_const_value') or
                 attr.form == 'DW_FORM_sec_offset')
 
     @staticmethod
@@ -120,4 +122,7 @@ class LocationParser(object):
                                'DW_AT_data_member_location',
                                'DW_AT_frame_base', 'DW_AT_segment',
                                'DW_AT_static_link', 'DW_AT_use_location',
-                               'DW_AT_vtable_elem_location'))
+                               'DW_AT_vtable_elem_location',
+                               'DW_AT_GNU_call_site_value',
+                               'DW_AT_GNU_call_site_target',
+                               'DW_AT_GNU_call_site_data_value'))

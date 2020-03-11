@@ -1,0 +1,8 @@
+Processing file: ./examples/sample_exe64.elf
+  Found a compile unit at offset 0, length 115
+    filename=../sysdeps/x86_64/elf/start.S -> 13 entries
+  Found a compile unit at offset 119, length 135
+  Found a compile unit at offset 258, length 156
+    filename=z.c -> 5 entries
+  Found a compile unit at offset 418, length 300
+    filename=elf-init.c -> 15 entries
