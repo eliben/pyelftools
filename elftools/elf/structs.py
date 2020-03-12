@@ -237,6 +237,9 @@ class ELFStructs(object):
 
             def compute_r_info(ctx):
                 raw = ctx['r_raw_info']
+                if not self.little_endian:
+                    return raw
+                # little endian requires an additional byteswap
                 return (((raw & 0xffffffff) << 32)
                         | ((raw >> 56) & 0xff)
                         | ((raw >> 40) & 0xff00)
