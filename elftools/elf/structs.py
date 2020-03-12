@@ -108,7 +108,6 @@ class ELFStructs(object):
         self._create_arm_attributes()
         self._create_elf_hash()
         self._create_gnu_hash()
-        self._create_note()
         self._create_leb128()
         self._create_stack_size()
 
