@@ -104,11 +104,15 @@ _generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_breg', 0, 31, 0x70)
 DW_OP_opcode2name = dict((v, k) for k, v in iteritems(DW_OP_name2opcode))
 
 
+# Each parsed DWARF expression is returned as this type with its numeric opcode,
+# op name (as a string) and a list of arguments.
 DwarfExprOp = namedtuple('DwarfExprOp', 'op op_name args')
 
 
 def parse_expr(expr, structs):
-    """TODO
+    """ Parses expr (a list of integers) into a list of DwarfExprOp.
+
+    The list can potentially be nested.
     """
     dispatch_table = _init_dispatch_table(structs)
 
