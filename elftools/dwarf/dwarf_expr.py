@@ -144,7 +144,7 @@ class GenericExprVisitor(object):
             self._cur_opcode_name = DW_OP_opcode2name.get(
                 self._cur_opcode, 'OP:0x%x' % self._cur_opcode)
             # Will be filled in by visitors
-            self._cur_args = [] 
+            self._cur_args = []
 
             # Dispatch to a visitor function
             visitor = self._dispatch_table.get(
@@ -158,10 +158,10 @@ class GenericExprVisitor(object):
 
     def _after_visit(self, opcode, opcode_name, args):
         pass
-        
+
     def _default_visitor(self, opcode, opcode_name):
         pass
-        
+
     def _visit_OP_with_no_args(self, opcode, opcode_name):
         self._cur_args = []
 
@@ -191,25 +191,25 @@ class GenericExprVisitor(object):
         self._dispatch_table = {}
         def add(opcode_name, func):
             self._dispatch_table[DW_OP_name2opcode[opcode_name]] = func
-            
+
         add('DW_OP_addr', self._visit_OP_addr)
-        add('DW_OP_const1u', 
+        add('DW_OP_const1u',
             self._make_visitor_arg_struct(self.structs.Dwarf_uint8('')))
-        add('DW_OP_const1s', 
+        add('DW_OP_const1s',
             self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
-        add('DW_OP_const2u', 
+        add('DW_OP_const2u',
             self._make_visitor_arg_struct(self.structs.Dwarf_uint16('')))
-        add('DW_OP_const2s', 
+        add('DW_OP_const2s',
             self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
-        add('DW_OP_const4u', 
+        add('DW_OP_const4u',
             self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
-        add('DW_OP_const4s', 
+        add('DW_OP_const4s',
             self._make_visitor_arg_struct(self.structs.Dwarf_int32('')))
-        add('DW_OP_const8u', 
+        add('DW_OP_const8u',
             self._make_visitor_arg_struct2(
                 self.structs.Dwarf_uint32(''),
                 self.structs.Dwarf_uint32('')))
-        add('DW_OP_const8s', 
+        add('DW_OP_const8s',
             self._make_visitor_arg_struct2(
                 self.structs.Dwarf_int32(''),
                 self.structs.Dwarf_int32('')))
@@ -221,9 +221,9 @@ class GenericExprVisitor(object):
             self._make_visitor_arg_struct(self.structs.Dwarf_uint8('')))
         add('DW_OP_plus_uconst',
             self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
-        add('DW_OP_bra', 
+        add('DW_OP_bra',
             self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
-        add('DW_OP_skip', 
+        add('DW_OP_skip',
             self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
 
         for opname in [ 'DW_OP_deref', 'DW_OP_dup', 'DW_OP_drop', 'DW_OP_over',
@@ -240,7 +240,7 @@ class GenericExprVisitor(object):
         for n in range(0, 32):
             add('DW_OP_lit%s' % n, self._visit_OP_with_no_args)
             add('DW_OP_reg%s' % n, self._visit_OP_with_no_args)
-            add('DW_OP_breg%s' % n, 
+            add('DW_OP_breg%s' % n,
                 self._make_visitor_arg_struct(self.structs.Dwarf_sleb128('')))
 
         add('DW_OP_fbreg',
@@ -267,5 +267,3 @@ class GenericExprVisitor(object):
             self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
         add('DW_OP_call_ref',
             self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
-
-
