@@ -9,7 +9,7 @@
 from collections import defaultdict
 
 from .constants import *
-from .dwarf_expr import GenericExprVisitor, parse_expr
+from .dwarf_expr import parse_expr
 from .die import DIE
 from ..common.utils import preserve_stream_pos, dwarf_assert
 from ..common.py3compat import bytes2str
