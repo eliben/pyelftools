@@ -317,7 +317,7 @@ def _init_dispatch_table(structs):
         return lambda stream: []
 
     def parse_op_addr():
-        return lambda stream: [struct_parse(self.structs.Dwarf_target_addr(''),
+        return lambda stream: [struct_parse(structs.Dwarf_target_addr(''),
                                             stream)]
 
     def parse_arg_struct(arg_struct):
