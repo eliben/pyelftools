@@ -9,7 +9,7 @@
 from collections import defaultdict
 
 from .constants import *
-from .dwarf_expr import GenericExprVisitor
+from .dwarf_expr import GenericExprVisitor, parse_expr
 from .die import DIE
 from ..common.utils import preserve_stream_pos, dwarf_assert
 from ..common.py3compat import bytes2str
@@ -531,17 +531,25 @@ _REG_NAMES_x64 = [
 ]
 
 
-class ExprDumper(GenericExprVisitor):
-    """ A concrete visitor for DWARF expressions that dumps a textual
+class ExprDumper(object):
+    """ A dumper for DWARF expressions that dumps a textual
         representation of the complete expression.
 
         Usage: after creation, call process_expr, and then get_str for a
         semicolon-delimited string representation of the decoded expression.
     """
     def __init__(self, structs):
-        super(ExprDumper, self).__init__(structs)
+        self.structs = structs
         self._init_lookups()
         self._str_parts = []
+
+    def process_expr(self, expr):
+        """ Parse and process a DWARF expression. expr should be a list of
+            (integer) byte values.
+        """
+        parsed = parse_expr(expr, self.structs)
+        for deo in parsed:
+            self._str_parts.append(self._dump_to_string(deo.op, deo.op_name, deo.args))
 
     def clear(self):
         self._str_parts = []
