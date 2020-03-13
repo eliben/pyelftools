@@ -574,9 +574,6 @@ class ExprDumper(object):
         self._ops_with_hex_arg = set(
             ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
 
-    def _after_visit(self, opcode, opcode_name, args):
-        self._str_parts.append(self._dump_to_string(opcode, opcode_name, args))
-
     def _dump_to_string(self, opcode, opcode_name, args):
         if len(args) == 0:
             if opcode_name.startswith('DW_OP_reg'):
