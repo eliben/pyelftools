@@ -103,14 +103,13 @@ def describe_CFI_instructions(entry):
             s += '  %s: %s\n' % (name, instr.args[0])
         elif name == 'DW_CFA_def_cfa_expression':
             expr_dumper = ExprDumper(entry.structs)
-            expr_dumper.process_expr(instr.args[0])
             # readelf output is missing a colon for DW_CFA_def_cfa_expression
-            s += '  %s (%s)\n' % (name, expr_dumper.get_str())
+            s += '  %s (%s)\n' % (name, expr_dumper.dump_expr(instr.args[0]))
         elif name == 'DW_CFA_expression':
             expr_dumper = ExprDumper(entry.structs)
-            expr_dumper.process_expr(instr.args[1])
             s += '  %s: %s (%s)\n' % (
-                name, _full_reg_name(instr.args[0]), expr_dumper.get_str())
+                name, _full_reg_name(instr.args[0]),
+                                     expr_dumper.dump_expr(instr.args[1]))
         else:
             s += '  %s: <??>\n' % name
 
@@ -146,9 +145,7 @@ def describe_DWARF_expr(expr, structs):
         _DWARF_EXPR_DUMPER_CACHE[cache_key] = \
             ExprDumper(structs)
     dwarf_expr_dumper = _DWARF_EXPR_DUMPER_CACHE[cache_key]
-    dwarf_expr_dumper.clear()
-    dwarf_expr_dumper.process_expr(expr)
-    return '(' + dwarf_expr_dumper.get_str() + ')'
+    return '(' + dwarf_expr_dumper.dump_expr(expr) + ')'
 
 
 def describe_reg_name(regnum, machine_arch=None, default=True):
@@ -535,8 +532,7 @@ class ExprDumper(object):
     """ A dumper for DWARF expressions that dumps a textual
         representation of the complete expression.
 
-        Usage: after creation, call process_expr, and then get_str for a
-        semicolon-delimited string representation of the decoded expression.
+        Usage: after creation, call dump_expr repeatedly - it's stateless.
     """
     def __init__(self, structs):
         self.structs = structs
@@ -544,19 +540,17 @@ class ExprDumper(object):
         self._init_lookups()
         self._str_parts = []
 
-    def process_expr(self, expr):
-        """ Parse and process a DWARF expression. expr should be a list of
+    def dump_expr(self, expr):
+        """ Parse and dump a DWARF expression. expr should be a list of
             (integer) byte values.
+
+            Returns a string representing the expression.
         """
         parsed = self.expr_parser.parse_expr(expr)
+        s = []
         for deo in parsed:
-            self._str_parts.append(self._dump_to_string(deo.op, deo.op_name, deo.args))
-
-    def clear(self):
-        self._str_parts = []
-
-    def get_str(self):
-        return '; '.join(self._str_parts)
+            s.append(self._dump_to_string(deo.op, deo.op_name, deo.args))
+        return '; '.join(s)
 
     def _init_lookups(self):
         self._ops_with_decimal_arg = set([
