@@ -538,7 +538,6 @@ class ExprDumper(object):
         self.structs = structs
         self.expr_parser = DWARFExprParser(self.structs)
         self._init_lookups()
-        self._str_parts = []
 
     def dump_expr(self, expr):
         """ Parse and dump a DWARF expression. expr should be a list of
