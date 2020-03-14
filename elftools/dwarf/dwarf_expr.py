@@ -6,6 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from collections import namedtuple
+
 from ..common.py3compat import BytesIO, iteritems
 from ..common.utils import struct_parse, bytelist2string
 
@@ -102,170 +104,118 @@ _generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_breg', 0, 31, 0x70)
 DW_OP_opcode2name = dict((v, k) for k, v in iteritems(DW_OP_name2opcode))
 
 
-class GenericExprVisitor(object):
-    """ A DWARF expression is a sequence of instructions encoded in a block
-        of bytes. This class decodes the sequence into discrete instructions
-        with their arguments and allows generic "visiting" to process them.
+# Each parsed DWARF expression is returned as this type with its numeric opcode,
+# op name (as a string) and a list of arguments.
+DWARFExprOp = namedtuple('DWARFExprOp', 'op op_name args')
 
-        Usage: subclass this class, and override the needed methods. The
-        easiest way would be to just override _after_visit, which gets passed
-        each decoded instruction (with its arguments) in order. Clients of
-        the visitor then just execute process_expr. The subclass can keep
-        its own internal information updated in _after_visit and provide
-        methods to extract it. For a good example of this usage, see the
-        ExprDumper class in the descriptions module.
 
-        A more complex usage could be to override visiting methods for
-        specific instructions, by placing them into the dispatch table.
+class DWARFExprParser(object):
+    """DWARF expression parser.
+
+    When initialized, requires structs to cache a dispatch table. After that,
+    parse_expr can be called repeatedly - it's stateless.
     """
-    def __init__(self, structs):
-        self.structs = structs
-        self._init_dispatch_table()
-        self.stream = None
-        self._cur_opcode = None
-        self._cur_opcode_name = None
-        self._cur_args = []
 
-    def process_expr(self, expr):
-        """ Process (visit) a DWARF expression. expr should be a list of
-            (integer) byte values.
+    def __init__(self, structs):
+        self._dispatch_table = _init_dispatch_table(structs)
+
+    def parse_expr(self, expr):
+        """ Parses expr (a list of integers) into a list of DWARFExprOp.
+
+        The list can potentially be nested.
         """
-        self.stream = BytesIO(bytelist2string(expr))
+        stream = BytesIO(bytelist2string(expr))
+        parsed = []
 
         while True:
             # Get the next opcode from the stream. If nothing is left in the
             # stream, we're done.
-            byte = self.stream.read(1)
+            byte = stream.read(1)
             if len(byte) == 0:
                 break
 
-            # Decode the opcode and its name
-            self._cur_opcode = ord(byte)
-            self._cur_opcode_name = DW_OP_opcode2name.get(
-                self._cur_opcode, 'OP:0x%x' % self._cur_opcode)
-            # Will be filled in by visitors
-            self._cur_args = [] 
+            # Decode the opcode and its name.
+            op = ord(byte)
+            op_name = DW_OP_opcode2name.get(op, 'OP:0x%x' % op)
 
-            # Dispatch to a visitor function
-            visitor = self._dispatch_table.get(
-                    self._cur_opcode,
-                    self._default_visitor)
-            visitor(self._cur_opcode, self._cur_opcode_name)
+            # Use dispatch table to parse args.
+            arg_parser = self._dispatch_table[op]
+            args = arg_parser(stream)
 
-            # Finally call the post-visit function
-            self._after_visit(
-                    self._cur_opcode, self._cur_opcode_name, self._cur_args)
+            parsed.append(DWARFExprOp(op=op, op_name=op_name, args=args))
 
-    def _after_visit(self, opcode, opcode_name, args):
-        pass
-        
-    def _default_visitor(self, opcode, opcode_name):
-        pass
-        
-    def _visit_OP_with_no_args(self, opcode, opcode_name):
-        self._cur_args = []
-
-    def _visit_OP_addr(self, opcode, opcode_name):
-        self._cur_args = [
-                struct_parse(self.structs.Dwarf_target_addr(''), self.stream)]
-
-    def _make_visitor_arg_struct(self, struct_arg):
-        """ Create a visitor method for an opcode that that accepts a single
-            argument, specified by a struct.
-        """
-        def visitor(opcode, opcode_name):
-            self._cur_args = [struct_parse(struct_arg, self.stream)]
-        return visitor
-
-    def _make_visitor_arg_struct2(self, struct_arg1, struct_arg2):
-        """ Create a visitor method for an opcode that that accepts two
-            arguments, specified by structs.
-        """
-        def visitor(opcode, opcode_name):
-            self._cur_args = [
-                struct_parse(struct_arg1, self.stream),
-                struct_parse(struct_arg2, self.stream)]
-        return visitor
-
-    def _init_dispatch_table(self):
-        self._dispatch_table = {}
-        def add(opcode_name, func):
-            self._dispatch_table[DW_OP_name2opcode[opcode_name]] = func
-            
-        add('DW_OP_addr', self._visit_OP_addr)
-        add('DW_OP_const1u', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint8('')))
-        add('DW_OP_const1s', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
-        add('DW_OP_const2u', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint16('')))
-        add('DW_OP_const2s', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
-        add('DW_OP_const4u', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
-        add('DW_OP_const4s', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int32('')))
-        add('DW_OP_const8u', 
-            self._make_visitor_arg_struct2(
-                self.structs.Dwarf_uint32(''),
-                self.structs.Dwarf_uint32('')))
-        add('DW_OP_const8s', 
-            self._make_visitor_arg_struct2(
-                self.structs.Dwarf_int32(''),
-                self.structs.Dwarf_int32('')))
-        add('DW_OP_constu',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
-        add('DW_OP_consts',
-            self._make_visitor_arg_struct(self.structs.Dwarf_sleb128('')))
-        add('DW_OP_pick',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint8('')))
-        add('DW_OP_plus_uconst',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
-        add('DW_OP_bra', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
-        add('DW_OP_skip', 
-            self._make_visitor_arg_struct(self.structs.Dwarf_int16('')))
-
-        for opname in [ 'DW_OP_deref', 'DW_OP_dup', 'DW_OP_drop', 'DW_OP_over',
-                        'DW_OP_swap', 'DW_OP_swap', 'DW_OP_rot', 'DW_OP_xderef',
-                        'DW_OP_abs', 'DW_OP_and', 'DW_OP_div', 'DW_OP_minus',
-                        'DW_OP_mod', 'DW_OP_mul', 'DW_OP_neg', 'DW_OP_not',
-                        'DW_OP_plus', 'DW_OP_shl', 'DW_OP_shr', 'DW_OP_shra',
-                        'DW_OP_xor', 'DW_OP_eq', 'DW_OP_ge', 'DW_OP_gt',
-                        'DW_OP_le', 'DW_OP_lt', 'DW_OP_ne', 'DW_OP_nop',
-                        'DW_OP_push_object_address', 'DW_OP_form_tls_address',
-                        'DW_OP_call_frame_cfa']:
-            add(opname, self._visit_OP_with_no_args)
-
-        for n in range(0, 32):
-            add('DW_OP_lit%s' % n, self._visit_OP_with_no_args)
-            add('DW_OP_reg%s' % n, self._visit_OP_with_no_args)
-            add('DW_OP_breg%s' % n, 
-                self._make_visitor_arg_struct(self.structs.Dwarf_sleb128('')))
-
-        add('DW_OP_fbreg',
-            self._make_visitor_arg_struct(self.structs.Dwarf_sleb128('')))
-        add('DW_OP_regx',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
-        add('DW_OP_bregx',
-            self._make_visitor_arg_struct2(
-                self.structs.Dwarf_uleb128(''),
-                self.structs.Dwarf_sleb128('')))
-        add('DW_OP_piece',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uleb128('')))
-        add('DW_OP_bit_piece',
-            self._make_visitor_arg_struct2(
-                self.structs.Dwarf_uleb128(''),
-                self.structs.Dwarf_uleb128('')))
-        add('DW_OP_deref_size',
-            self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
-        add('DW_OP_xderef_size',
-            self._make_visitor_arg_struct(self.structs.Dwarf_int8('')))
-        add('DW_OP_call2',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint16('')))
-        add('DW_OP_call4',
-            self._make_visitor_arg_struct(self.structs.Dwarf_uint32('')))
-        add('DW_OP_call_ref',
-            self._make_visitor_arg_struct(self.structs.Dwarf_offset('')))
+        return parsed
 
 
+def _init_dispatch_table(structs):
+    """Creates a dispatch table for parsing args of an op.
+
+    Returns a dict mapping opcode to a function. The function accepts a stream
+    and return a list of parsed arguments for the opcode from the stream;
+    the stream is advanced by the function as needed.
+    """
+    table = {}
+    def add(opcode_name, func):
+        table[DW_OP_name2opcode[opcode_name]] = func
+
+    def parse_noargs():
+        return lambda stream: []
+
+    def parse_op_addr():
+        return lambda stream: [struct_parse(structs.Dwarf_target_addr(''),
+                                            stream)]
+
+    def parse_arg_struct(arg_struct):
+        return lambda stream: [struct_parse(arg_struct, stream)]
+
+    def parse_arg_struct2(arg1_struct, arg2_struct):
+        return lambda stream: [struct_parse(arg1_struct, stream),
+                               struct_parse(arg2_struct, stream)]
+
+    add('DW_OP_addr', parse_op_addr())
+    add('DW_OP_const1u', parse_arg_struct(structs.Dwarf_uint8('')))
+    add('DW_OP_const2u', parse_arg_struct(structs.Dwarf_uint16('')))
+    add('DW_OP_const2s', parse_arg_struct(structs.Dwarf_int16('')))
+    add('DW_OP_const4u', parse_arg_struct(structs.Dwarf_uint32('')))
+    add('DW_OP_const4s', parse_arg_struct(structs.Dwarf_int32('')))
+    add('DW_OP_const8u', parse_arg_struct2(structs.Dwarf_uint32(''),
+                                           structs.Dwarf_uint32('')))
+    add('DW_OP_const8s', parse_arg_struct2(structs.Dwarf_int32(''),
+                                           structs.Dwarf_int32('')))
+    add('DW_OP_constu', parse_arg_struct(structs.Dwarf_uleb128('')))
+    add('DW_OP_consts', parse_arg_struct(structs.Dwarf_sleb128('')))
+    add('DW_OP_pick', parse_arg_struct(structs.Dwarf_uint8('')))
+    add('DW_OP_plus_uconst', parse_arg_struct(structs.Dwarf_uleb128('')))
+    add('DW_OP_bra', parse_arg_struct(structs.Dwarf_int16('')))
+    add('DW_OP_skip', parse_arg_struct(structs.Dwarf_int16('')))
+
+    for opname in [ 'DW_OP_deref', 'DW_OP_dup', 'DW_OP_drop', 'DW_OP_over',
+                    'DW_OP_swap', 'DW_OP_swap', 'DW_OP_rot', 'DW_OP_xderef',
+                    'DW_OP_abs', 'DW_OP_and', 'DW_OP_div', 'DW_OP_minus',
+                    'DW_OP_mod', 'DW_OP_mul', 'DW_OP_neg', 'DW_OP_not',
+                    'DW_OP_plus', 'DW_OP_shl', 'DW_OP_shr', 'DW_OP_shra',
+                    'DW_OP_xor', 'DW_OP_eq', 'DW_OP_ge', 'DW_OP_gt',
+                    'DW_OP_le', 'DW_OP_lt', 'DW_OP_ne', 'DW_OP_nop',
+                    'DW_OP_push_object_address', 'DW_OP_form_tls_address',
+                    'DW_OP_call_frame_cfa']:
+        add(opname, parse_noargs())
+
+    for n in range(0, 32):
+        add('DW_OP_lit%s' % n, parse_noargs())
+        add('DW_OP_reg%s' % n, parse_noargs())
+        add('DW_OP_breg%s' % n, parse_arg_struct(structs.Dwarf_sleb128('')))
+
+    add('DW_OP_fbreg', parse_arg_struct(structs.Dwarf_sleb128('')))
+    add('DW_OP_regx', parse_arg_struct(structs.Dwarf_uleb128('')))
+    add('DW_OP_bregx', parse_arg_struct2(structs.Dwarf_uleb128(''),
+                                         structs.Dwarf_sleb128('')))
+    add('DW_OP_piece', parse_arg_struct(structs.Dwarf_uleb128('')))
+    add('DW_OP_bit_piece', parse_arg_struct2(structs.Dwarf_uleb128(''),
+                                             structs.Dwarf_uleb128('')))
+    add('DW_OP_deref_size', parse_arg_struct(structs.Dwarf_int8('')))
+    add('DW_OP_xderef_size', parse_arg_struct(structs.Dwarf_int8('')))
+    add('DW_OP_call2', parse_arg_struct(structs.Dwarf_uint16('')))
+    add('DW_OP_call4', parse_arg_struct(structs.Dwarf_uint32('')))
+    add('DW_OP_call_ref', parse_arg_struct(structs.Dwarf_offset('')))
+
+    return table

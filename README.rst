@@ -1,5 +1,10 @@
-Introduction: what is pyelftools?
----------------------------------
+==========
+pyelftools
+==========
+
+.. image:: https://travis-ci.org/eliben/pyelftools.png?branch=master
+  :align: center
+  :target: https://travis-ci.org/eliben/pyelftools
 
 **pyelftools** is a pure-Python library for parsing and analyzing ELF files
 and DWARF debugging information. See the
@@ -10,7 +15,7 @@ Pre-requisites
 --------------
 
 As a user of **pyelftools**, one only needs Python to run. It works with
-Python versions 2.7 and 3.x (x >= 4). For hacking on **pyelftools** the
+Python versions 2.7 and 3.x (x >= 5). For hacking on **pyelftools** the
 requirements are a bit more strict, please see the
 `hacking guide <https://github.com/eliben/pyelftools/wiki/Hacking-guide>`_.
 
@@ -48,13 +53,3 @@ License
 
 **pyelftools** is open source software. Its code is in the public domain. See
 the ``LICENSE`` file for more details.
-
-CI Status
----------
-
-**pyelftools** has automatic testing enabled through the convenient
-`Travis CI project <https://travis-ci.org>`_. Here is the latest build status:
-
-.. image:: https://travis-ci.org/eliben/pyelftools.png?branch=master
-  :align: center
-  :target: https://travis-ci.org/eliben/pyelftools

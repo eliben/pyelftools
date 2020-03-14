@@ -285,24 +285,25 @@ class DWARFInfo(object):
             self.structs.Dwarf_uint32(''), self.debug_info_sec.stream, offset)
         dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
 
-        # At this point we still haven't read the whole header, so we don't
-        # know the address_size. Therefore, we're going to create structs
-        # with a default address_size=4. If, after parsing the header, we
-        # find out address_size is actually 8, we just create a new structs
-        # object for this CU.
+        
+        # Temporary structs for parsing the header
+        # The structs for the rest of the CU depend on the header data. 
         #
         cu_structs = DWARFStructs(
             little_endian=self.config.little_endian,
             dwarf_format=dwarf_format,
-            address_size=4)
+            address_size=4,
+            dwarf_version=2)
 
         cu_header = struct_parse(
             cu_structs.Dwarf_CU_header, self.debug_info_sec.stream, offset)
-        if cu_header['address_size'] == 8:
-            cu_structs = DWARFStructs(
-                little_endian=self.config.little_endian,
-                dwarf_format=dwarf_format,
-                address_size=8)
+
+        # structs for the rest of the CU, taking into account bitness and DWARF version
+        cu_structs = DWARFStructs(
+            little_endian=self.config.little_endian,
+            dwarf_format=dwarf_format,
+            address_size=cu_header['address_size'],
+            dwarf_version=cu_header['version'])
 
         cu_die_offset = self.debug_info_sec.stream.tell()
         dwarf_assert(

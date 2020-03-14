@@ -10,6 +10,7 @@
 import argparse
 import os, sys
 import string
+import traceback
 import itertools
 # Note: zip has different behaviour between Python 2.x and 3.x.
 # - Using izip ensures compatibility.
@@ -41,7 +42,7 @@ from elftools.elf.descriptions import (
     describe_ei_class, describe_ei_data, describe_ei_version,
     describe_ei_osabi, describe_e_type, describe_e_machine,
     describe_e_version_numeric, describe_p_type, describe_p_flags,
-    describe_sh_type, describe_sh_flags,
+    describe_rh_flags, describe_sh_type, describe_sh_flags,
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
     describe_dt_flags, describe_dt_flags_1, describe_ver_flags, describe_note,
@@ -49,6 +50,7 @@ from elftools.elf.descriptions import (
     )
 from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import E_FLAGS_MASKS
+from elftools.elf.constants import SH_FLAGS
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
     describe_reg_name, describe_attr_value, set_global_machine_arch,
@@ -277,6 +279,9 @@ class ReadElf(object):
 
             for section in self.elffile.iter_sections():
                 if (    not section.is_null() and
+                        not ((section['sh_flags'] & SH_FLAGS.SHF_TLS) != 0 and
+                             section['sh_type'] == 'SHT_NOBITS' and
+                             segment['p_type'] != 'PT_TLS') and
                         segment.section_in_segment(section)):
                     self._emit('%s ' % section.name)
 
@@ -444,6 +449,11 @@ class ReadElf(object):
                     if s.startswith('DT_'):
                         s = s[3:]
                     parsed = '%s' % s
+                elif tag.entry.d_tag == 'DT_MIPS_FLAGS':
+                    parsed = describe_rh_flags(tag.entry.d_val)
+                elif tag.entry.d_tag in ('DT_MIPS_SYMTABNO',
+                                         'DT_MIPS_LOCAL_GOTNO'):
+                    parsed = str(tag.entry.d_val)
                 else:
                     parsed = '%#x' % tag['d_val']
 
@@ -502,36 +512,52 @@ class ReadElf(object):
                         rel['r_info_type'], self.elffile)))
 
                 if rel['r_info_sym'] == 0:
+                    if section.is_RELA():
+                        fieldsize = 8 if self.elffile.elfclass == 32 else 16
+                        addend = self._format_hex(rel['r_addend'], lead0x=False)
+                        self._emit(' %s   %s' % (' ' * fieldsize, addend))
                     self._emitline()
-                    continue
 
-                symbol = symtable.get_symbol(rel['r_info_sym'])
-                # Some symbols have zero 'st_name', so instead what's used is
-                # the name of the section they point at. Truncate symbol names
-                # (excluding version info) to 22 chars, similarly to readelf.
-                if symbol['st_name'] == 0:
-                    symsec = self.elffile.get_section(symbol['st_shndx'])
-                    symbol_name = symsec.name
-                    version = ''
                 else:
-                    symbol_name = symbol.name
-                    version = self._symbol_version(rel['r_info_sym'])
-                    version = (version['name']
-                               if version and version['name'] else '')
-                symbol_name = '%.22s' % symbol_name
-                if version:
-                    symbol_name += '@' + version
+                    symbol = symtable.get_symbol(rel['r_info_sym'])
+                    # Some symbols have zero 'st_name', so instead what's used
+                    # is the name of the section they point at. Truncate symbol
+                    # names (excluding version info) to 22 chars, similarly to
+                    # readelf.
+                    if symbol['st_name'] == 0:
+                        symsec = self.elffile.get_section(symbol['st_shndx'])
+                        symbol_name = symsec.name
+                        version = ''
+                    else:
+                        symbol_name = symbol.name
+                        version = self._symbol_version(rel['r_info_sym'])
+                        version = (version['name']
+                                   if version and version['name'] else '')
+                    symbol_name = '%.22s' % symbol_name
+                    if version:
+                        symbol_name += '@' + version
 
-                self._emit(' %s %s' % (
-                    self._format_hex(
-                        symbol['st_value'],
-                        fullhex=True, lead0x=False),
-                    symbol_name))
-                if section.is_RELA():
-                    self._emit(' %s %x' % (
-                        '+' if rel['r_addend'] >= 0 else '-',
-                        abs(rel['r_addend'])))
-                self._emitline()
+                    self._emit(' %s %s' % (
+                        self._format_hex(
+                            symbol['st_value'],
+                            fullhex=True, lead0x=False),
+                        symbol_name))
+                    if section.is_RELA():
+                        self._emit(' %s %x' % (
+                            '+' if rel['r_addend'] >= 0 else '-',
+                            abs(rel['r_addend'])))
+                    self._emitline()
+
+                # Emit the two additional relocation types for ELF64 MIPS
+                # binaries.
+                if (self.elffile.elfclass == 64 and
+                    self.elffile['e_machine'] == 'EM_MIPS'):
+                    for i in (2, 3):
+                        rtype = rel['r_info_type%s' % i]
+                        self._emit('                    Type%s: %s' % (
+                                   i,
+                                   describe_reloc_type(rtype, self.elffile)))
+                        self._emitline()
 
         if not has_relocation_sections:
             self._emitline('\nThere are no relocations in this file.')
@@ -1383,6 +1409,10 @@ def main(stream=None):
             help=(
                 'Display the contents of DWARF debug sections. <what> can ' +
                 'one of {info,decodedline,frames,frames-interp}'))
+    argparser.add_argument('--traceback',
+                           action='store_true', dest='show_traceback',
+                           help='Dump the Python traceback on ELFError'
+                                ' exceptions from elftools')
 
     args = argparser.parse_args()
 
@@ -1427,7 +1457,10 @@ def main(stream=None):
             if args.debug_dump_what:
                 readelf.display_debug_dump(args.debug_dump_what)
         except ELFError as ex:
+            sys.stdout.flush()
             sys.stderr.write('ELF error: %s\n' % ex)
+            if args.show_traceback:
+                traceback.print_exc()
             sys.exit(1)
 
 

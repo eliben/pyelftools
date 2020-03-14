@@ -33,7 +33,7 @@ from .gnuversions import (
         GNUVerSymSection)
 from .segments import Segment, InterpSegment, NoteSegment
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
-
+from .hash import ELFHashSection, GNUHashSection
 
 class ELFFile(object):
     """ Creation: the constructor accepts a stream (file-like object) with the
@@ -504,6 +504,10 @@ class ELFFile(object):
             return StabSection(section_header, name, self)
         elif sectype == 'SHT_ARM_ATTRIBUTES':
             return ARMAttributesSection(section_header, name, self)
+        elif sectype == 'SHT_HASH':
+            return self._make_elf_hash_section(section_header, name)
+        elif sectype == 'SHT_GNU_HASH':
+            return self._make_gnu_hash_section(section_header, name)
         else:
             return Section(section_header, name, self)
 
@@ -556,6 +560,20 @@ class ELFFile(object):
             section_header, name,
             elffile=self,
             symboltable=strtab_section)
+
+    def _make_elf_hash_section(self, section_header, name):
+        linked_symtab_index = section_header['sh_link']
+        symtab_section = self.get_section(linked_symtab_index)
+        return ELFHashSection(
+            section_header, name, self, symtab_section
+        )
+
+    def _make_gnu_hash_section(self, section_header, name):
+        linked_symtab_index = section_header['sh_link']
+        symtab_section = self.get_section(linked_symtab_index)
+        return GNUHashSection(
+            section_header, name, self, symtab_section
+        )
 
     def _get_segment_header(self, n):
         """ Find the header of segment #n, parse it and return the struct

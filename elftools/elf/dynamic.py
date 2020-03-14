@@ -9,7 +9,7 @@
 import itertools
 
 from collections import defaultdict
-from .hash import HashSection, GNUHashSection
+from .hash import ELFHashTable, GNUHashTable
 from .sections import Section, Symbol
 from .enums import ENUM_D_TAG
 from .segments import Segment
@@ -73,13 +73,32 @@ class DynamicTag(object):
 class Dynamic(object):
     """ Shared functionality between dynamic sections and segments.
     """
-    def __init__(self, stream, elffile, stringtable, position):
+    def __init__(self, stream, elffile, stringtable, position, empty):
+        """
+        stream:         
+            The file-like object from which to load data
+
+        elffile:         
+            The parent elffile object
+
+        stringtable:     
+            A stringtable reference to use for parsing string references in
+            entries
+
+        position:        
+            The file offset of the dynamic segment/section
+
+        empty:           
+            Whether this is a degenerate case with zero entries. Normally, every
+            dynamic table will have at least one entry, the DT_NULL terminator.
+        """
         self.elffile = elffile
         self.elfstructs = elffile.structs
         self._stream = stream
-        self._num_tags = -1
+        self._num_tags = -1 if not empty else 0
         self._offset = position
         self._tagsize = self.elfstructs.Elf_Dyn.sizeof()
+        self._empty = empty
 
         # Do not access this directly yourself; use _get_stringtable() instead.
         self._stringtable = stringtable
@@ -125,6 +144,8 @@ class Dynamic(object):
     def _iter_tags(self, type=None):
         """ Yield all raw tags (limit to |type| if specified)
         """
+        if self._empty:
+            return
         for n in itertools.count():
             tag = self._get_tag(n)
             if type is None or tag['d_tag'] == type:
@@ -141,6 +162,8 @@ class Dynamic(object):
     def _get_tag(self, n):
         """ Get the raw tag at index #n from the file
         """
+        if self._num_tags != -1 and n >= self._num_tags:
+            raise IndexError(n)
         offset = self._offset + n * self._tagsize
         return struct_parse(
             self.elfstructs.Elf_Dyn,
@@ -153,7 +176,7 @@ class Dynamic(object):
         return DynamicTag(self._get_tag(n), self._get_stringtable())
 
     def num_tags(self):
-        """ Number of dynamic tags in the file
+        """ Number of dynamic tags in the file, including the DT_NULL tag
         """
         if self._num_tags != -1:
             return self._num_tags
@@ -207,7 +230,7 @@ class DynamicSection(Section, Dynamic):
         Section.__init__(self, header, name, elffile)
         stringtable = elffile.get_section(header['sh_link'])
         Dynamic.__init__(self, self.stream, self.elffile, stringtable,
-            self['sh_offset'])
+            self['sh_offset'], self['sh_type'] == 'SHT_NOBITS')
 
 
 class DynamicSegment(Segment, Dynamic):
@@ -227,7 +250,8 @@ class DynamicSegment(Segment, Dynamic):
                 stringtable = elffile.get_section(section['sh_link'])
                 break
         Segment.__init__(self, header, stream)
-        Dynamic.__init__(self, stream, elffile, stringtable, self['p_offset'])
+        Dynamic.__init__(self, stream, elffile, stringtable, self['p_offset'],
+             self['p_filesz'] == 0)
         self._symbol_list = None
         self._symbol_name_map = None
 
@@ -274,11 +298,10 @@ class DynamicSegment(Segment, Dynamic):
         end_ptr = None
 
         # Check if a DT_GNU_HASH tag exists and recover the number of symbols
-        # from the corresponding section
+        # from the corresponding hash table
         _, gnu_hash_offset = self.get_table_offset('DT_GNU_HASH')
         if gnu_hash_offset is not None:
-            hash_section = GNUHashSection(self.stream, gnu_hash_offset,
-                                          self.elffile)
+            hash_section = GNUHashTable(self.elffile, gnu_hash_offset, self)
             end_ptr = tab_ptr + \
                 hash_section.get_number_of_symbols() * symbol_size
 
@@ -286,8 +309,8 @@ class DynamicSegment(Segment, Dynamic):
         if end_ptr is None:
             _, hash_offset = self.get_table_offset('DT_HASH')
             if hash_offset is not None:
-                hash_section = HashSection(self.stream, hash_offset,
-                                           self.elffile)
+                # Get the hash table from the DT_HASH offset
+                hash_section = ELFHashTable(self.elffile, hash_offset, self)
                 end_ptr = tab_ptr + \
                     hash_section.get_number_of_symbols() * symbol_size
 
