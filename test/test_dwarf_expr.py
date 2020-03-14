@@ -7,7 +7,7 @@
 import unittest
 
 from elftools.dwarf.descriptions import ExprDumper, set_global_machine_arch
-from elftools.dwarf.dwarf_expr import parse_expr, DwarfExprOp
+from elftools.dwarf.dwarf_expr import DWARFExprParser, DWARFExprOp
 from elftools.dwarf.structs import DWARFStructs
 
 
@@ -77,11 +77,12 @@ class TestParseExpr(unittest.TestCase):
         set_global_machine_arch('x64')
 
     def test_single(self):
-        lst = parse_expr([0x1b], self.structs32)
-        self.assertEqual(lst, [DwarfExprOp(op=0x1B, op_name='DW_OP_div', args=[])])
+        p = DWARFExprParser(self.structs32)
+        lst = p.parse_expr([0x1b])
+        self.assertEqual(lst, [DWARFExprOp(op=0x1B, op_name='DW_OP_div', args=[])])
 
-        lst = parse_expr([0x90, 16], self.structs32)
-        self.assertEqual(lst, [DwarfExprOp(op=0x90, op_name='DW_OP_regx', args=[16])])
+        lst = p.parse_expr([0x90, 16])
+        self.assertEqual(lst, [DWARFExprOp(op=0x90, op_name='DW_OP_regx', args=[16])])
 
 
 if __name__ == '__main__':

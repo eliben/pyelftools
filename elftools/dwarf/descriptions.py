@@ -9,7 +9,7 @@
 from collections import defaultdict
 
 from .constants import *
-from .dwarf_expr import parse_expr
+from .dwarf_expr import DWARFExprParser
 from .die import DIE
 from ..common.utils import preserve_stream_pos, dwarf_assert
 from ..common.py3compat import bytes2str
@@ -540,6 +540,7 @@ class ExprDumper(object):
     """
     def __init__(self, structs):
         self.structs = structs
+        self.expr_parser = DWARFExprParser(self.structs)
         self._init_lookups()
         self._str_parts = []
 
@@ -547,7 +548,7 @@ class ExprDumper(object):
         """ Parse and process a DWARF expression. expr should be a list of
             (integer) byte values.
         """
-        parsed = parse_expr(expr, self.structs)
+        parsed = self.expr_parser.parse_expr(expr)
         for deo in parsed:
             self._str_parts.append(self._dump_to_string(deo.op, deo.op_name, deo.args))
 

@@ -106,37 +106,45 @@ DW_OP_opcode2name = dict((v, k) for k, v in iteritems(DW_OP_name2opcode))
 
 # Each parsed DWARF expression is returned as this type with its numeric opcode,
 # op name (as a string) and a list of arguments.
-DwarfExprOp = namedtuple('DwarfExprOp', 'op op_name args')
+DWARFExprOp = namedtuple('DWARFExprOp', 'op op_name args')
 
 
-def parse_expr(expr, structs):
-    """ Parses expr (a list of integers) into a list of DwarfExprOp.
+class DWARFExprParser(object):
+    """DWARF expression parser.
 
-    The list can potentially be nested.
+    When initialized, requires structs to cache a dispatch table. After that,
+    parse_expr can be called repeatedly - it's stateless.
     """
-    dispatch_table = _init_dispatch_table(structs)
 
-    stream = BytesIO(bytelist2string(expr))
-    parsed = []
+    def __init__(self, structs):
+        self._dispatch_table = _init_dispatch_table(structs)
 
-    while True:
-        # Get the next opcode from the stream. If nothing is left in the
-        # stream, we're done.
-        byte = stream.read(1)
-        if len(byte) == 0:
-            break
+    def parse_expr(self, expr):
+        """ Parses expr (a list of integers) into a list of DWARFExprOp.
 
-        # Decode the opcode and its name.
-        op = ord(byte)
-        op_name = DW_OP_opcode2name.get(op, 'OP:0x%x' % op)
+        The list can potentially be nested.
+        """
+        stream = BytesIO(bytelist2string(expr))
+        parsed = []
 
-        # Use dispatch table to parse args.
-        arg_parser = dispatch_table[op]
-        args = arg_parser(stream)
+        while True:
+            # Get the next opcode from the stream. If nothing is left in the
+            # stream, we're done.
+            byte = stream.read(1)
+            if len(byte) == 0:
+                break
 
-        parsed.append(DwarfExprOp(op=op, op_name=op_name, args=args))
+            # Decode the opcode and its name.
+            op = ord(byte)
+            op_name = DW_OP_opcode2name.get(op, 'OP:0x%x' % op)
 
-    return parsed
+            # Use dispatch table to parse args.
+            arg_parser = self._dispatch_table[op]
+            args = arg_parser(stream)
+
+            parsed.append(DWARFExprOp(op=op, op_name=op_name, args=args))
+
+        return parsed
 
 
 def _init_dispatch_table(structs):
