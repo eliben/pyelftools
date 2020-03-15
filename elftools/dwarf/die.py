@@ -77,7 +77,6 @@ class DIE(object):
                 The stream and offset into it where this DIE's data is located
         """
         self.cu = cu
-        self.dwarfinfo = self.cu.dwarfinfo # get DWARFInfo context
         self.stream = stream
         self.offset = offset
 
@@ -256,7 +255,7 @@ class DIE(object):
         value = None
         if form == 'DW_FORM_strp':
             with preserve_stream_pos(self.stream):
-                value = self.dwarfinfo.get_string_from_table(raw_value)
+                value = self.cu.dwarfinfo.get_string_from_table(raw_value)
         elif form == 'DW_FORM_flag':
             value = not raw_value == 0
         elif form == 'DW_FORM_flag_present':
