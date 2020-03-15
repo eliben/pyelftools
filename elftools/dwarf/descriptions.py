@@ -444,26 +444,12 @@ def _data_member_location_extra(attr, die, section_offset):
 def _import_extra(attr, die, section_offset):
     # For DW_AT_import the value points to a DIE (that can be either in the
     # current DIE's CU or in another CU, depending on the FORM). The extra
-    # information for it is the abbreviation number in this DIE and its tag.
-    if attr.form == 'DW_FORM_ref_addr':
-        # Absolute offset value
-        ref_die_offset = section_offset + attr.value
-    else:
-        # Relative offset to the current DIE's CU
-        ref_die_offset = attr.value + die.cu.cu_offset
-
-    # Now find the CU this DIE belongs to (since we have to find its abbrev
-    # table). This is done by linearly scanning through all CUs, looking for
-    # one spanning an address space containing the referred DIE's offset.
-    for cu in die.dwarfinfo.iter_CUs():
-        if cu['unit_length'] + cu.cu_offset > ref_die_offset >= cu.cu_offset:
-            # Once we have the CU, we can actually parse this DIE from the
-            # stream.
-            with preserve_stream_pos(die.stream):
-                ref_die = DIE(cu, die.stream, ref_die_offset)
-            #print '&&& ref_die', ref_die
-            return '[Abbrev Number: %s (%s)]' % (
-                ref_die.abbrev_code, ref_die.tag)
+    # information is the abbreviation number and tag of the referenced DIE.
+    try:
+        ref_die = die.get_DIE_from_attribute(attr.name)
+        return '[Abbrev Number: %s (%s)]' % (ref_die.abbrev_code, ref_die.tag)
+    except e:
+        pass
 
     return '[unknown]'
 
