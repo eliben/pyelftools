@@ -489,7 +489,7 @@ class ReadElf(object):
                 continue
 
             has_relocation_sections = True
-            self._emitline("\nRelocation section '%s' at offset %s contains %s entries:" % (
+            self._emitline("\nRelocation section '%.128s' at offset %s contains %s entries:" % (
                 section.name,
                 self._format_hex(section['sh_offset']),
                 section.num_relocations()))
@@ -986,7 +986,10 @@ class ReadElf(object):
             # correctly reflect the nesting depth
             #
             die_depth = 0
+            current_function = None
             for die in cu.iter_DIEs():
+                if die.tag == 'DW_TAG_subprogram':
+                    current_function = die
                 self._emitline(' <%s><%x>: Abbrev Number: %s%s' % (
                     die_depth,
                     die.offset,
@@ -1001,11 +1004,19 @@ class ReadElf(object):
                     # Unknown attribute values are passed-through as integers
                     if isinstance(name, int):
                         name = 'Unknown AT value: %x' % name
-                    self._emitline('    <%x>   %-18s: %s' % (
+
+                    attr_desc = describe_attr_value(attr, die, section_offset)
+
+                    if 'DW_OP_fbreg' in attr_desc and current_function and not 'DW_AT_frame_base' in current_function.attributes:
+                        postfix = ' [without dw_at_frame_base]'
+                    else:
+                        postfix = ''
+
+                    self._emitline('    <%x>   %-18s: %s%s' % (
                         attr.offset,
                         name,
-                        describe_attr_value(
-                            attr, die, section_offset)))
+                        attr_desc,
+                        postfix))
 
                 if die.has_children:
                     die_depth += 1

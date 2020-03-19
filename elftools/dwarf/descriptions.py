@@ -99,7 +99,7 @@ def describe_CFI_instructions(entry):
             s += '  %s: %s ofs %s\n' % (
                 name, _full_reg_name(instr.args[0]),
                 instr.args[1] * cie['data_alignment_factor'])
-        elif name == 'DW_CFA_def_cfa_offset':
+        elif name in ('DW_CFA_def_cfa_offset', 'DW_CFA_GNU_args_size'):
             s += '  %s: %s\n' % (name, instr.args[0])
         elif name == 'DW_CFA_def_cfa_expression':
             expr_dumper = ExprDumper(entry.structs)
@@ -335,6 +335,7 @@ _DESCR_DW_ATE = {
     DW_ATE_edited: '(edited)',
     DW_ATE_signed_fixed: '(signed_fixed)',
     DW_ATE_unsigned_fixed: '(unsigned_fixed)',
+    DW_ATE_UTF: '(unicode string)',
     DW_ATE_HP_float80: '(HP_float80)',
     DW_ATE_HP_complex_float80: '(HP_complex_float80)',
     DW_ATE_HP_float128: '(HP_float128)',
@@ -596,5 +597,11 @@ class ExprDumper(object):
             return '%s: %x' % (opcode_name, args[0])
         elif opcode_name in self._ops_with_two_decimal_args:
             return '%s: %s %s' % (opcode_name, args[0], args[1])
+        elif opcode_name == 'DW_OP_GNU_entry_value':
+            return '%s: (%s)' % (opcode_name, ','.join([self._dump_to_string(deo.op, deo.op_name, deo.args) for deo in args[0]]))
+        elif opcode_name == 'DW_OP_implicit_value':
+            return "%s %s byte block: %s" % (opcode_name, len(args[0]), ''.join(["%x " % b for b in args[0]]))
+        elif opcode_name == 'DW_OP_GNU_parameter_ref':
+            return "%s: <0x%x>" % (opcode_name, args[0])
         else:
             return '<unknown %s>' % opcode_name

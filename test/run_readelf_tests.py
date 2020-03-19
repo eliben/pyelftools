@@ -83,7 +83,7 @@ def run_test_on_file(filename, verbose=False):
             rc, stdout = run_exe(exe_path, args)
             if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
             if rc != 0:
-                testlog.error("@@ aborting - '%s' returned '%s'" % (exe_path, rc))
+                testlog.error("@@ aborting - '%s %s' returned '%s'" % (exe_path, option, rc))
                 return False
             stdouts.append(stdout)
         if verbose: testlog.info('....comparing output...')
