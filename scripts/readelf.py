@@ -400,11 +400,11 @@ class ReadElf(object):
                                 version_info = '@@%(name)s' % version
 
                 # symbol names are truncated to 25 chars, similarly to readelf
-                self._emitline('%6d: %s %5d %-7s %-6s %-7s %4s %.25s%s' % (
+                self._emitline('%6d: %s %s %-7s %-6s %-7s %4s %.25s%s' % (
                     nsym,
                     self._format_hex(
                         symbol['st_value'], fullhex=True, lead0x=False),
-                    symbol['st_size'],
+                    "%5d" % symbol['st_size'] if symbol['st_size'] < 100000 else hex(symbol['st_size']),
                     describe_symbol_type(symbol['st_info']['type']),
                     describe_symbol_bind(symbol['st_info']['bind']),
                     describe_symbol_visibility(symbol['st_other']['visibility']),
