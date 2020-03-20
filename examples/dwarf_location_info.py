@@ -85,13 +85,13 @@ def process_file(filename):
                         if isinstance(loc, LocationExpr):
                             print('      %s' % (
                                 describe_DWARF_expr(loc.loc_expr,
-                                                    dwarfinfo.structs)))
+                                                    dwarfinfo.structs, CU.cu_offset)))
                         elif isinstance(loc, list):
                             print(show_loclist(loc,
                                                dwarfinfo,
-                                               indent='      '))
+                                               '      ', CU.cu_offset))
 
-def show_loclist(loclist, dwarfinfo, indent):
+def show_loclist(loclist, dwarfinfo, indent, cu_offset):
     """ Display a location list nicely, decoding the DWARF expressions
         contained within.
     """
@@ -100,7 +100,7 @@ def show_loclist(loclist, dwarfinfo, indent):
         if isinstance(loc_entity, LocationEntry):
             d.append('%s <<%s>>' % (
                 loc_entity,
-                describe_DWARF_expr(loc_entity.loc_expr, dwarfinfo.structs)))
+                describe_DWARF_expr(loc_entity.loc_expr, dwarfinfo.structs, cu_offset)))
         else:
             d.append(str(loc_entity))
     return '\n'.join(indent + s for s in d)

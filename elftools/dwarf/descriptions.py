@@ -132,7 +132,7 @@ def describe_CFI_CFA_rule(rule):
         return '%s%+d' % (describe_reg_name(rule.reg), rule.offset)
 
 
-def describe_DWARF_expr(expr, structs):
+def describe_DWARF_expr(expr, structs, cu_offset = None):
     """ Textual description of a DWARF expression encoded in 'expr'.
         structs should come from the entity encompassing the expression - it's
         needed to be able to parse it correctly.
@@ -145,7 +145,7 @@ def describe_DWARF_expr(expr, structs):
         _DWARF_EXPR_DUMPER_CACHE[cache_key] = \
             ExprDumper(structs)
     dwarf_expr_dumper = _DWARF_EXPR_DUMPER_CACHE[cache_key]
-    return '(' + dwarf_expr_dumper.dump_expr(expr) + ')'
+    return '(' + dwarf_expr_dumper.dump_expr(expr, cu_offset) + ')'
 
 
 def describe_reg_name(regnum, machine_arch=None, default=True):
@@ -422,7 +422,7 @@ def _location_list_extra(attr, die, section_offset):
     if attr.form in ('DW_FORM_data4', 'DW_FORM_data8', 'DW_FORM_sec_offset'):
         return '(location list)'
     else:
-        return describe_DWARF_expr(attr.value, die.cu.structs)
+        return describe_DWARF_expr(attr.value, die.cu.structs, die.cu.cu_offset)
 
 
 def _data_member_location_extra(attr, die, section_offset):
@@ -435,7 +435,7 @@ def _data_member_location_extra(attr, die, section_offset):
     elif attr.form == 'DW_FORM_sdata':
         return str(attr.value)
     else:
-        return describe_DWARF_expr(attr.value, die.cu.structs)
+        return describe_DWARF_expr(attr.value, die.cu.structs, die.cu.cu_offset)
 
 
 def _import_extra(attr, die, section_offset):
@@ -540,7 +540,7 @@ class ExprDumper(object):
         self.expr_parser = DWARFExprParser(self.structs)
         self._init_lookups()
 
-    def dump_expr(self, expr):
+    def dump_expr(self, expr, cu_offset = None):
         """ Parse and dump a DWARF expression. expr should be a list of
             (integer) byte values.
 
@@ -549,7 +549,7 @@ class ExprDumper(object):
         parsed = self.expr_parser.parse_expr(expr)
         s = []
         for deo in parsed:
-            s.append(self._dump_to_string(deo.op, deo.op_name, deo.args))
+            s.append(self._dump_to_string(deo.op, deo.op_name, deo.args, cu_offset))
         return '; '.join(s)
 
     def _init_lookups(self):
@@ -569,7 +569,10 @@ class ExprDumper(object):
         self._ops_with_hex_arg = set(
             ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
 
-    def _dump_to_string(self, opcode, opcode_name, args):
+    def _dump_to_string(self, opcode, opcode_name, args, cu_offset = None):
+        if cu_offset is None:
+            cu_offset = 0
+
         if len(args) == 0:
             if opcode_name.startswith('DW_OP_reg'):
                 regnum = int(opcode_name[9:])
@@ -602,6 +605,14 @@ class ExprDumper(object):
         elif opcode_name == 'DW_OP_implicit_value':
             return "%s %s byte block: %s" % (opcode_name, len(args[0]), ''.join(["%x " % b for b in args[0]]))
         elif opcode_name == 'DW_OP_GNU_parameter_ref':
-            return "%s: <0x%x>" % (opcode_name, args[0])
+            return "%s: <0x%x>" % (opcode_name, args[0] + cu_offset)
+        elif opcode_name == 'DW_OP_GNU_implicit_pointer':
+            return "%s: <0x%x> %d" % (opcode_name, args[0], args[1])
+        elif opcode_name == 'DW_OP_GNU_convert':
+            return "%s <0x%x>" % (opcode_name, args[0] + cu_offset)
+        elif opcode_name == 'DW_OP_GNU_deref_type':
+            return "%s: %d <0x%x>" % (opcode_name, args[0], args[1] + cu_offset)
+        elif opcode_name == 'DW_OP_GNU_const_type':
+            return "%s: <0x%x>  %d byte block: %s " % (opcode_name, args[0] + cu_offset, len(args[1]), ' '.join("%x" % b for b in args[1]))
         else:
             return '<unknown %s>' % opcode_name
