@@ -114,11 +114,12 @@ class TestLineProgram(unittest.TestCase):
         lp = self._make_program_in_stream(s)
         linetable = lp.get_entries()
 
-        self.assertEqual(len(linetable), 3)
-        self.assertEqual(linetable[0].command, DW_LNE_set_discriminator)
-        self.assertIs(linetable[0].state, None)
-        self.assertLineState(linetable[1].state, discriminator=0x05, end_sequence=False)
-        self.assertLineState(linetable[2].state, discriminator=0x00, end_sequence=True)
+        # We expect two entries, since DW_LNE_set_discriminator does not add
+        # an entry of its own.
+        self.assertEqual(len(linetable), 2)
+        self.assertEqual(linetable[0].command, DW_LNS_copy)
+        self.assertLineState(linetable[0].state, discriminator=0x05)
+        self.assertLineState(linetable[1].state, discriminator=0x00, end_sequence=True)
 
 
 if __name__ == '__main__':

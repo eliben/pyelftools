@@ -64,7 +64,8 @@ class LineState(object):
         a = ['<LineState %x:' % id(self)]
         a.append('  address = 0x%x' % self.address)
         for attr in ('file', 'line', 'column', 'is_stmt', 'basic_block',
-                     'end_sequence', 'prologue_end', 'epilogue_begin', 'isa'):
+                     'end_sequence', 'prologue_end', 'epilogue_begin', 'isa',
+                     'discriminator'):
             a.append('  %s = %s' % (attr, getattr(self, attr)))
         return '\n'.join(a) + '>\n'
 
@@ -194,7 +195,6 @@ class LineProgram(object):
                     operand = struct_parse(self.structs.Dwarf_uleb128(''),
                                            self.stream)
                     state.discriminator = operand
-                    add_entry_old_state(ex_opcode, [operand], is_extended=True)
                 else:
                     # Unknown, but need to roll forward the stream because the
                     # length is specified. Seek forward inst_len - 1 because
