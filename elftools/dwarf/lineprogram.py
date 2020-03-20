@@ -194,6 +194,7 @@ class LineProgram(object):
                     operand = struct_parse(self.structs.Dwarf_uleb128(''),
                                            self.stream)
                     state.discriminator = operand
+                    add_entry_old_state(ex_opcode, [operand], is_extended=True)
                 else:
                     # Unknown, but need to roll forward the stream because the
                     # length is specified. Seek forward inst_len - 1 because
