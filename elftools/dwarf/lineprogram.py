@@ -58,12 +58,14 @@ class LineState(object):
         self.prologue_end = False
         self.epilogue_begin = False
         self.isa = 0
+        self.discriminator = 0
 
     def __repr__(self):
         a = ['<LineState %x:' % id(self)]
         a.append('  address = 0x%x' % self.address)
         for attr in ('file', 'line', 'column', 'is_stmt', 'basic_block',
-                     'end_sequence', 'prologue_end', 'epilogue_begin', 'isa'):
+                     'end_sequence', 'prologue_end', 'epilogue_begin', 'isa',
+                     'discriminator'):
             a.append('  %s = %s' % (attr, getattr(self, attr)))
         return '\n'.join(a) + '>\n'
 
@@ -130,6 +132,7 @@ class LineProgram(object):
             # After adding, clear some state registers.
             entries.append(LineProgramEntry(
                 cmd, is_extended, args, copy.copy(state)))
+            state.discriminator = 0
             state.basic_block = False
             state.prologue_end = False
             state.epilogue_begin = False
@@ -188,6 +191,10 @@ class LineProgram(object):
                         self.structs.Dwarf_lineprog_file_entry, self.stream)
                     self['file_entry'].append(operand)
                     add_entry_old_state(ex_opcode, [operand], is_extended=True)
+                elif ex_opcode == DW_LNE_set_discriminator:
+                    operand = struct_parse(self.structs.Dwarf_uleb128(''),
+                                           self.stream)
+                    state.discriminator = operand
                 else:
                     # Unknown, but need to roll forward the stream because the
                     # length is specified. Seek forward inst_len - 1 because
