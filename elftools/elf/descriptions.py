@@ -177,7 +177,7 @@ def describe_note(x):
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
-        if x['n_name'] == 'Android': # Lame patch :(
+        if x['n_name'] == 'Android':
             desc = '\n   description data: %s ' % ' '.join("%02x" % ord(b) for b in x['n_descdata'])
         else:
             desc = '\n    OS: %s, ABI: %d.%d.%d' % (

@@ -51,6 +51,9 @@ def discover_testfiles(rootdir):
 def run_test_on_file(filename, verbose, opt):
     """ Runs a test on the given input filename. Return True if all test
         runs succeeded.
+        If opt is specified, rather that going over the whole
+        set of supported readelf options, the test will only
+        run for one option.
     """
     success = True
     testlog.info("Test file '%s'" % filename)

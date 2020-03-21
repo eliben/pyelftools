@@ -132,7 +132,7 @@ def describe_CFI_CFA_rule(rule):
         return '%s%+d' % (describe_reg_name(rule.reg), rule.offset)
 
 
-def describe_DWARF_expr(expr, structs, cu_offset = None):
+def describe_DWARF_expr(expr, structs, cu_offset=None):
     """ Textual description of a DWARF expression encoded in 'expr'.
         structs should come from the entity encompassing the expression - it's
         needed to be able to parse it correctly.
@@ -540,9 +540,13 @@ class ExprDumper(object):
         self.expr_parser = DWARFExprParser(self.structs)
         self._init_lookups()
 
-    def dump_expr(self, expr, cu_offset = None):
+    def dump_expr(self, expr, cu_offset=None):
         """ Parse and dump a DWARF expression. expr should be a list of
-            (integer) byte values.
+            (integer) byte values. cu_offset is the cu_offset
+            value from the CU object where the expression resides.
+            Only affects a handful of GNU opcodes, if None is provided,
+            that's not a crash condition, only the expression dump will
+            not be consistent of that of readelf.
 
             Returns a string representing the expression.
         """
@@ -569,7 +573,11 @@ class ExprDumper(object):
         self._ops_with_hex_arg = set(
             ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
 
-    def _dump_to_string(self, opcode, opcode_name, args, cu_offset = None):
+    def _dump_to_string(self, opcode, opcode_name, args, cu_offset=None):
+        # Some GNU ops contain an offset from the current CU as an argument,
+        # but readelf emits those ops with offset from the info section
+        # so we need the base offset of the parent CU.
+        # If omitted, arguments on some GNU opcodes will be off.
         if cu_offset is None:
             cu_offset = 0
 

@@ -9,7 +9,7 @@
 from collections import namedtuple
 
 from ..common.py3compat import BytesIO, iteritems
-from ..common.utils import struct_parse, bytelist2string
+from ..common.utils import struct_parse, bytelist2string, read_blob
 
 
 # DWARF expression opcodes. name -> opcode mapping
@@ -183,24 +183,17 @@ def _init_dispatch_table(structs):
     def parse_nestedexpr():
         def parse(stream):
             size = struct_parse(structs.Dwarf_uleb128(''), stream)
-            nested_expr_blob = stream.read(size)
-            if isinstance(nested_expr_blob, str): # Python 2 patch. In Py3, it comes as bytes.
-                nested_expr_blob = [ord(b) for b in nested_expr_blob]
+            nested_expr_blob = read_blob(stream, size)
             return [DWARFExprParser(structs).parse_expr(nested_expr_blob)]
         return parse
 
-    # In Python 2, read returns a str, in Byton 3 - bytes.
-    # For Python 2, bytearray will do, since bytes is a synonym of str and isn't a collection of ints.
-    def to_blob(blob):
-        return bytearray(blob) if isinstance(blob, str) else blob
-
     # ULEB128, then a blob of that size
     def parse_blob():
-        return lambda stream: [to_blob(stream.read(struct_parse(structs.Dwarf_uleb128(''), stream)))]
+        return lambda stream: [read_blob(stream, struct_parse(structs.Dwarf_uleb128(''), stream))]
 
     # ULEB128 with datatype DIE offset, then byte, then a blob of that size
     def parse_typedblob():
-        return lambda stream: [struct_parse(structs.Dwarf_uleb128(''), stream), to_blob(stream.read(struct_parse(structs.Dwarf_uint8(''), stream)))]
+        return lambda stream: [struct_parse(structs.Dwarf_uleb128(''), stream), read_blob(stream, struct_parse(structs.Dwarf_uint8(''), stream))]
 
     add('DW_OP_addr', parse_op_addr())
     add('DW_OP_const1u', parse_arg_struct(structs.Dwarf_uint8('')))
