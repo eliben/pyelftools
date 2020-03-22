@@ -400,11 +400,11 @@ class ReadElf(object):
                                 version_info = '@@%(name)s' % version
 
                 # symbol names are truncated to 25 chars, similarly to readelf
-                self._emitline('%6d: %s %5d %-7s %-6s %-7s %4s %.25s%s' % (
+                self._emitline('%6d: %s %s %-7s %-6s %-7s %4s %.25s%s' % (
                     nsym,
                     self._format_hex(
                         symbol['st_value'], fullhex=True, lead0x=False),
-                    symbol['st_size'],
+                    "%5d" % symbol['st_size'] if symbol['st_size'] < 100000 else hex(symbol['st_size']),
                     describe_symbol_type(symbol['st_info']['type']),
                     describe_symbol_bind(symbol['st_info']['bind']),
                     describe_symbol_visibility(symbol['st_other']['visibility']),
@@ -489,7 +489,7 @@ class ReadElf(object):
                 continue
 
             has_relocation_sections = True
-            self._emitline("\nRelocation section '%s' at offset %s contains %s entries:" % (
+            self._emitline("\nRelocation section '%.128s' at offset %s contains %s entries:" % (
                 section.name,
                 self._format_hex(section['sh_offset']),
                 section.num_relocations()))
@@ -986,7 +986,10 @@ class ReadElf(object):
             # correctly reflect the nesting depth
             #
             die_depth = 0
+            current_function = None
             for die in cu.iter_DIEs():
+                if die.tag == 'DW_TAG_subprogram':
+                    current_function = die
                 self._emitline(' <%s><%x>: Abbrev Number: %s%s' % (
                     die_depth,
                     die.offset,
@@ -1001,11 +1004,19 @@ class ReadElf(object):
                     # Unknown attribute values are passed-through as integers
                     if isinstance(name, int):
                         name = 'Unknown AT value: %x' % name
-                    self._emitline('    <%x>   %-18s: %s' % (
+
+                    attr_desc = describe_attr_value(attr, die, section_offset)
+
+                    if 'DW_OP_fbreg' in attr_desc and current_function and not 'DW_AT_frame_base' in current_function.attributes:
+                        postfix = ' [without dw_at_frame_base]'
+                    else:
+                        postfix = ''
+
+                    self._emitline('    <%x>   %-18s: %s%s' % (
                         attr.offset,
                         name,
-                        describe_attr_value(
-                            attr, die, section_offset)))
+                        attr_desc,
+                        postfix))
 
                 if die.has_children:
                     die_depth += 1
@@ -1408,7 +1419,7 @@ def main(stream=None):
             action='store', dest='debug_dump_what', metavar='<what>',
             help=(
                 'Display the contents of DWARF debug sections. <what> can ' +
-                'one of {info,decodedline,frames,frames-interp}'))
+                'one of {info,decodedline,frames,frames-interp,aranges,pubtypes,pubnames}'))
     argparser.add_argument('--traceback',
                            action='store_true', dest='show_traceback',
                            help='Dump the Python traceback on ELFError'
