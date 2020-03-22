@@ -622,5 +622,7 @@ class ExprDumper(object):
             return "%s: %d <0x%x>" % (opcode_name, args[0], args[1] + cu_offset)
         elif opcode_name == 'DW_OP_GNU_const_type':
             return "%s: <0x%x>  %d byte block: %s " % (opcode_name, args[0] + cu_offset, len(args[1]), ' '.join("%x" % b for b in args[1]))
+        elif opcode_name == 'DW_OP_GNU_regval_type':
+            return "%s: %d (%s) <0x%x>" % (opcode_name, args[0], describe_reg_name(args[0], _MACHINE_ARCH), args[1] + cu_offset)
         else:
             return '<unknown %s>' % opcode_name
