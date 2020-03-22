@@ -1419,7 +1419,7 @@ def main(stream=None):
             action='store', dest='debug_dump_what', metavar='<what>',
             help=(
                 'Display the contents of DWARF debug sections. <what> can ' +
-                'one of {info,decodedline,frames,frames-interp}'))
+                'one of {info,decodedline,frames,frames-interp,aranges,pubtypes,pubnames}'))
     argparser.add_argument('--traceback',
                            action='store_true', dest='show_traceback',
                            help='Dump the Python traceback on ELFError'
