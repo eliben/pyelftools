@@ -48,7 +48,7 @@ def discover_testfiles(rootdir):
             yield os.path.join(rootdir, filename)
 
 
-def run_test_on_file(filename, verbose, opt):
+def run_test_on_file(filename, verbose=False, opt=None):
     """ Runs a test on the given input filename. Return True if all test
         runs succeeded.
         If opt is specified, rather that going over the whole
@@ -57,13 +57,17 @@ def run_test_on_file(filename, verbose, opt):
     """
     success = True
     testlog.info("Test file '%s'" % filename)
-    options = [opt] if opt else [
+    if opt is None:
+        options = [
             '-e', '-d', '-s', '-n', '-r', '-x.text', '-p.shstrtab', '-V',
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp',
             '--debug-dump=aranges', '--debug-dump=pubtypes',
             '--debug-dump=pubnames'
             ]
+    else:
+        options = [opt]
+
     for option in options:
         if verbose: testlog.info("..option='%s'" % option)
 
@@ -229,9 +233,7 @@ def main():
 
     if len(filenames) > 1 and args.parallel:
         pool = Pool()
-        results = pool.map(
-            lambda filename: run_test_on_file(filename, False, args.opt),
-            filenames)
+        results = pool.map(run_test_on_file, filenames)
         failures = results.count(False)
     else:
         failures = 0
