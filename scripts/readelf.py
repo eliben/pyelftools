@@ -55,10 +55,11 @@ from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
     describe_reg_name, describe_attr_value, set_global_machine_arch,
     describe_CFI_instructions, describe_CFI_register_rule,
-    describe_CFI_CFA_rule,
+    describe_CFI_CFA_rule, describe_DWARF_expr
     )
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
+from elftools.dwarf.locationlists import LocationParser, LocationEntry    
 from elftools.dwarf.callframe import CIE, FDE, ZERO
 
 
@@ -788,6 +789,8 @@ class ReadElf(object):
             self._dump_debug_aranges()
         elif dump_what in { 'pubtypes', 'pubnames' }:
             self._dump_debug_namelut(dump_what)
+        elif dump_what == 'loc':
+            self._dump_debug_locations()
         else:
             self._emitline('debug dump not yet supported for "%s"' % dump_what)
 
@@ -1332,6 +1335,58 @@ class ReadElf(object):
                     self._dwarfinfo.debug_frame_sec,
                     self._dwarfinfo.CFI_entries())
 
+    def _dump_debug_locations(self):
+        """ Dump the location lists from .debug_location section
+        """
+        def _get_cu_base(cu):
+            top_die = cu.get_top_DIE()
+            attr = top_die.attributes
+            if 'DW_AT_low_pc' in attr:
+                return attr['DW_AT_low_pc'].value
+            elif 'DW_AT_entry_pc' in attr:
+                return attr['DW_AT_entry_pc'].value
+            else:
+                raise ValueError("Can't find the base IP (low_pc) for a CU")                    
+
+        di = self._dwarfinfo
+        loc_lists = di.location_lists()
+        if loc_lists:
+            loc_lists = [ll for ll in loc_lists.iter_location_lists()]
+            if len(loc_lists) > 0:
+                # To dump a location list, one needs to know the CU.
+                # Scroll through DIEs once, list the known location list offsets
+                CUs = [cu for cu in di.iter_CUs()]
+                cu_map = dict() # Loc list offset => CU            
+                for cu in CUs:
+                    for die in cu.iter_DIEs():
+                        for key in die.attributes:
+                            attr = die.attributes[key]
+                            if (LocationParser.attribute_has_location(attr, cu['version']) and
+                                not LocationParser._attribute_has_loc_expr(attr, cu['version'])):
+                                cu_map[attr.value] = cu
+
+                addr_size = di.config.default_address_size # In bytes, 4 or 8
+                addr_width = addr_size * 2 # In hex digits, 8 or 16
+                line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)                
+
+                self._emitline('Contents of the %s section:\n\n    Offset   Begin            End              Expression' % di.debug_loc_sec.name)
+                for loc_list in loc_lists:
+                    cu = cu_map.get(loc_list[0].entry_offset, False)
+                    if not cu:
+                        raise ValueError("Location list can't be tracked to a CU")
+                    base_ip = _get_cu_base(cu)
+                    for loc_entry in loc_list:
+                        # TODO: support BaseAddressEntry lines
+                        expr = describe_DWARF_expr(loc_entry.loc_expr, cu.structs, cu.cu_offset)
+                        postfix = ' (start == end)' if loc_entry.begin_offset == loc_entry.end_offset else ''
+                        self._emitline(line_template %
+                            (loc_entry.entry_offset, base_ip + loc_entry.begin_offset, base_ip + loc_entry.end_offset, expr, postfix))
+                    last = loc_list[-1]
+                    last_len = 2*addr_size + (2 + len(last.loc_expr) if isinstance(last, LocationEntry) else 0)
+                    self._emitline("    %08x <End of list>" % (last.entry_offset + last_len))
+            else:
+                self._emitline("\nSection '%s' has no debugging data." % di.debug_loc_sec.name)
+
     def _display_arch_specific_arm(self):
         """ Display the ARM architecture-specific info contained in the file.
         """
@@ -1419,7 +1474,7 @@ def main(stream=None):
             action='store', dest='debug_dump_what', metavar='<what>',
             help=(
                 'Display the contents of DWARF debug sections. <what> can ' +
-                'one of {info,decodedline,frames,frames-interp,aranges,pubtypes,pubnames}'))
+                'one of {info,decodedline,frames,frames-interp,aranges,pubtypes,pubnames,loc}'))
     argparser.add_argument('--traceback',
                            action='store_true', dest='show_traceback',
                            help='Dump the Python traceback on ELFError'
