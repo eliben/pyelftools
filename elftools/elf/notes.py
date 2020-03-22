@@ -30,6 +30,7 @@ def iter_notes(elffile, offset, size):
         offset += disk_namesz
 
         desc_data = bytes2str(elffile.stream.read(note['n_descsz']))
+        note['n_descdata'] = desc_data
         if note['n_type'] == 'NT_GNU_ABI_TAG':
             note['n_desc'] = struct_parse(elffile.structs.Elf_abi,
                                           elffile.stream,

@@ -224,6 +224,8 @@ class CallFrameInfo(object):
                 args = [
                     struct_parse(structs.Dwarf_uleb128(''), self.stream),
                     struct_parse(structs.Dwarf_sleb128(''), self.stream)]
+            elif opcode == DW_CFA_GNU_args_size:
+                args = [struct_parse(structs.Dwarf_uleb128(''), self.stream)]
             else:
                 dwarf_assert(False, 'Unknown CFI opcode: 0x%x' % opcode)
 
@@ -488,7 +490,9 @@ class CFIEntry(object):
         line_stack = []
 
         def _add_to_order(regnum):
-            if regnum not in cur_line:
+            # DW_CFA_restore and others remove registers from cur_line,
+            #  but they stay in reg_order. Avoid duplicates.
+            if regnum not in reg_order: 
                 reg_order.append(regnum)
 
         for instr in self.instructions:
