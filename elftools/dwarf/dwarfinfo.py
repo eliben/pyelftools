@@ -227,8 +227,8 @@ class DWARFInfo(object):
             the DWARF data, or None if the section doesn't exist
         """
         if self.debug_aranges_sec:
-            return ARanges(self.debug_aranges_sec.stream, 
-                self.debug_aranges_sec.size, 
+            return ARanges(self.debug_aranges_sec.stream,
+                self.debug_aranges_sec.size,
                 self.structs)
         else:
             return None
@@ -285,9 +285,9 @@ class DWARFInfo(object):
             self.structs.Dwarf_uint32(''), self.debug_info_sec.stream, offset)
         dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
 
-        
+
         # Temporary structs for parsing the header
-        # The structs for the rest of the CU depend on the header data. 
+        # The structs for the rest of the CU depend on the header data.
         #
         cu_structs = DWARFStructs(
             little_endian=self.config.little_endian,
@@ -341,4 +341,3 @@ class DWARFInfo(object):
             structs=structs,
             program_start_offset=self.debug_line_sec.stream.tell(),
             program_end_offset=end_offset)
-
