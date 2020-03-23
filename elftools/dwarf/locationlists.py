@@ -12,8 +12,8 @@ from collections import namedtuple
 from ..common.utils import struct_parse
 
 LocationExpr = namedtuple('LocationExpr', 'loc_expr')
-LocationEntry = namedtuple('LocationEntry', 'begin_offset end_offset loc_expr')
-BaseAddressEntry = namedtuple('BaseAddressEntry', 'base_address')
+LocationEntry = namedtuple('LocationEntry', 'entry_offset begin_offset end_offset loc_expr')
+BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset base_address')
 
 class LocationLists(object):
     """ A single location list is a Python list consisting of LocationEntry or
@@ -46,6 +46,7 @@ class LocationLists(object):
     def _parse_location_list_from_stream(self):
         lst = []
         while True:
+            entry_offset = self.stream.tell()
             begin_offset = struct_parse(
                 self.structs.Dwarf_target_addr(''), self.stream)
             end_offset = struct_parse(
@@ -55,7 +56,7 @@ class LocationLists(object):
                 break
             elif begin_offset == self._max_addr:
                 # Base address selection entry
-                lst.append(BaseAddressEntry(base_address=end_offset))
+                lst.append(BaseAddressEntry(entry_offset=entry_offset, base_address=end_offset))
             else:
                 # Location list entry
                 expr_len = struct_parse(
@@ -64,6 +65,7 @@ class LocationLists(object):
                                          self.stream)
                                 for i in range(expr_len)]
                 lst.append(LocationEntry(
+                    entry_offset=entry_offset,
                     begin_offset=begin_offset,
                     end_offset=end_offset,
                     loc_expr=loc_expr))
