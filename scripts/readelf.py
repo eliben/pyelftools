@@ -59,7 +59,7 @@ from elftools.dwarf.descriptions import (
     )
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
-from elftools.dwarf.locationlists import LocationParser, LocationEntry    
+from elftools.dwarf.locationlists import LocationParser, LocationEntry
 from elftools.dwarf.callframe import CIE, FDE, ZERO
 
 
@@ -1167,12 +1167,12 @@ class ReadElf(object):
             section = self._dwarfinfo.debug_pubtypes_sec
 
         # readelf prints nothing if the section is not present.
-        if namelut is None or len(namelut) == 0:    
+        if namelut is None or len(namelut) == 0:
             return
-        
+
         self._emitline('Contents of the %s section:' % section.name)
         self._emitline()
-        
+
         cu_headers = namelut.get_cu_headers()
 
         # go over CU-by-CU first and item-by-item next.
@@ -1182,7 +1182,7 @@ class ReadElf(object):
             self._emitline('  Length:                              %d'   % cu_hdr.unit_length)
             self._emitline('  Version:                             %d'   % cu_hdr.version)
             self._emitline('  Offset into .debug_info section:     0x%x' % cu_hdr.debug_info_offset)
-            self._emitline('  Size of area in .debug_info section: %d'   % cu_hdr.debug_info_length) 
+            self._emitline('  Size of area in .debug_info section: %d'   % cu_hdr.debug_info_length)
             self._emitline()
             self._emitline('    Offset  Name')
             for item in items:
@@ -1346,7 +1346,7 @@ class ReadElf(object):
             elif 'DW_AT_entry_pc' in attr:
                 return attr['DW_AT_entry_pc'].value
             else:
-                raise ValueError("Can't find the base IP (low_pc) for a CU")                    
+                raise ValueError("Can't find the base IP (low_pc) for a CU")
 
         di = self._dwarfinfo
         loc_lists = di.location_lists()
@@ -1361,7 +1361,7 @@ class ReadElf(object):
 
         # To dump a location list, one needs to know the CU.
         # Scroll through DIEs once, list the known location list offsets
-        cu_map = dict() # Loc list offset => CU            
+        cu_map = dict() # Loc list offset => CU
         for cu in di.iter_CUs():
             for die in cu.iter_DIEs():
                 for key in die.attributes:
@@ -1372,7 +1372,7 @@ class ReadElf(object):
 
         addr_size = di.config.default_address_size # In bytes, 4 or 8
         addr_width = addr_size * 2 # In hex digits, 8 or 16
-        line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)                
+        line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)
 
         self._emitline('Contents of the %s section:\n' % di.debug_loc_sec.name)
         self._emitline('    Offset   Begin            End              Expression')

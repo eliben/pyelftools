@@ -326,7 +326,7 @@ class ARMAttribute(object):
         return self._tag['tag']
 
     def __repr__(self):
-        s = '<ARMAttribute (%s): %r>' % (self.tag, self.value) 
+        s = '<ARMAttribute (%s): %r>' % (self.tag, self.value)
         s += ' %s' % self.extra if self.extra is not None else ''
         return s
 
@@ -374,7 +374,7 @@ class ARMAttributesSubsubsection(object):
             yield ARMAttribute(self.structs, self.stream)
 
     def __repr__(self):
-        s = "<ARMAttributesSubsubsection (%s): %d bytes>" 
+        s = "<ARMAttributesSubsubsection (%s): %d bytes>"
         return s % (self.header.tag[4:], self.header.value)
 
 

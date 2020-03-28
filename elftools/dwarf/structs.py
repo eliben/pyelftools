@@ -228,7 +228,7 @@ class DWARFStructs(object):
         self.Dwarf_nameLUT_header = Struct("Dwarf_nameLUT_header",
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
-            self.Dwarf_offset('debug_info_offset'), 
+            self.Dwarf_offset('debug_info_offset'),
             self.Dwarf_length('debug_info_length')
             )
 

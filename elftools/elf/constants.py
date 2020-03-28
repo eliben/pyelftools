@@ -144,4 +144,4 @@ class SUNW_SYMINFO_FLAGS(object):
 class VER_FLAGS(object):
     VER_FLG_BASE=0x1
     VER_FLG_WEAK=0x2
-    VER_FLG_INFO=0x4 
+    VER_FLG_INFO=0x4

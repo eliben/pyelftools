@@ -178,7 +178,7 @@ def _init_dispatch_table(structs):
     def parse_arg_struct2(arg1_struct, arg2_struct):
         return lambda stream: [struct_parse(arg1_struct, stream),
                                struct_parse(arg2_struct, stream)]
- 
+
     # ULEB128, then an expression of that length
     def parse_nestedexpr():
         def parse(stream):
@@ -241,7 +241,7 @@ def _init_dispatch_table(structs):
     add('DW_OP_call2', parse_arg_struct(structs.Dwarf_uint16('')))
     add('DW_OP_call4', parse_arg_struct(structs.Dwarf_uint32('')))
     add('DW_OP_call_ref', parse_arg_struct(structs.Dwarf_offset('')))
-    add('DW_OP_implicit_value', parse_blob())            
+    add('DW_OP_implicit_value', parse_blob())
     add('DW_OP_GNU_entry_value', parse_nestedexpr())
     add('DW_OP_GNU_const_type', parse_typedblob())
     add('DW_OP_GNU_regval_type', parse_arg_struct2(structs.Dwarf_uleb128(''),

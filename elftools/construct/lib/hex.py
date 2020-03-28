@@ -34,11 +34,10 @@ class HexString(bytes):
 
     def __new__(cls, data, *args, **kwargs):
         return bytes.__new__(cls, data)
-        
+
     def __str__(self):
         if not self:
             return "''"
         sep = "\n"
         return sep + sep.join(
             hexdump(self, self.linesize))
-
