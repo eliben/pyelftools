@@ -12,7 +12,7 @@ from bisect import bisect_right
 from ..common.exceptions import DWARFError
 from ..common.utils import (struct_parse, dwarf_assert,
                             parse_cstring_from_stream)
-from .structs import DWARFStructs
+from .structs import DWARFStructsCache
 from .compileunit import CompileUnit
 from .abbrevtable import AbbrevTable
 from .lineprogram import LineProgram
@@ -101,7 +101,7 @@ class DWARFInfo(object):
         # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
         # to default values.
-        self.structs = DWARFStructs(
+        self.structs = DWARFStructsCache.get(
             little_endian=self.config.little_endian,
             dwarf_format=32,
             address_size=self.config.default_address_size)
@@ -493,7 +493,7 @@ class DWARFInfo(object):
 
         # Temporary structs for parsing the header.
         # The structs for the rest of the CU depend on the header data.
-        cu_structs = DWARFStructs(
+        cu_structs = DWARFStructsCache.get(
             little_endian=self.config.little_endian,
             dwarf_format=dwarf_format,
             address_size=4,
@@ -504,7 +504,7 @@ class DWARFInfo(object):
         cu_header = struct_parse(header_struct_to_parse, sec.stream, offset)
 
         # Structs for the rest of the CU, using header bitness and DWARF version
-        cu_structs = DWARFStructs(
+        cu_structs = DWARFStructsCache.get(
             little_endian=self.config.little_endian,
             dwarf_format=dwarf_format,
             address_size=cu_header['address_size'],

@@ -12,7 +12,7 @@ from ..common.utils import (struct_parse, dwarf_assert, preserve_stream_pos)
 from ..common.py3compat import iterbytes, iterkeys
 from ..construct import Struct, Switch
 from .enums import DW_EH_encoding_flags
-from .structs import DWARFStructs
+from .structs import DWARFStructsCache
 from .constants import *
 
 
@@ -97,7 +97,7 @@ class CallFrameInfo(object):
 
         dwarf_format = 64 if entry_length == 0xFFFFFFFF else 32
 
-        entry_structs = DWARFStructs(
+        entry_structs = DWARFStructsCache.get(
             little_endian=self.base_structs.little_endian,
             dwarf_format=dwarf_format,
             address_size=self.base_structs.address_size)
@@ -128,7 +128,7 @@ class CallFrameInfo(object):
         # If this is DWARF version 4 or later, we can have a more precise
         # address size, read from the CIE header.
         if not self.for_eh_frame and entry_structs.dwarf_version >= 4:
-            entry_structs = DWARFStructs(
+            entry_structs = DWARFStructsCache.get(
                 little_endian=entry_structs.little_endian,
                 dwarf_format=entry_structs.dwarf_format,
                 address_size=header.address_size)

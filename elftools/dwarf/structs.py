@@ -14,6 +14,7 @@ from ..construct import (
     CString, Embed, StaticField, Switch
     )
 from ..common.construct_utils import RepeatUntilExcluding, ULEB128, SLEB128
+from collections import namedtuple
 from .enums import *
 
 
@@ -79,6 +80,7 @@ class DWARFStructs(object):
 
         See also the documentation of public methods.
     """
+    # When updating this function, also update DWARFStructsCache below.
     def __init__(self,
                  little_endian, dwarf_format, address_size, dwarf_version=2):
         """ dwarf_version:
@@ -335,6 +337,21 @@ class DWARFStructs(object):
         return PrefixedArray(
                     subcon=self.Dwarf_uint8('elem'),
                     length_field=length_field(''))
+
+class DWARFStructsCache(object):
+    """ Cache and return instances of each DWARFStructs class object required
+    """
+    KeyTuple = namedtuple('struct_parms',
+        'little_endian dwarf_format address_size dwarf_version')
+    cache = {}
+
+    @classmethod
+    def get(self, little_endian, dwarf_format, address_size, dwarf_version=2):
+        key = self.KeyTuple(little_endian, dwarf_format, address_size,
+                            dwarf_version)
+        if key not in self.cache:
+            self.cache[key] = DWARFStructs(**key._asdict())
+        return self.cache[key]
 
 
 class _InitialLengthAdapter(Adapter):
