@@ -141,6 +141,14 @@ class CallFrameInfo(object):
         else:
             cie = self._parse_cie_for_fde(offset, header, entry_structs)
             aug_bytes = self._read_augmentation_data(entry_structs)
+            lsda_encoding = cie.augmentation_dict.get('LSDA_encoding', DW_EH_encoding_flags['DW_EH_PE_omit'])
+            if lsda_encoding != DW_EH_encoding_flags['DW_EH_PE_omit']:
+                # parse LSDA pointer
+                lsda_pointer = self._parse_lsda_pointer(entry_structs,
+                                                        self.stream.tell() - len(aug_bytes),
+                                                        lsda_encoding)
+            else:
+                lsda_pointer = None
 
         # For convenience, compute the end offset for this entry
         end_offset = (
@@ -163,8 +171,10 @@ class CallFrameInfo(object):
             cie = self._parse_cie_for_fde(offset, header, entry_structs)
             self._entry_cache[offset] = FDE(
                 header=header, instructions=instructions, offset=offset,
+                structs=entry_structs, cie=cie,
                 augmentation_bytes=aug_bytes,
-                structs=entry_structs, cie=cie)
+                lsda_pointer=lsda_pointer,
+            )
         return self._entry_cache[offset]
 
     def _parse_instructions(self, structs, offset, end_offset):
@@ -323,6 +333,31 @@ class CallFrameInfo(object):
             self.stream)['length']
         return self.stream.read(augmentation_data_length)
 
+    def _parse_lsda_pointer(self, structs, stream_offset, encoding):
+        """ Parse bytes to get an LSDA pointer.
+        """
+        assert encoding != DW_EH_encoding_flags['DW_EH_PE_omit']
+        basic_encoding = encoding & 0x0f
+        modifier = encoding & 0xf0
+
+        formats = self._eh_encoding_to_field(structs)
+
+        ptr = struct_parse(
+            Struct('Augmentation_Data',
+                   formats[basic_encoding]('LSDA_pointer')),
+            self.stream, stream_pos=stream_offset)['LSDA_pointer']
+
+        if modifier == 0:
+            pass
+
+        elif modifier == DW_EH_encoding_flags['DW_EH_PE_pcrel']:
+            ptr += self.address + stream_offset
+
+        else:
+            assert False, 'Unsupported encoding modifier for LSDA pointer: {:#x}'.format(modifier)
+
+        return ptr
+
     def _parse_fde_header(self, entry_structs, offset):
         """ Compute a struct to parse the header of the current FDE.
         """
@@ -369,7 +404,8 @@ class CallFrameInfo(object):
 
         return result
 
-    def _eh_encoding_to_field(self, entry_structs):
+    @staticmethod
+    def _eh_encoding_to_field(entry_structs):
         """
         Return a mapping from basic encodings (DW_EH_encoding_flags) the
         corresponding field constructors (for instance
@@ -436,14 +472,14 @@ class CFIEntry(object):
             http://www.airs.com/blog/archives/460.
     """
     def __init__(self, header, structs, instructions, offset,
-            augmentation_dict={}, augmentation_bytes=b'', cie=None):
+            augmentation_dict=None, augmentation_bytes=b'', cie=None):
         self.header = header
         self.structs = structs
         self.instructions = instructions
         self.offset = offset
         self.cie = cie
         self._decoded_table = None
-        self.augmentation_dict = augmentation_dict
+        self.augmentation_dict = augmentation_dict if augmentation_dict else {}
         self.augmentation_bytes = augmentation_bytes
 
     def get_decoded(self):
@@ -593,7 +629,9 @@ class CIE(CFIEntry):
 
 
 class FDE(CFIEntry):
-    pass
+    def __init__(self, header, structs, instructions, offset, augmentation_bytes=None, cie=None, lsda_pointer=None):
+        super().__init__(header, structs, instructions, offset, augmentation_bytes=augmentation_bytes, cie=cie)
+        self.lsda_pointer = lsda_pointer
 
 
 class ZERO(object):
