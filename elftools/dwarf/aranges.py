@@ -49,7 +49,10 @@ class ARanges(object):
             'offset' refers to the offset in the .debug_info section.
         """
         tup = self.entries[bisect_right(self.keys, addr) - 1]
-        return tup.info_offset
+        if tup.begin_addr <= addr < tup.begin_addr + tup.length:
+            return tup.info_offset
+        else:
+            return None
 
 
     #------ PRIVATE ------#
