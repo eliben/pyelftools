@@ -203,10 +203,8 @@ def _init_dispatch_table(structs):
     add('DW_OP_const2s', parse_arg_struct(structs.Dwarf_int16('')))
     add('DW_OP_const4u', parse_arg_struct(structs.Dwarf_uint32('')))
     add('DW_OP_const4s', parse_arg_struct(structs.Dwarf_int32('')))
-    add('DW_OP_const8u', parse_arg_struct2(structs.Dwarf_uint32(''),
-                                           structs.Dwarf_uint32('')))
-    add('DW_OP_const8s', parse_arg_struct2(structs.Dwarf_int32(''),
-                                           structs.Dwarf_int32('')))
+    add('DW_OP_const8u', parse_arg_struct(structs.Dwarf_uint64('')))
+    add('DW_OP_const8s', parse_arg_struct(structs.Dwarf_int64('')))
     add('DW_OP_constu', parse_arg_struct(structs.Dwarf_uleb128('')))
     add('DW_OP_consts', parse_arg_struct(structs.Dwarf_sleb128('')))
     add('DW_OP_pick', parse_arg_struct(structs.Dwarf_uint8('')))
