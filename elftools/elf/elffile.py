@@ -14,9 +14,13 @@ try:
     import resource
     PAGESIZE = resource.getpagesize()
 except ImportError:
-    # Windows system
-    import mmap
-    PAGESIZE = mmap.PAGESIZE
+    try:
+        # Windows system
+        import mmap
+        PAGESIZE = mmap.PAGESIZE
+    except ImportError:
+        # Jython
+        PAGESIZE = 4096
 
 from ..common.py3compat import BytesIO
 from ..common.exceptions import ELFError
