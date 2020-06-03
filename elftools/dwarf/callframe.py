@@ -335,6 +335,12 @@ class CallFrameInfo(object):
 
     def _parse_lsda_pointer(self, structs, stream_offset, encoding):
         """ Parse bytes to get an LSDA pointer.
+
+        The basic encoding (lower four bits of the encoding) describes how the values are encoded in a CIE or an FDE.
+        The modifier (upper four bits of the encoding) describes how the raw values, after decoded using a basic
+        encoding, should be modified before using.
+
+        Ref: https://www.airs.com/blog/archives/460
         """
         assert encoding != DW_EH_encoding_flags['DW_EH_PE_omit']
         basic_encoding = encoding & 0x0f
@@ -347,7 +353,7 @@ class CallFrameInfo(object):
                    formats[basic_encoding]('LSDA_pointer')),
             self.stream, stream_pos=stream_offset)['LSDA_pointer']
 
-        if modifier == 0:
+        if modifier == DW_EH_encoding_flags['DW_EH_PE_absptr']:
             pass
 
         elif modifier == DW_EH_encoding_flags['DW_EH_PE_pcrel']:
