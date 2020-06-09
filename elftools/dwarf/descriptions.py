@@ -159,6 +159,8 @@ def describe_reg_name(regnum, machine_arch=None, default=True):
         return _REG_NAMES_x86[regnum]
     elif machine_arch == 'x64':
         return _REG_NAMES_x64[regnum]
+    elif machine_arch == 'AArch64':
+        return _REG_NAMES_AArch64[regnum]
     elif default:
         return 'r%s' % regnum
     else:
@@ -526,6 +528,14 @@ _REG_NAMES_x64 = [
     'mm7', 'rflags', 'es', 'cs', 'ss', 'ds', 'fs', 'gs',
     '<none>', '<none>', 'fs.base', 'gs.base', '<none>', '<none>', 'tr', 'ldtr',
     'mxcsr', 'fcw', 'fsw'
+]
+
+# https://developer.arm.com/docs/ihi0057/c/dwarf-for-the-arm-64-bit-architecture-aarch64-abi-2018q4#id24
+_REG_NAMES_AArch64 = [
+    'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'x9',
+    'x10', 'x11', 'x12', 'x13', 'x14', 'x15', 'x16', 'x17', 'x18', 'x19',
+    'x20', 'x21', 'x22', 'x23', 'x24', 'x25', 'x26', 'x27', 'x28', 'x29',
+    'x30', 'sp'
 ]
 
 

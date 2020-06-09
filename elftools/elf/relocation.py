@@ -12,7 +12,8 @@ from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
 from .sections import Section
 from .enums import (
-    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS, ENUM_RELOC_TYPE_ARM, ENUM_D_TAG)
+    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
+    ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_D_TAG)
 
 
 class Relocation(object):
@@ -172,6 +173,8 @@ class RelocationHandler(object):
                 raise ELFRelocationError(
                     'Unexpected RELA relocation for ARM: %s' % reloc)
             recipe = self._RELOCATION_RECIPES_ARM.get(reloc_type, None)
+        elif self.elffile.get_machine_arch() == 'AArch64':
+            recipe = self._RELOCATION_RECIPES_AARCH64.get(reloc_type, None)
 
         if recipe is None:
             raise ELFRelocationError(
@@ -245,6 +248,16 @@ class RelocationHandler(object):
         ENUM_RELOC_TYPE_ARM['R_ARM_CALL']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False,
             calc_func=_arm_reloc_calc_sym_plus_value_pcrel),
+    }
+
+    _RELOCATION_RECIPES_AARCH64 = {
+        ENUM_RELOC_TYPE_AARCH64['R_AARCH64_ABS64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_AARCH64['R_AARCH64_ABS32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_AARCH64['R_AARCH64_PREL32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True,
+            calc_func=_reloc_calc_sym_plus_addend_pcrel),
     }
 
     # https://dmz-portal.mips.com/wiki/MIPS_relocation_types
