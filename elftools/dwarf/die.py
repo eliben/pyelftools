@@ -110,7 +110,7 @@ class DIE(object):
                          'DW_FORM_ref8', 'DW_FORM_ref'):
             refaddr = self.cu.cu_offset + attr.raw_value
             return self.cu.get_DIE_from_refaddr(refaddr)
-        elif attr.form in ('DW_FORM_refaddr'):
+        elif attr.form in ('DW_FORM_ref_addr'):
             return self.cu.dwarfinfo.get_DIE_from_refaddr(attr.raw_value)
         elif attr.form in ('DW_FORM_ref_sig8'):
             # Implement search type units for matching signature
