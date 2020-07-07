@@ -13,6 +13,7 @@ from elftools.dwarf.callframe import (
 from elftools.dwarf.structs import DWARFStructs
 from elftools.dwarf.descriptions import (describe_CFI_instructions,
     set_global_machine_arch)
+from elftools.dwarf.enums import DW_EH_encoding_flags
 from elftools.elf.elffile import ELFFile
 from os.path import join
 
@@ -85,6 +86,7 @@ class TestCallFrame(unittest.TestCase):
         self.assertEqual(entries[1]['length'], 40)
         self.assertEqual(entries[1]['CIE_pointer'], 0)
         self.assertEqual(entries[1]['address_range'], 84)
+        self.assertIsNone(entries[1].lsda_pointer)
         self.assertIs(entries[1].cie, entries[0])
         self.assertEqual(len(entries[1].instructions), 21)
         self.assertInstruction(entries[1].instructions[0],
@@ -166,6 +168,56 @@ class TestCallFrame(unittest.TestCase):
             )
             self.assertEqual(oracle_decoded.table[0]['cfa'].offset,
                 decoded.table[0]['cfa'].offset)
+
+    def test_ehframe_fde_with_lsda_pointer(self):
+        # CIE and FDE dumped from exceptions_0, offset 0xcc0
+        # binary is at https://github.com/angr/binaries/blob/master/tests/x86_64/exceptions_0
+        data = (b'' +
+            # CIE
+            b'\x1c\x00\x00\x00' +       # length
+            b'\x00\x00\x00\x00' +       # ID
+            b'\x01' +                   # version
+            b'\x7a\x50\x4c\x52\x00' +   # augmentation string
+            b'\x01' +                   # code alignment
+            b'\x78' +                   # data alignment
+            b'\x10' +                   # return address register
+            b'\x07' +                   # augmentation data length
+            b'\x9b' +                   # personality function pointer encoding
+            b'\x3d\x13\x20\x00' +       # personality function pointer
+            b'\x1b' +                   # LSDA pointer encoding
+            b'\x1b' +                   # FDE encoding
+            b'\x0c\x07\x08\x90' +       # initial instructions
+            b'\x01\x00\x00' +
+            # FDE
+            b'\x24\x00\x00\x00' +       # length
+            b'\x24\x00\x00\x00' +       # CIE reference pointer
+            b'\x62\xfd\xff\xff' +       # pc begin
+            b'\x89\x00\x00\x00' +       # pc range
+            b'\x04' +                   # augmentation data length
+            b'\xb7\x00\x00\x00' +       # LSDA pointer
+            b'\x41\x0e\x10\x86' +       # initial instructions
+            b'\x02\x43\x0d\x06' +
+            b'\x45\x83\x03\x02' +
+            b'\x7f\x0c\x07\x08' +
+            b'\x00\x00\x00'
+            )
+        s = BytesIO(data)
+
+        structs = DWARFStructs(little_endian=True, dwarf_format=32, address_size=8)
+        cfi = CallFrameInfo(s, len(data), 0, structs, for_eh_frame=True)
+        entries = cfi.get_entries()
+
+        self.assertEqual(len(entries), 2)
+        self.assertIsInstance(entries[0], CIE)
+        self.assertIn('LSDA_encoding', entries[0].augmentation_dict)
+        # check LSDA encoding
+        lsda_encoding = entries[0].augmentation_dict['LSDA_encoding']
+        basic_encoding = lsda_encoding & 0x0f
+        modifier = lsda_encoding & 0xf0
+        self.assertEqual(basic_encoding, DW_EH_encoding_flags['DW_EH_PE_sdata4'])
+        self.assertEqual(modifier, DW_EH_encoding_flags['DW_EH_PE_pcrel'])
+        self.assertIsInstance(entries[1], FDE)
+        self.assertEqual(entries[1].lsda_pointer, 232)
 
 if __name__ == '__main__':
     unittest.main()
