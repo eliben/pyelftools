@@ -155,9 +155,7 @@ class CompileUnit(object):
                 cur_offset += child.size
             elif "DW_AT_sibling" in child.attributes:
                 sibling = child.attributes["DW_AT_sibling"]
-                cur_offset = sibling.value
-                if sibling.form != 'DW_FORM_ref_addr':
-                    cur_offset += self.cu_offset
+                cur_offset = sibling.value + self.cu_offset
             else:
                 # If no DW_AT_sibling attribute is provided by the producer
                 # then the whole child subtree must be parsed to find its next
