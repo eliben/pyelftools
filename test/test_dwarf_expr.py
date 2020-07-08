@@ -53,8 +53,11 @@ class TestExprDumper(unittest.TestCase):
         self.assertEqual(self.visitor.dump_expr([0x1d, 0x1e, 0x1d, 0x1e, 0x1d, 0x1e]),
             'DW_OP_mod; DW_OP_mul; DW_OP_mod; DW_OP_mul; DW_OP_mod; DW_OP_mul')
 
-        self.assertEqual(self.visitor.dump_expr([0x08, 0x0f, 0xe0]),
-            'DW_OP_const1u: 15; DW_OP_GNU_push_tls_address')
+        self.assertIn(self.visitor.dump_expr([0x08, 0x0f, 0xe0]),
+                      ('DW_OP_const1u: 15; DW_OP_GNU_push_tls_address',
+                       'DW_OP_const1u: 15; DW_OP_lo_user',
+                       )
+                      )
 
 
 class TestParseExpr(unittest.TestCase):
@@ -75,7 +78,11 @@ class TestParseExpr(unittest.TestCase):
         self.assertEqual(lst, [DWARFExprOp(op=0x90, op_name='DW_OP_regx', args=[16])])
 
         lst = p.parse_expr([0xe0])
-        self.assertEqual(lst, [DWARFExprOp(op=0xe0, op_name='DW_OP_GNU_push_tls_address', args=[])])
+        self.assertEqual(len(lst), 1)
+        self.assertIn(lst[0], [
+            DWARFExprOp(op=0xe0, op_name='DW_OP_GNU_push_tls_address', args=[]),
+            DWARFExprOp(op=0xe0, op_name='DW_OP_lo_user', args=[])
+        ])
 
 
 if __name__ == '__main__':
