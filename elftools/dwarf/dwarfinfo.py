@@ -147,7 +147,7 @@ class DWARFInfo(object):
             .debug_info section.
 
             refaddr:
-                Either a refaddr of a DIE (possibly from a DW_FORM_refaddr
+                Either a refaddr of a DIE (possibly from a DW_FORM_ref_addr
                 attribute) or the section offset of a CU (possibly from an
                 aranges table).
 
