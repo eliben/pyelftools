@@ -636,7 +636,7 @@ class CIE(CFIEntry):
 
 class FDE(CFIEntry):
     def __init__(self, header, structs, instructions, offset, augmentation_bytes=None, cie=None, lsda_pointer=None):
-        super().__init__(header, structs, instructions, offset, augmentation_bytes=augmentation_bytes, cie=cie)
+        super(FDE, self).__init__(header, structs, instructions, offset, augmentation_bytes=augmentation_bytes, cie=cie)
         self.lsda_pointer = lsda_pointer
 
 
