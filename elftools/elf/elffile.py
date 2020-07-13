@@ -120,7 +120,10 @@ class ELFFile(object):
     def num_segments(self):
         """ Number of segments in the file
         """
-        return self['e_phnum']
+        if self['e_phnum'] < 0xffff:
+            return self['e_phnum']
+        else:
+            return self.get_section(0)['sh_info']
 
     def get_segment(self, n):
         """ Get the segment at index #n from the file (Segment object)
