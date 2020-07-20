@@ -120,7 +120,17 @@ class ELFFile(object):
     def num_segments(self):
         """ Number of segments in the file
         """
-        return self['e_phnum']
+        # From: https://github.com/hjl-tools/x86-psABI/wiki/X86-psABI
+        # Section: 4.1.2 Number of Program Headers
+        # If the number of program headers is greater than or equal to
+        # PN_XNUM (0xffff), this member has the value PN_XNUM
+        # (0xffff). The actual number of program header table entries
+        # is contained in the sh_info field of the section header at
+        # index 0.
+        if self['e_phnum'] < 0xffff:
+            return self['e_phnum']
+        else:
+            return self.get_section(0)['sh_info']
 
     def get_segment(self, n):
         """ Get the segment at index #n from the file (Segment object)

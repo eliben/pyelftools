@@ -218,7 +218,7 @@ class ReadElf(object):
             # readelf weirness - why isn't e_phoff printed as hex? (for section
             # headers, it is...)
             self._emitline('There are %s program headers, starting at offset %s' % (
-                elfheader['e_phnum'], elfheader['e_phoff']))
+                self.elffile.num_segments(), elfheader['e_phoff']))
             self._emitline()
 
         self._emitline('Program Headers:')
