@@ -345,7 +345,7 @@ class FormatField(StaticField):
         return attrs
     def __setstate__(self, attrs):
         attrs["packer"] = Packer(attrs["packer"])
-        return StaticField.__setstate__(attrs)
+        return StaticField.__setstate__(self, attrs)
     def _parse(self, stream, context):
         try:
             return self.packer.unpack(_read_stream(stream, self.length))[0]
@@ -1297,6 +1297,8 @@ class Pass(Construct):
         assert obj is None
     def _sizeof(self, context):
         return 0
+    def __reduce__(self):
+        return self.__class__.__name__
 Pass = Pass(None)
 
 class Terminator(Construct):
