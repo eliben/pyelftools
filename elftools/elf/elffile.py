@@ -37,6 +37,7 @@ from .gnuversions import (
         GNUVerSymSection)
 from .segments import Segment, InterpSegment, NoteSegment
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
+from ..ehabi.ehabiinfo import EHABIInfo
 from .hash import ELFHashSection, GNUHashSection
 
 class ELFFile(object):
@@ -226,6 +227,22 @@ class ELFFile(object):
                 debug_pubtypes_sec = debug_sections[debug_pubtypes_name],
                 debug_pubnames_sec = debug_sections[debug_pubnames_name]
                 )
+
+    def has_ehabi_info(self):
+        """ Check whether this file appears to have arm exception handler index table.
+        """
+        return any(s.header['sh_type'] == 'SHT_ARM_EXIDX' for s in self.iter_sections())
+
+    def get_ehabi_infos(self):
+        """ Generally, shared library and executable contain 1 .ARM.exidx section.
+            Object file contains many .ARM.exidx sections.
+            So we must traverse every section and filter sections which type is SHT_ARM_EXIDX.
+        """
+        _ret = []
+        for section in self.iter_sections():
+            if section.header['sh_type'] == 'SHT_ARM_EXIDX':
+                _ret.append(EHABIInfo(section))
+        return _ret if len(_ret) > 0 else None
 
     def get_machine_arch(self):
         """ Return the machine architecture, as detected from the ELF header.
