@@ -32,6 +32,9 @@ class EHABIInfo(object):
     def section_name(self):
         return self._arm_idx_section.name
 
+    def section_offset(self):
+        return self._arm_idx_section['sh_offset']
+
     def num_entry(self):
         """ Number of exception handler entry in the section.
         """
