@@ -8,6 +8,7 @@
 # -------------------------------------------------------------------------------
 
 from ..common.utils import struct_parse
+from ..common.py3compat import byte2int
 from ..construct.core import Struct
 from ..construct.macros import ULInt32
 
@@ -88,10 +89,10 @@ class EHABIInfo(object):
                     self._arm_idx_section.stream.seek(eh_table_offset + 4)
                     for i in range(more_word):
                         r = self._arm_idx_section.stream.read(4)
-                        opcode.append((ord(r[3])))
-                        opcode.append((ord(r[2])))
-                        opcode.append((ord(r[1])))
-                        opcode.append((ord(r[0])))
+                        opcode.append((byte2int(r[3])))
+                        opcode.append((byte2int(r[2])))
+                        opcode.append((byte2int(r[1])))
+                        opcode.append((byte2int(r[0])))
                     return EHABIEntry(function_offset, per_index, opcode, eh_table_offset=eh_table_offset)
         else:
             # highest bit is one, compact model must be 0
