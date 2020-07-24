@@ -239,6 +239,10 @@ class ELFFile(object):
             So we must traverse every section and filter sections which type is SHT_ARM_EXIDX.
         """
         _ret = []
+        if self.header['e_type'] == 'ET_REL':
+            # TODO: support relocatable file
+            print ("Current version of pyelftools doesn't support relocatable file.")
+            return _ret
         for section in self.iter_sections():
             if section.header['sh_type'] == 'SHT_ARM_EXIDX':
                 _ret.append(EHABIInfo(section))

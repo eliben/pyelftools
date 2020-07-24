@@ -22,7 +22,7 @@ class TestEHABIELF(unittest.TestCase):
         with open(fname, 'rb') as f:
             elf = ELFFile(f)
             ehabi_infos = elf.get_ehabi_infos()
-            self.assertEqual(100, len(ehabi_infos))
+            self.assertEqual(0, len(ehabi_infos))
             # TODO
 
     def test_parse_shared_library(self):
