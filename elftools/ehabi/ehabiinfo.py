@@ -56,6 +56,7 @@ class EHABIInfo(object):
         Word0, Word1 = eh_index_data['Word0'], eh_index_data['Word1']
 
         if Word0 & 0x80000000 != 0:
+            print ('Corrupt ARM exception handler table entry: %x' % n)
             return CorruptEHABIEntry()
 
         function_offset = arm_expand_prel31(Word0, self._arm_idx_section['sh_offset'] + n * EHABI_INDEX_ENTRY_SIZE)
@@ -85,7 +86,7 @@ class EHABIInfo(object):
                     # arm compact model 0
                     opcode = [(Word0 & 0xFF0000) >> 16, (Word0 & 0xFF00) >> 8, Word0 & 0xFF]
                     return EHABIEntry(function_offset, per_index, opcode)
-                else:
+                elif per_index == 1 or per_index == 2:
                     # arm compact model 1/2
                     more_word = (Word0 >> 16) & 0xff
                     opcode = [(Word0 >> 8) & 0xff, (Word0 >> 0) & 0xff]
@@ -97,6 +98,9 @@ class EHABIInfo(object):
                         opcode.append((byte2int(r[1])))
                         opcode.append((byte2int(r[0])))
                     return EHABIEntry(function_offset, per_index, opcode, eh_table_offset=eh_table_offset)
+                else:
+                    print ('Unknown ARM compact model %d at table entry: %x' % (per_index, n))
+                    return CorruptEHABIEntry()
         else:
             # highest bit is one, compact model must be 0
             if Word1 & 0x70000000 != 0:
