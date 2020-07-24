@@ -51,6 +51,9 @@ class TestEHABIELF(unittest.TestCase):
             self.assertEqual(info.get_entry(9).function_offset, 0x3477c)
             self.assertEqual(info.get_entry(9).personality, 0x31a30)
 
+            for i in range(info.num_entry()):
+                self.assertIsNotNone(info.get_entry(i))
+
     def test_parse_executable(self):
         fname = os.path.join('test', 'testfiles_for_unittests', 'arm_exidx_test.elf')
         with open(fname, 'rb') as f:
@@ -76,6 +79,8 @@ class TestEHABIELF(unittest.TestCase):
             self.assertEqual(info.get_entry(9).personality, 0)
             self.assertEqual(info.get_entry(9).bytecode_array, [0x97, 0x84, 0x08])
 
+            for i in range(info.num_entry()):
+                self.assertIsNotNone(info.get_entry(i))
 
 if __name__ == '__main__':
     unittest.main()
