@@ -8,7 +8,7 @@
 import unittest
 import os
 
-from elftools.ehabi.ehabiinfo import EHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry
+from elftools.ehabi.ehabiinfo import EHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry, CorruptEHABIEntry
 from elftools.elf.elffile import ELFFile
 
 
@@ -52,7 +52,7 @@ class TestEHABIELF(unittest.TestCase):
             self.assertEqual(info.get_entry(9).personality, 0x31a30)
 
             for i in range(info.num_entry()):
-                self.assertIsNotNone(info.get_entry(i))
+                self.assertNotIsInstance(info.get_entry(i), CorruptEHABIEntry)
 
     def test_parse_executable(self):
         fname = os.path.join('test', 'testfiles_for_unittests', 'arm_exidx_test.elf')
@@ -80,7 +80,7 @@ class TestEHABIELF(unittest.TestCase):
             self.assertEqual(info.get_entry(9).bytecode_array, [0x97, 0x84, 0x08])
 
             for i in range(info.num_entry()):
-                self.assertIsNotNone(info.get_entry(i))
+                self.assertNotIsInstance(info.get_entry(i), CorruptEHABIEntry)
 
 if __name__ == '__main__':
     unittest.main()
