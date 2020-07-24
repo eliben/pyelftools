@@ -103,7 +103,7 @@ class EHABIInfo(object):
                     return CorruptEHABIEntry()
         else:
             # highest bit is one, compact model must be 0
-            if Word1 & 0x70000000 != 0:
+            if Word1 & 0x7f000000 != 0:
                 print('Corrupt ARM compact model table entry: %x' % n)
                 return CorruptEHABIEntry()
             opcode = [(Word1 & 0xFF0000) >> 16, (Word1 & 0xFF00) >> 8, Word1 & 0xFF]
