@@ -211,7 +211,7 @@ def arm_expand_prel31(address, place):
        place: uint32
        return: uint64
     """
-    Location = address & 0x7fffffff
-    if Location & 0x04000000:
-        Location |= 0xffffffff80000000
-    return Location + place & 0xffffffffffffffff
+    location = address & 0x7fffffff
+    if location & 0x04000000:
+        location |= 0xffffffff80000000
+    return location + place & 0xffffffffffffffff
