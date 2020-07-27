@@ -236,7 +236,7 @@ class ELFFile(object):
     def get_ehabi_infos(self):
         """ Generally, shared library and executable contain 1 .ARM.exidx section.
             Object file contains many .ARM.exidx sections.
-            So we must traverse every section and filter sections which type is SHT_ARM_EXIDX.
+            So we must traverse every section and filter sections whose type is SHT_ARM_EXIDX.
         """
         _ret = []
         if self.header['e_type'] == 'ET_REL':
@@ -245,7 +245,7 @@ class ELFFile(object):
             return _ret
         for section in self.iter_sections():
             if section.header['sh_type'] == 'SHT_ARM_EXIDX':
-                _ret.append(EHABIInfo(section))
+                _ret.append(EHABIInfo(section, self.little_endian))
         return _ret if len(_ret) > 0 else None
 
     def get_machine_arch(self):

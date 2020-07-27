@@ -8,12 +8,10 @@
 # -------------------------------------------------------------------------------
 
 from ..common.utils import struct_parse
-from ..common.py3compat import byte2int
-from ..construct.core import Struct
-from ..construct.macros import ULInt32
 
 from .decoder import EHABIBytecodeDecoder
 from .constants import EHABI_INDEX_ENTRY_SIZE
+from .structs import EHABIStructs
 
 
 class EHABIInfo(object):
@@ -25,8 +23,9 @@ class EHABIInfo(object):
                 elf.sections.Section object, section which type is SHT_ARM_EXIDX.
     """
 
-    def __init__(self, arm_idx_section):
+    def __init__(self, arm_idx_section, little_endian):
         self._arm_idx_section = arm_idx_section
+        self._struct = EHABIStructs(little_endian)
         self._num_entry = None
 
     def section_name(self):
@@ -48,11 +47,7 @@ class EHABIInfo(object):
         if n >= self.num_entry():
             raise IndexError('Invalid entry %d/%d' % (n, self._num_entry))
         eh_index_entry_offset = self._arm_idx_section['sh_offset'] + n * EHABI_INDEX_ENTRY_SIZE
-        eh_index_data = struct_parse(Struct(
-            'EH_Index',
-            ULInt32('Word0'),
-            ULInt32('Word1')
-        ), self._arm_idx_section.stream, eh_index_entry_offset)
+        eh_index_data = struct_parse(self._struct.EH_index_struct, self._arm_idx_section.stream, eh_index_entry_offset)
         Word0, Word1 = eh_index_data['Word0'], eh_index_data['Word1']
 
         if Word0 & 0x80000000 != 0:
@@ -67,10 +62,7 @@ class EHABIInfo(object):
         elif Word1 & 0x80000000 == 0:
             # highest bit is zero, point to .ARM.extab data
             eh_table_offset = arm_expand_prel31(Word1, self._arm_idx_section['sh_offset'] + n * EHABI_INDEX_ENTRY_SIZE + 4)
-            eh_index_data = struct_parse(Struct(
-                'EH_Table',
-                ULInt32('Word0'),
-            ), self._arm_idx_section.stream, eh_table_offset)
+            eh_index_data = struct_parse(self._struct.EH_table_struct, self._arm_idx_section.stream, eh_table_offset)
             Word0 = eh_index_data['Word0']
             if Word0 & 0x80000000 == 0:
                 # highest bit is one, generic model
@@ -92,11 +84,11 @@ class EHABIInfo(object):
                     opcode = [(Word0 >> 8) & 0xff, (Word0 >> 0) & 0xff]
                     self._arm_idx_section.stream.seek(eh_table_offset + 4)
                     for i in range(more_word):
-                        r = self._arm_idx_section.stream.read(4)
-                        opcode.append((byte2int(r[3])))
-                        opcode.append((byte2int(r[2])))
-                        opcode.append((byte2int(r[1])))
-                        opcode.append((byte2int(r[0])))
+                        r = struct_parse(self._struct.EH_table_struct, self._arm_idx_section.stream)['Word0']
+                        opcode.append((r >> 24) & 0xFF)
+                        opcode.append((r >> 16) & 0xFF)
+                        opcode.append((r >> 8) & 0xFF)
+                        opcode.append((r >> 0) & 0xFF)
                     return EHABIEntry(function_offset, per_index, opcode, eh_table_offset=eh_table_offset)
                 else:
                     print ('Unknown ARM compact model %d at table entry: %x' % (per_index, n))
