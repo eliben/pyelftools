@@ -21,6 +21,9 @@ class EHABIInfo(object):
 
             arm_idx_section:
                 elf.sections.Section object, section which type is SHT_ARM_EXIDX.
+
+            little_endian:
+                bool, endianness of elf file.
     """
 
     def __init__(self, arm_idx_section, little_endian):
