@@ -49,45 +49,45 @@ class EHABIInfo(object):
         """
         if n >= self.num_entry():
             raise IndexError('Invalid entry %d/%d' % (n, self._num_entry))
-        eh_index_entry_offset = self._arm_idx_section['sh_offset'] + n * EHABI_INDEX_ENTRY_SIZE
+        eh_index_entry_offset = self.section_offset() + n * EHABI_INDEX_ENTRY_SIZE
         eh_index_data = struct_parse(self._struct.EH_index_struct, self._arm_idx_section.stream, eh_index_entry_offset)
-        Word0, Word1 = eh_index_data['Word0'], eh_index_data['Word1']
+        word0, word1 = eh_index_data['word0'], eh_index_data['word1']
 
-        if Word0 & 0x80000000 != 0:
+        if word0 & 0x80000000 != 0:
             print ('Corrupt ARM exception handler table entry: %x' % n)
             return CorruptEHABIEntry()
 
-        function_offset = arm_expand_prel31(Word0, self._arm_idx_section['sh_offset'] + n * EHABI_INDEX_ENTRY_SIZE)
+        function_offset = arm_expand_prel31(word0, self.section_offset() + n * EHABI_INDEX_ENTRY_SIZE)
 
-        if Word1 == 1:
+        if word1 == 1:
             # 0x1 means cannot unwind
             return CannotUnwindEHABIEntry(function_offset)
-        elif Word1 & 0x80000000 == 0:
+        elif word1 & 0x80000000 == 0:
             # highest bit is zero, point to .ARM.extab data
-            eh_table_offset = arm_expand_prel31(Word1, self._arm_idx_section['sh_offset'] + n * EHABI_INDEX_ENTRY_SIZE + 4)
+            eh_table_offset = arm_expand_prel31(word1, self.section_offset() + n * EHABI_INDEX_ENTRY_SIZE + 4)
             eh_index_data = struct_parse(self._struct.EH_table_struct, self._arm_idx_section.stream, eh_table_offset)
-            Word0 = eh_index_data['Word0']
-            if Word0 & 0x80000000 == 0:
+            word0 = eh_index_data['word0']
+            if word0 & 0x80000000 == 0:
                 # highest bit is one, generic model
-                return GenericEHABIEntry(function_offset, arm_expand_prel31(Word0, eh_table_offset))
+                return GenericEHABIEntry(function_offset, arm_expand_prel31(word0, eh_table_offset))
             else:
                 # highest bit is one, arm compact model
                 # highest half must be 0b1000 for compact model
-                if Word0 & 0x70000000 != 0:
+                if word0 & 0x70000000 != 0:
                     print ('Corrupt ARM compact model table entry: %x' % n)
                     return CorruptEHABIEntry()
-                per_index = (Word0 >> 24) & 0x7f
+                per_index = (word0 >> 24) & 0x7f
                 if per_index == 0:
                     # arm compact model 0
-                    opcode = [(Word0 & 0xFF0000) >> 16, (Word0 & 0xFF00) >> 8, Word0 & 0xFF]
+                    opcode = [(word0 & 0xFF0000) >> 16, (word0 & 0xFF00) >> 8, word0 & 0xFF]
                     return EHABIEntry(function_offset, per_index, opcode)
                 elif per_index == 1 or per_index == 2:
                     # arm compact model 1/2
-                    more_word = (Word0 >> 16) & 0xff
-                    opcode = [(Word0 >> 8) & 0xff, (Word0 >> 0) & 0xff]
+                    more_word = (word0 >> 16) & 0xff
+                    opcode = [(word0 >> 8) & 0xff, (word0 >> 0) & 0xff]
                     self._arm_idx_section.stream.seek(eh_table_offset + 4)
                     for i in range(more_word):
-                        r = struct_parse(self._struct.EH_table_struct, self._arm_idx_section.stream)['Word0']
+                        r = struct_parse(self._struct.EH_table_struct, self._arm_idx_section.stream)['word0']
                         opcode.append((r >> 24) & 0xFF)
                         opcode.append((r >> 16) & 0xFF)
                         opcode.append((r >> 8) & 0xFF)
@@ -98,10 +98,10 @@ class EHABIInfo(object):
                     return CorruptEHABIEntry()
         else:
             # highest bit is one, compact model must be 0
-            if Word1 & 0x7f000000 != 0:
+            if word1 & 0x7f000000 != 0:
                 print('Corrupt ARM compact model table entry: %x' % n)
                 return CorruptEHABIEntry()
-            opcode = [(Word1 & 0xFF0000) >> 16, (Word1 & 0xFF00) >> 8, Word1 & 0xFF]
+            opcode = [(word1 & 0xFF0000) >> 16, (word1 & 0xFF00) >> 8, word1 & 0xFF]
             return EHABIEntry(function_offset, 0, opcode)
 
 

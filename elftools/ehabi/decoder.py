@@ -66,15 +66,15 @@ class EHABIBytecodeDecoder(object):
         self._index += 1
         return 'vsp = vsp - %u' % (((opcode & 0x3f) << 2) + 4)
 
-    GPR_register_names = ("r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
+    gpr_register_names = ("r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
                         "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc")
 
-    def _printGPR(self, GPR_mask):
-        hits = [self.GPR_register_names[i] for i in range(32) if GPR_mask & (1 << i) != 0]
+    def _printGPR(self, gpr_mask):
+        hits = [self.gpr_register_names[i] for i in range(32) if gpr_mask & (1 << i) != 0]
         return '{%s}' % ', '.join(hits)
 
-    def _print_registers(self, VFP_mask, prefix):
-        hits = [prefix + str(i) for i in range(32) if VFP_mask & (1 << i) != 0]
+    def _print_registers(self, vfp_mask, prefix):
+        hits = [prefix + str(i) for i in range(32) if vfp_mask & (1 << i) != 0]
         return '{%s}' % ', '.join(hits)
 
     def _decode_1000iiii_iiiiiiii(self):
@@ -88,11 +88,11 @@ class EHABIBytecodeDecoder(object):
         #               Opcode0, Opcode1, GPRMask ? "pop " : "refuse to unwind");
         #   if (GPRMask)
         #     PrintGPR(GPRMask);
-        GPR_mask = (op1 << 4) | ((op0 & 0x0f) << 12)
-        if GPR_mask == 0:
+        gpr_mask = (op1 << 4) | ((op0 & 0x0f) << 12)
+        if gpr_mask == 0:
             return 'refuse to unwind'
         else:
-            return 'pop %s' % self._printGPR(GPR_mask)
+            return 'pop %s' % self._printGPR(gpr_mask)
 
     def _decode_10011101(self):
         self._index += 1
