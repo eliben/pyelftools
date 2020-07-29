@@ -164,8 +164,7 @@ class EHABIBytecodeDecoder(object):
         return self._decode_11001001_sssscccc()
 
     def _decode_101101nn(self):
-        self._index += 1
-        return 'spare'
+        return self._spare()
 
     def _decode_10111nnn(self):
         #  SW.startLine() << format("0x%02X      ; pop ", Opcode);
@@ -225,8 +224,7 @@ class EHABIBytecodeDecoder(object):
         return 'pop %s' % self._print_registers((((1 << (count + 1)) - 1) << start), "d")
 
     def _decode_11001yyy(self):
-        self._index += 1
-        return 'spare'
+        return self._spare()
 
     def _decode_11000nnn(self):
         #   SW.startLine() << format("0x%02X      ; pop ", Opcode);
@@ -243,6 +241,9 @@ class EHABIBytecodeDecoder(object):
         return 'pop %s' % self._print_registers((((1 << ((opcode & 0x07) + 1)) - 1) << 8), "d")
 
     def _decode_11xxxyyy(self):
+        return self._spare()
+
+    def _spare(self):
         self._index += 1
         return 'spare'
 
