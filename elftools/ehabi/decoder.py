@@ -67,7 +67,7 @@ class EHABIBytecodeDecoder(object):
         return 'vsp = vsp - %u' % (((opcode & 0x3f) << 2) + 4)
 
     gpr_register_names = ("r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-                        "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc")
+                          "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc")
 
     def _printGPR(self, gpr_mask):
         hits = [self.gpr_register_names[i] for i in range(32) if gpr_mask & (1 << i) != 0]

@@ -142,8 +142,7 @@ class EHABIEntry(object):
                  bytecode_array,
                  eh_table_offset=None,
                  unwindable=True,
-                 corrupt=False
-                 ):
+                 corrupt=False):
         self.function_offset = function_offset
         self.personality = personality
         self.bytecode_array = bytecode_array
