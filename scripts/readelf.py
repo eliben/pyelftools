@@ -1506,7 +1506,7 @@ def main(stream=None):
     argparser.add_argument('-r', '--relocs',
             action='store_true', dest='show_relocs',
             help='Display the relocations (if present)')
-    argparser.add_argument('-au', '--arm_unwind',
+    argparser.add_argument('-au', '--arm-unwind',
             action='store_true', dest='show_arm_unwind',
             help='Display the armeabi unwind information (if present)')
     argparser.add_argument('-x', '--hex-dump',
