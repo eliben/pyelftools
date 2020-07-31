@@ -6,6 +6,7 @@
 # LeadroyaL (leadroyal@qq.com)
 # This code is in the public domain
 # -------------------------------------------------------------------------------
+from collections import namedtuple
 
 
 class EHABIBytecodeDecoder(object):
@@ -18,38 +19,34 @@ class EHABIBytecodeDecoder(object):
         Accessible attributes:
 
             mnemonic_array:
-                before decode, None.
-                after decode, MnemonicItem array.
+                MnemonicItem array.
 
         Parameters:
 
             bytecode_array:
                 Integer array, raw data of bytecode.
 
-            auto_decode:
-                bool, whether bytecode should be decoded during construction.
-                (default : true)
     """
 
-    def __init__(self, bytecode_array, auto_decode=True):
+    def __init__(self, bytecode_array):
         self._bytecode_array = bytecode_array
         self._index = None
         self.mnemonic_array = None
-        if auto_decode:
-            self.decode()
+        self._decode()
 
-    def decode(self):
+    def _decode(self):
         """ Decode bytecode array, put result into mnemonic_array.
         """
         self._index = 0
         self.mnemonic_array = []
         while self._index < len(self._bytecode_array):
-            for mask, value, _decode_handler in self.ring:
+            for mask, value, handler in self.ring:
                 if (self._bytecode_array[self._index] & mask) == value:
                     start_idx = self._index
-                    mnemonic = _decode_handler(self)
+                    mnemonic = handler(self)
                     end_idx = self._index
-                    self.mnemonic_array.append(MnemonicItem(self._bytecode_array[start_idx: end_idx], mnemonic))
+                    self.mnemonic_array.append(
+                        MnemonicItem(self._bytecode_array[start_idx: end_idx], mnemonic))
                     break
 
     def _decode_00xxxxxx(self):
@@ -133,7 +130,7 @@ class EHABIBytecodeDecoder(object):
         #             ((Opcode1 & 0xf0) || Opcode1 == 0x00) ? "spare" : "pop ");
         # if (((Opcode1 & 0xf0) == 0x00) && Opcode1)
         #   PrintGPR((Opcode1 & 0x0f));
-        self._index += 1
+        self._index += 1  # skip constant byte
         op1 = self._bytecode_array[self._index]
         self._index += 1
         if (op1 & 0xf0) != 0 or op1 == 0x00:
@@ -148,7 +145,7 @@ class EHABIBytecodeDecoder(object):
         #  for (unsigned BI = 0, BE = ULEB.size(); BI != BE; ++BI)
         #    Value = Value | ((ULEB[BI] & 0x7f) << (7 * BI));
         #  OS << format("; vsp = vsp + %" PRIu64 "\n", 0x204 + (Value << 2));
-        self._index += 1
+        self._index += 1   # skip constant byte
         uleb_buffer = [self._bytecode_array[self._index]]
         self._index += 1
         while self._bytecode_array[self._index] & 0x80 == 0:
@@ -178,7 +175,7 @@ class EHABIBytecodeDecoder(object):
         #  uint8_t Start = ((Opcode1 & 0xf0) >> 4);
         #  uint8_t Count = ((Opcode1 & 0x0f) >> 0);
         #  PrintRegisters((((1 << (Count + 1)) - 1) << Start), "wR");
-        self._index += 1
+        self._index += 1  # skip constant byte
         op1 = self._bytecode_array[self._index]
         self._index += 1
         start = ((op1 & 0xf0) >> 4)
@@ -191,7 +188,7 @@ class EHABIBytecodeDecoder(object):
         #               ((Opcode1 & 0xf0) || Opcode1 == 0x00) ? "spare" : "pop ");
         #   if ((Opcode1 & 0xf0) == 0x00 && Opcode1)
         #       PrintRegisters(Opcode1 & 0x0f, "wCGR");
-        self._index += 1
+        self._index += 1  # skip constant byte
         op1 = self._bytecode_array[self._index]
         self._index += 1
         if (op1 & 0xf0) != 0 or op1 == 0x00:
@@ -204,7 +201,7 @@ class EHABIBytecodeDecoder(object):
         #   uint8_t Start = 16 + ((Opcode1 & 0xf0) >> 4);
         #   uint8_t Count = ((Opcode1 & 0x0f) >> 0);
         #   PrintRegisters((((1 << (Count + 1)) - 1) << Start), "d");
-        self._index += 1
+        self._index += 1  # skip constant byte
         op1 = self._bytecode_array[self._index]
         self._index += 1
         start = 16 + ((op1 & 0xf0) >> 4)
@@ -216,7 +213,7 @@ class EHABIBytecodeDecoder(object):
         #   uint8_t Start = ((Opcode1 & 0xf0) >> 4);
         #   uint8_t Count = ((Opcode1 & 0x0f) >> 0);
         #   PrintRegisters((((1 << (Count + 1)) - 1) << Start), "d");
-        self._index += 1
+        self._index += 1  # skip constant byte
         op1 = self._bytecode_array[self._index]
         self._index += 1
         start = ((op1 & 0xf0) >> 4)
@@ -247,29 +244,31 @@ class EHABIBytecodeDecoder(object):
         self._index += 1
         return 'spare'
 
+    _DECODE_RECIPE_TYPE = namedtuple('_DECODE_RECIPE_TYPE', 'mask value handler')
+
     ring = (
-        (0xc0, 0x00, _decode_00xxxxxx),
-        (0xc0, 0x40, _decode_01xxxxxx),
-        (0xf0, 0x80, _decode_1000iiii_iiiiiiii),
-        (0xff, 0x9d, _decode_10011101),
-        (0xff, 0x9f, _decode_10011111),
-        (0xf0, 0x90, _decode_1001nnnn),
-        (0xf8, 0xa0, _decode_10100nnn),
-        (0xf8, 0xa8, _decode_10101nnn),
-        (0xff, 0xb0, _decode_10110000),
-        (0xff, 0xb1, _decode_10110001_0000iiii),
-        (0xff, 0xb2, _decode_10110010_uleb128),
-        (0xff, 0xb3, _decode_10110011_sssscccc),
-        (0xfc, 0xb4, _decode_101101nn),
-        (0xf8, 0xb8, _decode_10111nnn),
-        (0xff, 0xc6, _decode_11000110_sssscccc),
-        (0xff, 0xc7, _decode_11000111_0000iiii),
-        (0xff, 0xc8, _decode_11001000_sssscccc),
-        (0xff, 0xc9, _decode_11001001_sssscccc),
-        (0xc8, 0xc8, _decode_11001yyy),
-        (0xf8, 0xc0, _decode_11000nnn),
-        (0xf8, 0xd0, _decode_11010nnn),
-        (0xc0, 0xc0, _decode_11xxxyyy),
+        _DECODE_RECIPE_TYPE(mask=0xc0, value=0x00, handler=_decode_00xxxxxx),
+        _DECODE_RECIPE_TYPE(mask=0xc0, value=0x40, handler=_decode_01xxxxxx),
+        _DECODE_RECIPE_TYPE(mask=0xf0, value=0x80, handler=_decode_1000iiii_iiiiiiii),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0x9d, handler=_decode_10011101),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0x9f, handler=_decode_10011111),
+        _DECODE_RECIPE_TYPE(mask=0xf0, value=0x90, handler=_decode_1001nnnn),
+        _DECODE_RECIPE_TYPE(mask=0xf8, value=0xa0, handler=_decode_10100nnn),
+        _DECODE_RECIPE_TYPE(mask=0xf8, value=0xa8, handler=_decode_10101nnn),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0xb0, handler=_decode_10110000),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0xb1, handler=_decode_10110001_0000iiii),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0xb2, handler=_decode_10110010_uleb128),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0xb3, handler=_decode_10110011_sssscccc),
+        _DECODE_RECIPE_TYPE(mask=0xfc, value=0xb4, handler=_decode_101101nn),
+        _DECODE_RECIPE_TYPE(mask=0xf8, value=0xb8, handler=_decode_10111nnn),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0xc6, handler=_decode_11000110_sssscccc),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0xc7, handler=_decode_11000111_0000iiii),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0xc8, handler=_decode_11001000_sssscccc),
+        _DECODE_RECIPE_TYPE(mask=0xff, value=0xc9, handler=_decode_11001001_sssscccc),
+        _DECODE_RECIPE_TYPE(mask=0xc8, value=0xc8, handler=_decode_11001yyy),
+        _DECODE_RECIPE_TYPE(mask=0xf8, value=0xc0, handler=_decode_11000nnn),
+        _DECODE_RECIPE_TYPE(mask=0xf8, value=0xd0, handler=_decode_11010nnn),
+        _DECODE_RECIPE_TYPE(mask=0xc0, value=0xc0, handler=_decode_11xxxyyy),
     )
 
 

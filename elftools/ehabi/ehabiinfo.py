@@ -41,7 +41,7 @@ class EHABIInfo(object):
         """ Number of exception handler entry in the section.
         """
         if self._num_entry is None:
-            self._num_entry = self._arm_idx_section.header['sh_size'] // EHABI_INDEX_ENTRY_SIZE
+            self._num_entry = self._arm_idx_section['sh_size'] // EHABI_INDEX_ENTRY_SIZE
         return self._num_entry
 
     def get_entry(self, n):
@@ -54,8 +54,7 @@ class EHABIInfo(object):
         word0, word1 = eh_index_data['word0'], eh_index_data['word1']
 
         if word0 & 0x80000000 != 0:
-            print ('Corrupt ARM exception handler table entry: %x' % n)
-            return CorruptEHABIEntry()
+            return CorruptEHABIEntry('Corrupt ARM exception handler table entry: %x' % n)
 
         function_offset = arm_expand_prel31(word0, self.section_offset() + n * EHABI_INDEX_ENTRY_SIZE)
 
@@ -74,8 +73,7 @@ class EHABIInfo(object):
                 # highest bit is one, arm compact model
                 # highest half must be 0b1000 for compact model
                 if word0 & 0x70000000 != 0:
-                    print ('Corrupt ARM compact model table entry: %x' % n)
-                    return CorruptEHABIEntry()
+                    return CorruptEHABIEntry('Corrupt ARM compact model table entry: %x' % n)
                 per_index = (word0 >> 24) & 0x7f
                 if per_index == 0:
                     # arm compact model 0
@@ -94,13 +92,11 @@ class EHABIInfo(object):
                         opcode.append((r >> 0) & 0xFF)
                     return EHABIEntry(function_offset, per_index, opcode, eh_table_offset=eh_table_offset)
                 else:
-                    print ('Unknown ARM compact model %d at table entry: %x' % (per_index, n))
-                    return CorruptEHABIEntry()
+                    return CorruptEHABIEntry('Unknown ARM compact model %d at table entry: %x' % (per_index, n))
         else:
             # highest bit is one, compact model must be 0
             if word1 & 0x7f000000 != 0:
-                print('Corrupt ARM compact model table entry: %x' % n)
-                return CorruptEHABIEntry()
+                return CorruptEHABIEntry('Corrupt ARM compact model table entry: %x' % n)
             opcode = [(word1 & 0xFF0000) >> 16, (word1 & 0xFF00) >> 8, word1 & 0xFF]
             return EHABIEntry(function_offset, 0, opcode)
 
@@ -112,21 +108,22 @@ class EHABIEntry(object):
 
             function_offset:
                 Integer.
-                Return None when corrupt.
+                None if corrupt. (Reference: CorruptEHABIEntry)
 
             personality:
                 Integer.
-                Return None when corrupt or unwindable.
+                None if corrupt or unwindable. (Reference: CorruptEHABIEntry, CannotUnwindEHABIEntry)
                 0/1/2 for ARM personality compact format.
                 Others for generic personality.
 
             bytecode_array:
                 Integer array.
-                Return None when corrupt or unwindable.
+                None if corrupt or unwindable or generic personality.
+                (Reference: CorruptEHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry)
 
             eh_table_offset:
                 Integer.
-                Return None when corrupt or unwindable or ARM inline compact.
+                Only entries who point to .ARM.extab contains this field, otherwise return None.
 
             unwindable:
                 bool. Whether this function is unwindable.
@@ -168,12 +165,13 @@ class CorruptEHABIEntry(EHABIEntry):
     """ This entry is corrupt. Attribute #corrupt will be True.
     """
 
-    def __init__(self):
+    def __init__(self, reason):
         super(CorruptEHABIEntry, self).__init__(function_offset=None, personality=None, bytecode_array=None,
                                                 corrupt=True)
+        self.reason = reason
 
     def __repr__(self):
-        return "<CorruptEHABIEntry>"
+        return "<CorruptEHABIEntry reason=%s>" % self.reason
 
 
 class CannotUnwindEHABIEntry(EHABIEntry):

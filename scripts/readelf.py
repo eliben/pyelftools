@@ -581,7 +581,7 @@ class ReadElf(object):
                 self._emitline()
                 self._emitline("Entry %d:" % i)
                 if isinstance(entry, CorruptEHABIEntry):
-                    self._emitline("    [corrupt]")
+                    self._emitline("    [corrupt] %s" % entry.reason)
                     continue
                 self._emit("    Function offset 0x%x: " % entry.function_offset)
                 if isinstance(entry, CannotUnwindEHABIEntry):

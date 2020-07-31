@@ -21,9 +21,11 @@ class TestEHABIELF(unittest.TestCase):
         fname = os.path.join('test', 'testfiles_for_unittests', 'arm_exidx_test.o')
         with open(fname, 'rb') as f:
             elf = ELFFile(f)
-            ehabi_infos = elf.get_ehabi_infos()
-            self.assertEqual(0, len(ehabi_infos))
-            # TODO
+            try:
+                elf.get_ehabi_infos()
+                self.assertTrue(False, "Unreachable code")
+            except AssertionError as e:
+                self.assertEqual(e.message, "Current version of pyelftools doesn't support relocatable file.")
 
     def test_parse_shared_library(self):
         fname = os.path.join('test', 'testfiles_for_unittests', 'arm_exidx_test.so')
@@ -81,6 +83,7 @@ class TestEHABIELF(unittest.TestCase):
 
             for i in range(info.num_entry()):
                 self.assertNotIsInstance(info.get_entry(i), CorruptEHABIEntry)
+
 
 if __name__ == '__main__':
     unittest.main()

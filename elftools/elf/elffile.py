@@ -231,7 +231,7 @@ class ELFFile(object):
     def has_ehabi_info(self):
         """ Check whether this file appears to have arm exception handler index table.
         """
-        return any(s.header['sh_type'] == 'SHT_ARM_EXIDX' for s in self.iter_sections())
+        return any(s['sh_type'] == 'SHT_ARM_EXIDX' for s in self.iter_sections())
 
     def get_ehabi_infos(self):
         """ Generally, shared library and executable contain 1 .ARM.exidx section.
@@ -239,12 +239,11 @@ class ELFFile(object):
             So we must traverse every section and filter sections whose type is SHT_ARM_EXIDX.
         """
         _ret = []
-        if self.header['e_type'] == 'ET_REL':
+        if self['e_type'] == 'ET_REL':
             # TODO: support relocatable file
-            print ("Current version of pyelftools doesn't support relocatable file.")
-            return _ret
+            assert False, "Current version of pyelftools doesn't support relocatable file."
         for section in self.iter_sections():
-            if section.header['sh_type'] == 'SHT_ARM_EXIDX':
+            if section['sh_type'] == 'SHT_ARM_EXIDX':
                 _ret.append(EHABIInfo(section, self.little_endian))
         return _ret if len(_ret) > 0 else None
 
