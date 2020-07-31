@@ -25,7 +25,7 @@ class TestEHABIELF(unittest.TestCase):
                 elf.get_ehabi_infos()
                 self.assertTrue(False, "Unreachable code")
             except AssertionError as e:
-                self.assertEqual(e.message, "Current version of pyelftools doesn't support relocatable file.")
+                self.assertEqual(str(e), "Current version of pyelftools doesn't support relocatable file.")
 
     def test_parse_shared_library(self):
         fname = os.path.join('test', 'testfiles_for_unittests', 'arm_exidx_test.so')
