@@ -41,6 +41,7 @@ setup(
         'elftools.elf',
         'elftools.common',
         'elftools.dwarf',
+        'elftools.ehabi',
         'elftools.construct', 'elftools.construct.lib',
         ],
 
