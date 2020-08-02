@@ -66,6 +66,9 @@ class EHABIBytecodeDecoder(object):
     gpr_register_names = ("r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
                           "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc")
 
+    def _calculate_range(self, start, count):
+        return ((1 << (count + 1)) - 1) << start
+
     def _printGPR(self, gpr_mask):
         hits = [self.gpr_register_names[i] for i in range(32) if gpr_mask & (1 << i) != 0]
         return '{%s}' % ', '.join(hits)
@@ -110,14 +113,14 @@ class EHABIBytecodeDecoder(object):
         # PrintGPR((((1 << ((Opcode & 0x7) + 1)) - 1) << 4));
         opcode = self._bytecode_array[self._index]
         self._index += 1
-        return 'pop %s' % self._printGPR((((1 << ((opcode & 0x7) + 1)) - 1) << 4))
+        return 'pop %s' % self._printGPR(self._calculate_range(4, opcode & 0x07))
 
     def _decode_10101nnn(self):
         # SW.startLine() << format("0x%02X      ; pop ", Opcode);
         # PrintGPR((((1 << ((Opcode & 0x7) + 1)) - 1) << 4) | (1 << 14));
         opcode = self._bytecode_array[self._index]
         self._index += 1
-        return 'pop %s' % self._printGPR((((1 << ((opcode & 0x7) + 1)) - 1) << 4) | (1 << 14))
+        return 'pop %s' % self._printGPR(self._calculate_range(4, opcode & 0x07) | (1 << 14))
 
     def _decode_10110000(self):
         # SW.startLine() << format("0x%02X      ; finish\n", Opcode);
@@ -168,7 +171,7 @@ class EHABIBytecodeDecoder(object):
         #  PrintRegisters((((1 << ((Opcode & 0x07) + 1)) - 1) << 8), "d");
         opcode = self._bytecode_array[self._index]
         self._index += 1
-        return 'pop %s' % self._print_registers((((1 << ((opcode & 0x07) + 1)) - 1) << 8), "d")
+        return 'pop %s' % self._print_registers(self._calculate_range(8, opcode & 0x07), "d")
 
     def _decode_11000110_sssscccc(self):
         #  SW.startLine() << format("0x%02X 0x%02X ; pop ", Opcode0, Opcode1);
@@ -180,7 +183,7 @@ class EHABIBytecodeDecoder(object):
         self._index += 1
         start = ((op1 & 0xf0) >> 4)
         count = ((op1 & 0x0f) >> 0)
-        return 'pop %s' % self._print_registers((((1 << (count + 1)) - 1) << start), "wR")
+        return 'pop %s' % self._print_registers(self._calculate_range(start, count), "wR")
 
     def _decode_11000111_0000iiii(self):
         #   SW.startLine()
@@ -206,7 +209,7 @@ class EHABIBytecodeDecoder(object):
         self._index += 1
         start = 16 + ((op1 & 0xf0) >> 4)
         count = ((op1 & 0x0f) >> 0)
-        return 'pop %s' % self._print_registers((((1 << (count + 1)) - 1) << start), "d")
+        return 'pop %s' % self._print_registers(self._calculate_range(start, count), "d")
 
     def _decode_11001001_sssscccc(self):
         #   SW.startLine() << format("0x%02X 0x%02X ; pop ", Opcode0, Opcode1);
@@ -218,7 +221,7 @@ class EHABIBytecodeDecoder(object):
         self._index += 1
         start = ((op1 & 0xf0) >> 4)
         count = ((op1 & 0x0f) >> 0)
-        return 'pop %s' % self._print_registers((((1 << (count + 1)) - 1) << start), "d")
+        return 'pop %s' % self._print_registers(self._calculate_range(start, count), "d")
 
     def _decode_11001yyy(self):
         return self._spare()
@@ -228,14 +231,11 @@ class EHABIBytecodeDecoder(object):
         #   PrintRegisters((((1 << ((Opcode & 0x07) + 1)) - 1) << 10), "wR");
         opcode = self._bytecode_array[self._index]
         self._index += 1
-        return 'pop %s' % self._print_registers((((1 << ((opcode & 0x07) + 1)) - 1) << 10), "wR")
+        return 'pop %s' % self._print_registers(self._calculate_range(10, opcode & 0x07), "wR")
 
     def _decode_11010nnn(self):
-        #   SW.startLine() << format("0x%02X      ; pop ", Opcode);
-        #   PrintRegisters((((1 << ((Opcode & 0x07) + 1)) - 1) << 8), "d");
-        opcode = self._bytecode_array[self._index]
-        self._index += 1
-        return 'pop %s' % self._print_registers((((1 << ((opcode & 0x07) + 1)) - 1) << 8), "d")
+        # these two decoders are equal
+        return self._decode_10111nnn()
 
     def _decode_11xxxyyy(self):
         return self._spare()
