@@ -2,9 +2,9 @@
 pyelftools
 ==========
 
-.. image:: https://travis-ci.org/eliben/pyelftools.png?branch=master
+.. image:: https://github.com/eliben/pyelftools/workflows/pyelftools-tests/badge.svg
   :align: center
-  :target: https://travis-ci.org/eliben/pyelftools
+  :target: https://github.com/eliben/pyelftools/actions
 
 **pyelftools** is a pure-Python library for parsing and analyzing ELF files
 and DWARF debugging information. See the
