@@ -25,5 +25,5 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Test
       run: |
-        python tests/all_tests.py
+        python test/all_tests.py
 
