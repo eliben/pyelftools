@@ -119,9 +119,7 @@ class ELFFile(object):
         #
         if self._section_name_map is None:
             self._make_section_name_map()
-        if not self._section_name_map.has_key(section_name):
-            return None
-        return self._section_name_map[section_name]
+        return self._section_name_map.get(section_name, None)
 
     def iter_sections(self):
         """ Yield all the sections in the file
