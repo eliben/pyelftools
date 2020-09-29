@@ -28,8 +28,8 @@ from ..common.utils import struct_parse, elf_assert
 from .structs import ELFStructs
 from .sections import (
         Section, StringTableSection, SymbolTableSection,
-        SUNWSyminfoTableSection, NullSection, NoteSection,
-        StabSection, ARMAttributesSection)
+        SymbolTableIndexSection, SUNWSyminfoTableSection, NullSection,
+        NoteSection, StabSection, ARMAttributesSection)
 from .dynamic import DynamicSection, DynamicSegment
 from .relocation import RelocationSection, RelocationHandler
 from .gnuversions import (
@@ -39,6 +39,7 @@ from .segments import Segment, InterpSegment, NoteSegment
 from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 from ..ehabi.ehabiinfo import EHABIInfo
 from .hash import ELFHashSection, GNUHashSection
+from .constants import SHN_INDICES
 
 class ELFFile(object):
     """ Creation: the constructor accepts a stream (file-like object) with the
@@ -83,12 +84,25 @@ class ELFFile(object):
         self.stream.seek(0)
         self.e_ident_raw = self.stream.read(16)
 
-        self._file_stringtable_section = self._get_file_stringtable()
+        self._section_header_stringtable = \
+            self._get_section_header_stringtable()
         self._section_name_map = None
 
     def num_sections(self):
         """ Number of sections in the file
         """
+        if self['e_shoff'] == 0:
+            return 0
+        # From the ELF ABI documentation at
+        # https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.sheader.html:
+        # "e_shnum normally tells how many entries the section header table
+        # contains. [...] If the number of sections is greater than or equal to
+        # SHN_LORESERVE (0xff00), e_shnum has the value SHN_UNDEF (0) and the
+        # actual number of section header table entries is contained in the
+        # sh_size field of the section header at index 0 (otherwise, the sh_size
+        # member of the initial entry contains 0)."
+        if self['e_shnum'] == 0:
+            return self._get_section_header(0)['sh_size']
         return self['e_shnum']
 
     def get_section(self, n):
@@ -437,6 +451,19 @@ class ELFFile(object):
 
         return architectures.get(self['e_machine'], '<unknown>')
 
+    def get_shstrndx(self):
+        """ Find the string table section index for the section header table
+        """
+        # From https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html:
+        # If the section name string table section index is greater than or
+        # equal to SHN_LORESERVE (0xff00), this member has the value SHN_XINDEX
+        # (0xffff) and the actual index of the section name string table section
+        # is contained in the sh_link field of the section header at index 0.
+        if self['e_shstrndx'] != SHN_INDICES.SHN_XINDEX:
+            return self['e_shstrndx']
+        else:
+            return self._get_section_header(0)['sh_link']
+
     #-------------------------------- PRIVATE --------------------------------#
 
     def __getitem__(self, name):
@@ -506,7 +533,7 @@ class ELFFile(object):
             string table
         """
         name_offset = section_header['sh_name']
-        return self._file_stringtable_section.get_string(name_offset)
+        return self._section_header_stringtable.get_string(name_offset)
 
     def _make_section(self, section_header):
         """ Create a section object of the appropriate type
@@ -520,6 +547,8 @@ class ELFFile(object):
             return NullSection(section_header, name, self)
         elif sectype in ('SHT_SYMTAB', 'SHT_DYNSYM', 'SHT_SUNW_LDYNSYM'):
             return self._make_symbol_table_section(section_header, name)
+        elif sectype == 'SHT_SYMTAB_SHNDX':
+            return self._make_symbol_table_index_section(section_header, name)
         elif sectype == 'SHT_SUNW_syminfo':
             return self._make_sunwsyminfo_table_section(section_header, name)
         elif sectype == 'SHT_GNU_verneed':
@@ -554,6 +583,14 @@ class ELFFile(object):
             section_header, name,
             elffile=self,
             stringtable=strtab_section)
+
+    def _make_symbol_table_index_section(self, section_header, name):
+        """ Create a SymbolTableIndexSection object
+        """
+        linked_symtab_index = section_header['sh_link']
+        return SymbolTableIndexSection(
+            section_header, name, elffile=self,
+            symboltable=linked_symtab_index)
 
     def _make_sunwsyminfo_table_section(self, section_header, name):
         """ Create a SUNWSyminfoTableSection
@@ -617,10 +654,11 @@ class ELFFile(object):
             self.stream,
             stream_pos=self._segment_offset(n))
 
-    def _get_file_stringtable(self):
-        """ Find the file's string table section
+    def _get_section_header_stringtable(self):
+        """ Get the string table section corresponding to the section header
+            table.
         """
-        stringtable_section_num = self['e_shstrndx']
+        stringtable_section_num = self.get_shstrndx()
         return StringTableSection(
                 header=self._get_section_header(stringtable_section_num),
                 name='',
