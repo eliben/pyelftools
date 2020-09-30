@@ -1,5 +1,5 @@
 ==========
-pyelftools
+pyelftools 
 ==========
 
 .. image:: https://github.com/eliben/pyelftools/workflows/pyelftools-tests/badge.svg
@@ -24,7 +24,9 @@ Installing
 
 **pyelftools** can be installed from PyPI (Python package index)::
 
-    > pip install pyelftools
+install all module in windows powersell admine(recomanned)
+
+    > pip install pyelftools 
 
 Alternatively, you can download the source distribution for the most recent and
 historic versions from the *Downloads* tab on the `pyelftools project page
