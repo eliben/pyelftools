@@ -32,7 +32,9 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG
 from elftools.elf.segments import InterpSegment
-from elftools.elf.sections import NoteSection, SymbolTableSection
+from elftools.elf.sections import (
+    NoteSection, SymbolTableSection, SymbolTableIndexSection
+)
 from elftools.elf.gnuversions import (
     GNUVerSymSection, GNUVerDefSection,
     GNUVerNeedSection,
@@ -51,6 +53,7 @@ from elftools.elf.descriptions import (
 from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import E_FLAGS_MASKS
 from elftools.elf.constants import SH_FLAGS
+from elftools.elf.constants import SHN_INDICES
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
     describe_reg_name, describe_attr_value, set_global_machine_arch,
@@ -81,6 +84,8 @@ class ReadElf(object):
         self._dwarfinfo = None
 
         self._versioninfo = None
+
+        self._shndx_sections = None
 
     def display_file_header(self):
         """ Display the ELF file header
@@ -127,10 +132,18 @@ class ReadElf(object):
                 header['e_phnum'])
         self._emitline('  Size of section headers:           %s (bytes)' %
                 header['e_shentsize'])
-        self._emitline('  Number of section headers:         %s' %
+        self._emit('  Number of section headers:         %s' %
                 header['e_shnum'])
-        self._emitline('  Section header string table index: %s' %
+        if header['e_shnum'] == 0 and self.elffile.num_sections() != 0:
+            self._emitline(' (%d)' % self.elffile.num_sections())
+        else:
+            self._emitline('')
+        self._emit('  Section header string table index: %s' %
                 header['e_shstrndx'])
+        if header['e_shstrndx'] == SHN_INDICES.SHN_XINDEX:
+            self._emitline(' (%d)' % self.elffile.get_shstrndx())
+        else:
+            self._emitline('')
 
     def decode_flags(self, flags):
         description = ""
@@ -302,7 +315,7 @@ class ReadElf(object):
             return
 
         self._emitline('\nSection Header%s:' % (
-            's' if elfheader['e_shnum'] > 1 else ''))
+            's' if self.elffile.num_sections() > 1 else ''))
 
         # Different formatting constraints of 32-bit and 64-bit addresses
         #
@@ -357,7 +370,7 @@ class ReadElf(object):
         """
         self._init_versioninfo()
 
-        symbol_tables = [s for s in self.elffile.iter_sections()
+        symbol_tables = [(idx, s) for idx, s in enumerate(self.elffile.iter_sections())
                          if isinstance(s, SymbolTableSection)]
 
         if not symbol_tables and self.elffile.num_sections() == 0:
@@ -365,7 +378,7 @@ class ReadElf(object):
             self._emitline('Dynamic symbol information is not available for'
                            ' displaying symbols.')
 
-        for section in symbol_tables:
+        for section_index, section in symbol_tables:
             if not isinstance(section, SymbolTableSection):
                 continue
 
@@ -410,7 +423,9 @@ class ReadElf(object):
                     describe_symbol_type(symbol['st_info']['type']),
                     describe_symbol_bind(symbol['st_info']['bind']),
                     describe_symbol_visibility(symbol['st_other']['visibility']),
-                    describe_symbol_shndx(symbol['st_shndx']),
+                    describe_symbol_shndx(self._get_symbol_shndx(symbol,
+                                                                 nsym,
+                                                                 section_index)),
                     symbol.name,
                     version_info))
 
@@ -527,7 +542,10 @@ class ReadElf(object):
                     # names (excluding version info) to 22 chars, similarly to
                     # readelf.
                     if symbol['st_name'] == 0:
-                        symsec = self.elffile.get_section(symbol['st_shndx'])
+                        symsecidx = self._get_symbol_shndx(symbol,
+                                                           rel['r_info_sym'],
+                                                           section['sh_link'])
+                        symsec = self.elffile.get_section(symsecidx)
                         symbol_name = symsec.name
                         version = ''
                     else:
@@ -972,6 +990,22 @@ class ReadElf(object):
         except ValueError:
             # Not a number. Must be a name then
             return self.elffile.get_section_by_name(spec)
+
+    def _get_symbol_shndx(self, symbol, symbol_index, symtab_index):
+        """ Get the index into the section header table for the "symbol"
+            at "symbol_index" located in the symbol table with section index
+            "symtab_index".
+        """
+        symbol_shndx = symbol['st_shndx']
+        if symbol_shndx != SHN_INDICES.SHN_XINDEX:
+            return symbol_shndx
+
+        # Check for or lazily construct index section mapping (symbol table
+        # index -> corresponding symbol table index section object)
+        if self._shndx_sections is None:
+            self._shndx_sections = {sec.symboltable: sec for sec in self.elffile.iter_sections()
+                                    if isinstance(sec, SymbolTableIndexSection)}
+        return self._shndx_sections[symtab_index].get_section_index(symbol_index)
 
     def _note_relocs_for_section(self, section):
         """ If there are relocation sections pointing to the givne section,
