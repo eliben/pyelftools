@@ -57,12 +57,9 @@ class RangeLists(object):
             elif begin_offset == self._max_addr:
                 # Base address selection entry
                 lst.append(BaseAddressEntry(base_address=end_offset))
-            else: 
+            else:
                 # Range entry
                 lst.append(RangeEntry(
                     begin_offset=begin_offset,
                     end_offset=end_offset))
         return lst
-
-
-

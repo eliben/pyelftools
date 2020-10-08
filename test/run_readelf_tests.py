@@ -48,19 +48,27 @@ def discover_testfiles(rootdir):
             yield os.path.join(rootdir, filename)
 
 
-def run_test_on_file(filename, verbose=False):
+def run_test_on_file(filename, verbose=False, opt=None):
     """ Runs a test on the given input filename. Return True if all test
         runs succeeded.
+        If opt is specified, rather that going over the whole
+        set of supported readelf options, the test will only
+        run for one option.
     """
     success = True
     testlog.info("Test file '%s'" % filename)
-    for option in [
+    if opt is None:
+        options = [
             '-e', '-d', '-s', '-n', '-r', '-x.text', '-p.shstrtab', '-V',
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp',
             '--debug-dump=aranges', '--debug-dump=pubtypes',
-            '--debug-dump=pubnames'
-            ]:
+            '--debug-dump=pubnames', '--debug-dump=loc'
+            ]
+    else:
+        options = [opt]
+
+    for option in options:
         if verbose: testlog.info("..option='%s'" % option)
 
         # TODO(zlobober): this is a dirty hack to make tests work for ELF core
@@ -83,7 +91,7 @@ def run_test_on_file(filename, verbose=False):
             rc, stdout = run_exe(exe_path, args)
             if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
             if rc != 0:
-                testlog.error("@@ aborting - '%s' returned '%s'" % (exe_path, rc))
+                testlog.error("@@ aborting - '%s %s' returned '%s'" % (exe_path, option, rc))
                 return False
             stdouts.append(stdout)
         if verbose: testlog.info('....comparing output...')
@@ -201,6 +209,9 @@ def main():
         '-k', '--keep-going',
         action='store_true', dest='keep_going',
         help="Run all tests, don't stop at the first failure")
+    argparser.add_argument('--opt',
+        action='store', dest='opt', metavar='<readelf-option>',
+        help= 'Limit the test one one readelf option.')
     args = argparser.parse_args()
 
     if args.parallel:
@@ -222,14 +233,12 @@ def main():
 
     if len(filenames) > 1 and args.parallel:
         pool = Pool()
-        results = pool.map(
-            run_test_on_file,
-            filenames)
+        results = pool.map(run_test_on_file, filenames)
         failures = results.count(False)
     else:
         failures = 0
         for filename in filenames:
-            if not run_test_on_file(filename, verbose=args.verbose):
+            if not run_test_on_file(filename, args.verbose, args.opt):
                 failures += 1
                 if not args.keep_going:
                     break

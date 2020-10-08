@@ -9,7 +9,7 @@
 from collections import defaultdict
 
 from .constants import *
-from .dwarf_expr import GenericExprVisitor
+from .dwarf_expr import DWARFExprParser
 from .die import DIE
 from ..common.utils import preserve_stream_pos, dwarf_assert
 from ..common.py3compat import bytes2str
@@ -99,18 +99,17 @@ def describe_CFI_instructions(entry):
             s += '  %s: %s ofs %s\n' % (
                 name, _full_reg_name(instr.args[0]),
                 instr.args[1] * cie['data_alignment_factor'])
-        elif name == 'DW_CFA_def_cfa_offset':
+        elif name in ('DW_CFA_def_cfa_offset', 'DW_CFA_GNU_args_size'):
             s += '  %s: %s\n' % (name, instr.args[0])
         elif name == 'DW_CFA_def_cfa_expression':
             expr_dumper = ExprDumper(entry.structs)
-            expr_dumper.process_expr(instr.args[0])
             # readelf output is missing a colon for DW_CFA_def_cfa_expression
-            s += '  %s (%s)\n' % (name, expr_dumper.get_str())
+            s += '  %s (%s)\n' % (name, expr_dumper.dump_expr(instr.args[0]))
         elif name == 'DW_CFA_expression':
             expr_dumper = ExprDumper(entry.structs)
-            expr_dumper.process_expr(instr.args[1])
             s += '  %s: %s (%s)\n' % (
-                name, _full_reg_name(instr.args[0]), expr_dumper.get_str())
+                name, _full_reg_name(instr.args[0]),
+                                     expr_dumper.dump_expr(instr.args[1]))
         else:
             s += '  %s: <??>\n' % name
 
@@ -133,7 +132,7 @@ def describe_CFI_CFA_rule(rule):
         return '%s%+d' % (describe_reg_name(rule.reg), rule.offset)
 
 
-def describe_DWARF_expr(expr, structs):
+def describe_DWARF_expr(expr, structs, cu_offset=None):
     """ Textual description of a DWARF expression encoded in 'expr'.
         structs should come from the entity encompassing the expression - it's
         needed to be able to parse it correctly.
@@ -146,9 +145,7 @@ def describe_DWARF_expr(expr, structs):
         _DWARF_EXPR_DUMPER_CACHE[cache_key] = \
             ExprDumper(structs)
     dwarf_expr_dumper = _DWARF_EXPR_DUMPER_CACHE[cache_key]
-    dwarf_expr_dumper.clear()
-    dwarf_expr_dumper.process_expr(expr)
-    return '(' + dwarf_expr_dumper.get_str() + ')'
+    return '(' + dwarf_expr_dumper.dump_expr(expr, cu_offset) + ')'
 
 
 def describe_reg_name(regnum, machine_arch=None, default=True):
@@ -338,6 +335,7 @@ _DESCR_DW_ATE = {
     DW_ATE_edited: '(edited)',
     DW_ATE_signed_fixed: '(signed_fixed)',
     DW_ATE_unsigned_fixed: '(unsigned_fixed)',
+    DW_ATE_UTF: '(unicode string)',
     DW_ATE_HP_float80: '(HP_float80)',
     DW_ATE_HP_complex_float80: '(HP_complex_float80)',
     DW_ATE_HP_float128: '(HP_float128)',
@@ -424,7 +422,7 @@ def _location_list_extra(attr, die, section_offset):
     if attr.form in ('DW_FORM_data4', 'DW_FORM_data8', 'DW_FORM_sec_offset'):
         return '(location list)'
     else:
-        return describe_DWARF_expr(attr.value, die.cu.structs)
+        return describe_DWARF_expr(attr.value, die.cu.structs, die.cu.cu_offset)
 
 
 def _data_member_location_extra(attr, die, section_offset):
@@ -437,7 +435,7 @@ def _data_member_location_extra(attr, die, section_offset):
     elif attr.form == 'DW_FORM_sdata':
         return str(attr.value)
     else:
-        return describe_DWARF_expr(attr.value, die.cu.structs)
+        return describe_DWARF_expr(attr.value, die.cu.structs, die.cu.cu_offset)
 
 
 def _import_extra(attr, die, section_offset):
@@ -531,23 +529,32 @@ _REG_NAMES_x64 = [
 ]
 
 
-class ExprDumper(GenericExprVisitor):
-    """ A concrete visitor for DWARF expressions that dumps a textual
+class ExprDumper(object):
+    """ A dumper for DWARF expressions that dumps a textual
         representation of the complete expression.
 
-        Usage: after creation, call process_expr, and then get_str for a
-        semicolon-delimited string representation of the decoded expression.
+        Usage: after creation, call dump_expr repeatedly - it's stateless.
     """
     def __init__(self, structs):
-        super(ExprDumper, self).__init__(structs)
+        self.structs = structs
+        self.expr_parser = DWARFExprParser(self.structs)
         self._init_lookups()
-        self._str_parts = []
 
-    def clear(self):
-        self._str_parts = []
+    def dump_expr(self, expr, cu_offset=None):
+        """ Parse and dump a DWARF expression. expr should be a list of
+            (integer) byte values. cu_offset is the cu_offset
+            value from the CU object where the expression resides.
+            Only affects a handful of GNU opcodes, if None is provided,
+            that's not a crash condition, only the expression dump will
+            not be consistent of that of readelf.
 
-    def get_str(self):
-        return '; '.join(self._str_parts)
+            Returns a string representing the expression.
+        """
+        parsed = self.expr_parser.parse_expr(expr)
+        s = []
+        for deo in parsed:
+            s.append(self._dump_to_string(deo.op, deo.op_name, deo.args, cu_offset))
+        return '; '.join(s)
 
     def _init_lookups(self):
         self._ops_with_decimal_arg = set([
@@ -566,10 +573,14 @@ class ExprDumper(GenericExprVisitor):
         self._ops_with_hex_arg = set(
             ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
 
-    def _after_visit(self, opcode, opcode_name, args):
-        self._str_parts.append(self._dump_to_string(opcode, opcode_name, args))
+    def _dump_to_string(self, opcode, opcode_name, args, cu_offset=None):
+        # Some GNU ops contain an offset from the current CU as an argument,
+        # but readelf emits those ops with offset from the info section
+        # so we need the base offset of the parent CU.
+        # If omitted, arguments on some GNU opcodes will be off.
+        if cu_offset is None:
+            cu_offset = 0
 
-    def _dump_to_string(self, opcode, opcode_name, args):
         if len(args) == 0:
             if opcode_name.startswith('DW_OP_reg'):
                 regnum = int(opcode_name[9:])
@@ -597,5 +608,21 @@ class ExprDumper(GenericExprVisitor):
             return '%s: %x' % (opcode_name, args[0])
         elif opcode_name in self._ops_with_two_decimal_args:
             return '%s: %s %s' % (opcode_name, args[0], args[1])
+        elif opcode_name == 'DW_OP_GNU_entry_value':
+            return '%s: (%s)' % (opcode_name, ','.join([self._dump_to_string(deo.op, deo.op_name, deo.args) for deo in args[0]]))
+        elif opcode_name == 'DW_OP_implicit_value':
+            return "%s %s byte block: %s" % (opcode_name, len(args[0]), ''.join(["%x " % b for b in args[0]]))
+        elif opcode_name == 'DW_OP_GNU_parameter_ref':
+            return "%s: <0x%x>" % (opcode_name, args[0] + cu_offset)
+        elif opcode_name == 'DW_OP_GNU_implicit_pointer':
+            return "%s: <0x%x> %d" % (opcode_name, args[0], args[1])
+        elif opcode_name == 'DW_OP_GNU_convert':
+            return "%s <0x%x>" % (opcode_name, args[0] + cu_offset)
+        elif opcode_name == 'DW_OP_GNU_deref_type':
+            return "%s: %d <0x%x>" % (opcode_name, args[0], args[1] + cu_offset)
+        elif opcode_name == 'DW_OP_GNU_const_type':
+            return "%s: <0x%x>  %d byte block: %s " % (opcode_name, args[0] + cu_offset, len(args[1]), ' '.join("%x" % b for b in args[1]))
+        elif opcode_name == 'DW_OP_GNU_regval_type':
+            return "%s: %d (%s) <0x%x>" % (opcode_name, args[0], describe_reg_name(args[0], _MACHINE_ARCH), args[1] + cu_offset)
         else:
             return '<unknown %s>' % opcode_name

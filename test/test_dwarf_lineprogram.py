@@ -18,7 +18,7 @@ class TestLineProgram(unittest.TestCase):
         """
         ds = DWARFStructs(little_endian=True, dwarf_format=32, address_size=4)
         header = ds.Dwarf_lineprog_header.parse(
-            b'\x04\x10\x00\x00' +    # initial lenght
+            b'\x04\x10\x00\x00' +    # initial length
             b'\x03\x00' +            # version
             b'\x20\x00\x00\x00' +    # header length
             b'\x01\x01\x01\x0F' +    # flags
@@ -99,6 +99,27 @@ class TestLineProgram(unittest.TestCase):
         self.assertLineState(linetable[5].state, address=0x244, line=6)
         self.assertLineState(linetable[7].state, address=0x24b, line=7, end_sequence=False)
         self.assertLineState(linetable[9].state, address=0x24d, line=7, end_sequence=True)
+
+    def test_lne_set_discriminator(self):
+        """
+        Tests the handling of DWARFv4's new DW_LNE_set_discriminator opcode.
+        """
+        s = BytesIO()
+        s.write(
+            b'\x00\x02\x04\x05' +  # DW_LNE_set_discriminator (discriminator=0x05)
+            b'\x01' +              # DW_LNS_copy
+            b'\x00\x01\x01'        # DW_LNE_end_sequence
+        )
+
+        lp = self._make_program_in_stream(s)
+        linetable = lp.get_entries()
+
+        # We expect two entries, since DW_LNE_set_discriminator does not add
+        # an entry of its own.
+        self.assertEqual(len(linetable), 2)
+        self.assertEqual(linetable[0].command, DW_LNS_copy)
+        self.assertLineState(linetable[0].state, discriminator=0x05)
+        self.assertLineState(linetable[1].state, discriminator=0x00, end_sequence=True)
 
 
 if __name__ == '__main__':
