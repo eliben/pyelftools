@@ -279,7 +279,7 @@ class ExprAdapter(Adapter):
     * subcon - the subcon to adapt
     * encoder - a function that takes (obj, context) and returns an encoded
       version of obj
-    * decoder - a function that takes (obj, context) and returns an decoded
+    * decoder - a function that takes (obj, context) and returns a decoded
       version of obj
 
     Example:

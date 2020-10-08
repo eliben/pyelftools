@@ -13,7 +13,7 @@ import os, sys
 import unittest
 
 # Make it possible to run this file from the root dir of pyelftools without
-# installing pyelftools; useful for Travis testing, etc.
+# installing pyelftools; useful for CI testing, etc.
 sys.path[0:0] = ['.']
 
 

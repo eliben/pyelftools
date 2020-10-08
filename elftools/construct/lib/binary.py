@@ -28,8 +28,8 @@ def int_to_bin(number, width=32):
 
 
 _bit_values = {
-    0: 0, 
-    1: 1, 
+    0: 0,
+    1: 1,
     48: 0, # '0'
     49: 1, # '1'
 
@@ -90,7 +90,7 @@ for i in range(256):
 
 
 def encode_bin(data):
-    """ 
+    """
     Create a binary representation of the given b'' object. Assume 8-bit
     ASCII. Example:
 
@@ -101,7 +101,7 @@ def encode_bin(data):
 
 
 def decode_bin(data):
-    """ 
+    """
     Locical opposite of decode_bin.
     """
     if len(data) & 7:
@@ -115,4 +115,3 @@ def decode_bin(data):
         i += 8
         j += 1
     return b"".join(chars)
-

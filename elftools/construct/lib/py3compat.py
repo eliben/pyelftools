@@ -46,7 +46,7 @@ if PY3:
         return bytes(b, encoding)
 
     advance_iterator = next
-        
+
 else:
     import cStringIO
     StringIO = BytesIO = cStringIO.StringIO
@@ -72,4 +72,3 @@ else:
 
     def advance_iterator(it):
         return it.next()
-

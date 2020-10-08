@@ -12,21 +12,21 @@ from ..common.utils import struct_parse
 from bisect import bisect_right
 import math
 
-# An entry in the aranges table; 
+# An entry in the aranges table;
 # begin_addr: The beginning address in the CU
 # length: The length of the address range in this entry
 # info_offset: The CU's offset into .debug_info
 # see 6.1.2 in DWARF4 docs for explanation of the remaining fields
-ARangeEntry = namedtuple('ARangeEntry', 
+ARangeEntry = namedtuple('ARangeEntry',
     'begin_addr length info_offset unit_length version address_size segment_size')
 
 class ARanges(object):
     """ ARanges table in DWARF
 
-        stream, size: 
+        stream, size:
             A stream holding the .debug_aranges section, and its size
 
-        structs: 
+        structs:
             A DWARFStructs instance for parsing the data
     """
     def __init__(self, stream, size, structs):
@@ -49,8 +49,11 @@ class ARanges(object):
             'offset' refers to the offset in the .debug_info section.
         """
         tup = self.entries[bisect_right(self.keys, addr) - 1]
-        return tup.info_offset
-        
+        if tup.begin_addr <= addr < tup.begin_addr + tup.length:
+            return tup.info_offset
+        else:
+            return None
+
 
     #------ PRIVATE ------#
     def _get_entries(self):
@@ -62,14 +65,14 @@ class ARanges(object):
 
         # one loop == one "set" == one CU
         while offset < self.size :
-            aranges_header = struct_parse(self.structs.Dwarf_aranges_header, 
+            aranges_header = struct_parse(self.structs.Dwarf_aranges_header,
                 self.stream, offset)
             addr_size = self._get_addr_size_struct(aranges_header["address_size"])
 
             # No segmentation
             if aranges_header["segment_size"] == 0:
                 # pad to nearest multiple of tuple size
-                tuple_size = aranges_header["address_size"] * 2 
+                tuple_size = aranges_header["address_size"] * 2
                 fp = self.stream.tell()
                 seek_to = int(math.ceil(fp/float(tuple_size)) * tuple_size)
                 self.stream.seek(seek_to)
@@ -80,8 +83,8 @@ class ARanges(object):
                 while addr != 0 or length != 0:
                     # 'begin_addr length info_offset version address_size segment_size'
                     entries.append(
-                        ARangeEntry(begin_addr=addr, 
-                            length=length, 
+                        ARangeEntry(begin_addr=addr,
+                            length=length,
                             info_offset=aranges_header["debug_info_offset"],
                             unit_length=aranges_header["unit_length"],
                             version=aranges_header["version"],
@@ -93,18 +96,18 @@ class ARanges(object):
             elif aranges_header["segment_size"] != 0:
                 raise NotImplementedError("Segmentation not implemented")
 
-            offset = (offset 
-                + aranges_header.unit_length 
+            offset = (offset
+                + aranges_header.unit_length
                 + self.structs.initial_length_field_size())
 
         return entries
 
     def _get_addr_size_struct(self, addr_header_value):
-        """ Given this set's header value (int) for the address size, 
+        """ Given this set's header value (int) for the address size,
             get the Construct representation of that size
         """
         if addr_header_value == 4:
             return self.structs.Dwarf_uint32
-        else: 
+        else:
             assert addr_header_value == 8
             return self.structs.Dwarf_uint64

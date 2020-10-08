@@ -223,7 +223,7 @@ def describe_attr_tag_arm(tag, val, extra):
 
         elif tag == 'TAG_NODEFAULTS':
             return _DESCR_ATTR_TAG_ARM[tag] + 'True'
-            
+
         s = _DESCR_ATTR_TAG_ARM[tag]
         s += '"%s"' % val if val else ''
         return s

@@ -38,7 +38,7 @@ def process_file(filename):
             print('ERROR: No .debug_pubnames section found in ELF.')
         else:
             print('%d entries found in .debug_pubnames' % len(pubnames))
-            
+
             # try getting information on a global symbol.
             print('Trying pubnames example ...')
             sym_name = 'main'
@@ -56,9 +56,9 @@ def process_file(filename):
                     if cu.cu_offset == entry.cu_ofs:
                         for die in cu.iter_DIEs():
                             if die.offset == entry.die_ofs:
-                                print('Die Name: %s' % 
+                                print('Die Name: %s' %
                                         bytes2str(die.attributes['DW_AT_name'].value))
-        
+
             # dump all entries in .debug_pubnames section.
             print('Dumping .debug_pubnames table ...')
             print('-' * 66)
@@ -91,9 +91,9 @@ def process_file(filename):
                     if cu.cu_offset == entry.cu_ofs:
                         for die in cu.iter_DIEs():
                             if die.offset == entry.die_ofs:
-                                print('Die Name: %s' % 
+                                print('Die Name: %s' %
                                         bytes2str(die.attributes['DW_AT_name'].value))
-        
+
             # dump all entries in .debug_pubtypes section.
             print('Dumping .debug_pubtypes table ...')
             print('-' * 66)

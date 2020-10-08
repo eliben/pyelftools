@@ -144,6 +144,26 @@ class StringTableSection(Section):
         return s.decode('utf-8', errors='replace') if s else ''
 
 
+class SymbolTableIndexSection(Section):
+    """ A section containing the section header table indices corresponding
+        to symbols in the linked symbol table. This section has to exist if the
+        symbol table contains an entry with a section header index set to
+        SHN_XINDEX (0xffff). The format of the section is described at
+        https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.sheader.html
+    """
+    def __init__(self, header, name, elffile, symboltable):
+        super(SymbolTableIndexSection, self).__init__(header, name, elffile)
+        self.symboltable = symboltable
+
+    def get_section_index(self, n):
+        """ Get the section header table index for the symbol with index #n.
+            The section contains an array of Elf32_word values with one entry
+            for every symbol in the associated symbol table.
+        """
+        return struct_parse(self.elffile.structs.Elf_word(''), self.stream,
+                            self['sh_offset'] + n * self['sh_entsize'])
+
+
 class SymbolTableSection(Section):
     """ ELF symbol table section. Has an associated StringTableSection that's
         passed in the constructor.
@@ -326,7 +346,7 @@ class ARMAttribute(object):
         return self._tag['tag']
 
     def __repr__(self):
-        s = '<ARMAttribute (%s): %r>' % (self.tag, self.value) 
+        s = '<ARMAttribute (%s): %r>' % (self.tag, self.value)
         s += ' %s' % self.extra if self.extra is not None else ''
         return s
 
@@ -374,7 +394,7 @@ class ARMAttributesSubsubsection(object):
             yield ARMAttribute(self.structs, self.stream)
 
     def __repr__(self):
-        s = "<ARMAttributesSubsubsection (%s): %d bytes>" 
+        s = "<ARMAttributesSubsubsection (%s): %d bytes>"
         return s % (self.header.tag[4:], self.header.value)
 
 

@@ -32,7 +32,9 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG
 from elftools.elf.segments import InterpSegment
-from elftools.elf.sections import NoteSection, SymbolTableSection
+from elftools.elf.sections import (
+    NoteSection, SymbolTableSection, SymbolTableIndexSection
+)
 from elftools.elf.gnuversions import (
     GNUVerSymSection, GNUVerDefSection,
     GNUVerNeedSection,
@@ -51,6 +53,7 @@ from elftools.elf.descriptions import (
 from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import E_FLAGS_MASKS
 from elftools.elf.constants import SH_FLAGS
+from elftools.elf.constants import SHN_INDICES
 from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
     describe_reg_name, describe_attr_value, set_global_machine_arch,
@@ -59,8 +62,9 @@ from elftools.dwarf.descriptions import (
     )
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
-from elftools.dwarf.locationlists import LocationParser, LocationEntry    
+from elftools.dwarf.locationlists import LocationParser, LocationEntry
 from elftools.dwarf.callframe import CIE, FDE, ZERO
+from elftools.ehabi.ehabiinfo import CorruptEHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry
 
 
 class ReadElf(object):
@@ -80,6 +84,8 @@ class ReadElf(object):
         self._dwarfinfo = None
 
         self._versioninfo = None
+
+        self._shndx_sections = None
 
     def display_file_header(self):
         """ Display the ELF file header
@@ -126,10 +132,18 @@ class ReadElf(object):
                 header['e_phnum'])
         self._emitline('  Size of section headers:           %s (bytes)' %
                 header['e_shentsize'])
-        self._emitline('  Number of section headers:         %s' %
+        self._emit('  Number of section headers:         %s' %
                 header['e_shnum'])
-        self._emitline('  Section header string table index: %s' %
+        if header['e_shnum'] == 0 and self.elffile.num_sections() != 0:
+            self._emitline(' (%d)' % self.elffile.num_sections())
+        else:
+            self._emitline('')
+        self._emit('  Section header string table index: %s' %
                 header['e_shstrndx'])
+        if header['e_shstrndx'] == SHN_INDICES.SHN_XINDEX:
+            self._emitline(' (%d)' % self.elffile.get_shstrndx())
+        else:
+            self._emitline('')
 
     def decode_flags(self, flags):
         description = ""
@@ -218,7 +232,7 @@ class ReadElf(object):
             # readelf weirness - why isn't e_phoff printed as hex? (for section
             # headers, it is...)
             self._emitline('There are %s program headers, starting at offset %s' % (
-                elfheader['e_phnum'], elfheader['e_phoff']))
+                self.elffile.num_segments(), elfheader['e_phoff']))
             self._emitline()
 
         self._emitline('Program Headers:')
@@ -301,7 +315,7 @@ class ReadElf(object):
             return
 
         self._emitline('\nSection Header%s:' % (
-            's' if elfheader['e_shnum'] > 1 else ''))
+            's' if self.elffile.num_sections() > 1 else ''))
 
         # Different formatting constraints of 32-bit and 64-bit addresses
         #
@@ -356,7 +370,7 @@ class ReadElf(object):
         """
         self._init_versioninfo()
 
-        symbol_tables = [s for s in self.elffile.iter_sections()
+        symbol_tables = [(idx, s) for idx, s in enumerate(self.elffile.iter_sections())
                          if isinstance(s, SymbolTableSection)]
 
         if not symbol_tables and self.elffile.num_sections() == 0:
@@ -364,7 +378,7 @@ class ReadElf(object):
             self._emitline('Dynamic symbol information is not available for'
                            ' displaying symbols.')
 
-        for section in symbol_tables:
+        for section_index, section in symbol_tables:
             if not isinstance(section, SymbolTableSection):
                 continue
 
@@ -409,7 +423,9 @@ class ReadElf(object):
                     describe_symbol_type(symbol['st_info']['type']),
                     describe_symbol_bind(symbol['st_info']['bind']),
                     describe_symbol_visibility(symbol['st_other']['visibility']),
-                    describe_symbol_shndx(symbol['st_shndx']),
+                    describe_symbol_shndx(self._get_symbol_shndx(symbol,
+                                                                 nsym,
+                                                                 section_index)),
                     symbol.name,
                     version_info))
 
@@ -526,7 +542,10 @@ class ReadElf(object):
                     # names (excluding version info) to 22 chars, similarly to
                     # readelf.
                     if symbol['st_name'] == 0:
-                        symsec = self.elffile.get_section(symbol['st_shndx'])
+                        symsecidx = self._get_symbol_shndx(symbol,
+                                                           rel['r_info_sym'],
+                                                           section['sh_link'])
+                        symsec = self.elffile.get_section(symsecidx)
                         symbol_name = symsec.name
                         version = ''
                     else:
@@ -562,6 +581,41 @@ class ReadElf(object):
 
         if not has_relocation_sections:
             self._emitline('\nThere are no relocations in this file.')
+
+    def display_arm_unwind(self):
+        if not self.elffile.has_ehabi_info():
+            self._emitline('There are no .ARM.idx sections in this file.')
+            return
+        for ehabi_info in self.elffile.get_ehabi_infos():
+            # Unwind section '.ARM.exidx' at offset 0x203e8 contains 1009 entries:
+            self._emitline("\nUnwind section '%s' at offset 0x%x contains %d entries" % (
+                ehabi_info.section_name(),
+                ehabi_info.section_offset(),
+                ehabi_info.num_entry()
+            ))
+
+            for i in range(ehabi_info.num_entry()):
+                entry = ehabi_info.get_entry(i)
+                self._emitline()
+                self._emitline("Entry %d:" % i)
+                if isinstance(entry, CorruptEHABIEntry):
+                    self._emitline("    [corrupt] %s" % entry.reason)
+                    continue
+                self._emit("    Function offset 0x%x: " % entry.function_offset)
+                if isinstance(entry, CannotUnwindEHABIEntry):
+                    self._emitline("[cantunwind]")
+                    continue
+                elif entry.eh_table_offset:
+                    self._emitline("@0x%x" % entry.eh_table_offset)
+                else:
+                    self._emitline("Compact (inline)")
+                if isinstance(entry, GenericEHABIEntry):
+                    self._emitline("    Personality: 0x%x" % entry.personality)
+                else:
+                    self._emitline("    Compact model index: %d" % entry.personality)
+                    for mnemonic_item in entry.mnmemonic_array():
+                        self._emit('    ')
+                        self._emitline(mnemonic_item)
 
     def display_version_info(self):
         """ Display the version info contained in the file
@@ -937,6 +991,22 @@ class ReadElf(object):
             # Not a number. Must be a name then
             return self.elffile.get_section_by_name(spec)
 
+    def _get_symbol_shndx(self, symbol, symbol_index, symtab_index):
+        """ Get the index into the section header table for the "symbol"
+            at "symbol_index" located in the symbol table with section index
+            "symtab_index".
+        """
+        symbol_shndx = symbol['st_shndx']
+        if symbol_shndx != SHN_INDICES.SHN_XINDEX:
+            return symbol_shndx
+
+        # Check for or lazily construct index section mapping (symbol table
+        # index -> corresponding symbol table index section object)
+        if self._shndx_sections is None:
+            self._shndx_sections = {sec.symboltable: sec for sec in self.elffile.iter_sections()
+                                    if isinstance(sec, SymbolTableIndexSection)}
+        return self._shndx_sections[symtab_index].get_section_index(symbol_index)
+
     def _note_relocs_for_section(self, section):
         """ If there are relocation sections pointing to the givne section,
             emit a note about it.
@@ -1167,12 +1237,12 @@ class ReadElf(object):
             section = self._dwarfinfo.debug_pubtypes_sec
 
         # readelf prints nothing if the section is not present.
-        if namelut is None or len(namelut) == 0:    
+        if namelut is None or len(namelut) == 0:
             return
-        
+
         self._emitline('Contents of the %s section:' % section.name)
         self._emitline()
-        
+
         cu_headers = namelut.get_cu_headers()
 
         # go over CU-by-CU first and item-by-item next.
@@ -1182,7 +1252,7 @@ class ReadElf(object):
             self._emitline('  Length:                              %d'   % cu_hdr.unit_length)
             self._emitline('  Version:                             %d'   % cu_hdr.version)
             self._emitline('  Offset into .debug_info section:     0x%x' % cu_hdr.debug_info_offset)
-            self._emitline('  Size of area in .debug_info section: %d'   % cu_hdr.debug_info_length) 
+            self._emitline('  Size of area in .debug_info section: %d'   % cu_hdr.debug_info_length)
             self._emitline()
             self._emitline('    Offset  Name')
             for item in items:
@@ -1346,7 +1416,7 @@ class ReadElf(object):
             elif 'DW_AT_entry_pc' in attr:
                 return attr['DW_AT_entry_pc'].value
             else:
-                raise ValueError("Can't find the base IP (low_pc) for a CU")                    
+                raise ValueError("Can't find the base IP (low_pc) for a CU")
 
         di = self._dwarfinfo
         loc_lists = di.location_lists()
@@ -1361,7 +1431,7 @@ class ReadElf(object):
 
         # To dump a location list, one needs to know the CU.
         # Scroll through DIEs once, list the known location list offsets
-        cu_map = dict() # Loc list offset => CU            
+        cu_map = dict() # Loc list offset => CU
         for cu in di.iter_CUs():
             for die in cu.iter_DIEs():
                 for key in die.attributes:
@@ -1372,7 +1442,7 @@ class ReadElf(object):
 
         addr_size = di.config.default_address_size # In bytes, 4 or 8
         addr_width = addr_size * 2 # In hex digits, 8 or 16
-        line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)                
+        line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)
 
         self._emitline('Contents of the %s section:\n' % di.debug_loc_sec.name)
         self._emitline('    Offset   Begin            End              Expression')
@@ -1470,6 +1540,9 @@ def main(stream=None):
     argparser.add_argument('-r', '--relocs',
             action='store_true', dest='show_relocs',
             help='Display the relocations (if present)')
+    argparser.add_argument('-au', '--arm-unwind',
+            action='store_true', dest='show_arm_unwind',
+            help='Display the armeabi unwind information (if present)')
     argparser.add_argument('-x', '--hex-dump',
             action='store', dest='show_hex_dump', metavar='<number|name>',
             help='Dump the contents of section <number|name> as bytes')
@@ -1524,6 +1597,8 @@ def main(stream=None):
                 readelf.display_notes()
             if args.show_relocs:
                 readelf.display_relocations()
+            if args.show_arm_unwind:
+                readelf.display_arm_unwind()
             if args.show_version_info:
                 readelf.display_version_info()
             if args.show_arch_specific:

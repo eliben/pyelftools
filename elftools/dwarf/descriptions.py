@@ -159,6 +159,8 @@ def describe_reg_name(regnum, machine_arch=None, default=True):
         return _REG_NAMES_x86[regnum]
     elif machine_arch == 'x64':
         return _REG_NAMES_x64[regnum]
+    elif machine_arch == 'AArch64':
+        return _REG_NAMES_AArch64[regnum]
     elif default:
         return 'r%s' % regnum
     else:
@@ -528,6 +530,14 @@ _REG_NAMES_x64 = [
     'mxcsr', 'fcw', 'fsw'
 ]
 
+# https://developer.arm.com/docs/ihi0057/c/dwarf-for-the-arm-64-bit-architecture-aarch64-abi-2018q4#id24
+_REG_NAMES_AArch64 = [
+    'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'x9',
+    'x10', 'x11', 'x12', 'x13', 'x14', 'x15', 'x16', 'x17', 'x18', 'x19',
+    'x20', 'x21', 'x22', 'x23', 'x24', 'x25', 'x26', 'x27', 'x28', 'x29',
+    'x30', 'sp'
+]
+
 
 class ExprDumper(object):
     """ A dumper for DWARF expressions that dumps a textual
@@ -559,16 +569,15 @@ class ExprDumper(object):
     def _init_lookups(self):
         self._ops_with_decimal_arg = set([
             'DW_OP_const1u', 'DW_OP_const1s', 'DW_OP_const2u', 'DW_OP_const2s',
-            'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_constu', 'DW_OP_consts',
-            'DW_OP_pick', 'DW_OP_plus_uconst', 'DW_OP_bra', 'DW_OP_skip',
-            'DW_OP_fbreg', 'DW_OP_piece', 'DW_OP_deref_size',
-            'DW_OP_xderef_size', 'DW_OP_regx',])
+            'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_const8u', 'DW_OP_const8s',
+            'DW_OP_constu', 'DW_OP_consts', 'DW_OP_pick', 'DW_OP_plus_uconst',
+            'DW_OP_bra', 'DW_OP_skip', 'DW_OP_fbreg', 'DW_OP_piece',
+            'DW_OP_deref_size', 'DW_OP_xderef_size', 'DW_OP_regx',])
 
         for n in range(0, 32):
             self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)
 
-        self._ops_with_two_decimal_args = set([
-            'DW_OP_const8u', 'DW_OP_const8s', 'DW_OP_bregx', 'DW_OP_bit_piece'])
+        self._ops_with_two_decimal_args = set(['DW_OP_bregx', 'DW_OP_bit_piece'])
 
         self._ops_with_hex_arg = set(
             ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])

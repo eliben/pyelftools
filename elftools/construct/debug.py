@@ -15,17 +15,17 @@ class Probe(Construct):
     A probe: dumps the context, stack frames, and stream content to the screen
     to aid the debugging process.
     See also Debugger.
-    
+
     Parameters:
     * name - the display name
-    * show_stream - whether or not to show stream contents. default is True. 
+    * show_stream - whether or not to show stream contents. default is True.
       the stream must be seekable.
     * show_context - whether or not to show the context. default is True.
-    * show_stack - whether or not to show the upper stack frames. default 
+    * show_stack - whether or not to show the upper stack frames. default
       is True.
     * stream_lookahead - the number of bytes to dump when show_stack is set.
       default is 100.
-    
+
     Example:
     Struct("foo",
         UBInt8("a"),
@@ -34,13 +34,13 @@ class Probe(Construct):
     )
     """
     __slots__ = [
-        "printname", "show_stream", "show_context", "show_stack", 
+        "printname", "show_stream", "show_context", "show_stack",
         "stream_lookahead"
     ]
     counter = 0
-    
-    def __init__(self, name = None, show_stream = True, 
-                 show_context = True, show_stack = True, 
+
+    def __init__(self, name = None, show_stream = True,
+                 show_context = True, show_stack = True,
                  stream_lookahead = 100):
         Construct.__init__(self, None)
         if name is None:
@@ -59,7 +59,7 @@ class Probe(Construct):
         self.printout(stream, context)
     def _sizeof(self, context):
         return 0
-    
+
     def printout(self, stream, context):
         obj = Container()
         if self.show_stream:
@@ -71,10 +71,10 @@ class Probe(Construct):
                 stream.seek(-len(follows), 1)
                 obj.following_stream_data = HexString(follows)
             print
-        
+
         if self.show_context:
             obj.context = context
-        
+
         if self.show_stack:
             obj.stack = ListContainer()
             frames = [s[0] for s in inspect.stack()][1:-1]
@@ -83,7 +83,7 @@ class Probe(Construct):
                 a = Container()
                 a.__update__(f.f_locals)
                 obj.stack.append(a)
-        
+
         print("=" * 80)
         print("Probe", self.printname)
         print(obj)
@@ -93,10 +93,10 @@ class Debugger(Subconstruct):
     """
     A pdb-based debugger. When an exception occurs in the subcon, a debugger
     will appear and allow you to debug the error (and even fix on-the-fly).
-    
+
     Parameters:
     * subcon - the subcon to debug
-    
+
     Example:
     Debugger(
         Enum(UBInt8("foo"),
@@ -131,4 +131,3 @@ class Debugger(Subconstruct):
             print(msg)
         pdb.post_mortem(sys.exc_info()[2])
         print("=" * 80)
-
