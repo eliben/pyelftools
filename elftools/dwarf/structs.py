@@ -195,6 +195,7 @@ class DWARFStructs(object):
             DW_FORM_strp=self.Dwarf_offset(''),
             DW_FORM_flag=self.Dwarf_uint8(''),
 
+            DW_FORM_ref=self.Dwarf_uint32(''),
             DW_FORM_ref1=self.Dwarf_uint8(''),
             DW_FORM_ref2=self.Dwarf_uint16(''),
             DW_FORM_ref4=self.Dwarf_uint32(''),
