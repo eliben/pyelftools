@@ -99,3 +99,17 @@ class TestGNUHash(unittest.TestCase):
             symbol_f1 = hash_section.get_symbol('function1_ver1_1')
             self.assertIsNotNone(symbol_f1)
             self.assertEqual(symbol_f1['st_value'], int(0x9a2))
+
+    def test_get_symbol_big_endian(self):
+        """ Verify we can get a specific symbol from a GNU hash section in a
+            big-endian file.
+        """
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'aarch64_be_gnu_hash.so.elf'), 'rb') as f:
+            elf = ELFFile(f)
+            self.assertFalse(elf.little_endian)
+            hash_section = elf.get_section_by_name('.gnu.hash')
+            self.assertIsNotNone(hash_section)
+            symbol_f1 = hash_section.get_symbol('caller')
+            self.assertIsNotNone(symbol_f1)
+            self.assertEqual(symbol_f1['st_value'], int(0x5a4))

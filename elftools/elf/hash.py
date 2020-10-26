@@ -119,10 +119,11 @@ class GNUHashTable(object):
         max_chain_pos = self._chain_pos + \
             (max_idx - self.params['symoffset']) * self._wordsize
         self.elffile.stream.seek(max_chain_pos)
+        hash_format = '<I' if self.elffile.little_endian else '>I'
 
         # Walk the chain to its end (lowest bit is set)
         while True:
-            cur_hash = struct.unpack('I', self.elffile.stream.read(self._wordsize))[0]
+            cur_hash = struct.unpack(hash_format, self.elffile.stream.read(self._wordsize))[0]
             if cur_hash & 1:
                 return max_idx + 1
 
@@ -150,8 +151,9 @@ class GNUHashTable(object):
             return None
 
         self.elffile.stream.seek(self._chain_pos + (symidx - self.params['symoffset']) * self._wordsize)
+        hash_format = '<I' if self.elffile.little_endian else '>I'
         while True:
-            cur_hash = struct.unpack('I', self.elffile.stream.read(self._wordsize))[0]
+            cur_hash = struct.unpack(hash_format, self.elffile.stream.read(self._wordsize))[0]
             if cur_hash | 1 == namehash | 1:
                 symbol = self._symboltable.get_symbol(symidx)
                 if name == symbol.name:
