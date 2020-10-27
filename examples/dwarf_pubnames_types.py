@@ -39,19 +39,13 @@ def process_file(filename):
         else:
             print('%d entries found in .debug_pubnames' % len(pubnames))
 
-            # try getting information on a global symbol.
             print('Trying pubnames example ...')
-            sym_name = 'main'
-            try:
-                entry = pubnames[sym_name]
-            except KeyError:
-                print('ERROR: No pubname entry found for ' + sym_name)
-            else:
+            for name, entry in pubnames.items():
                 print('%s: cu_ofs = %d, die_ofs = %d' %
-                        (sym_name, entry.cu_ofs, entry.die_ofs))
+                        (name, entry.cu_ofs, entry.die_ofs))
 
                 # get the actual CU/DIE that has this information.
-                print('Fetching the actual die for %s ...' % sym_name)
+                print('Fetching the actual die for %s ...' % name)
                 for cu in dwarfinfo.iter_CUs():
                     if cu.cu_offset == entry.cu_ofs:
                         for die in cu.iter_DIEs():
