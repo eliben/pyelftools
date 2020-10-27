@@ -23,6 +23,7 @@ Preparing a new release
 * Untar the created ``dist/pyelftools-x.y.tar.gz`` and make sure
   everything looks ok
 * Now build with upload to send it to PyPi
+* Tag new version in git
 * Test with pip install from some new virtualenv
 
 Distribution
