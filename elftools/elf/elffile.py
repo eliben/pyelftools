@@ -689,7 +689,7 @@ class ELFFile(object):
                 stream=section_stream,
                 name=section.name,
                 global_offset=section['sh_offset'],
-                size=section['sh_size'],
+                size=section._decompressed_size,
                 address=section['sh_addr'])
 
     @staticmethod
