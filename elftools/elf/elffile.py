@@ -120,11 +120,20 @@ class ELFFile(object):
         # mapping
         #
         if self._section_name_map is None:
-            self._section_name_map = {}
-            for i, sec in enumerate(self.iter_sections()):
-                self._section_name_map[sec.name] = i
+            self._make_section_name_map()
         secnum = self._section_name_map.get(name, None)
         return None if secnum is None else self.get_section(secnum)
+
+    def get_section_index(self, section_name):
+        """ Gets the index of the section by name. Return None if no such
+            section name exists.
+        """
+        # The first time this method is called, construct a name to number
+        # mapping
+        #
+        if self._section_name_map is None:
+            self._make_section_name_map()
+        return self._section_name_map.get(section_name, None)
 
     def iter_sections(self):
         """ Yield all the sections in the file
@@ -573,6 +582,11 @@ class ELFFile(object):
             return self._make_gnu_hash_section(section_header, name)
         else:
             return Section(section_header, name, self)
+
+    def _make_section_name_map(self):
+        self._section_name_map = {}
+        for i, sec in enumerate(self.iter_sections()):
+            self._section_name_map[sec.name] = i
 
     def _make_symbol_table_section(self, section_header, name):
         """ Create a SymbolTableSection
