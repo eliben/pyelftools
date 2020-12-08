@@ -252,22 +252,81 @@ class DynamicSegment(Segment, Dynamic):
         Segment.__init__(self, header, stream)
         Dynamic.__init__(self, stream, elffile, stringtable, self['p_offset'],
              self['p_filesz'] == 0)
-        self._symbol_list = None
+        self._symbol_size = self.elfstructs.Elf_Sym.sizeof()
+        self._num_symbols = None
         self._symbol_name_map = None
 
     def num_symbols(self):
         """ Number of symbols in the table recovered from DT_SYMTAB
         """
-        if self._symbol_list is None:
-            self._symbol_list = list(self.iter_symbols())
-        return len(self._symbol_list)
+        if self._num_symbols is not None:
+            return self._num_symbols
+
+        # Check if a DT_GNU_HASH tag exists and recover the number of symbols
+        # from the corresponding hash table
+        _, gnu_hash_offset = self.get_table_offset('DT_GNU_HASH')
+        if gnu_hash_offset is not None:
+            hash_section = GNUHashTable(self.elffile, gnu_hash_offset, self)
+            self._num_symbols = hash_section.get_number_of_symbols()
+
+        # If DT_GNU_HASH did not exist, maybe we can use DT_HASH
+        if self._num_symbols is None:
+            _, hash_offset = self.get_table_offset('DT_HASH')
+            if hash_offset is not None:
+                # Get the hash table from the DT_HASH offset
+                hash_section = ELFHashTable(self.elffile, hash_offset, self)
+                self._num_symbols = hash_section.get_number_of_symbols()
+
+        if self._num_symbols is None:
+            # Find closest higher pointer than tab_ptr. We'll use that to mark
+            # the end of the symbol table.
+            tab_ptr, tab_offset = self.get_table_offset('DT_SYMTAB')
+            if tab_ptr is None or tab_offset is None:
+                raise ELFError('Segment does not contain DT_SYMTAB.')
+            nearest_ptr = None
+            for tag in self.iter_tags():
+                tag_ptr = tag['d_ptr']
+                if tag['d_tag'] == 'DT_SYMENT':
+                    if self._symbol_size != tag['d_val']:
+                        # DT_SYMENT is the size of one symbol entry. It must be
+                        # the same as returned by Elf_Sym.sizeof.
+                        raise ELFError('DT_SYMENT (%d) != Elf_Sym (%d).' %
+                                       (tag['d_val'], self._symbol_size))
+                if (tag_ptr > tab_ptr and
+                        (nearest_ptr is None or nearest_ptr > tag_ptr)):
+                    nearest_ptr = tag_ptr
+
+            if nearest_ptr is None:
+                # Use the end of segment that contains DT_SYMTAB.
+                for segment in self.elffile.iter_segments():
+                    if (segment['p_vaddr'] <= tab_ptr and
+                            tab_ptr <= (segment['p_vaddr'] + segment['p_filesz'])):
+                        nearest_ptr = segment['p_vaddr'] + segment['p_filesz']
+
+            end_ptr = nearest_ptr
+            self._num_symbols = (end_ptr - tab_ptr) // self._symbol_size
+
+        if self._num_symbols is None:
+            raise ELFError('Cannot determine the end of DT_SYMTAB.')
+
+        return self._num_symbols
 
     def get_symbol(self, index):
         """ Get the symbol at index #index from the table (Symbol object)
         """
-        if self._symbol_list is None:
-            self._symbol_list = list(self.iter_symbols())
-        return self._symbol_list[index]
+        tab_ptr, tab_offset = self.get_table_offset('DT_SYMTAB')
+        if tab_ptr is None or tab_offset is None:
+            raise ELFError('Segment does not contain DT_SYMTAB.')
+
+        symbol = struct_parse(
+            self.elfstructs.Elf_Sym,
+            self._stream,
+            stream_pos=tab_offset + index * self._symbol_size)
+
+        string_table = self._get_stringtable()
+        symbol_name = string_table.get_string(symbol["st_name"])
+
+        return Symbol(symbol, symbol_name)
 
     def get_symbol_by_name(self, name):
         """ Get a symbol(s) by name. Return None if no symbol by the given name
@@ -289,62 +348,5 @@ class DynamicSegment(Segment, Dynamic):
             in stripped binaries, SymbolTableSection might have been removed.
             This method reads from the mandatory dynamic tag DT_SYMTAB.
         """
-        tab_ptr, tab_offset = self.get_table_offset('DT_SYMTAB')
-        if tab_ptr is None or tab_offset is None:
-            raise ELFError('Segment does not contain DT_SYMTAB.')
-
-        symbol_size = self.elfstructs.Elf_Sym.sizeof()
-
-        end_ptr = None
-
-        # Check if a DT_GNU_HASH tag exists and recover the number of symbols
-        # from the corresponding hash table
-        _, gnu_hash_offset = self.get_table_offset('DT_GNU_HASH')
-        if gnu_hash_offset is not None:
-            hash_section = GNUHashTable(self.elffile, gnu_hash_offset, self)
-            end_ptr = tab_ptr + \
-                hash_section.get_number_of_symbols() * symbol_size
-
-        # If DT_GNU_HASH did not exist, maybe we can use DT_HASH
-        if end_ptr is None:
-            _, hash_offset = self.get_table_offset('DT_HASH')
-            if hash_offset is not None:
-                # Get the hash table from the DT_HASH offset
-                hash_section = ELFHashTable(self.elffile, hash_offset, self)
-                end_ptr = tab_ptr + \
-                    hash_section.get_number_of_symbols() * symbol_size
-
-        if end_ptr is None:
-            # Find closest higher pointer than tab_ptr. We'll use that to mark
-            # the end of the symbol table.
-            nearest_ptr = None
-            for tag in self.iter_tags():
-                tag_ptr = tag['d_ptr']
-                if tag['d_tag'] == 'DT_SYMENT':
-                    if symbol_size != tag['d_val']:
-                        # DT_SYMENT is the size of one symbol entry. It must be
-                        # the same as returned by Elf_Sym.sizeof.
-                        raise ELFError('DT_SYMENT (%d) != Elf_Sym (%d).' %
-                                    (tag['d_val'], symbol_size))
-                if (tag_ptr > tab_ptr and
-                        (nearest_ptr is None or nearest_ptr > tag_ptr)):
-                    nearest_ptr = tag_ptr
-
-            if nearest_ptr is None:
-                # Use the end of segment that contains DT_SYMTAB.
-                for segment in self.elffile.iter_segments():
-                    if (segment['p_vaddr'] <= tab_ptr and
-                            tab_ptr <= (segment['p_vaddr'] + segment['p_filesz'])):
-                        nearest_ptr = segment['p_vaddr'] + segment['p_filesz']
-
-            end_ptr = nearest_ptr
-
-        if end_ptr is None:
-            raise ELFError('Cannot determine the end of DT_SYMTAB.')
-
-        string_table = self._get_stringtable()
-        for i in range((end_ptr - tab_ptr) // symbol_size):
-            symbol = struct_parse(self.elfstructs.Elf_Sym, self._stream,
-                                  i * symbol_size + tab_offset)
-            symbol_name = string_table.get_string(symbol['st_name'])
-            yield Symbol(symbol, symbol_name)
+        for i in range(self.num_symbols()):
+            yield(self.get_symbol(i))
