@@ -5,6 +5,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import unittest
+import os
 
 from elftools.elf.elffile import ELFFile
 
@@ -43,6 +44,16 @@ class TestMap(unittest.TestCase):
         self.assertEqual(tuple(elf.address_offsets(0x103FE, 4)), ())
         self.assertEqual(tuple(elf.address_offsets(0x10400, 4)), ())
 
+class TestSectionFilter(unittest.TestCase):
+
+    def test_section_filter(self):
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'arm_exidx_test.so'), 'rb') as f:
+            elf = ELFFile(f)
+            self.assertEqual(len(list(elf.iter_sections())), 26)
+            self.assertEqual(len(list(elf.iter_sections('SHT_REL'))), 2)
+            self.assertEqual(len(list(elf.iter_sections('SHT_ARM_EXIDX'))), 1)
+            self.assertTrue(elf.has_ehabi_info())
 
 if __name__ == '__main__':
     unittest.main()

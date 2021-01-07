@@ -135,11 +135,17 @@ class ELFFile(object):
             self._make_section_name_map()
         return self._section_name_map.get(section_name, None)
 
-    def iter_sections(self):
-        """ Yield all the sections in the file
+    def iter_sections(self, type=None):
+        """ Yield all the sections in the file. If the optional |type|
+            parameter is passed, this method will only yield sections of the
+            given type. The parameter value must be a string containing the
+            name of the type as defined in the ELF specification, e.g.
+            'SHT_SYMTAB'.
         """
         for i in range(self.num_sections()):
-            yield self.get_section(i)
+            section = self.get_section(i)
+            if type is None or section['sh_type'] == type:
+                yield section
 
     def num_segments(self):
         """ Number of segments in the file
@@ -254,7 +260,7 @@ class ELFFile(object):
     def has_ehabi_info(self):
         """ Check whether this file appears to have arm exception handler index table.
         """
-        return any(s['sh_type'] == 'SHT_ARM_EXIDX' for s in self.iter_sections())
+        return any(self.iter_sections(type='SHT_ARM_EXIDX'))
 
     def get_ehabi_infos(self):
         """ Generally, shared library and executable contain 1 .ARM.exidx section.
@@ -265,9 +271,8 @@ class ELFFile(object):
         if self['e_type'] == 'ET_REL':
             # TODO: support relocatable file
             assert False, "Current version of pyelftools doesn't support relocatable file."
-        for section in self.iter_sections():
-            if section['sh_type'] == 'SHT_ARM_EXIDX':
-                _ret.append(EHABIInfo(section, self.little_endian))
+        for section in self.iter_sections(type='SHT_ARM_EXIDX'):
+            _ret.append(EHABIInfo(section, self.little_endian))
         return _ret if len(_ret) > 0 else None
 
     def get_machine_arch(self):
