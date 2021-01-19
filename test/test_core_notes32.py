@@ -35,13 +35,13 @@ class TestCoreNotes(unittest.TestCase):
                 self.assertEqual(desc['pr_sname'], b'R')
                 self.assertEqual(desc['pr_zomb'], 0)
                 self.assertEqual(desc['pr_nice'], 0)
-                self.assertEqual(desc['pr_flag'], 0x404700)
+                self.assertEqual(desc['pr_flag'], 0x400600)
                 self.assertEqual(desc['pr_uid'], 1000)
                 self.assertEqual(desc['pr_gid'], 1000)
-                self.assertEqual(desc['pr_pid'], 131)
-                self.assertEqual(desc['pr_ppid'], 108)
-                self.assertEqual(desc['pr_pgrp'], 131)
-                self.assertEqual(desc['pr_sid'], 108)
+                self.assertEqual(desc['pr_pid'], 11038)
+                self.assertEqual(desc['pr_ppid'], 10442)
+                self.assertEqual(desc['pr_pgrp'], 11038)
+                self.assertEqual(desc['pr_sid'], 10442)
                 self.assertEqual(
                     desc['pr_fname'],
                     b'coredump\x00\x00\x00\x00\x00\x00\x00\x00')
@@ -57,41 +57,29 @@ class TestCoreNotes(unittest.TestCase):
 
         eu-readelf -n core_linux64.elf
         ...
-        CORE                 0x0000029b	NT_FILE (mapped files)
+        CORE                 0x0000018b	NT_FILE (mapped files)
         Page size: 4096
              Start         End Page Offset
-        0x56610000  0x56611000  0x00000000
+        0x56624000  0x56625000  0x00000000
             /tmp/coredump
-        0x56611000  0x56612000  0x00000001
+        0x56625000  0x56626000  0x00000000
             /tmp/coredump
-        0x56612000  0x56613000  0x00000002
+        0x56626000  0x56627000  0x00000001
             /tmp/coredump
-        0x56613000  0x56614000  0x00000002
-            /tmp/coredump
-        0x56614000  0x56615000  0x00000003
-            /tmp/coredump
-        0xf7dbe000  0xf7ddb000  0x00000000
-            /usr/lib/i386-linux-gnu/libc-2.31.so
-        0xf7ddb000  0xf7f36000  0x0000001d
-            /usr/lib/i386-linux-gnu/libc-2.31.so
-        0xf7f36000  0xf7fa6000  0x00000178
-            /usr/lib/i386-linux-gnu/libc-2.31.so
-        0xf7fa6000  0xf7fa7000  0x000001e8
-            /usr/lib/i386-linux-gnu/libc-2.31.so
-        0xf7fa7000  0xf7fa9000  0x000001e8
-            /usr/lib/i386-linux-gnu/libc-2.31.so
-        0xf7fa9000  0xf7fab000  0x000001ea
-            /usr/lib/i386-linux-gnu/libc-2.31.so
-        0xf7fbb000  0xf7fbc000  0x00000000
-            /usr/lib/i386-linux-gnu/ld-2.31.so
-        0xf7fbc000  0xf7fda000  0x00000001
-            /usr/lib/i386-linux-gnu/ld-2.31.so
-        0xf7fda000  0xf7fe5000  0x0000001f
-            /usr/lib/i386-linux-gnu/ld-2.31.so
-        0xf7fe6000  0xf7fe7000  0x0000002a
-            /usr/lib/i386-linux-gnu/ld-2.31.so
-        0xf7fe7000  0xf7fe8000  0x0000002b
-            /usr/lib/i386-linux-gnu/ld-2.31.so
+        0xf7d13000  0xf7ee8000  0x00000000
+            /lib/i386-linux-gnu/libc-2.27.so
+        0xf7ee8000  0xf7ee9000  0x000001d5
+            /lib/i386-linux-gnu/libc-2.27.so
+        0xf7ee9000  0xf7eeb000  0x000001d5
+            /lib/i386-linux-gnu/libc-2.27.so
+        0xf7eeb000  0xf7eec000  0x000001d7
+            /lib/i386-linux-gnu/libc-2.27.so
+        0xf7f39000  0xf7f5f000  0x00000000
+            /lib/i386-linux-gnu/ld-2.27.so
+        0xf7f5f000  0xf7f60000  0x00000025
+            /lib/i386-linux-gnu/ld-2.27.so
+        0xf7f60000  0xf7f61000  0x00000026
+            /lib/i386-linux-gnu/ld-2.27.so
         ...
         """
         elf = ELFFile(self._core_file)
@@ -104,106 +92,71 @@ class TestCoreNotes(unittest.TestCase):
                     continue
                 nt_file_found = True
                 desc = note['n_desc']
-                self.assertEqual(desc['num_map_entries'], 16)
+                self.assertEqual(desc['num_map_entries'], 10)
                 self.assertEqual(desc['page_size'], 4096)
-                self.assertEqual(len(desc['Elf_Nt_File_Entry']), 16)
-                self.assertEqual(len(desc['filename']), 16)
+                self.assertEqual(len(desc['Elf_Nt_File_Entry']), 10)
+                self.assertEqual(len(desc['filename']), 10)
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][0],
                                             desc['page_size'],
-                                            0x56610000, 0x56611000, 0x00000000)
+                                            0x56624000, 0x56625000, 0x00000000)
                 self.assertEqual(desc['filename'][0],
                                  b"/tmp/coredump")
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][1],
                                             desc['page_size'],
-                                            0x56611000, 0x56612000, 0x00000001)
+                                            0x56625000, 0x56626000, 0x00000000)
                 self.assertEqual(desc['filename'][1],
                                  b"/tmp/coredump")
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][2],
                                             desc['page_size'],
-                                            0x56612000, 0x56613000, 0x00000002)
+                                            0x56626000, 0x56627000, 0x00000001)
                 self.assertEqual(desc['filename'][2],
                                  b"/tmp/coredump")
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][3],
                                             desc['page_size'],
-                                            0x56613000, 0x56614000, 0x00000002)
+                                            0xf7d13000, 0xf7ee8000, 0x00000000)
                 self.assertEqual(desc['filename'][3],
-                                 b"/tmp/coredump")
+                                 b"/lib/i386-linux-gnu/libc-2.27.so")
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][4],
                                             desc['page_size'],
-                                            0x56614000, 0x56615000, 0x00000003)
+                                            0xf7ee8000, 0xf7ee9000, 0x000001d5)
                 self.assertEqual(desc['filename'][4],
-                                 b"/tmp/coredump")
+                                 b"/lib/i386-linux-gnu/libc-2.27.so")
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][5],
                                             desc['page_size'],
-                                            0xf7dbe000, 0xf7ddb000, 0x00000000)
+                                            0xf7ee9000, 0xf7eeb000, 0x000001d5)
                 self.assertEqual(desc['filename'][5],
-                                 b"/usr/lib/i386-linux-gnu/libc-2.31.so")
+                                 b"/lib/i386-linux-gnu/libc-2.27.so")
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][6],
                                             desc['page_size'],
-                                            0xf7ddb000, 0xf7f36000, 0x0000001d)
+                                            0xf7eeb000, 0xf7eec000, 0x000001d7)
                 self.assertEqual(desc['filename'][6],
-                                 b"/usr/lib/i386-linux-gnu/libc-2.31.so")
+                                 b"/lib/i386-linux-gnu/libc-2.27.so")
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][7],
                                             desc['page_size'],
-                                            0xf7f36000, 0xf7fa6000, 0x00000178)
+                                            0xf7f39000, 0xf7f5f000, 0x00000000)
                 self.assertEqual(desc['filename'][7],
-                                 b"/usr/lib/i386-linux-gnu/libc-2.31.so")
+                                 b"/lib/i386-linux-gnu/ld-2.27.so")
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][8],
                                             desc['page_size'],
-                                            0xf7fa6000, 0xf7fa7000, 0x000001e8)
+                                            0xf7f5f000, 0xf7f60000, 0x00000025)
                 self.assertEqual(desc['filename'][8],
-                                 b"/usr/lib/i386-linux-gnu/libc-2.31.so")
+                                 b"/lib/i386-linux-gnu/ld-2.27.so")
 
                 self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][9],
                                             desc['page_size'],
-                                            0xf7fa7000, 0xf7fa9000, 0x000001e8)
+                                            0xf7f60000, 0xf7f61000, 0x00000026)
                 self.assertEqual(desc['filename'][9],
-                                 b"/usr/lib/i386-linux-gnu/libc-2.31.so")
+                                 b"/lib/i386-linux-gnu/ld-2.27.so")
 
-                self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][10],
-                                            desc['page_size'],
-                                            0xf7fa9000, 0xf7fab000, 0x000001ea)
-                self.assertEqual(desc['filename'][10],
-                                 b"/usr/lib/i386-linux-gnu/libc-2.31.so")
-
-                self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][11],
-                                            desc['page_size'],
-                                            0xf7fbb000, 0xf7fbc000, 0x00000000)
-                self.assertEqual(desc['filename'][11],
-                                 b"/usr/lib/i386-linux-gnu/ld-2.31.so")
-
-                self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][12],
-                                            desc['page_size'],
-                                            0xf7fbc000, 0xf7fda000, 0x00000001)
-                self.assertEqual(desc['filename'][12],
-                                 b"/usr/lib/i386-linux-gnu/ld-2.31.so")
-
-                self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][13],
-                                            desc['page_size'],
-                                            0xf7fda000, 0xf7fe5000, 0x0000001f)
-                self.assertEqual(desc['filename'][13],
-                                 b"/usr/lib/i386-linux-gnu/ld-2.31.so")
-
-                self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][14],
-                                            desc['page_size'],
-                                            0xf7fe6000, 0xf7fe7000, 0x0000002a)
-                self.assertEqual(desc['filename'][14],
-                                 b"/usr/lib/i386-linux-gnu/ld-2.31.so")
-
-                self.validate_nt_file_entry(desc['Elf_Nt_File_Entry'][15],
-                                            desc['page_size'],
-                                            0xf7fe7000, 0xf7fe8000, 0x0000002b)
-                self.assertEqual(desc['filename'][15],
-                                 b"/usr/lib/i386-linux-gnu/ld-2.31.so")
         self.assertTrue(nt_file_found)
 
     def validate_nt_file_entry(self,
@@ -214,8 +167,7 @@ class TestCoreNotes(unittest.TestCase):
                                expected_page_offset):
         self.assertEqual(entry.vm_start, expected_vm_start)
         self.assertEqual(entry.vm_end, expected_vm_end)
-        print(entry.page_offset, page_size, expected_page_offset)
-        self.assertEqual(entry.page_offset * page_size, expected_page_offset)
+        self.assertEqual(entry.page_offset, expected_page_offset)
 
     @classmethod
     def tearDownClass(cls):
