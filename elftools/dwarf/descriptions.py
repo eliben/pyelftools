@@ -530,12 +530,24 @@ _REG_NAMES_x64 = [
     'mxcsr', 'fcw', 'fsw'
 ]
 
-# https://developer.arm.com/docs/ihi0057/c/dwarf-for-the-arm-64-bit-architecture-aarch64-abi-2018q4#id24
+# https://developer.arm.com/documentation/ihi0057/e/?lang=en#dwarf-register-names
 _REG_NAMES_AArch64 = [
-    'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'x9',
-    'x10', 'x11', 'x12', 'x13', 'x14', 'x15', 'x16', 'x17', 'x18', 'x19',
-    'x20', 'x21', 'x22', 'x23', 'x24', 'x25', 'x26', 'x27', 'x28', 'x29',
-    'x30', 'sp'
+    'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7',
+    'x8', 'x9', 'x10', 'x11', 'x12', 'x13', 'x14', 'x15',
+    'x16', 'x17', 'x18', 'x19', 'x20', 'x21', 'x22', 'x23',
+    'x24', 'x25', 'x26', 'x27', 'x28', 'x29', 'x30', 'sp',
+    '<none>', 'ELR_mode', 'RA_SIGN_STATE', '<none>', '<none>', '<none>', '<none>', '<none>',
+    '<none>', '<none>', '<none>', '<none>', '<none>', '<none>', 'VG', 'FFR',
+    'p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7',
+    'p8', 'p9', 'p10', 'p11', 'p12', 'p13', 'p14', 'p15',
+    'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7',
+    'v8', 'v9', 'v10', 'v11', 'v12', 'v13', 'v14', 'v15',
+    'v16', 'v17', 'v18', 'v19', 'v20', 'v21', 'v22', 'v23',
+    'v24', 'v25', 'v26', 'v27', 'v28', 'v29', 'v30', 'v31',
+    'z0', 'z1', 'z2', 'z3', 'z4', 'z5', 'z6', 'z7',
+    'z8', 'z9', 'z10', 'z11', 'z12', 'z13', 'z14', 'z15',
+    'z16', 'z17', 'z18', 'z19', 'z20', 'z21', 'z22', 'z23',
+    'z24', 'z25', 'z26', 'z27', 'z28', 'z29', 'z30', 'z31'
 ]
 
 
