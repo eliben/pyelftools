@@ -289,7 +289,10 @@ class ELFStructs(object):
         # st_other is hierarchical. To access the visibility,
         # use container['st_other']['visibility']
         st_other_struct = BitStruct('st_other',
-            Padding(5),
+            # https://openpowerfoundation.org/wp-content/uploads/2016/03/ABI64BitOpenPOWERv1.1_16July2015_pub4.pdf
+            # See 3.4.1 Symbol Values.
+            Enum(BitField('local', 3), **ENUM_ST_LOCAL),
+            Padding(2),
             Enum(BitField('visibility', 3), **ENUM_ST_VISIBILITY))
         if self.elfclass == 32:
             self.Elf_Sym = Struct('Elf_Sym',

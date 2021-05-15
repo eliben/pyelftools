@@ -48,7 +48,7 @@ from elftools.elf.descriptions import (
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
     describe_dt_flags, describe_dt_flags_1, describe_ver_flags, describe_note,
-    describe_attr_tag_arm
+    describe_attr_tag_arm, describe_symbol_other
     )
 from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import E_FLAGS_MASKS
@@ -172,6 +172,10 @@ class ReadElf(object):
                     description += ', <unknown>'
             else:
                 description += ', <unrecognized EABI>'
+
+        elif self.elffile['e_machine'] == 'EM_PPC64':
+            if flags & E_FLAGS.EF_PPC64_ABI_V2:
+                description += ', abiv2'
 
         elif self.elffile['e_machine'] == "EM_MIPS":
             if flags & E_FLAGS.EF_MIPS_NOREORDER:
@@ -422,7 +426,7 @@ class ReadElf(object):
                     "%5d" % symbol['st_size'] if symbol['st_size'] < 100000 else hex(symbol['st_size']),
                     describe_symbol_type(symbol['st_info']['type']),
                     describe_symbol_bind(symbol['st_info']['bind']),
-                    describe_symbol_visibility(symbol['st_other']['visibility']),
+                    describe_symbol_other(symbol['st_other']),
                     describe_symbol_shndx(self._get_symbol_shndx(symbol,
                                                                  nsym,
                                                                  section_index)),
@@ -1143,7 +1147,7 @@ class ReadElf(object):
                     # readelf doesn't print the state after end_sequence
                     # instructions. I think it's a bug but to be compatible
                     # I don't print them too.
-                    if lineprogram['version'] < 4:
+                    if lineprogram['version'] < 4 or self.elffile['e_machine'] == 'EM_PPC64':
                         self._emitline('%-35s  %11d  %18s' % (
                             bytes2str(lineprogram['file_entry'][state.file - 1].name),
                             state.line,
