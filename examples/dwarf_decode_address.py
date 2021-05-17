@@ -67,7 +67,7 @@ def decode_funcname(dwarfinfo, address):
                               highpc_attr_class)
                         continue
 
-                    if lowpc <= address <= highpc:
+                    if lowpc <= address < highpc:
                         return DIE.attributes['DW_AT_name'].value
             except KeyError:
                 continue
