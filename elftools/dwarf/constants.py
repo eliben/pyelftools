@@ -160,6 +160,15 @@ DW_LNE_set_discriminator = 0x04
 DW_LNE_lo_user = 0x80
 DW_LNE_hi_user = 0xff
 
+# Line program header content types
+#
+DW_LNCT_path = 0x01
+DW_LNCT_directory_index = 0x02
+DW_LNCT_timestamp = 0x03
+DW_LNCT_size = 0x04
+DW_LNCT_MD5 = 0x05
+DW_LNCT_lo_user = 0x2000
+DW_LNCT_hi_user = 0x3fff
 
 # Call frame instructions
 #
