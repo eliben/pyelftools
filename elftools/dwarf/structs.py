@@ -161,17 +161,13 @@ class DWARFStructs(object):
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
             If(lambda ctx: ctx['version'] >= 5,
-                self.Dwarf_uint8('unit_type'),
-                0,
-            ),
-            # DWARFv5 flips the order of address_size and debug_abbrev_offset.
-            If(lambda ctx: ctx['version'] >= 5,
-                self.Dwarf_uint8('address_size'),
-                self.Dwarf_offset('debug_abbrev_offset'),
-            ),
-            If(lambda ctx: ctx['version'] < 5,
-                self.Dwarf_offset('debug_abbrev_offset'),
-                self.Dwarf_uint8('address_size'),
+                Embed(Struct('',
+                    self.Dwarf_uint8('unit_type'),
+                    self.Dwarf_uint8('address_size'),
+                    self.Dwarf_offset('debug_abbrev_offset'))),
+                Embed(Struct('',
+                    self.Dwarf_offset('debug_abbrev_offset'),
+                    self.Dwarf_uint8('address_size'))),
             ))
 
     def _create_abbrev_declaration(self):
