@@ -11,7 +11,7 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, Enum, Array, PrefixedArray,
-    CString, Embed, StaticField
+    CString, Embed, StaticField, IfThenElse
     )
 from ..common.construct_utils import RepeatUntilExcluding, ULEB128, SLEB128
 from .enums import *
@@ -160,7 +160,7 @@ class DWARFStructs(object):
         self.Dwarf_CU_header = Struct('Dwarf_CU_header',
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
-            If(lambda ctx: ctx['version'] >= 5,
+            IfThenElse('', lambda ctx: ctx['version'] >= 5,
                 Embed(Struct('',
                     self.Dwarf_uint8('unit_type'),
                     self.Dwarf_uint8('address_size'),
