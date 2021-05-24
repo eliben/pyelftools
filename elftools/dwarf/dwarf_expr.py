@@ -197,6 +197,7 @@ def _init_dispatch_table(structs):
         return lambda stream: [struct_parse(structs.Dwarf_uleb128(''), stream), read_blob(stream, struct_parse(structs.Dwarf_uint8(''), stream))]
 
     add('DW_OP_addr', parse_op_addr())
+    add('DW_OP_addrx', parse_arg_struct(structs.Dwarf_uleb128('')))
     add('DW_OP_const1u', parse_arg_struct(structs.Dwarf_uint8('')))
     add('DW_OP_const1s', parse_arg_struct(structs.Dwarf_int8('')))
     add('DW_OP_const2u', parse_arg_struct(structs.Dwarf_uint16('')))
