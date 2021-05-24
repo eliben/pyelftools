@@ -213,7 +213,7 @@ DW_CFA_GNU_args_size = 0x2e
 #
 # DWARFv5 introduces the unit_type" field to each CU header, allowing
 # individual CUs to indicate whether they're complete, partial, and so forth.
-# See DWARFv3 3.1 ("Unit Entries") and 7.5.1 ("Unit Headers").
+# See DWARFv5 3.1 ("Unit Entries") and 7.5.1 ("Unit Headers").
 DW_UT_compile = 0x01
 DW_UT_type = 0x02
 DW_UT_partial = 0x03
