@@ -200,6 +200,10 @@ class DWARFStructs(object):
 
             DW_FORM_string=CString(''),
             DW_FORM_strp=self.Dwarf_offset(''),
+            DW_FORM_strx1=self.Dwarf_uint8(''),
+            DW_FORM_strx2=self.Dwarf_uint16(''),
+            # DW_FORM_strx3=self.Dwarf_uint24(''),  # TODO
+            DW_FORM_strx4=self.Dwarf_uint64(''),
             DW_FORM_flag=self.Dwarf_uint8(''),
 
             DW_FORM_ref=self.Dwarf_uint32(''),
