@@ -160,6 +160,7 @@ class DWARFStructs(object):
         self.Dwarf_CU_header = Struct('Dwarf_CU_header',
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
+            # DWARFv5 reverses the order of address_size and debug_abbrev_offset.
             IfThenElse('', lambda ctx: ctx['version'] >= 5,
                 Embed(Struct('',
                     self.Dwarf_uint8('unit_type'),
