@@ -434,7 +434,7 @@ class DWARFInfo(object):
     def _is_supported_version(self, version):
         """ DWARF version supported by this parser
         """
-        return 2 <= version <= 4
+        return 2 <= version <= 5
 
     def _parse_line_program_at_offset(self, debug_line_offset, structs):
         """ Given an offset to the .debug_line section, parse the line program

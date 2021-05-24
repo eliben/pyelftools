@@ -89,7 +89,7 @@ class DWARFStructs(object):
                 section 7.5.1)
         """
         assert dwarf_format == 32 or dwarf_format == 64
-        assert address_size == 8 or address_size == 4
+        assert address_size == 8 or address_size == 4, str(address_size)
         self.little_endian = little_endian
         self.dwarf_format = dwarf_format
         self.address_size = address_size
@@ -160,8 +160,19 @@ class DWARFStructs(object):
         self.Dwarf_CU_header = Struct('Dwarf_CU_header',
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
-            self.Dwarf_offset('debug_abbrev_offset'),
-            self.Dwarf_uint8('address_size'))
+            If(lambda ctx: ctx['version'] >= 5,
+                self.Dwarf_uint8('unit_type'),
+                0,
+            ),
+            # DWARFv5 flips the order of address_size and debug_abbrev_offset.
+            If(lambda ctx: ctx['version'] >= 5,
+                self.Dwarf_uint8('address_size'),
+                self.Dwarf_offset('debug_abbrev_offset'),
+            ),
+            If(lambda ctx: ctx['version'] < 5,
+                self.Dwarf_offset('debug_abbrev_offset'),
+                self.Dwarf_uint8('address_size'),
+            ))
 
     def _create_abbrev_declaration(self):
         self.Dwarf_abbrev_declaration = Struct('Dwarf_abbrev_entry',
