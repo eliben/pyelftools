@@ -71,7 +71,9 @@ class DWARFInfo(object):
             debug_ranges_sec,
             debug_line_sec,
             debug_pubtypes_sec,
-            debug_pubnames_sec):
+            debug_pubnames_sec,
+            debug_addr_sec,
+            debug_str_offsets_sec):
         """ config:
                 A DwarfConfig object
 

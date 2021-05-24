@@ -43,7 +43,9 @@ class TestRefAddrOnDWARFv2With64BitTarget(unittest.TestCase):
             debug_ranges_sec = None,
             debug_line_sec = None,
             debug_pubtypes_sec = None,
-            debug_pubnames_sec = None
+            debug_pubnames_sec = None,
+            debug_addr_sec=None,
+            debug_str_offsets_sec=None,
         )
 
         CUs = [cu for cu in di.iter_CUs()]
