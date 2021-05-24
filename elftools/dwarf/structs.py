@@ -138,6 +138,8 @@ class DWARFStructs(object):
         self._create_callframe_entry_headers()
         self._create_aranges_header()
         self._create_nameLUT_header()
+        self._create_string_offsets_table_header()
+        self._create_address_table_header()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -248,6 +250,22 @@ class DWARFStructs(object):
             self.Dwarf_uint16('version'),
             self.Dwarf_offset('debug_info_offset'),
             self.Dwarf_length('debug_info_length')
+            )
+
+    def _create_string_offsets_table_header(self):
+        self.Dwarf_string_offsets_table_header = Struct(
+            "Dwarf_string_offets_table_header",
+            self.Dwarf_initial_length('unit_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_uint16('padding'),
+            )
+
+    def _create_address_table_header(self):
+        self.Dwarf_address_table_header = Struct("Dwarf_address_table_header",
+            self.Dwarf_initial_length('unit_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_uint8('address_size'),
+            self.Dwarf_uint8('segment_selector_size'),
             )
 
     def _create_lineprog_header(self):
