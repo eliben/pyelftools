@@ -184,6 +184,11 @@ class DWARFStructs(object):
     def _create_dw_form(self):
         self.Dwarf_dw_form = dict(
             DW_FORM_addr=self.Dwarf_target_addr(''),
+            DW_FORM_addrx=self.Dwarf_uleb128(''),
+            DW_FORM_addr1=self.Dwarf_uint8(''),
+            DW_FORM_addr2=self.Dwarf_uint16(''),
+            # DW_FORM_addr3=self.Dwarf_uint24(''),  # TODO
+            DW_FORM_addr4=self.Dwarf_uint32(''),
 
             DW_FORM_block1=self._make_block_struct(self.Dwarf_uint8),
             DW_FORM_block2=self._make_block_struct(self.Dwarf_uint16),
