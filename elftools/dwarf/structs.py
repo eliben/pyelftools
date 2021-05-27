@@ -11,7 +11,7 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, Enum, Array, PrefixedArray,
-    CString, Embed, StaticField
+    CString, Embed, StaticField, IfThenElse
     )
 from ..common.construct_utils import RepeatUntilExcluding, ULEB128, SLEB128
 from .enums import *
@@ -89,7 +89,7 @@ class DWARFStructs(object):
                 section 7.5.1)
         """
         assert dwarf_format == 32 or dwarf_format == 64
-        assert address_size == 8 or address_size == 4
+        assert address_size == 8 or address_size == 4, str(address_size)
         self.little_endian = little_endian
         self.dwarf_format = dwarf_format
         self.address_size = address_size
@@ -138,6 +138,8 @@ class DWARFStructs(object):
         self._create_callframe_entry_headers()
         self._create_aranges_header()
         self._create_nameLUT_header()
+        self._create_string_offsets_table_header()
+        self._create_address_table_header()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -160,8 +162,16 @@ class DWARFStructs(object):
         self.Dwarf_CU_header = Struct('Dwarf_CU_header',
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
-            self.Dwarf_offset('debug_abbrev_offset'),
-            self.Dwarf_uint8('address_size'))
+            # DWARFv5 reverses the order of address_size and debug_abbrev_offset.
+            IfThenElse('', lambda ctx: ctx['version'] >= 5,
+                Embed(Struct('',
+                    self.Dwarf_uint8('unit_type'),
+                    self.Dwarf_uint8('address_size'),
+                    self.Dwarf_offset('debug_abbrev_offset'))),
+                Embed(Struct('',
+                    self.Dwarf_offset('debug_abbrev_offset'),
+                    self.Dwarf_uint8('address_size'))),
+            ))
 
     def _create_abbrev_declaration(self):
         self.Dwarf_abbrev_declaration = Struct('Dwarf_abbrev_entry',
@@ -177,6 +187,11 @@ class DWARFStructs(object):
     def _create_dw_form(self):
         self.Dwarf_dw_form = dict(
             DW_FORM_addr=self.Dwarf_target_addr(''),
+            DW_FORM_addrx=self.Dwarf_uleb128(''),
+            DW_FORM_addrx1=self.Dwarf_uint8(''),
+            DW_FORM_addrx2=self.Dwarf_uint16(''),
+            # DW_FORM_addrx3=self.Dwarf_uint24(''),  # TODO
+            DW_FORM_addrx4=self.Dwarf_uint32(''),
 
             DW_FORM_block1=self._make_block_struct(self.Dwarf_uint8),
             DW_FORM_block2=self._make_block_struct(self.Dwarf_uint16),
@@ -193,6 +208,10 @@ class DWARFStructs(object):
 
             DW_FORM_string=CString(''),
             DW_FORM_strp=self.Dwarf_offset(''),
+            DW_FORM_strx1=self.Dwarf_uint8(''),
+            DW_FORM_strx2=self.Dwarf_uint16(''),
+            # DW_FORM_strx3=self.Dwarf_uint24(''),  # TODO
+            DW_FORM_strx4=self.Dwarf_uint64(''),
             DW_FORM_flag=self.Dwarf_uint8(''),
 
             DW_FORM_ref=self.Dwarf_uint32(''),
@@ -231,6 +250,22 @@ class DWARFStructs(object):
             self.Dwarf_uint16('version'),
             self.Dwarf_offset('debug_info_offset'),
             self.Dwarf_length('debug_info_length')
+            )
+
+    def _create_string_offsets_table_header(self):
+        self.Dwarf_string_offsets_table_header = Struct(
+            "Dwarf_string_offets_table_header",
+            self.Dwarf_initial_length('unit_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_uint16('padding'),
+            )
+
+    def _create_address_table_header(self):
+        self.Dwarf_address_table_header = Struct("Dwarf_address_table_header",
+            self.Dwarf_initial_length('unit_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_uint8('address_size'),
+            self.Dwarf_uint8('segment_selector_size'),
             )
 
     def _create_lineprog_header(self):

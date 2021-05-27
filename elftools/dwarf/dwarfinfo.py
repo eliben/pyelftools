@@ -71,7 +71,9 @@ class DWARFInfo(object):
             debug_ranges_sec,
             debug_line_sec,
             debug_pubtypes_sec,
-            debug_pubnames_sec):
+            debug_pubnames_sec,
+            debug_addr_sec,
+            debug_str_offsets_sec):
         """ config:
                 A DwarfConfig object
 
@@ -434,7 +436,7 @@ class DWARFInfo(object):
     def _is_supported_version(self, version):
         """ DWARF version supported by this parser
         """
-        return 2 <= version <= 4
+        return 2 <= version <= 5
 
     def _parse_line_program_at_offset(self, debug_line_offset, structs):
         """ Given an offset to the .debug_line section, parse the line program
