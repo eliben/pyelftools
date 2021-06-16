@@ -285,12 +285,14 @@ class DWARFInfo(object):
         each symbol. See the NameLUT doc string for more details.
         """
 
-        if self.debug_pubtypes_sec:
-            return NameLUT(self.debug_pubtypes_sec.stream,
-                    self.debug_pubtypes_sec.size,
-                    self.structs)
-        else:
-            return None
+        if not hasattr(self, '_pubtypes'):
+            if self.debug_pubtypes_sec:
+                self._pubtypes = NameLUT(self.debug_pubtypes_sec.stream,
+                                 self.debug_pubtypes_sec.size,
+                                 self.structs)
+            else:
+                self._pubtypes = None
+        return self._pubtypes
 
     def get_pubnames(self):
         """
@@ -301,12 +303,14 @@ class DWARFInfo(object):
         each symbol. See the NameLUT doc string for more details.
         """
 
-        if self.debug_pubnames_sec:
-            return NameLUT(self.debug_pubnames_sec.stream,
-                    self.debug_pubnames_sec.size,
-                    self.structs)
-        else:
-            return None
+        if not hasattr(self, '_pubnames'):
+            if self.debug_pubnames_sec:
+                self._pubnames = NameLUT(self.debug_pubnames_sec.stream,
+                                 self.debug_pubnames_sec.size,
+                                 self.structs)
+            else:
+                self._pubnames = None
+        return self._pubnames
 
     def get_aranges(self):
         """ Get an ARanges object representing the .debug_aranges section of
