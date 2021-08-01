@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 # elftools tests
 #
-# Lukas Dresel (lukasdresel@ucsb.edu)
+# Lukas Dresel (lukas.dresel@cs.ucsb.edu)
 # This code is in the public domain
 #------------------------------------------------------------------------------
 import unittest
