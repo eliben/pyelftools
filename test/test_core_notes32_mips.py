@@ -12,8 +12,11 @@ from elftools.elf.segments import NoteSegment
 
 
 class TestCoreNotes(unittest.TestCase):
-    """ This test makes sure than core dump specific
-        sections are properly analyzed.
+    """ This test ensures that core dump specific notes
+        are properly analyzed. Specifically, tests for a
+        regression where MIPS PRPSINFO structures would be
+        parsed incorrectly due to being treated as 16-bit
+        fields instead of 32-bit fields.
     """
     @classmethod
     def setUpClass(cls):
@@ -51,6 +54,7 @@ class TestCoreNotes(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls._core_file.close()
+
 
 if __name__ == '__main__':
     unittest.main()
