@@ -67,7 +67,7 @@ def decode_funcname(dwarfinfo, address):
                               highpc_attr_class)
                         continue
 
-                    if lowpc <= address <= highpc:
+                    if lowpc <= address < highpc:
                         return DIE.attributes['DW_AT_name'].value
             except KeyError:
                 continue
@@ -85,17 +85,22 @@ def decode_file_line(dwarfinfo, address):
             # We're interested in those entries where a new state is assigned
             if entry.state is None:
                 continue
-            if entry.state.end_sequence:
-                # if the line number sequence ends, clear prevstate.
-                prevstate = None
-                continue
             # Looking for a range of addresses in two consecutive states that
             # contain the required address.
             if prevstate and prevstate.address <= address < entry.state.address:
                 filename = lineprog['file_entry'][prevstate.file - 1].name
                 line = prevstate.line
                 return filename, line
-            prevstate = entry.state
+            if entry.state.end_sequence:
+                # For the state with `end_sequence`, `address` means the address
+                # of the first byte after the target machine instruction
+                # sequence and other information is meaningless. We clear
+                # prevstate so that it's not used in the next iteration. Address
+                # info is used in the above comparison to see if we need to use
+                # the line information for the prevstate.
+                prevstate = None
+            else:
+                prevstate = entry.state
     return None, None
 
 
