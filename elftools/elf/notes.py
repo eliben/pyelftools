@@ -29,14 +29,14 @@ def iter_notes(elffile, offset, size):
             CString('').parse(elffile.stream.read(disk_namesz)))
         offset += disk_namesz
 
-        desc_data = bytes2str(elffile.stream.read(note['n_descsz']))
+        desc_data = elffile.stream.read(note['n_descsz'])
         note['n_descdata'] = desc_data
         if note['n_type'] == 'NT_GNU_ABI_TAG':
             note['n_desc'] = struct_parse(elffile.structs.Elf_abi,
                                           elffile.stream,
                                           offset)
         elif note['n_type'] == 'NT_GNU_BUILD_ID':
-            note['n_desc'] = ''.join('%.2x' % ord(b) for b in desc_data)
+            note['n_desc'] = ''.join('%.2x' % ord(b) for b in bytes2str(desc_data))
         elif note['n_type'] == 'NT_PRPSINFO':
             note['n_desc'] = struct_parse(elffile.structs.Elf_Prpsinfo,
                                           elffile.stream,
