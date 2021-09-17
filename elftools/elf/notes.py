@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.py3compat import bytes2str
+from ..common.py3compat import bytes2hex, bytes2str
 from ..common.utils import struct_parse, roundup
 from ..construct import CString
 
@@ -36,7 +36,9 @@ def iter_notes(elffile, offset, size):
                                           elffile.stream,
                                           offset)
         elif note['n_type'] == 'NT_GNU_BUILD_ID':
-            note['n_desc'] = ''.join('%.2x' % ord(b) for b in bytes2str(desc_data))
+            note['n_desc'] = bytes2hex(desc_data)
+        elif note['n_type'] == 'NT_GNU_GOLD_VERSION':
+            note['n_desc'] = bytes2str(desc_data)
         elif note['n_type'] == 'NT_PRPSINFO':
             note['n_desc'] = struct_parse(elffile.structs.Elf_Prpsinfo,
                                           elffile.stream,

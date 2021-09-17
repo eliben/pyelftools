@@ -16,6 +16,7 @@ sys.path[0:0] = ['.', '..']
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import NoteSection
+from elftools.common.py3compat import bytes2hex
 
 
 def process_file(filename):
@@ -36,10 +37,10 @@ def process_file(filename):
                         desc['abi_major'],
                         desc['abi_minor'],
                         desc['abi_tiny']))
-                elif note['n_type'] == 'NT_GNU_BUILD_ID':
+                elif note['n_type'] in {'NT_GNU_BUILD_ID', 'NT_GNU_GOLD_VERSION'}:
                     print('    Desc:', desc)
                 else:
-                    print('    Desc:', ''.join('%.2x' % ord(b) for b in desc))
+                    print('    Desc:', bytes2hex(desc))
 
 
 if __name__ == '__main__':
