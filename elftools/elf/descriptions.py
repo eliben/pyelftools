@@ -13,7 +13,7 @@ from .enums import (
     ENUM_RELOC_TYPE_MIPS, ENUM_ATTR_TAG_ARM, ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
-from ..common.py3compat import iteritems
+from ..common.py3compat import bytes2hex, iteritems
 
 
 def describe_ei_class(x):
@@ -193,7 +193,7 @@ def describe_note(x):
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
         if x['n_name'] == 'Android':
-            desc = '\n   description data: %s ' % ' '.join("%02x" % ord(b) for b in x['n_descdata'])
+            desc = '\n   description data: %s ' % bytes2hex(x['n_descdata'])
         else:
             desc = '\n    OS: %s, ABI: %d.%d.%d' % (
                 _DESCR_NOTE_ABI_TAG_OS.get(n_desc['abi_os'], _unknown),
@@ -203,9 +203,7 @@ def describe_note(x):
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
     else:
-        desc = '\n    description data: {}'.format(' '.join(
-            '{:02x}'.format(ord(byte)) for byte in n_desc
-        ))
+        desc = '\n    description data: {}'.format(bytes2hex(n_desc))
 
     if x['n_type'] == 'NT_GNU_ABI_TAG' and x['n_name'] == 'Android':
         note_type = 'NT_VERSION'
