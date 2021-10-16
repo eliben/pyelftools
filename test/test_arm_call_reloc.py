@@ -38,7 +38,7 @@ class TestARMRElocation(unittest.TestCase):
             elf = ELFFile(f)
 
             # Comparison of '.text' section data
-            self.assertEquals(do_relocation(rel_elf),
+            self.assertEqual(do_relocation(rel_elf),
                               elf.get_section_by_name('.text').data())
 
 if __name__ == '__main__':
