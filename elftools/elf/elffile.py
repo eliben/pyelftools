@@ -168,11 +168,17 @@ class ELFFile(object):
         segment_header = self._get_segment_header(n)
         return self._make_segment(segment_header)
 
-    def iter_segments(self):
-        """ Yield all the segments in the file
+    def iter_segments(self, type=None):
+        """ Yield all the segments in the file. If the optional |type|
+            parameter is passed, this method will only yield segments of the
+            given type. The parameter value must be a string containing the
+            name of the type as defined in the ELF specification, e.g.
+            'PT_LOAD'.
         """
         for i in range(self.num_segments()):
-            yield self.get_segment(i)
+            segment = self.get_segment(i)
+            if type is None or segment['p_type'] == type:
+                yield segment
 
     def address_offsets(self, start, size=1):
         """ Yield a file offset for each ELF segment containing a memory region.
@@ -181,10 +187,8 @@ class ELFFile(object):
             offset of the region is yielded.
         """
         end = start + size
-        for seg in self.iter_segments():
-            # consider LOAD only to prevent same address being yielded twice
-            if seg['p_type'] != 'PT_LOAD':
-                continue
+        # consider LOAD only to prevent same address being yielded twice
+        for seg in self.iter_segments(type='PT_LOAD'):
             if (start >= seg['p_vaddr'] and
                 end <= seg['p_vaddr'] + seg['p_filesz']):
                 yield start - seg['p_vaddr'] + seg['p_offset']
