@@ -254,6 +254,9 @@ ENUM_E_MACHINE = dict(
     EM_MOXIE         = 223, # Moxie processor family
     EM_AMDGPU        = 224, # AMD GPU architecture
     EM_RISCV         = 243, # RISC-V
+    EM_BPF           = 247,	# Linux BPF - in-kernel virtual machine
+    EM_CSKY          = 252,	# C-SKY
+    EM_FRV           = 0x5441, # Fujitsu FR-V
     # Reservations
     # reserved  11-14   Reserved for future use
     # reserved  16      Reserved for future use

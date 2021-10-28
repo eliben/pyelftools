@@ -467,7 +467,10 @@ class ELFFile(object):
             'EM_FT32'          : 'FTDI Chip FT32 32-bit RISC',
             'EM_MOXIE'         : 'Moxie',
             'EM_AMDGPU'        : 'AMD GPU',
-            'EM_RISCV'         : 'RISC-V'
+            'EM_RISCV'         : 'RISC-V',
+            'EM_BPF'           : 'Linux BPF - in-kernel virtual machine',
+            'EM_CSKY'          : 'C-SKY',
+            'EM_FRV'           : 'Fujitsu FR-V'
         }
 
         return architectures.get(self['e_machine'], '<unknown>')
