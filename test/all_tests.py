@@ -9,7 +9,7 @@
 #-------------------------------------------------------------------------------
 from __future__ import print_function
 import subprocess, sys
-from utils import is_in_rootdir
+from .utils import is_in_rootdir
 
 def run_test_script(path):
     cmd = [sys.executable, path]

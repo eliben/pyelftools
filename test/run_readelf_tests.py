@@ -17,7 +17,7 @@ import re
 import sys
 import time
 
-from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
+from .utils import run_exe, is_in_rootdir, dump_output_to_temp_files
 
 # Make it possible to run this file from the root dir of pyelftools without
 # installing pyelftools; useful for CI testing, etc.
