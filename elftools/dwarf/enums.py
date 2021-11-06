@@ -152,6 +152,7 @@ ENUM_DW_AT = dict(
     DW_AT_bit_stride                = 0x2e,
     DW_AT_stride_size               = 0x2e,
     DW_AT_upper_bound               = 0x2f,
+    DW_AT_virtual                   = 0x30,
     DW_AT_abstract_origin           = 0x31,
     DW_AT_accessibility             = 0x32,
     DW_AT_address_class             = 0x33,
