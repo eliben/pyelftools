@@ -26,7 +26,7 @@ class TestDieSize(unittest.TestCase):
             dwarfinfo = elffile.get_dwarf_info()
             for CU in dwarfinfo.iter_CUs():
                  for child in CU.get_top_DIE().iter_children():
-                     self.assertEquals(child.size, 3)
+                     self.assertEqual(child.size, 3)
 
 if __name__ == '__main__':
     unittest.main()

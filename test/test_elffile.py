@@ -5,6 +5,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import unittest
+import os
 
 from elftools.elf.elffile import ELFFile
 
@@ -13,12 +14,18 @@ class TestMap(unittest.TestCase):
     def test_address_offsets(self):
         class MockELF(ELFFile):
             __init__ = object.__init__
-            def iter_segments(self):
-                return iter((
-                    dict(p_type='PT_PHDR', p_vaddr=0x10100, p_filesz=0x100, p_offset=0x400),
-                    dict(p_type='PT_LOAD', p_vaddr=0x10200, p_filesz=0x200, p_offset=0x100),
-                    dict(p_type='PT_LOAD', p_vaddr=0x10100, p_filesz=0x100, p_offset=0x400),
-                ))
+            def iter_segments(self, type=None):
+                if type == 'PT_LOAD':
+                    return iter((
+                        dict(p_type='PT_LOAD', p_vaddr=0x10200, p_filesz=0x200, p_offset=0x100),
+                        dict(p_type='PT_LOAD', p_vaddr=0x10100, p_filesz=0x100, p_offset=0x400),
+                    ))
+                else:
+                    return iter((
+                        dict(p_type='PT_PHDR', p_vaddr=0x10100, p_filesz=0x100, p_offset=0x400),
+                        dict(p_type='PT_LOAD', p_vaddr=0x10200, p_filesz=0x200, p_offset=0x100),
+                        dict(p_type='PT_LOAD', p_vaddr=0x10100, p_filesz=0x100, p_offset=0x400),
+                    ))
 
         elf = MockELF()
 
@@ -43,6 +50,16 @@ class TestMap(unittest.TestCase):
         self.assertEqual(tuple(elf.address_offsets(0x103FE, 4)), ())
         self.assertEqual(tuple(elf.address_offsets(0x10400, 4)), ())
 
+class TestSectionFilter(unittest.TestCase):
+
+    def test_section_filter(self):
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'arm_exidx_test.so'), 'rb') as f:
+            elf = ELFFile(f)
+            self.assertEqual(len(list(elf.iter_sections())), 26)
+            self.assertEqual(len(list(elf.iter_sections('SHT_REL'))), 2)
+            self.assertEqual(len(list(elf.iter_sections('SHT_ARM_EXIDX'))), 1)
+            self.assertTrue(elf.has_ehabi_info())
 
 if __name__ == '__main__':
     unittest.main()

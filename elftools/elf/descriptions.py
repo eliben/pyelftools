@@ -9,11 +9,11 @@
 from .enums import (
     ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE_BASE, ENUM_SH_TYPE_BASE,
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
-    ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_MIPS,
-    ENUM_ATTR_TAG_ARM, ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
+    ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
+    ENUM_RELOC_TYPE_MIPS, ENUM_ATTR_TAG_ARM, ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
-from ..common.py3compat import iteritems
+from ..common.py3compat import bytes2hex, iteritems
 
 
 def describe_ei_class(x):
@@ -84,7 +84,7 @@ def describe_sh_type(x):
         return _DESCR_SH_TYPE.get(x)
     elif (x >= ENUM_SH_TYPE_BASE['SHT_LOOS'] and
           x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']):
-        return 'loos+%lx' % (x - ENUM_SH_TYPE_BASE['SHT_LOOS'])
+        return 'loos+0x%lx' % (x - ENUM_SH_TYPE_BASE['SHT_LOOS'])
     else:
         return _unknown
 
@@ -98,8 +98,9 @@ def describe_sh_flags(x):
             SH_FLAGS.SHF_GROUP, SH_FLAGS.SHF_TLS, SH_FLAGS.SHF_MASKOS,
             SH_FLAGS.SHF_EXCLUDE):
         s += _DESCR_SH_FLAGS[flag] if (x & flag) else ''
-    if x & SH_FLAGS.SHF_MASKPROC:
-        s += 'p'
+    if not x & SH_FLAGS.SHF_EXCLUDE:
+        if x & SH_FLAGS.SHF_MASKPROC:
+            s += 'p'
     return s
 
 
@@ -113,6 +114,17 @@ def describe_symbol_bind(x):
 
 def describe_symbol_visibility(x):
     return _DESCR_ST_VISIBILITY.get(x, _unknown)
+
+
+def describe_symbol_local(x):
+    return '[<localentry>: ' + str(1 << x) + ']'
+
+
+def describe_symbol_other(x):
+    vis = describe_symbol_visibility(x['visibility'])
+    if x['local'] > 1 and x['local'] < 7:
+        return vis + ' ' + describe_symbol_local(x['local'])
+    return vis
 
 
 def describe_symbol_shndx(x):
@@ -129,6 +141,8 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_ARM.get(x, _unknown)
     elif arch == 'AArch64':
         return _DESCR_RELOC_TYPE_AARCH64.get(x, _unknown)
+    elif arch == '64-bit PowerPC':
+        return _DESCR_RELOC_TYPE_PPC64.get(x, _unknown)
     elif arch == 'MIPS':
         return _DESCR_RELOC_TYPE_MIPS.get(x, _unknown)
     else:
@@ -179,7 +193,7 @@ def describe_note(x):
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
         if x['n_name'] == 'Android':
-            desc = '\n   description data: %s ' % ' '.join("%02x" % ord(b) for b in x['n_descdata'])
+            desc = '\n   description data: %s ' % bytes2hex(x['n_descdata'])
         else:
             desc = '\n    OS: %s, ABI: %d.%d.%d' % (
                 _DESCR_NOTE_ABI_TAG_OS.get(n_desc['abi_os'], _unknown),
@@ -189,9 +203,7 @@ def describe_note(x):
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
     else:
-        desc = '\n    description data: {}'.format(' '.join(
-            '{:02x}'.format(ord(byte)) for byte in n_desc
-        ))
+        desc = '\n    description data: {}'.format(bytes2hex(n_desc))
 
     if x['n_type'] == 'NT_GNU_ABI_TAG' and x['n_name'] == 'Android':
         note_type = 'NT_VERSION'
@@ -303,6 +315,7 @@ _DESCR_E_MACHINE = dict(
     EM_AARCH64='AArch64',
     EM_BLACKFIN='Analog Devices Blackfin',
     EM_PPC='PowerPC',
+    EM_PPC64='PowerPC64',
     RESERVED='RESERVED',
 )
 
@@ -545,6 +558,7 @@ _DESCR_RELOC_TYPE_i386 = _reverse_dict(ENUM_RELOC_TYPE_i386)
 _DESCR_RELOC_TYPE_x64 = _reverse_dict(ENUM_RELOC_TYPE_x64)
 _DESCR_RELOC_TYPE_ARM = _reverse_dict(ENUM_RELOC_TYPE_ARM)
 _DESCR_RELOC_TYPE_AARCH64 = _reverse_dict(ENUM_RELOC_TYPE_AARCH64)
+_DESCR_RELOC_TYPE_PPC64 = _reverse_dict(ENUM_RELOC_TYPE_PPC64)
 _DESCR_RELOC_TYPE_MIPS = _reverse_dict(ENUM_RELOC_TYPE_MIPS)
 
 _low_priority_D_TAG = (

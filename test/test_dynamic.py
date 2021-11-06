@@ -74,7 +74,6 @@ class TestDynamic(unittest.TestCase):
         self.assertEqual(symbol_names, exp)
         self.assertEqual(symbol_at_index_3.name, 'abort')
         self.assertIsNotNone(symbols_abort)
-        self.assertEqual(symbols_abort[0], symbol_at_index_3)
 
     def test_reading_symbols_gnu_hash(self):
         """ Verify we can read symbol table without SymbolTableSection but with
@@ -98,7 +97,6 @@ class TestDynamic(unittest.TestCase):
         self.assertEqual(symbol_names[:9], exp)
         self.assertEqual(symbol_at_index_3.name, '__register_atfork')
         self.assertIsNotNone(symbols_atfork)
-        self.assertEqual(symbols_atfork[0], symbol_at_index_3)
 
     def test_sunw_tags(self):
         def extract_sunw(filename):

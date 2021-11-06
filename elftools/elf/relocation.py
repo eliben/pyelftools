@@ -13,7 +13,8 @@ from ..common.utils import elf_assert, struct_parse
 from .sections import Section
 from .enums import (
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
-    ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_D_TAG)
+    ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
+    ENUM_D_TAG)
 
 
 class Relocation(object):
@@ -175,6 +176,8 @@ class RelocationHandler(object):
             recipe = self._RELOCATION_RECIPES_ARM.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'AArch64':
             recipe = self._RELOCATION_RECIPES_AARCH64.get(reloc_type, None)
+        elif self.elffile.get_machine_arch() == '64-bit PowerPC':
+            recipe = self._RELOCATION_RECIPES_PPC64.get(reloc_type, None)
 
         if recipe is None:
             raise ELFRelocationError(
@@ -267,6 +270,15 @@ class RelocationHandler(object):
         ENUM_RELOC_TYPE_MIPS['R_MIPS_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False,
             calc_func=_reloc_calc_sym_plus_value),
+    }
+
+    _RELOCATION_RECIPES_PPC64 = {
+        ENUM_RELOC_TYPE_PPC64['R_PPC64_ADDR32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_PPC64['R_PPC64_REL32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend_pcrel),
+        ENUM_RELOC_TYPE_PPC64['R_PPC64_ADDR64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
     }
 
     _RELOCATION_RECIPES_X86 = {

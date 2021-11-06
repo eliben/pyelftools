@@ -1,6 +1,20 @@
 Changelog
 =========
 
++ Version 0.27 (2020.10.27)
+
+  - Print addend wfor RELA relocations without symbol (#292)
+  - Implement symbol lookup for {GNU,}HashSection (#290)
+  - Major rewrite of expression parsing
+  - Cashed random access to CUs and DIEs (#264)
+  - GNU expressions (#303)
+  - Support parsing LSDA pointers from FDEs (#308)
+  - Add support for DWA_OP_GNU_push_tls_address in expressions (#315)
+  - Some initial support for AArch64 little-endian (#318)
+  - Support for ELF files with a large number of sections (#333)
+  - Some minimal support for DWARFv1 (#335)
+  - Many small bug fixes; see git log.
+
 + Version 0.26 (2019.12.05)
 
   - Call relocation for ARM v3 (#194)

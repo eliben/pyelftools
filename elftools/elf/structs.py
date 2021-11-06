@@ -289,7 +289,10 @@ class ELFStructs(object):
         # st_other is hierarchical. To access the visibility,
         # use container['st_other']['visibility']
         st_other_struct = BitStruct('st_other',
-            Padding(5),
+            # https://openpowerfoundation.org/wp-content/uploads/2016/03/ABI64BitOpenPOWERv1.1_16July2015_pub4.pdf
+            # See 3.4.1 Symbol Values.
+            Enum(BitField('local', 3), **ENUM_ST_LOCAL),
+            Padding(2),
             Enum(BitField('visibility', 3), **ENUM_ST_VISIBILITY))
         if self.elfclass == 32:
             self.Elf_Sym = Struct('Elf_Sym',
@@ -370,6 +373,20 @@ class ELFStructs(object):
 
     def _create_note(self, e_type=None):
         # Structure of "PT_NOTE" section
+
+        self.Elf_ugid = self.Elf_half if self.elfclass == 32 and self.e_machine in {
+            'EM_MN10300',
+            'EM_ARM',
+            'EM_CRIS',
+            'EM_CYGNUS_FRV',
+            'EM_386',
+            'EM_M32R',
+            'EM_68K',
+            'EM_S390',
+            'EM_SH',
+            'EM_SPARC',
+        } else self.Elf_word
+
         self.Elf_Nhdr = Struct('Elf_Nhdr',
             self.Elf_word('n_namesz'),
             self.Elf_word('n_descsz'),
@@ -387,12 +404,12 @@ class ELFStructs(object):
                 self.Elf_byte('pr_zomb'),
                 self.Elf_byte('pr_nice'),
                 self.Elf_xword('pr_flag'),
-                self.Elf_half('pr_uid'),
-                self.Elf_half('pr_gid'),
-                self.Elf_half('pr_pid'),
-                self.Elf_half('pr_ppid'),
-                self.Elf_half('pr_pgrp'),
-                self.Elf_half('pr_sid'),
+                self.Elf_ugid('pr_uid'),
+                self.Elf_ugid('pr_gid'),
+                self.Elf_word('pr_pid'),
+                self.Elf_word('pr_ppid'),
+                self.Elf_word('pr_pgrp'),
+                self.Elf_word('pr_sid'),
                 String('pr_fname', 16),
                 String('pr_psargs', 80),
             )
@@ -404,8 +421,8 @@ class ELFStructs(object):
                 self.Elf_byte('pr_nice'),
                 Padding(4),
                 self.Elf_xword('pr_flag'),
-                self.Elf_word('pr_uid'),
-                self.Elf_word('pr_gid'),
+                self.Elf_ugid('pr_uid'),
+                self.Elf_ugid('pr_gid'),
                 self.Elf_word('pr_pid'),
                 self.Elf_word('pr_ppid'),
                 self.Elf_word('pr_pgrp'),

@@ -120,17 +120,32 @@ class ELFFile(object):
         # mapping
         #
         if self._section_name_map is None:
-            self._section_name_map = {}
-            for i, sec in enumerate(self.iter_sections()):
-                self._section_name_map[sec.name] = i
+            self._make_section_name_map()
         secnum = self._section_name_map.get(name, None)
         return None if secnum is None else self.get_section(secnum)
 
-    def iter_sections(self):
-        """ Yield all the sections in the file
+    def get_section_index(self, section_name):
+        """ Gets the index of the section by name. Return None if no such
+            section name exists.
+        """
+        # The first time this method is called, construct a name to number
+        # mapping
+        #
+        if self._section_name_map is None:
+            self._make_section_name_map()
+        return self._section_name_map.get(section_name, None)
+
+    def iter_sections(self, type=None):
+        """ Yield all the sections in the file. If the optional |type|
+            parameter is passed, this method will only yield sections of the
+            given type. The parameter value must be a string containing the
+            name of the type as defined in the ELF specification, e.g.
+            'SHT_SYMTAB'.
         """
         for i in range(self.num_sections()):
-            yield self.get_section(i)
+            section = self.get_section(i)
+            if type is None or section['sh_type'] == type:
+                yield section
 
     def num_segments(self):
         """ Number of segments in the file
@@ -153,11 +168,17 @@ class ELFFile(object):
         segment_header = self._get_segment_header(n)
         return self._make_segment(segment_header)
 
-    def iter_segments(self):
-        """ Yield all the segments in the file
+    def iter_segments(self, type=None):
+        """ Yield all the segments in the file. If the optional |type|
+            parameter is passed, this method will only yield segments of the
+            given type. The parameter value must be a string containing the
+            name of the type as defined in the ELF specification, e.g.
+            'PT_LOAD'.
         """
         for i in range(self.num_segments()):
-            yield self.get_segment(i)
+            segment = self.get_segment(i)
+            if type is None or segment['p_type'] == type:
+                yield segment
 
     def address_offsets(self, start, size=1):
         """ Yield a file offset for each ELF segment containing a memory region.
@@ -166,10 +187,8 @@ class ELFFile(object):
             offset of the region is yielded.
         """
         end = start + size
-        for seg in self.iter_segments():
-            # consider LOAD only to prevent same address being yielded twice
-            if seg['p_type'] != 'PT_LOAD':
-                continue
+        # consider LOAD only to prevent same address being yielded twice
+        for seg in self.iter_segments(type='PT_LOAD'):
             if (start >= seg['p_vaddr'] and
                 end <= seg['p_vaddr'] + seg['p_filesz']):
                 yield start - seg['p_vaddr'] + seg['p_offset']
@@ -197,7 +216,7 @@ class ELFFile(object):
         section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev',
                          '.debug_str', '.debug_line', '.debug_frame',
                          '.debug_loc', '.debug_ranges', '.debug_pubtypes',
-                         '.debug_pubnames')
+                         '.debug_pubnames', '.debug_addr', '.debug_str_offsets')
 
         compressed = bool(self.get_section_by_name('.zdebug_info'))
         if compressed:
@@ -209,7 +228,8 @@ class ELFFile(object):
         (debug_info_sec_name, debug_aranges_sec_name, debug_abbrev_sec_name,
          debug_str_sec_name, debug_line_sec_name, debug_frame_sec_name,
          debug_loc_sec_name, debug_ranges_sec_name, debug_pubtypes_name,
-         debug_pubnames_name, eh_frame_sec_name) = section_names
+         debug_pubnames_name, debug_addr_name, debug_str_offsets_name,
+         eh_frame_sec_name) = section_names
 
         debug_sections = {}
         for secname in section_names:
@@ -238,14 +258,16 @@ class ELFFile(object):
                 debug_loc_sec=debug_sections[debug_loc_sec_name],
                 debug_ranges_sec=debug_sections[debug_ranges_sec_name],
                 debug_line_sec=debug_sections[debug_line_sec_name],
-                debug_pubtypes_sec = debug_sections[debug_pubtypes_name],
-                debug_pubnames_sec = debug_sections[debug_pubnames_name]
+                debug_pubtypes_sec=debug_sections[debug_pubtypes_name],
+                debug_pubnames_sec=debug_sections[debug_pubnames_name],
+                debug_addr_sec=debug_sections[debug_addr_name],
+                debug_str_offsets_sec=debug_sections[debug_str_offsets_name],
                 )
 
     def has_ehabi_info(self):
         """ Check whether this file appears to have arm exception handler index table.
         """
-        return any(s['sh_type'] == 'SHT_ARM_EXIDX' for s in self.iter_sections())
+        return any(self.iter_sections(type='SHT_ARM_EXIDX'))
 
     def get_ehabi_infos(self):
         """ Generally, shared library and executable contain 1 .ARM.exidx section.
@@ -256,9 +278,8 @@ class ELFFile(object):
         if self['e_type'] == 'ET_REL':
             # TODO: support relocatable file
             assert False, "Current version of pyelftools doesn't support relocatable file."
-        for section in self.iter_sections():
-            if section['sh_type'] == 'SHT_ARM_EXIDX':
-                _ret.append(EHABIInfo(section, self.little_endian))
+        for section in self.iter_sections(type='SHT_ARM_EXIDX'):
+            _ret.append(EHABIInfo(section, self.little_endian))
         return _ret if len(_ret) > 0 else None
 
     def get_machine_arch(self):
@@ -446,7 +467,10 @@ class ELFFile(object):
             'EM_FT32'          : 'FTDI Chip FT32 32-bit RISC',
             'EM_MOXIE'         : 'Moxie',
             'EM_AMDGPU'        : 'AMD GPU',
-            'EM_RISCV'         : 'RISC-V'
+            'EM_RISCV'         : 'RISC-V',
+            'EM_BPF'           : 'Linux BPF - in-kernel virtual machine',
+            'EM_CSKY'          : 'C-SKY',
+            'EM_FRV'           : 'Fujitsu FR-V'
         }
 
         return architectures.get(self['e_machine'], '<unknown>')
@@ -574,6 +598,11 @@ class ELFFile(object):
         else:
             return Section(section_header, name, self)
 
+    def _make_section_name_map(self):
+        self._section_name_map = {}
+        for i, sec in enumerate(self.iter_sections()):
+            self._section_name_map[sec.name] = i
+
     def _make_symbol_table_section(self, section_header, name):
         """ Create a SymbolTableSection
         """
@@ -689,7 +718,7 @@ class ELFFile(object):
                 stream=section_stream,
                 name=section.name,
                 global_offset=section['sh_offset'],
-                size=section['sh_size'],
+                size=section.data_size,
                 address=section['sh_addr'])
 
     @staticmethod
