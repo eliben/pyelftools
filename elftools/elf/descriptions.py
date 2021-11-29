@@ -202,6 +202,8 @@ def describe_note(x):
         desc = '\n    Build ID: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
+    elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
+        pass
     else:
         desc = '\n    description data: {}'.format(bytes2hex(n_desc))
 

@@ -839,6 +839,7 @@ ENUM_NOTE_N_TYPE = dict(
     NT_GNU_HWCAP=2,
     NT_GNU_BUILD_ID=3,
     NT_GNU_GOLD_VERSION=4,
+    NT_GNU_PROPERTY_TYPE_0=5,
     _default_=Pass,
 )
 
@@ -862,6 +863,13 @@ ENUM_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_FREEBSD=3,
     ELF_NOTE_OS_NETBSD=4,
     ELF_NOTE_OS_SYLLABLE=5,
+    _default_=Pass,
+)
+
+# Values in GNU .note.gnu.property notes (n_type=='NT_GNU_PROPERTY_TYPE_0')
+ENUM_NOTE_GNU_PROPERTY_TYPE = dict(
+    GNU_PROPERTY_STACK_SIZE=1,
+    GNU_PROPERTY_NO_COPY_ON_PROTECTED=2,
     _default_=Pass,
 )
 
