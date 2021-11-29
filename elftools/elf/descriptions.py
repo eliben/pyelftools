@@ -203,7 +203,7 @@ def describe_note(x):
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
-        pass
+        desc = '\n    Properties: ' + describe_note_gnu_properties(x['n_desc'])
     else:
         desc = '\n    description data: {}'.format(bytes2hex(n_desc))
 
@@ -245,6 +245,26 @@ def describe_attr_tag_arm(tag, val, extra):
     else:
         return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
 
+
+def describe_note_gnu_properties(properties):
+    descriptions = []
+    for prop in properties:
+        t, d, sz = prop.pr_type, prop.pr_data, prop.pr_datasz
+        if t == 'GNU_PROPERTY_STACK_SIZE':
+            if type(d) is int:
+                prop_desc = 'stack size: 0x%x' % d
+            else:
+                prop_desc = 'stack size: <corrupted length: 0x%x>' % sz
+        elif t == 'GNU_PROPERTY_NO_COPY_ON_PROTECTED':
+            prop_desc = 'no copy on protected'
+            if sz != 0:
+                prop_desc += ' <corrupted length: 0x%x>' % sz
+        elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
+            prop_desc = '%s: type 0x%x (processor-specific) data: %s' % (_unknown, t, bytes2hex(d))
+        elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
+            prop_desc = '%s: type 0x%x (application-specific) data: %s' % (_unknown, t, bytes2hex(d))
+        descriptions.append(prop_desc)
+    return '\n      '.join(descriptions)
 
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
@@ -527,6 +547,7 @@ _DESCR_NOTE_N_TYPE = dict(
     NT_GNU_HWCAP='DSO-supplied software HWCAP info',
     NT_GNU_BUILD_ID='unique build ID bitstring',
     NT_GNU_GOLD_VERSION='gold version',
+    NT_GNU_PROPERTY_TYPE_0='program properties'
 )
 
 
@@ -539,6 +560,13 @@ _DESCR_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_NETBSD='NetBSD',
     ELF_NOTE_OS_SYLLABLE='Syllable',
 )
+
+# Values in GNU .note.gnu.property notes (n_type=='NT_GNU_PROPERTY_TYPE_0') have
+# different formats which need to be parsed/described differently
+_DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC=0xc0000000
+_DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC=0xdfffffff
+_DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER=0xe0000000
+_DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER=0xffffffff
 
 def _reverse_dict(d, low_priority=()):
     """
