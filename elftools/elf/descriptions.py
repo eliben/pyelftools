@@ -203,9 +203,9 @@ def describe_note(x):
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
-        desc = '\n    Properties: ' + describe_note_gnu_properties(x['n_desc'])
+        desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'])
     else:
-        desc = '\n    description data: {}'.format(bytes2hex(n_desc))
+        desc = '\n      description data: {}'.format(bytes2hex(n_desc))
 
     if x['n_type'] == 'NT_GNU_ABI_TAG' and x['n_name'] == 'Android':
         note_type = 'NT_VERSION'
@@ -254,17 +254,20 @@ def describe_note_gnu_properties(properties):
             if type(d) is int:
                 prop_desc = 'stack size: 0x%x' % d
             else:
-                prop_desc = 'stack size: <corrupted length: 0x%x>' % sz
+                prop_desc = 'stack size: <corrupt length: 0x%x>' % sz
         elif t == 'GNU_PROPERTY_NO_COPY_ON_PROTECTED':
-            prop_desc = 'no copy on protected'
             if sz != 0:
-                prop_desc += ' <corrupted length: 0x%x>' % sz
+                prop_desc = ' <corrupt length: 0x%x>' % sz
+            else:
+                prop_desc = 'no copy on protected'
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
-            prop_desc = '%s: type 0x%x (processor-specific) data: %s' % (_unknown, t, bytes2hex(d))
+            prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
-            prop_desc = '%s: type 0x%x (application-specific) data: %s' % (_unknown, t, bytes2hex(d))
+            prop_desc = '<application-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
+        else:
+            prop_desc = '<unknown type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         descriptions.append(prop_desc)
-    return '\n      '.join(descriptions)
+    return '\n        '.join(descriptions)
 
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
