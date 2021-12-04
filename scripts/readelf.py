@@ -495,7 +495,7 @@ class ReadElf(object):
                 for note in section.iter_notes():
                       self._emitline("\nDisplaying notes found in: {}".format(
                           section.name))
-                      self._emitline('  Owner                 Data size Description')
+                      self._emitline('  Owner                 Data size       Description')
                       self._emitline('  %s %s\t%s' % (
                           note['n_name'].ljust(20),
                           self._format_hex(note['n_descsz'], fieldsize=8),
