@@ -140,6 +140,9 @@ def compare_output(s1, s2):
         if 'symbol table' in lines1[i]:
             flag_after_symtable = True
 
+        # readelf spelling error for GNU property notes
+        lines1[i] = lines1[i].replace('procesor-specific type', 'processor-specific type')
+
         # Compare ignoring whitespace
         lines1_parts = lines1[i].split()
         lines2_parts = lines2[i].split()
@@ -178,6 +181,12 @@ def compare_output(s1, s2):
             elif (  'unknown at value' in lines1[i] and
                     'dw_at_apple' in lines2[i]):
                 ok = True
+            elif 'loos+0x474e553' in lines1[i]:
+                # readelf v2.29 does not know about PT_GNU_PROPERTY apparently
+                ok = lines2_parts[0] == 'gnu_property'
+            elif len(lines1_parts) == 3 and lines1_parts[2] == 'nt_gnu_property_type_0':
+                # readelf does not seem to print a readable description for this
+                ok = lines1_parts == lines2_parts[:3]
             else:
                 for s in ('t (tls)', 'l (large)'):
                     if s in lines1[i] or s in lines2[i]:
