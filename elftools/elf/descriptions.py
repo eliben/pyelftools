@@ -202,8 +202,10 @@ def describe_note(x):
         desc = '\n    Build ID: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
+    elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
+        desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'])
     else:
-        desc = '\n    description data: {}'.format(bytes2hex(n_desc))
+        desc = '\n      description data: {}'.format(bytes2hex(n_desc))
 
     if x['n_type'] == 'NT_GNU_ABI_TAG' and x['n_name'] == 'Android':
         note_type = 'NT_VERSION'
@@ -243,6 +245,29 @@ def describe_attr_tag_arm(tag, val, extra):
     else:
         return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
 
+
+def describe_note_gnu_properties(properties):
+    descriptions = []
+    for prop in properties:
+        t, d, sz = prop.pr_type, prop.pr_data, prop.pr_datasz
+        if t == 'GNU_PROPERTY_STACK_SIZE':
+            if type(d) is int:
+                prop_desc = 'stack size: 0x%x' % d
+            else:
+                prop_desc = 'stack size: <corrupt length: 0x%x>' % sz
+        elif t == 'GNU_PROPERTY_NO_COPY_ON_PROTECTED':
+            if sz != 0:
+                prop_desc = ' <corrupt length: 0x%x>' % sz
+            else:
+                prop_desc = 'no copy on protected'
+        elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
+            prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
+        elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
+            prop_desc = '<application-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
+        else:
+            prop_desc = '<unknown type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
+        descriptions.append(prop_desc)
+    return '\n        '.join(descriptions)
 
 #-------------------------------------------------------------------------------
 _unknown = '<unknown>'
@@ -331,6 +356,7 @@ _DESCR_P_TYPE = dict(
     PT_GNU_EH_FRAME='GNU_EH_FRAME',
     PT_GNU_STACK='GNU_STACK',
     PT_GNU_RELRO='GNU_RELRO',
+    PT_GNU_PROPERTY='GNU_PROPERTY',
     PT_ARM_ARCHEXT='ARM_ARCHEXT',
     PT_ARM_EXIDX='EXIDX',  # binutils calls this EXIDX, not ARM_EXIDX
     PT_AARCH64_ARCHEXT='AARCH64_ARCHEXT',
@@ -525,6 +551,7 @@ _DESCR_NOTE_N_TYPE = dict(
     NT_GNU_HWCAP='DSO-supplied software HWCAP info',
     NT_GNU_BUILD_ID='unique build ID bitstring',
     NT_GNU_GOLD_VERSION='gold version',
+    NT_GNU_PROPERTY_TYPE_0='program properties'
 )
 
 
@@ -537,6 +564,13 @@ _DESCR_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_NETBSD='NetBSD',
     ELF_NOTE_OS_SYLLABLE='Syllable',
 )
+
+# Values in GNU .note.gnu.property notes (n_type=='NT_GNU_PROPERTY_TYPE_0') have
+# different formats which need to be parsed/described differently
+_DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC=0xc0000000
+_DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC=0xdfffffff
+_DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER=0xe0000000
+_DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER=0xffffffff
 
 def _reverse_dict(d, low_priority=()):
     """
