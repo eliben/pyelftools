@@ -35,7 +35,13 @@ def describe_ei_osabi(x):
     return _DESCR_EI_OSABI.get(x, _unknown)
 
 
-def describe_e_type(x):
+def describe_e_type(x, elffile=None):
+    if elffile is not None and x == 'ET_DYN':
+        # Detect whether this is a normal SO or a PIE executable
+        dynamic = elffile.get_section_by_name('.dynamic')
+        for t in dynamic.iter_tags('DT_FLAGS_1'):
+            if t.entry.d_val & ENUM_DT_FLAGS_1['DF_1_PIE']:
+                return 'DYN (Position-Independent Executable file)'
     return _DESCR_E_TYPE.get(x, _unknown)
 
 
