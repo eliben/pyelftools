@@ -7,7 +7,6 @@
  * ELF executable (to also have a PT_GNU_PROPERTY program header):
  *     gcc -DEXE -c note_gnu_property.S -o /tmp/x.o
  *     ld /tmp/x.o -o note_gnu_property.elf
- *     strip
  */
 
 // https://github.com/hjl-tools/linux-abi/wiki/linux-abi-draft.pdf
@@ -21,13 +20,23 @@
 
 // Unknown property types for testing purposes
 #define GNU_PROPERTY_TEST_UNKNOWN         0x12345678
-#define GNU_PROPERTY_TEST_UNKNOWN_PROC    0xc1234567
-#define GNU_PROPERTY_TEST_UNKNOWN_USER    0xe1234567
+#define GNU_PROPERTY_TEST_UNKNOWN_PROC    (GNU_PROPERTY_LOPROC + 0x1234567)
+#define GNU_PROPERTY_TEST_UNKNOWN_USER    (GNU_PROPERTY_LOUSER + 0x1234567)
 
+// https://gitlab.com/x86-psABIs/x86-64-ABI/
 // https://gitlab.com/x86-psABIs/x86-64-ABI/-/wikis/x86-64-psABI
-#define GNU_PROPERTY_X86_FEATURE_1_AND    0xc0000002
-#define GNU_PROPERTY_X86_FEATURE_1_IBT    0x00000001
-#define GNU_PROPERTY_X86_FEATURE_1_SHSTK  0x00000002
+#define GNU_PROPERTY_X86_UINT32_AND_LO    0xc0000002
+#define GNU_PROPERTY_X86_UINT32_AND_HI    0xc0007fff
+#define GNU_PROPERTY_X86_UINT32_OR_LO     0xc0008000
+#define GNU_PROPERTY_X86_UINT32_OR_HI     0xc000ffff
+#define GNU_PROPERTY_X86_UINT32_OR_AND_LO 0xc0010000
+#define GNU_PROPERTY_X86_UINT32_OR_AND_HI 0xc0017fff
+
+#define GNU_PROPERTY_X86_FEATURE_1_AND     (GNU_PROPERTY_X86_UINT32_AND_LO + 0)
+#define GNU_PROPERTY_X86_FEATURE_1_IBT     (1U << 0)
+#define GNU_PROPERTY_X86_FEATURE_1_SHSTK   (1U << 1)
+#define GNU_PROPERTY_X86_FEATURE_1_LAM_U48 (1U << 2)
+#define GNU_PROPERTY_X86_FEATURE_1_LAM_U57 (1U << 3)
 
 #ifdef __x86_64__
 #define ALIGN .p2align 3
@@ -80,12 +89,15 @@ _start:
 	ALIGN
 #endif
 
-/* TODO: add support for these later...
-6:	.long GNU_PROPERTY_X86_FEATURE_1_AND // pr_type.
-	.long 8f - 7f                        // pr_datasz
-7:
-	.long GNU_PROPERTY_X86_FEATURE_1_IBT|GNU_PROPERTY_X86_FEATURE_1_SHSTK
-8:
+11:	.long GNU_PROPERTY_X86_FEATURE_1_AND // pr_type.
+	.long 13f - 12f                      // pr_datasz
+12:
+	// Not sure if LAM_U48 and LAM_U57 make sense together, readelf does not
+	// seem to complain and outputs both.
+	.long GNU_PROPERTY_X86_FEATURE_1_IBT     \
+		| GNU_PROPERTY_X86_FEATURE_1_SHSTK   \
+		| GNU_PROPERTY_X86_FEATURE_1_LAM_U48 \
+		| GNU_PROPERTY_X86_FEATURE_1_LAM_U57
+13:
 	ALIGN
-*/
 end:

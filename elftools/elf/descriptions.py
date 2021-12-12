@@ -252,6 +252,13 @@ def describe_attr_tag_arm(tag, val, extra):
         return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
 
 
+def describe_note_gnu_property_x86_feature_1(value):
+    descs = []
+    for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_1_FLAGS:
+        if value & mask:
+            descs.append(desc)
+    return 'x86 feature: ' + ', '.join(descs)
+
 def describe_note_gnu_properties(properties):
     descriptions = []
     for prop in properties:
@@ -266,6 +273,11 @@ def describe_note_gnu_properties(properties):
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
                 prop_desc = 'no copy on protected'
+        elif t == 'GNU_PROPERTY_X86_FEATURE_1_AND':
+            if sz != 4:
+                prop_desc = ' <corrupt length: 0x%x>' % sz
+            else:
+                prop_desc = describe_note_gnu_property_x86_feature_1(d)
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
             prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
@@ -571,12 +583,24 @@ _DESCR_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_SYLLABLE='Syllable',
 )
 
+
 # Values in GNU .note.gnu.property notes (n_type=='NT_GNU_PROPERTY_TYPE_0') have
 # different formats which need to be parsed/described differently
 _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC=0xc0000000
 _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC=0xdfffffff
 _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER=0xe0000000
 _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER=0xffffffff
+
+
+# Bit masks for GNU_PROPERTY_X86_FEATURE_1_xxx flags in the form
+# (mask, flag_description) in the desired output order
+_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_1_FLAGS = (
+    (1, 'IBT'),
+    (2, 'SHSTK'),
+    (4, 'LAM_U48'),
+    (8, 'LAM_U57'),
+)
+
 
 def _reverse_dict(d, low_priority=()):
     """
