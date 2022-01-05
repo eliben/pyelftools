@@ -49,7 +49,7 @@ class ELFFile(object):
 
             stream:
                 The stream holding the data of the file - must be a binary
-                stream (bytes, not string).
+                stream (bytes, not string) or bytes-like object.
 
             elfclass:
                 32 or 64 - specifies the word size of the target machine
@@ -69,6 +69,8 @@ class ELFFile(object):
                 the raw e_ident field of the header
     """
     def __init__(self, stream):
+        if isinstance(stream, bytes) or isinstance(stream, bytearray):
+            stream = io.BytesIO(stream)
         self.stream = stream
         self._identify_file()
         self.structs = ELFStructs(
