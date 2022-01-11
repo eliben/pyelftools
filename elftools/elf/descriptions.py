@@ -326,6 +326,7 @@ _DESCR_EI_OSABI = dict(
     ELFOSABI_SORTIX='Sortix',
     ELFOSABI_ARM_AEABI='ARM - EABI',
     ELFOSABI_ARM='ARM - ABI',
+    ELFOSABI_CELL_LV2='CellOS Lv-2',
     ELFOSABI_STANDALONE='Standalone App',
 )
 
