@@ -70,7 +70,7 @@ class ELFFile(object):
     """
     def __init__(self, stream):
         if isinstance(stream, bytes) or isinstance(stream, bytearray):
-            stream = io.BytesIO(stream)
+            stream = BytesIO(stream)
         self.stream = stream
         self._identify_file()
         self.structs = ELFStructs(
