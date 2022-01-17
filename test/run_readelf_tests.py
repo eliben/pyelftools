@@ -130,15 +130,19 @@ def compare_output(s1, s2):
     lines1 = prepare_lines(s1)
     lines2 = prepare_lines(s2)
 
-    flag_after_symtable = False
+    flag_in_debug_line_section = False
 
     if len(lines1) != len(lines2):
         return False, 'Number of lines different: %s vs %s' % (
                 len(lines1), len(lines2))
 
     for i in range(len(lines1)):
-        if 'symbol table' in lines1[i]:
-            flag_after_symtable = True
+        if lines1[i].endswith('debug_line section:'):
+            # .debug_line or .zdebug_line
+            flag_in_debug_line_section = True
+
+        # readelf spelling error for GNU property notes
+        lines1[i] = lines1[i].replace('procesor-specific type', 'processor-specific type')
 
         # Compare ignoring whitespace
         lines1_parts = lines1[i].split()
@@ -159,12 +163,32 @@ def compare_output(s1, s2):
             sm = SequenceMatcher()
             sm.set_seqs(lines1[i], lines2[i])
             changes = sm.get_opcodes()
-            if flag_after_symtable:
-                # Detect readelf's adding @ with lib and version after
-                # symbol name.
-                if (    len(changes) == 2 and changes[1][0] == 'delete' and
-                        lines1[i][changes[1][1]] == '@'):
+            if flag_in_debug_line_section:
+                # readelf outputs an additional "View" column: ignore it
+                if len(lines1_parts) >= 2 and lines1_parts[-2] == 'view':
                     ok = True
+                else:
+                    # Fast check special-cased for the only ELF we have which
+                    # has this information (dwarf_gnuops4.so.elf)
+                    ok = (    lines1_parts[-2:] == ['1', 'x']
+                          and lines2_parts[-1] == 'x')
+            elif '[...]' in lines1[i]:
+                # Special case truncations with ellipsis like these:
+                #     .note.gnu.bu[...]        redelf
+                #     .note.gnu.build-i        pyelftools
+                # Or more complex for symbols with versions, like these:
+                #     _unw[...]@gcc_3.0        readelf
+                #     _unwind_resume@gcc_3.0   pyelftools
+                for p1, p2 in zip(lines1_parts, lines2_parts):
+                    dots_start = p1.find('[...]')
+                    if dots_start != -1:
+                        break
+                ok = p1.endswith('[...]') and p1[:dots_start] == p2[:dots_start]
+                if not ok:
+                    dots_end = dots_start + 5
+                    if len(p1) > dots_end and p1[dots_end] == '@':
+                        ok = (    p1[:dots_start] == p2[:dots_start]
+                              and p1[p1.rfind('@'):] == p2[p2.rfind('@'):])
             elif 'at_const_value' in lines1[i]:
                 # On 32-bit machines, readelf doesn't correctly represent
                 # some boundary LEB128 numbers
@@ -175,11 +199,11 @@ def compare_output(s1, s2):
             elif 'os/abi' in lines1[i]:
                 if 'unix - gnu' in lines1[i] and 'unix - linux' in lines2[i]:
                     ok = True
-            elif (  'unknown at value' in lines1[i] and
-                    'dw_at_apple' in lines2[i]):
-                ok = True
+            elif len(lines1_parts) == 3 and lines1_parts[2] == 'nt_gnu_property_type_0':
+                # readelf does not seem to print a readable description for this
+                ok = lines1_parts == lines2_parts[:3]
             else:
-                for s in ('t (tls)', 'l (large)'):
+                for s in ('t (tls)', 'l (large)', 'd (mbind)'):
                     if s in lines1[i] or s in lines2[i]:
                         ok = True
                         break

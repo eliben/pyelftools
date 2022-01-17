@@ -108,7 +108,7 @@ class ReadElf(object):
         self._emitline('  ABI Version:                       %d' %
                 e_ident['EI_ABIVERSION'])
         self._emitline('  Type:                              %s' %
-                describe_e_type(header['e_type']))
+                describe_e_type(header['e_type'], self.elffile))
         self._emitline('  Machine:                           %s' %
                 describe_e_machine(header['e_machine']))
         self._emitline('  Version:                           %s' %
@@ -230,7 +230,7 @@ class ReadElf(object):
         elfheader = self.elffile.header
         if show_heading:
             self._emitline('Elf file type is %s' %
-                describe_e_type(elfheader['e_type']))
+                describe_e_type(elfheader['e_type'], self.elffile))
             self._emitline('Entry point is %s' %
                 self._format_hex(elfheader['e_entry']))
             # readelf weirness - why isn't e_phoff printed as hex? (for section
@@ -391,8 +391,10 @@ class ReadElf(object):
                     section.name))
                 continue
 
-            self._emitline("\nSymbol table '%s' contains %s entries:" % (
-                section.name, section.num_symbols()))
+            self._emitline("\nSymbol table '%s' contains %d %s:" % (
+                section.name,
+                section.num_symbols(),
+                'entry' if section.num_symbols() == 1 else 'entries'))
 
             if self.elffile.elfclass == 32:
                 self._emitline('   Num:    Value  Size Type    Bind   Vis      Ndx Name')
@@ -418,6 +420,13 @@ class ReadElf(object):
                             else:
                                 version_info = '@@%(name)s' % version
 
+                symbol_name = symbol.name
+                # Print section names for STT_SECTION symbols as readelf does
+                if (symbol['st_info']['type'] == 'STT_SECTION'
+                    and symbol['st_shndx'] < self.elffile.num_sections()
+                    and symbol['st_name'] == 0):
+                    symbol_name = self.elffile.get_section(symbol['st_shndx']).name
+
                 # symbol names are truncated to 25 chars, similarly to readelf
                 self._emitline('%6d: %s %s %-7s %-6s %-7s %4s %.25s%s' % (
                     nsym,
@@ -430,7 +439,7 @@ class ReadElf(object):
                     describe_symbol_shndx(self._get_symbol_shndx(symbol,
                                                                  nsym,
                                                                  section_index)),
-                    symbol.name,
+                    symbol_name,
                     version_info))
 
     def display_dynamic_tags(self):
@@ -442,9 +451,10 @@ class ReadElf(object):
                 continue
 
             has_dynamic_sections = True
-            self._emitline("\nDynamic section at offset %s contains %s entries:" % (
+            self._emitline("\nDynamic section at offset %s contains %d %s:" % (
                 self._format_hex(section['sh_offset']),
-                section.num_tags()))
+                section.num_tags(),
+                'entry' if section.num_tags() == 1 else 'entries'))
             self._emitline("  Tag        Type                         Name/Value")
 
             padding = 20 + (8 if self.elffile.elfclass == 32 else 0)
@@ -495,7 +505,7 @@ class ReadElf(object):
                 for note in section.iter_notes():
                       self._emitline("\nDisplaying notes found in: {}".format(
                           section.name))
-                      self._emitline('  Owner                 Data size Description')
+                      self._emitline('  Owner                Data size        Description')
                       self._emitline('  %s %s\t%s' % (
                           note['n_name'].ljust(20),
                           self._format_hex(note['n_descsz'], fieldsize=8),
@@ -510,10 +520,11 @@ class ReadElf(object):
                 continue
 
             has_relocation_sections = True
-            self._emitline("\nRelocation section '%.128s' at offset %s contains %s entries:" % (
+            self._emitline("\nRelocation section '%.128s' at offset %s contains %d %s:" % (
                 section.name,
                 self._format_hex(section['sh_offset']),
-                section.num_relocations()))
+                section.num_relocations(),
+                'entry' if section.num_relocations() == 1 else 'entries'))
             if section.is_RELA():
                 self._emitline("  Offset          Info           Type           Sym. Value    Sym. Name + Addend")
             else:
@@ -592,11 +603,11 @@ class ReadElf(object):
             return
         for ehabi_info in self.elffile.get_ehabi_infos():
             # Unwind section '.ARM.exidx' at offset 0x203e8 contains 1009 entries:
-            self._emitline("\nUnwind section '%s' at offset 0x%x contains %d entries" % (
+            self._emitline("\nUnwind section '%s' at offset 0x%x contains %d %s" % (
                 ehabi_info.section_name(),
                 ehabi_info.section_offset(),
-                ehabi_info.num_entry()
-            ))
+                ehabi_info.num_entry(),
+                'entry' if ehabi_info.num_entry() == 1 else 'entries'))
 
             for i in range(ehabi_info.num_entry()):
                 entry = ehabi_info.get_entry(i)
@@ -632,9 +643,7 @@ class ReadElf(object):
 
         for section in self.elffile.iter_sections():
             if isinstance(section, GNUVerSymSection):
-                self._print_version_section_header(
-                    section, 'Version symbols', lead0x=False)
-
+                self._print_version_section_header(section, 'Version symbols')
                 num_symbols = section.num_symbols()
 
                 # Symbol version info are printed four by four entries
@@ -903,8 +912,9 @@ class ReadElf(object):
         else:
             num_entries = version_section.num_symbols()
 
-        self._emitline("\n%s section '%s' contains %s entries:" %
-            (name, version_section.name, num_entries))
+        self._emitline("\n%s section '%s' contains %d %s:" % (
+            name, version_section.name, num_entries,
+            'entry' if num_entries == 1 else 'entries'))
         self._emitline('%sAddr: %s  Offset: %s  Link: %i (%s)' % (
             ' ' * indent,
             self._format_hex(
@@ -1106,7 +1116,8 @@ class ReadElf(object):
         """
         if not self._dwarfinfo.has_debug_info:
             return
-        self._emitline('Decoded dump of debug contents of section %s:\n' % self._dwarfinfo.debug_line_sec.name)
+        self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_line_sec.name)
+        self._emitline()
 
         for cu in self._dwarfinfo.iter_CUs():
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
@@ -1121,7 +1132,7 @@ class ReadElf(object):
                 cu_filename = '%s/%s' % (bytes2str(dir), cu_filename)
 
             self._emitline('CU: %s:' % cu_filename)
-            self._emitline('File name                            Line number    Starting address')
+            self._emitline('File name                            Line number    Starting address    Stmt')
 
             # Print each state's file, line and address information. For some
             # instructions other output is needed to be compatible with
@@ -1143,23 +1154,19 @@ class ReadElf(object):
                     elif entry.command == DW_LNE_define_file:
                         self._emitline('%s:' % (
                             bytes2str(lineprogram['include_directory'][entry.args[0].dir_index])))
-                elif not state.end_sequence:
-                    # readelf doesn't print the state after end_sequence
-                    # instructions. I think it's a bug but to be compatible
-                    # I don't print them too.
-                    if lineprogram['version'] < 4 or self.elffile['e_machine'] == 'EM_PPC64':
-                        self._emitline('%-35s  %11d  %18s' % (
-                            bytes2str(lineprogram['file_entry'][state.file - 1].name),
-                            state.line,
-                            '0' if state.address == 0 else
-                                self._format_hex(state.address)))
-                    else:
-                        self._emitline('%-35s  %11d  %18s[%d]' % (
-                            bytes2str(lineprogram['file_entry'][state.file - 1].name),
-                            state.line,
-                            '0' if state.address == 0 else
-                                self._format_hex(state.address),
-                            state.op_index))
+                elif lineprogram['version'] < 4 or self.elffile['e_machine'] == 'EM_PPC64':
+                    self._emitline('%-35s  %11s  %18s    %s' % (
+                        bytes2str(lineprogram['file_entry'][state.file - 1].name),
+                        state.line if not state.end_sequence else '-',
+                        '0' if state.address == 0 else self._format_hex(state.address),
+                        'x' if state.is_stmt and not state.end_sequence else ''))
+                else:
+                    self._emitline('%-35s  %11d  %18s[%d] %s' % (
+                        bytes2str(lineprogram['file_entry'][state.file - 1].name),
+                        state.line if not state.end_sequence else '-',
+                        '0' if state.address == 0 else self._format_hex(state.address),
+                        state.op_index,
+                        'x' if state.is_stmt and not state.end_sequence else ''))
                 if entry.command == DW_LNS_copy:
                     # Another readelf oddity...
                     self._emitline()

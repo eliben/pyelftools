@@ -11,9 +11,11 @@ from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt32, SLInt32, SBInt64, SLInt64,
-    Struct, Array, Enum, Padding, BitStruct, BitField, Value, String, CString
+    Struct, Array, Enum, Padding, BitStruct, BitField, Value, String, CString,
+    Switch, Field
     )
 from ..common.construct_utils import ULEB128
+from ..common.utils import roundup
 from .enums import *
 
 
@@ -102,6 +104,7 @@ class ELFStructs(object):
         self._create_gnu_verdef()
         self._create_gnu_versym()
         self._create_gnu_abi()
+        self._create_gnu_property()
         self._create_note(e_type)
         self._create_stabs()
         self._create_arm_attributes()
@@ -369,6 +372,34 @@ class ELFStructs(object):
             self.Elf_word('abi_major'),
             self.Elf_word('abi_minor'),
             self.Elf_word('abi_tiny'),
+        )
+
+    def _create_gnu_property(self):
+        # Structure of GNU property notes is documented in
+        # https://github.com/hjl-tools/linux-abi/wiki/linux-abi-draft.pdf
+        def roundup_padding(ctx):
+            if self.elfclass == 32:
+                return roundup(ctx.pr_datasz, 2) - ctx.pr_datasz
+            return roundup(ctx.pr_datasz, 3) - ctx.pr_datasz
+
+        def classify_pr_data(ctx):
+            if type(ctx.pr_type) is not str:
+                return None
+            if ctx.pr_type.startswith('GNU_PROPERTY_X86_'):
+                return ('GNU_PROPERTY_X86_*', 4, 0)
+            return (ctx.pr_type, ctx.pr_datasz, self.elfclass)
+
+        self.Elf_Prop = Struct('Elf_Prop',
+            Enum(self.Elf_word('pr_type'), **ENUM_NOTE_GNU_PROPERTY_TYPE),
+            self.Elf_word('pr_datasz'),
+            Switch('pr_data', classify_pr_data, {
+                    ('GNU_PROPERTY_STACK_SIZE', 4, 32): self.Elf_word('pr_data'),
+                    ('GNU_PROPERTY_STACK_SIZE', 8, 64): self.Elf_word64('pr_data'),
+                    ('GNU_PROPERTY_X86_*', 4, 0): self.Elf_word('pr_data'),
+                },
+                default=Field('pr_data', lambda ctx: ctx.pr_datasz)
+            ),
+            Padding(roundup_padding)
         )
 
     def _create_note(self, e_type=None):

@@ -10,7 +10,7 @@ import os
 import copy
 from collections import namedtuple
 
-from ..common.utils import struct_parse
+from ..common.utils import struct_parse, dwarf_assert
 from .constants import *
 
 
@@ -178,6 +178,7 @@ class LineProgram(object):
 
                 if ex_opcode == DW_LNE_end_sequence:
                     state.end_sequence = True
+                    state.is_stmt = 0
                     add_entry_new_state(ex_opcode, [], is_extended=True)
                     # reset state
                     state = LineState(self.header['default_is_stmt'])
