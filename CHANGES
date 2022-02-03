@@ -1,6 +1,21 @@
 Changelog
 =========
 
++ Version 0.28 (2022.02.03)
+
+  - Added a method for returning the index of a section by name (#331)
+  - Allow filtering by section types in iter_sections (#345)
+  - Support Android compressed rel/rela sections (#357)
+  - Initial support for PPC64LE (#360)
+  - Initial DWARF v5 support (#363 with several follow-ups)
+  - Fixed parsing for structures containing uids or gids in core
+    dumps (#354)
+  - Allow filtering by segment types in iter_segments (#375)
+  - Add support for .note.gnu.property (#386)
+  - Update readelf tests to work with more recent version of
+    readelf (#387)
+  - Add support for note GNU_PROPERTY_X86_FEATURE_1_AND (#388)
+
 + Version 0.27 (2020.10.27)
 
   - Print addend wfor RELA relocations without symbol (#292)
