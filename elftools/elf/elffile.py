@@ -31,7 +31,8 @@ from .sections import (
         SymbolTableIndexSection, SUNWSyminfoTableSection, NullSection,
         NoteSection, StabSection, ARMAttributesSection)
 from .dynamic import DynamicSection, DynamicSegment
-from .relocation import RelocationSection, RelocationHandler
+from .relocation import (RelocationSection, RelocationHandler,
+        RelrRelocationSection)
 from .gnuversions import (
         GNUVerNeedSection, GNUVerDefSection,
         GNUVerSymSection)
@@ -595,6 +596,8 @@ class ELFFile(object):
             return self._make_elf_hash_section(section_header, name)
         elif sectype == 'SHT_GNU_HASH':
             return self._make_gnu_hash_section(section_header, name)
+        elif sectype == 'SHT_RELR':
+            return RelrRelocationSection(section_header, name, self)
         else:
             return Section(section_header, name, self)
 
