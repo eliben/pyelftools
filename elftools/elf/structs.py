@@ -270,6 +270,12 @@ class ELFStructs(object):
                                *fields_and_addend
         )
 
+        # Elf32_Relr is typedef'd as Elf32_Word, Elf64_Relr as Elf64_Xword
+        # (see the glibc patch, for example:
+        # https://sourceware.org/pipermail/libc-alpha/2021-October/132029.html)
+        # For us, this is the same as self.Elf_addr (or self.Elf_xword).
+        self.Elf_Relr = Struct('Elf_Relr', self.Elf_addr('r_offset'))
+
     def _create_dyn(self):
         d_tag_dict = dict(ENUM_D_TAG_COMMON)
         if self.e_machine in ENUMMAP_EXTRA_D_TAG_MACHINE:

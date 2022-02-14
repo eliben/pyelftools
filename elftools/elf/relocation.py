@@ -15,6 +15,7 @@ from .enums import (
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
     ENUM_D_TAG)
+from ..construct import Container
 
 
 class Relocation(object):
@@ -106,6 +107,80 @@ class RelocationSection(Section, RelocationTable):
             'Expected sh_entsize of %s section to be %s' % (
                 header['sh_type'], self.entry_size))
 
+class RelrRelocationSection(Section):
+    """ RELR compressed relocation section. This stores relative relocations
+        in a compressed format. An entry with an even value serves as an
+        'anchor' that defines a base address. Following this entry are one or
+        more bitmaps for consecutive addresses after the anchor which determine
+        if the corresponding relocation exists (if the bit is 1) or if it is
+        skipped. Addends are stored at the respective addresses (as in REL
+        relocations).
+    """
+    def __init__(self, header, name, elffile):
+        Section.__init__(self, header, name, elffile)
+        self._offset = self['sh_offset']
+        self._size = self['sh_size']
+        self._relr_struct = self.elffile.structs.Elf_Relr
+        self._entrysize = self._relr_struct.sizeof()
+        self._cached_relocations = None
+
+    def iter_relocations(self):
+        """ Yield all the relocations in the section
+        """
+        limit = self._offset + self._size
+        relr = self._offset
+        # The addresses of relocations in a bitmap are calculated from a base
+        # value provided in an initial 'anchor' relocation.
+        base = None
+        while relr < limit:
+            entry = struct_parse(self._relr_struct,
+                                 self.elffile.stream,
+                                 stream_pos=relr)
+            entry_offset = entry['r_offset']
+            if (entry_offset & 1) == 0:
+                # We found an anchor, take the current value as the base address
+                # for the following bitmaps and move the 'where' pointer to the
+                # beginning of the first bitmap.
+                base = entry_offset
+                base += self._entrysize
+                yield Relocation(entry, self.elffile)
+            else:
+                # We're processing a bitmap.
+                elf_assert(base is not None, 'RELR bitmap without base address')
+                i = 0
+                while True:
+                    # Iterate over all bits except the least significant one.
+                    entry_offset = (entry_offset >> 1)
+                    if entry_offset == 0:
+                        break
+                    # if the current LSB is set, we have a relocation at the
+                    # corresponding address so generate a Relocation with the
+                    # matching offset
+                    if (entry_offset & 1) != 0:
+                        calc_offset = base + i * self._entrysize
+                        yield Relocation(Container(r_offset = calc_offset),
+                                         self.elffile)
+                    i += 1
+                # Advance 'base' past the current bitmap (8 == CHAR_BIT). There
+                # are 63 (or 31 for 32-bit ELFs) entries in each bitmap, and
+                # every bit corresponds to an ELF_addr-sized relocation.
+                base += (8 * self._entrysize - 1) * self.elffile.structs.Elf_addr('').sizeof()
+            # Advance to the next entry
+            relr += self._entrysize
+
+    def num_relocations(self):
+        """ Number of relocations in the section
+        """
+        if self._cached_relocations is None:
+            self._cached_relocations = list(self.iter_relocations())
+        return len(self._cached_relocations)
+
+    def get_relocation(self, n):
+        """ Get the relocation at index #n from the section (Relocation object)
+        """
+        if self._cached_relocations is None:
+            self._cached_relocations = list(self.iter_relocations())
+        return self._cached_relocations[n]
 
 class RelocationHandler(object):
     """ Handles the logic of relocations in ELF files.
