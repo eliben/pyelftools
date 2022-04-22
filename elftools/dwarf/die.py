@@ -265,6 +265,9 @@ class DIE(object):
         if form == 'DW_FORM_strp':
             with preserve_stream_pos(self.stream):
                 value = self.dwarfinfo.get_string_from_table(raw_value)
+        elif form == 'DW_FORM_line_strp':
+            with preserve_stream_pos(self.stream):
+                value = self.dwarfinfo.get_string_from_linetable(raw_value)
         elif form == 'DW_FORM_flag':
             value = not raw_value == 0
         elif form == 'DW_FORM_flag_present':
