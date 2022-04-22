@@ -182,7 +182,9 @@ class DWARFStructs(object):
                     obj.name == 'DW_AT_null' and obj.form == 'DW_FORM_null',
                 Struct('attr_spec',
                     Enum(self.Dwarf_uleb128('name'), **ENUM_DW_AT),
-                    Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM))))
+                    Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM),
+                    If(lambda ctx: ctx['form'] == 'DW_FORM_implicit_const',
+                        self.Dwarf_sleb128('value')))))
 
     def _create_dw_form(self):
         self.Dwarf_dw_form = dict(
