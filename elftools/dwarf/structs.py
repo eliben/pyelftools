@@ -223,6 +223,7 @@ class DWARFStructs(object):
             DW_FORM_ref_addr=self.Dwarf_target_addr('') if self.dwarf_version == 2 else self.Dwarf_offset(''),
 
             DW_FORM_indirect=self.Dwarf_uleb128(''),
+            DW_FORM_line_strp=self.Dwarf_uint32('') if self.dwarf_format == 32 else self.Dwarf_uint64(''),
 
             # New forms in DWARFv4
             DW_FORM_flag_present = StaticField('', 0),

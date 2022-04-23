@@ -26,7 +26,10 @@ if PY3:
             return b.hex()
         return sep.join(map('{:02x}'.format, b))
 
-    def bytes2str(b): return b.decode('latin-1')
+    def bytes2str(b):
+        if isinstance(b, int):
+            return str(b)
+        return b.decode('latin-1')
     def str2bytes(s): return s.encode('latin-1')
     def int2byte(i): return bytes((i,))
     def byte2int(b): return b
