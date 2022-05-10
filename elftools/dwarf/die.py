@@ -237,11 +237,18 @@ class DIE(object):
 
         # Guided by the attributes listed in the abbreviation declaration, parse
         # values from the stream.
-        for name, form in abbrev_decl.iter_attr_specs():
+        for spec in abbrev_decl['attr_spec']:
+            form = spec.form
+            name = spec.name
             attr_offset = self.stream.tell()
-            raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
-
-            value = self._translate_attr_value(form, raw_value)
+            # Special case here: the attribute value is stored in the attribute
+            # definition in the abbreviation spec, not in the DIE itself.
+            if form == 'DW_FORM_implicit_const':
+                value = spec.value
+                raw_value = value
+            else:
+                raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
+                value = self._translate_attr_value(form, raw_value)
             self.attributes[name] = AttributeValue(
                 name=name,
                 form=form,
@@ -258,6 +265,9 @@ class DIE(object):
         if form == 'DW_FORM_strp':
             with preserve_stream_pos(self.stream):
                 value = self.dwarfinfo.get_string_from_table(raw_value)
+        elif form == 'DW_FORM_line_strp':
+            with preserve_stream_pos(self.stream):
+                value = self.dwarfinfo.get_string_from_linetable(raw_value)
         elif form == 'DW_FORM_flag':
             value = not raw_value == 0
         elif form == 'DW_FORM_flag_present':
