@@ -67,6 +67,11 @@ class ARanges(object):
         while offset < self.size :
             aranges_header = struct_parse(self.structs.Dwarf_aranges_header,
                 self.stream, offset)
+            
+            # End of useful data in the section
+            if not aranges_header["address_size"]:
+                break
+            
             addr_size = self._get_addr_size_struct(aranges_header["address_size"])
 
             # No segmentation

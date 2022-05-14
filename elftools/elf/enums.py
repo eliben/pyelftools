@@ -406,6 +406,8 @@ ENUM_P_TYPE_BASE = dict(
     _default_=Pass,
 )
 
+ENUM_P_TYPE = ENUM_P_TYPE_BASE
+
 ENUM_P_TYPE_ARM = merge_dicts(
         ENUM_P_TYPE_BASE,
         dict(
