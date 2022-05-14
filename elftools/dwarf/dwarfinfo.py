@@ -73,7 +73,8 @@ class DWARFInfo(object):
             debug_pubtypes_sec,
             debug_pubnames_sec,
             debug_addr_sec,
-            debug_str_offsets_sec):
+            debug_str_offsets_sec,
+            debug_line_str_sec):
         """ config:
                 A DwarfConfig object
 
@@ -92,6 +93,7 @@ class DWARFInfo(object):
         self.debug_loc_sec = debug_loc_sec
         self.debug_ranges_sec = debug_ranges_sec
         self.debug_line_sec = debug_line_sec
+        self.debug_line_str_sec = debug_line_str_sec
         self.debug_pubtypes_sec = debug_pubtypes_sec
         self.debug_pubnames_sec = debug_pubnames_sec
 
@@ -230,6 +232,12 @@ class DWARFInfo(object):
             relative to the section.
         """
         return parse_cstring_from_stream(self.debug_str_sec.stream, offset)
+
+    def get_string_from_linetable(self, offset):
+        """ Obtain a string from the string table section, given an offset
+            relative to the section.
+        """
+        return parse_cstring_from_stream(self.debug_line_str_sec.stream, offset)
 
     def line_program_for_CU(self, CU):
         """ Given a CU object, fetch the line program it points to from the

@@ -24,7 +24,7 @@ setup(
     description='Library for analyzing ELF files and DWARF debugging information',
     long_description=description,
     license='Public domain',
-    version='0.27',
+    version='0.28',
     author='Eli Bendersky',
     maintainer='Eli Bendersky',
     author_email='eliben@gmail.com',
