@@ -72,18 +72,41 @@ class TestParseExpr(unittest.TestCase):
     def test_single(self):
         p = DWARFExprParser(self.structs32)
         lst = p.parse_expr([0x1b])
-        self.assertEqual(lst, [DWARFExprOp(op=0x1B, op_name='DW_OP_div', args=[])])
+        self.assertEqual(lst, [DWARFExprOp(op=0x1B, op_name='DW_OP_div', args=[], offset=0)])
 
         lst = p.parse_expr([0x90, 16])
-        self.assertEqual(lst, [DWARFExprOp(op=0x90, op_name='DW_OP_regx', args=[16])])
+        self.assertEqual(lst, [DWARFExprOp(op=0x90, op_name='DW_OP_regx', args=[16], offset=0)])
 
         lst = p.parse_expr([0xe0])
         self.assertEqual(len(lst), 1)
         # 0xe0 maps to both DW_OP_GNU_push_tls_address and DW_OP_lo_user, so
         # check for both to prevent non-determinism.
         self.assertIn(lst[0], [
-            DWARFExprOp(op=0xe0, op_name='DW_OP_GNU_push_tls_address', args=[]),
-            DWARFExprOp(op=0xe0, op_name='DW_OP_lo_user', args=[])])
+            DWARFExprOp(op=0xe0, op_name='DW_OP_GNU_push_tls_address', args=[], offset=0),
+            DWARFExprOp(op=0xe0, op_name='DW_OP_lo_user', args=[], offset=0)])
+
+        # Real life example:
+        # push_object_address
+        # deref
+        # dup
+        # bra 4
+        # lit0
+        # skip 3
+        # lit4
+        # minus 
+        # deref        
+        lst = p.parse_expr([0x97,0x6,0x12,0x28,0x4,0x0,0x30,0x2F,0x3,0x0,0x34,0x1C,0x6])
+        self.assertEqual(len(lst), 9)
+        self.assertEqual(lst, [
+            DWARFExprOp(op=0x97, op_name='DW_OP_push_object_address', args=[], offset=0),
+            DWARFExprOp(op=0x6,  op_name='DW_OP_deref', args=[], offset=1),
+            DWARFExprOp(op=0x12, op_name='DW_OP_dup', args=[], offset=2),
+            DWARFExprOp(op=0x28, op_name='DW_OP_bra', args=[4], offset=3),
+            DWARFExprOp(op=0x30, op_name='DW_OP_lit0', args=[], offset=6),
+            DWARFExprOp(op=0x2f, op_name='DW_OP_skip', args=[3], offset=7),
+            DWARFExprOp(op=0x34, op_name='DW_OP_lit4', args=[], offset=10),
+            DWARFExprOp(op=0x1c, op_name='DW_OP_minus', args=[], offset=11),
+            DWARFExprOp(op=0x6,  op_name='DW_OP_deref', args=[], offset=12)])
 
 
 if __name__ == '__main__':

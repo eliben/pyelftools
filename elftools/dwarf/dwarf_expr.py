@@ -151,7 +151,7 @@ class DWARFExprParser(object):
             arg_parser = self._dispatch_table[op]
             args = arg_parser(stream)
 
-            parsed.append(DWARFExprOp(op=op, op_name=op_name, args=args, offset = offset))
+            parsed.append(DWARFExprOp(op=op, op_name=op_name, args=args, offset=offset))
 
         return parsed
 
