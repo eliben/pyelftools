@@ -114,7 +114,7 @@ DW_OP_opcode2name = dict((v, k) for k, v in iteritems(DW_OP_name2opcode))
 
 # Each parsed DWARF expression is returned as this type with its numeric opcode,
 # op name (as a string) and a list of arguments.
-DWARFExprOp = namedtuple('DWARFExprOp', 'op op_name args')
+DWARFExprOp = namedtuple('DWARFExprOp', 'op op_name args offset')
 
 
 class DWARFExprParser(object):
@@ -138,6 +138,7 @@ class DWARFExprParser(object):
         while True:
             # Get the next opcode from the stream. If nothing is left in the
             # stream, we're done.
+            offset = stream.tell()
             byte = stream.read(1)
             if len(byte) == 0:
                 break
@@ -150,7 +151,7 @@ class DWARFExprParser(object):
             arg_parser = self._dispatch_table[op]
             args = arg_parser(stream)
 
-            parsed.append(DWARFExprOp(op=op, op_name=op_name, args=args))
+            parsed.append(DWARFExprOp(op=op, op_name=op_name, args=args, offset=offset))
 
         return parsed
 
