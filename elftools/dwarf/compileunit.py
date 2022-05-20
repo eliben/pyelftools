@@ -155,6 +155,8 @@ class CompileUnit(object):
                 cur_offset += child.size
             elif "DW_AT_sibling" in child.attributes:
                 sibling = child.attributes["DW_AT_sibling"]
+                assert sibling.form in ('DW_FORM_ref1', 'DW_FORM_ref2', 'DW_FORM_ref4',
+                         'DW_FORM_ref8', 'DW_FORM_ref')
                 cur_offset = sibling.value + self.cu_offset
             else:
                 # If no DW_AT_sibling attribute is provided by the producer
