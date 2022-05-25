@@ -65,6 +65,7 @@ from elftools.dwarf.constants import (
 from elftools.dwarf.locationlists import LocationParser, LocationEntry
 from elftools.dwarf.callframe import CIE, FDE, ZERO
 from elftools.ehabi.ehabiinfo import CorruptEHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry
+from elftools.dwarf.enums import ENUM_DW_UT
 
 
 class ReadElf(object):
@@ -1061,7 +1062,10 @@ class ReadElf(object):
             self._emitline('   Length:        %s (%s)' % (
                 self._format_hex(cu['unit_length']),
                 '%s-bit' % cu.dwarf_format()))
-            self._emitline('   Version:       %s' % cu['version']),
+            self._emitline('   Version:       %s' % cu['version'])
+            if cu.header.get("unit_type", False):
+                ut = next((key for key, value in ENUM_DW_UT.items() if value == cu.header.unit_type), '?')
+                self._emitline('   Unit Type:     %s (%d)' % (ut, cu.header.unit_type))
             self._emitline('   Abbrev Offset: %s' % (
                 self._format_hex(cu['debug_abbrev_offset']))),
             self._emitline('   Pointer Size:  %s' % cu['address_size'])
