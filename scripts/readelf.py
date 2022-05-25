@@ -1161,9 +1161,9 @@ class ReadElf(object):
                         '0' if state.address == 0 else self._format_hex(state.address),
                         'x' if state.is_stmt and not state.end_sequence else ''))
                 else:
-                    self._emitline('%-35s  %11d  %18s[%d] %s' % (
+                    self._emitline('%-35s  %s  %18s[%d] %s' % (
                         bytes2str(lineprogram['file_entry'][state.file - 1].name),
-                        state.line if not state.end_sequence else '-',
+                        "%11d" % (state.line,) if not state.end_sequence else '-',
                         '0' if state.address == 0 else self._format_hex(state.address),
                         state.op_index,
                         'x' if state.is_stmt and not state.end_sequence else ''))
