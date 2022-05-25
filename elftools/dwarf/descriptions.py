@@ -206,6 +206,10 @@ def _describe_attr_strp(attr, die, section_offset):
     return '(indirect string, offset: 0x%x): %s' % (
         attr.raw_value, bytes2str(attr.value))
 
+def _describe_attr_line_strp(attr, die, section_offset):
+    return '(indirect line string, offset: 0x%x): %s' % (
+        attr.raw_value, bytes2str(attr.value))        
+
 def _describe_attr_string(attr, die, section_offset):
     return bytes2str(attr.value)
 
@@ -247,6 +251,7 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_udata=_describe_attr_value_passthrough,
     DW_FORM_string=_describe_attr_string,
     DW_FORM_strp=_describe_attr_strp,
+    DW_FORM_line_strp=_describe_attr_line_strp,
     DW_FORM_block1=_describe_attr_block,
     DW_FORM_block2=_describe_attr_block,
     DW_FORM_block4=_describe_attr_block,
