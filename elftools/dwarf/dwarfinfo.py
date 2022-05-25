@@ -458,7 +458,7 @@ class DWARFInfo(object):
 
         # DWARF5: resolve names
         def resolve_strings(self, lineprog_header, format_field, data_field):
-            if format_field in lineprog_header:
+            if lineprog_header.get(format_field, False):
                 data = lineprog_header[data_field]
                 for field in lineprog_header[format_field]:
                     def replace_value(data, content_type, replacer):
@@ -476,9 +476,9 @@ class DWARFInfo(object):
         resolve_strings(self, lineprog_header, 'file_name_entry_format', 'file_names')
 
         # DWARF5: provide compatible file/directory name arrays for legacy lineprogram consumers
-        if 'directories' in lineprog_header:
+        if lineprog_header.get('directories', False):
             lineprog_header.include_directory = tuple(d.DW_LNCT_path for d in lineprog_header.directories)
-        if 'file_names' in lineprog_header:
+        if lineprog_header.get('file_names', False):
             translate = namedtuple("file_entry", "name dir_index mtime length")
             lineprog_header.file_entry = tuple(
                 translate(e.get('DW_LNCT_path'), e.get('DW_LNCT_directory_index'), e.get('DW_LNCT_timestamp'), e.get('DW_LNCT_size'))
