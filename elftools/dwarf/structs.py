@@ -295,6 +295,7 @@ class DWARFStructs(object):
                 self.format_field = format_field
 
             def _parse(self, stream, context):
+                # Somewhat tricky technique here, explicitly writing back to the context
                 if self.format_field + "_parser" in context:
                     parser = context[self.format_field + "_parser"]
                 else:
