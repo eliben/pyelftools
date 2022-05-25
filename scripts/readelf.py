@@ -1125,6 +1125,7 @@ class ReadElf(object):
 
         for cu in self._dwarfinfo.iter_CUs():
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
+            ver5 = lineprogram.header.version >= 5
 
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
             if len(lineprogram['include_directory']) > 0:
@@ -1136,7 +1137,9 @@ class ReadElf(object):
                 cu_filename = '%s/%s' % (bytes2str(dir), cu_filename)
 
             self._emitline('CU: %s:' % cu_filename)
-            self._emitline('File name                            Line number    Starting address    Stmt')
+            self._emitline('File name                            Line number    Starting address    View    Stmt' if ver5
+                else 'File name                            Line number    Starting address    Stmt')
+            # What goes into View on V5? To be seen...
 
             # Print each state's file, line and address information. For some
             # instructions other output is needed to be compatible with
@@ -1165,11 +1168,14 @@ class ReadElf(object):
                         '0' if state.address == 0 else self._format_hex(state.address),
                         'x' if state.is_stmt and not state.end_sequence else ''))
                 else:
-                    self._emitline('%-35s  %s  %18s[%d] %s' % (
+                    # What's the deal with op_index after address on DWARF 5? Is omitting it
+                    # a function of DWARF version, or ISA, or what?
+                    # Used to be unconditional, even on non-VLIW machines.
+                    self._emitline('%-35s  %s  %18s%s %s' % (
                         bytes2str(lineprogram['file_entry'][state.file - 1].name),
                         "%11d" % (state.line,) if not state.end_sequence else '-',
                         '0' if state.address == 0 else self._format_hex(state.address),
-                        state.op_index,
+                        '' if ver5 else '[%d]' % (state.op_index,),
                         'x' if state.is_stmt and not state.end_sequence else ''))
                 if entry.command == DW_LNS_copy:
                     # Another readelf oddity...
