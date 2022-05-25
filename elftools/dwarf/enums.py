@@ -394,3 +394,13 @@ DW_EH_encoding_flags = dict(
 
     DW_EH_PE_omit     = 0xff,
 )
+
+ENUM_DW_LNCT = dict(
+    DW_LNCT_path             = 0x1,
+    DW_LNCT_directory_index  = 0x2,
+    DW_LNCT_timestamp        = 0x3,
+    DW_LNCT_size             = 0x4,
+    DW_LNCT_MD5              = 0x5,
+    DW_LNCT_lo_user          = 0x2000,
+    DW_LNCT_hi_user          = 0x3fff
+)

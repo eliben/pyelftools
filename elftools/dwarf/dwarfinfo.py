@@ -456,6 +456,34 @@ class DWARFInfo(object):
             self.debug_line_sec.stream,
             debug_line_offset)
 
+        # DWARF5: resolve names
+        def resolve_strings(self, lineprog_header, format_field, data_field):
+            if format_field in lineprog_header:
+                data = lineprog_header[data_field]
+                for field in lineprog_header[format_field]:
+                    def replace_value(data, content_type, replacer):
+                        for entry in data:
+                            entry[content_type] = replacer(entry[content_type])
+
+                    if field.form == 'DW_FORM_line_strp':
+                        replace_value(data, field.content_type, self.get_string_from_linetable)
+                    elif field.form == 'DW_FORM_strp':
+                        replace_value(data, field.content_type, self.get_string_from_table)
+                    elif field.form in ('DW_FORM_strp_sup', 'DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4'):
+                        raise NotImplementedError()
+
+        resolve_strings(self, lineprog_header, 'directory_entry_format', 'directories')
+        resolve_strings(self, lineprog_header, 'file_name_entry_format', 'file_names')
+
+        # DWARF5: provide compatible file/directory name arrays for legacy lineprogram consumers
+        if 'directories' in lineprog_header:
+            lineprog_header.include_directory = tuple(d.DW_LNCT_path for d in lineprog_header.directories)
+        if 'file_names' in lineprog_header:
+            translate = namedtuple("file_entry", "name dir_index mtime length")
+            lineprog_header.file_entry = tuple(
+                translate(e.get('DW_LNCT_path'), e.get('DW_LNCT_directory_index'), e.get('DW_LNCT_timestamp'), e.get('DW_LNCT_size'))
+                for e in lineprog_header.file_names)
+        
         # Calculate the offset to the next line program (see DWARF 6.2.4)
         end_offset = (  debug_line_offset + lineprog_header['unit_length'] +
                         structs.initial_length_field_size())
