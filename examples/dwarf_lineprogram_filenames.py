@@ -78,7 +78,7 @@ def lpe_filename(line_program, file_index):
 
     # File and directory indices are 1-indexed.
     file_entry = file_entries[file_index - 1]
-    dir_index = file_entry["dir_index"]
+    dir_index = file_entry.dir_index
 
     # A dir_index of 0 indicates that no absolute directory was recorded during
     # compilation; return just the basename.
