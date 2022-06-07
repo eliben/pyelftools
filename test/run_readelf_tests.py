@@ -80,6 +80,15 @@ def run_test_on_file(filename, verbose=False, opt=None):
                 testlog.info('.......................SKIPPED')
             continue
 
+        # TODO(sevaa): I've checked the readelf sources, the DWARF docs,
+        # and concluded the the readelf.py's behavior is correct while
+        # GNU binutils' is wrong.
+        if filename.endswith("dwarf_lineprogramv5.elf") and option == "--debug-dump=frames-interp":
+            if verbose:
+                testlog.warning("....will fail because GNU readelf has a bug here, see eliben/pyelftools PR #411")
+                testlog.info('.......................SKIPPED')
+            continue
+
         # stdouts will be a 2-element list: output of readelf and output
         # of scripts/readelf.py
         stdouts = []
