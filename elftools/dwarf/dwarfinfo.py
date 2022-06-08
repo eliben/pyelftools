@@ -243,6 +243,14 @@ class DWARFInfo(object):
         """ Given a CU object, fetch the line program it points to from the
             .debug_line section.
             If the CU doesn't point to a line program, return None.
+            
+            Note about directory and file names. They are returned as two collections
+            in the lineprogram object's header - include_directory and file_entry.
+
+            In DWARFv5, they have introduced a different, extensible format for those
+            collections. So in a lineprogram v5+, there are two more collections in
+            the header - directories and file_names. Those might contain extra DWARFv5
+            information that is not exposed in include_directory and file_entry.
         """
         # The line program is pointed to by the DW_AT_stmt_list attribute of
         # the top DIE of a CU.
