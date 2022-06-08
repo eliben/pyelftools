@@ -955,7 +955,7 @@ class ReadElf(object):
 
     def _symbol_version(self, nsym):
         """ Return a dict containing information on the
-                   or None if no version information is available
+            or None if no version information is available
         """
         self._init_versioninfo()
 
@@ -1174,9 +1174,9 @@ class ReadElf(object):
     def _dump_frames_info(self, section, cfi_entries):
         """ Dump the raw call frame info in a section.
 
-        `section` is the Section instance that contains the call frame info
-        while `cfi_entries` must be an iterable that yields the sequence of
-        CIE or FDE instances.
+            `section` is the Section instance that contains the call frame info
+            while `cfi_entries` must be an iterable that yields the sequence of
+            CIE or FDE instances.
         """
         self._emitline('Contents of the %s section:' % section.name)
 
@@ -1403,7 +1403,7 @@ class ReadElf(object):
 
     def _dump_debug_frames_interp(self):
         """ Dump the interpreted (decoded) frame information from .debug_frame
-        and .eh_framae sections.
+            and .eh_frame sections.
         """
         if self._dwarfinfo.has_EH_CFI():
             self._dump_frames_interp_info(
