@@ -317,23 +317,23 @@ _DESCR_DW_LANG = {
     DW_LANG_UPC: '(Unified Parallel C)',
     DW_LANG_D: '(D)',
     DW_LANG_Python: '(Python)',
-    DW_LANG_OpenCL: '(OpenCL)', # Not tested
-    DW_LANG_Go: '(go)', # Not tested
-    DW_LANG_Modula3: '(Modula 3)', # Not tested
-    DW_LANG_Haskell: '(Haskell)', # Not tested
-    DW_LANG_C_plus_plus_03: '(C++02)', # Not tested
-    DW_LANG_C_plus_plus_11: '(C++11)', # Not tested
-    DW_LANG_OCaml: '(OCaml)', # Not tested
-    DW_LANG_Rust: '(Rust)', # Not tested
-    DW_LANG_C11: '(c11)',
-    DW_LANG_Swift: '(Swift)', # Not tested
-    DW_LANG_Julia: '(Julia)', # Not tested
-    DW_LANG_Dylan: '(Dylan)', # Not tested
-    DW_LANG_C_plus_plus_14: '(C++14)', # Not tested
-    DW_LANG_Fortran03: '(Fortran 3)', # Not tested
-    DW_LANG_Fortran08: '(Fortran 8)', # Not tested
-    DW_LANG_RenderScript: '(RenderScript)', # Not tested
-    DW_LANG_BLISS: '(Bliss)', # Not tested
+    DW_LANG_OpenCL: '(OpenCL)',
+    DW_LANG_Go: '(Go)',
+    DW_LANG_Modula3: '(Modula 3)',
+    DW_LANG_Haskell: '(Haskell)',
+    DW_LANG_C_plus_plus_03: '(C++03)',
+    DW_LANG_C_plus_plus_11: '(C++11)',
+    DW_LANG_OCaml: '(OCaml)',
+    DW_LANG_Rust: '(Rust)',
+    DW_LANG_C11: '(C11)',
+    DW_LANG_Swift: '(Swift)',
+    DW_LANG_Julia: '(Julia)',
+    DW_LANG_Dylan: '(Dylan)',
+    DW_LANG_C_plus_plus_14: '(C++14)',
+    DW_LANG_Fortran03: '(Fortran 03)',
+    DW_LANG_Fortran08: '(Fortran 08)',
+    DW_LANG_RenderScript: '(RenderScript)',
+    DW_LANG_BLISS: '(Bliss)', # Not in binutils
     DW_LANG_Mips_Assembler: '(MIPS assembler)',
     DW_LANG_HP_Bliss: '(HP Bliss)',
     DW_LANG_HP_Basic91: '(HP Basic 91)',
