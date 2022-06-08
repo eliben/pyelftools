@@ -8,6 +8,8 @@
 #-------------------------------------------------------------------------------
 from __future__ import print_function
 import sys
+import posixpath
+from elftools.common.py3compat import bytes2str
 
 # If pyelftools is not installed, the example can also run from the root or
 # examples/ dir of the source distribution.
@@ -15,6 +17,13 @@ sys.path[0:0] = ['.', '..']
 
 from elftools.elf.elffile import ELFFile
 
+# Replacement for DIE.get_full_path, with POSIX paths instead of host patsh
+def get_full_path_posix(die):
+    comp_dir_attr = die.attributes.get('DW_AT_comp_dir', None)
+    comp_dir = bytes2str(comp_dir_attr.value) if comp_dir_attr else ''
+    fname_attr = die.attributes.get('DW_AT_name', None)
+    fname = bytes2str(fname_attr.value) if fname_attr else ''
+    return posixpath.join(comp_dir, fname)  
 
 def process_file(filename):
     print('Processing file:', filename)
@@ -43,7 +52,7 @@ def process_file(filename):
             print('    Top DIE with tag=%s' % top_DIE.tag)
 
             # We're interested in the filename...
-            print('    name=%s' % top_DIE.get_full_path())
+            print('    name=%s' % get_full_path_posix(top_DIE))
 
 if __name__ == '__main__':
     if sys.argv[1] == '--test':

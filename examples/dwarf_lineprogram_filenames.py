@@ -12,6 +12,7 @@ from __future__ import print_function
 from collections import defaultdict
 import os
 import sys
+import posixpath
 
 # If pyelftools is not installed, the example can also run from the root or
 # examples/ dir of the source distribution.
@@ -86,7 +87,7 @@ def lpe_filename(line_program, file_index):
         return file_entry.name.decode()
 
     directory = lp_header["include_directory"][dir_index - 1]
-    return os.path.join(directory, file_entry.name).decode()
+    return posixpath.join(directory, file_entry.name).decode()
 
 
 if __name__ == '__main__':
