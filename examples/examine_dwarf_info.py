@@ -9,13 +9,13 @@
 from __future__ import print_function
 import sys
 import posixpath
-from elftools.common.py3compat import bytes2str
 
 # If pyelftools is not installed, the example can also run from the root or
 # examples/ dir of the source distribution.
 sys.path[0:0] = ['.', '..']
 
 from elftools.elf.elffile import ELFFile
+from elftools.common.py3compat import bytes2str
 
 # Replacement for DIE.get_full_path, with POSIX paths instead of host patsh
 def get_full_path_posix(die):
