@@ -17,7 +17,7 @@ sys.path[0:0] = ['.', '..']
 from elftools.elf.elffile import ELFFile
 from elftools.common.py3compat import bytes2str
 
-# Replacement for DIE.get_full_path, with POSIX paths instead of host patsh
+# Replacement for DIE.get_full_path, with POSIX paths instead of host paths
 def get_full_path_posix(die):
     comp_dir_attr = die.attributes.get('DW_AT_comp_dir', None)
     comp_dir = bytes2str(comp_dir_attr.value) if comp_dir_attr else ''
