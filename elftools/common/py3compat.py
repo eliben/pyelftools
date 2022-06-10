@@ -12,6 +12,7 @@ PY3 = sys.version_info[0] == 3
 
 if PY3:
     import io
+    from pathlib import Path
     StringIO = io.StringIO
     BytesIO = io.BytesIO
 
@@ -42,8 +43,15 @@ if PY3:
     ifilter = filter
 
     maxint = sys.maxsize
+
+    def path_to_posix(s):
+        return Path(s).as_posix()
+
 else:
     import cStringIO
+    import os
+    import posixpath
+
     StringIO = BytesIO = cStringIO.StringIO
 
     def bytes2hex(b, sep=''):
@@ -62,6 +70,9 @@ else:
     from itertools import ifilter
 
     maxint = sys.maxint
+
+    def path_to_posix(s):
+        return posixpath.join(*os.path.split(s))
 
 
 def iterkeys(d):
