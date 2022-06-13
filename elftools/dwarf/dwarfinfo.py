@@ -243,6 +243,14 @@ class DWARFInfo(object):
         """ Given a CU object, fetch the line program it points to from the
             .debug_line section.
             If the CU doesn't point to a line program, return None.
+            
+            Note about directory and file names. They are returned as two collections
+            in the lineprogram object's header - include_directory and file_entry.
+
+            In DWARFv5, they have introduced a different, extensible format for those
+            collections. So in a lineprogram v5+, there are two more collections in
+            the header - directories and file_names. Those might contain extra DWARFv5
+            information that is not exposed in include_directory and file_entry.
         """
         # The line program is pointed to by the DW_AT_stmt_list attribute of
         # the top DIE of a CU.
@@ -456,6 +464,34 @@ class DWARFInfo(object):
             self.debug_line_sec.stream,
             debug_line_offset)
 
+        # DWARF5: resolve names
+        def resolve_strings(self, lineprog_header, format_field, data_field):
+            if lineprog_header.get(format_field, False):
+                data = lineprog_header[data_field]
+                for field in lineprog_header[format_field]:
+                    def replace_value(data, content_type, replacer):
+                        for entry in data:
+                            entry[content_type] = replacer(entry[content_type])
+
+                    if field.form == 'DW_FORM_line_strp':
+                        replace_value(data, field.content_type, self.get_string_from_linetable)
+                    elif field.form == 'DW_FORM_strp':
+                        replace_value(data, field.content_type, self.get_string_from_table)
+                    elif field.form in ('DW_FORM_strp_sup', 'DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4'):
+                        raise NotImplementedError()
+
+        resolve_strings(self, lineprog_header, 'directory_entry_format', 'directories')
+        resolve_strings(self, lineprog_header, 'file_name_entry_format', 'file_names')
+
+        # DWARF5: provide compatible file/directory name arrays for legacy lineprogram consumers
+        if lineprog_header.get('directories', False):
+            lineprog_header.include_directory = tuple(d.DW_LNCT_path for d in lineprog_header.directories)
+        if lineprog_header.get('file_names', False):
+            translate = namedtuple("file_entry", "name dir_index mtime length")
+            lineprog_header.file_entry = tuple(
+                translate(e.get('DW_LNCT_path'), e.get('DW_LNCT_directory_index'), e.get('DW_LNCT_timestamp'), e.get('DW_LNCT_size'))
+                for e in lineprog_header.file_names)
+        
         # Calculate the offset to the next line program (see DWARF 6.2.4)
         end_offset = (  debug_line_offset + lineprog_header['unit_length'] +
                         structs.initial_length_field_size())

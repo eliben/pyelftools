@@ -259,6 +259,13 @@ def describe_note_gnu_property_x86_feature_1(value):
             descs.append(desc)
     return 'x86 feature: ' + ', '.join(descs)
 
+def describe_note_gnu_property_x86_isa_1(value):
+    descs = []
+    for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS:
+        if value & mask:
+            descs.append(desc)
+    return 'x86 ISA needed: ' + ', '.join(descs)    
+
 def describe_note_gnu_properties(properties):
     descriptions = []
     for prop in properties:
@@ -278,6 +285,11 @@ def describe_note_gnu_properties(properties):
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
                 prop_desc = describe_note_gnu_property_x86_feature_1(d)
+        elif t == 'GNU_PROPERTY_X86_ISA_1_NEEDED':
+            if sz != 4:
+                prop_desc = ' <corrupt length: 0x%x>' % sz
+            else:
+                prop_desc = describe_note_gnu_property_x86_isa_1(d)
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
             prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
@@ -601,6 +613,12 @@ _DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_1_FLAGS = (
     (2, 'SHSTK'),
     (4, 'LAM_U48'),
     (8, 'LAM_U57'),
+)
+
+# Same for GNU_PROPERTY_X86_SET_1_xxx
+_DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS = (
+    (1, 'x86-64-baseline'),
+    # TODO; there is a long list
 )
 
 

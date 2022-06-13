@@ -206,6 +206,10 @@ def _describe_attr_strp(attr, die, section_offset):
     return '(indirect string, offset: 0x%x): %s' % (
         attr.raw_value, bytes2str(attr.value))
 
+def _describe_attr_line_strp(attr, die, section_offset):
+    return '(indirect line string, offset: 0x%x): %s' % (
+        attr.raw_value, bytes2str(attr.value))        
+
 def _describe_attr_string(attr, die, section_offset):
     return bytes2str(attr.value)
 
@@ -247,6 +251,7 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_udata=_describe_attr_value_passthrough,
     DW_FORM_string=_describe_attr_string,
     DW_FORM_strp=_describe_attr_strp,
+    DW_FORM_line_strp=_describe_attr_line_strp,
     DW_FORM_block1=_describe_attr_block,
     DW_FORM_block2=_describe_attr_block,
     DW_FORM_block4=_describe_attr_block,
@@ -312,12 +317,29 @@ _DESCR_DW_LANG = {
     DW_LANG_UPC: '(Unified Parallel C)',
     DW_LANG_D: '(D)',
     DW_LANG_Python: '(Python)',
+    DW_LANG_OpenCL: '(OpenCL)',
+    DW_LANG_Go: '(Go)',
+    DW_LANG_Modula3: '(Modula 3)',
+    DW_LANG_Haskell: '(Haskell)',
+    DW_LANG_C_plus_plus_03: '(C++03)',
+    DW_LANG_C_plus_plus_11: '(C++11)',
+    DW_LANG_OCaml: '(OCaml)',
+    DW_LANG_Rust: '(Rust)',
+    DW_LANG_C11: '(C11)',
+    DW_LANG_Swift: '(Swift)',
+    DW_LANG_Julia: '(Julia)',
+    DW_LANG_Dylan: '(Dylan)',
+    DW_LANG_C_plus_plus_14: '(C++14)',
+    DW_LANG_Fortran03: '(Fortran 03)',
+    DW_LANG_Fortran08: '(Fortran 08)',
+    DW_LANG_RenderScript: '(RenderScript)',
+    DW_LANG_BLISS: '(Bliss)', # Not in binutils
     DW_LANG_Mips_Assembler: '(MIPS assembler)',
     DW_LANG_HP_Bliss: '(HP Bliss)',
     DW_LANG_HP_Basic91: '(HP Basic 91)',
     DW_LANG_HP_Pascal91: '(HP Pascal 91)',
     DW_LANG_HP_IMacro: '(HP IMacro)',
-    DW_LANG_HP_Assembler: '(HP assembler)',
+    DW_LANG_HP_Assembler: '(HP assembler)'
 }
 
 _DESCR_DW_ATE = {

@@ -7,11 +7,13 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from elftools.construct.core import Subconstruct
+from elftools.construct.macros import Embedded
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, Enum, Array, PrefixedArray,
-    CString, Embed, StaticField, IfThenElse
+    CString, Embed, StaticField, IfThenElse, Construct, Rename, Sequence
     )
 from ..common.construct_utils import RepeatUntilExcluding, ULEB128, SLEB128
 from .enums import *
@@ -282,27 +284,80 @@ class DWARFStructs(object):
                     self.Dwarf_uleb128('mtime'),
                     self.Dwarf_uleb128('length')))))
 
+        class FormattedEntry(Construct):
+            # Generates a parser based on a previously parsed piece,
+            # similar to deprecared Dynamic.
+            # Strings are resolved later, since it potentially requires
+            # looking at another section.
+            def __init__(self, name, structs, format_field):
+                Construct.__init__(self, name)
+                self.structs = structs
+                self.format_field = format_field
+
+            def _parse(self, stream, context):
+                # Somewhat tricky technique here, explicitly writing back to the context
+                if self.format_field + "_parser" in context:
+                    parser = context[self.format_field + "_parser"]
+                else:
+                    fields = tuple(
+                        Rename(f.content_type, self.structs.Dwarf_dw_form[f.form])
+                        for f in context[self.format_field])
+                    parser = Struct('formatted_entry', *fields)
+                    context[self.format_field + "_parser"] = parser
+                return parser._parse(stream, context)
+ 
+        ver5 = lambda ctx: ctx.version >= 5
+        
         self.Dwarf_lineprog_header = Struct('Dwarf_lineprog_header',
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
+            If(ver5,
+                self.Dwarf_uint8("address_size"),
+                None),
+            If(ver5,
+                self.Dwarf_uint8("segment_selector_size"),
+                None),
             self.Dwarf_offset('header_length'),
             self.Dwarf_uint8('minimum_instruction_length'),
-            If(lambda ctx: ctx['version'] >= 4,
+            If(lambda ctx: ctx.version >= 4,
                 self.Dwarf_uint8("maximum_operations_per_instruction"),
                 1),
             self.Dwarf_uint8('default_is_stmt'),
             self.Dwarf_int8('line_base'),
             self.Dwarf_uint8('line_range'),
             self.Dwarf_uint8('opcode_base'),
-            Array(lambda ctx: ctx['opcode_base'] - 1,
+            Array(lambda ctx: ctx.opcode_base - 1,
                   self.Dwarf_uint8('standard_opcode_lengths')),
-            RepeatUntilExcluding(
-                lambda obj, ctx: obj == b'',
-                CString('include_directory')),
-            RepeatUntilExcluding(
-                lambda obj, ctx: len(obj.name) == 0,
-                self.Dwarf_lineprog_file_entry),
-            )
+            If(ver5,
+                PrefixedArray(
+                    Struct('directory_entry_format',
+                        Enum(self.Dwarf_uleb128('content_type'), **ENUM_DW_LNCT),
+                        Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM)),
+                    self.Dwarf_uint8("directory_entry_format_count"))),
+            If(ver5, # Name deliberately doesn't match the legacy object, since the format can't be made compatible
+                PrefixedArray(
+                    FormattedEntry('directories', self, "directory_entry_format"),
+                    self.Dwarf_uleb128('directories_count'))),
+            If(ver5,
+                PrefixedArray(
+                    Struct('file_name_entry_format',
+                        Enum(self.Dwarf_uleb128('content_type'), **ENUM_DW_LNCT),
+                        Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM)),
+                    self.Dwarf_uint8("file_name_entry_format_count"))),
+            If(ver5,
+                PrefixedArray(
+                    FormattedEntry('file_names', self, "file_name_entry_format"),
+                    self.Dwarf_uleb128('file_names_count'))),
+            # Legacy  directories/files - DWARF < 5 only
+            If(lambda ctx: ctx.version < 5,
+                RepeatUntilExcluding(
+                    lambda obj, ctx: obj == b'',
+                    CString('include_directory'))),
+            If(lambda ctx: ctx.version < 5, 
+                RepeatUntilExcluding(
+                    lambda obj, ctx: len(obj.name) == 0,
+                    self.Dwarf_lineprog_file_entry)) # array name is file_entry 
+        )
 
     def _create_callframe_entry_headers(self):
         self.Dwarf_CIE_header = Struct('Dwarf_CIE_header',

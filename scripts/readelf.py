@@ -65,6 +65,7 @@ from elftools.dwarf.constants import (
 from elftools.dwarf.locationlists import LocationParser, LocationEntry
 from elftools.dwarf.callframe import CIE, FDE, ZERO
 from elftools.ehabi.ehabiinfo import CorruptEHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry
+from elftools.dwarf.enums import ENUM_DW_UT
 
 
 class ReadElf(object):
@@ -1061,7 +1062,10 @@ class ReadElf(object):
             self._emitline('   Length:        %s (%s)' % (
                 self._format_hex(cu['unit_length']),
                 '%s-bit' % cu.dwarf_format()))
-            self._emitline('   Version:       %s' % cu['version']),
+            self._emitline('   Version:       %s' % cu['version'])
+            if cu.header.get("unit_type", False):
+                ut = next((key for key, value in ENUM_DW_UT.items() if value == cu.header.unit_type), '?')
+                self._emitline('   Unit Type:     %s (%d)' % (ut, cu.header.unit_type))
             self._emitline('   Abbrev Offset: %s' % (
                 self._format_hex(cu['debug_abbrev_offset']))),
             self._emitline('   Pointer Size:  %s' % cu['address_size'])
@@ -1121,6 +1125,7 @@ class ReadElf(object):
 
         for cu in self._dwarfinfo.iter_CUs():
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
+            ver5 = lineprogram.header.version >= 5
 
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
             if len(lineprogram['include_directory']) > 0:
@@ -1132,7 +1137,9 @@ class ReadElf(object):
                 cu_filename = '%s/%s' % (bytes2str(dir), cu_filename)
 
             self._emitline('CU: %s:' % cu_filename)
-            self._emitline('File name                            Line number    Starting address    Stmt')
+            self._emitline('File name                            Line number    Starting address    View    Stmt' if ver5
+                else 'File name                            Line number    Starting address    Stmt')
+            # What goes into View on V5? To be seen...
 
             # Print each state's file, line and address information. For some
             # instructions other output is needed to be compatible with
@@ -1161,11 +1168,14 @@ class ReadElf(object):
                         '0' if state.address == 0 else self._format_hex(state.address),
                         'x' if state.is_stmt and not state.end_sequence else ''))
                 else:
-                    self._emitline('%-35s  %11d  %18s[%d] %s' % (
+                    # What's the deal with op_index after address on DWARF 5? Is omitting it
+                    # a function of DWARF version, or ISA, or what?
+                    # Used to be unconditional, even on non-VLIW machines.
+                    self._emitline('%-35s  %s  %18s%s %s' % (
                         bytes2str(lineprogram['file_entry'][state.file - 1].name),
-                        state.line if not state.end_sequence else '-',
+                        "%11d" % (state.line,) if not state.end_sequence else '-',
                         '0' if state.address == 0 else self._format_hex(state.address),
-                        state.op_index,
+                        '' if ver5 else '[%d]' % (state.op_index,),
                         'x' if state.is_stmt and not state.end_sequence else ''))
                 if entry.command == DW_LNS_copy:
                     # Another readelf oddity...
