@@ -243,7 +243,7 @@ class DWARFInfo(object):
         """ Given a CU object, fetch the line program it points to from the
             .debug_line section.
             If the CU doesn't point to a line program, return None.
-            
+
             Note about directory and file names. They are returned as two collections
             in the lineprogram object's header - include_directory and file_entry.
 
@@ -491,7 +491,7 @@ class DWARFInfo(object):
             lineprog_header.file_entry = tuple(
                 translate(e.get('DW_LNCT_path'), e.get('DW_LNCT_directory_index'), e.get('DW_LNCT_timestamp'), e.get('DW_LNCT_size'))
                 for e in lineprog_header.file_names)
-        
+
         # Calculate the offset to the next line program (see DWARF 6.2.4)
         end_offset = (  debug_line_offset + lineprog_header['unit_length'] +
                         structs.initial_length_field_size())

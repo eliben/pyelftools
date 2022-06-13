@@ -208,7 +208,7 @@ def _describe_attr_strp(attr, die, section_offset):
 
 def _describe_attr_line_strp(attr, die, section_offset):
     return '(indirect line string, offset: 0x%x): %s' % (
-        attr.raw_value, bytes2str(attr.value))        
+        attr.raw_value, bytes2str(attr.value))
 
 def _describe_attr_string(attr, die, section_offset):
     return bytes2str(attr.value)

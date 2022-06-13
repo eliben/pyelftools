@@ -305,9 +305,9 @@ class DWARFStructs(object):
                     parser = Struct('formatted_entry', *fields)
                     context[self.format_field + "_parser"] = parser
                 return parser._parse(stream, context)
- 
+
         ver5 = lambda ctx: ctx.version >= 5
-        
+
         self.Dwarf_lineprog_header = Struct('Dwarf_lineprog_header',
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
@@ -353,10 +353,10 @@ class DWARFStructs(object):
                 RepeatUntilExcluding(
                     lambda obj, ctx: obj == b'',
                     CString('include_directory'))),
-            If(lambda ctx: ctx.version < 5, 
+            If(lambda ctx: ctx.version < 5,
                 RepeatUntilExcluding(
                     lambda obj, ctx: len(obj.name) == 0,
-                    self.Dwarf_lineprog_file_entry)) # array name is file_entry 
+                    self.Dwarf_lineprog_file_entry)) # array name is file_entry
         )
 
     def _create_callframe_entry_headers(self):
