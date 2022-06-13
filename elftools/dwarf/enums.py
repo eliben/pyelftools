@@ -290,6 +290,8 @@ ENUM_DW_AT = dict(
     DW_AT_GNU_pubnames                      = 0x2134,
     DW_AT_GNU_pubtypes                      = 0x2135,
     DW_AT_GNU_discriminator                 = 0x2136,
+    DW_AT_GNU_locviews                      = 0x2137,
+    DW_AT_GNU_entry_view                    = 0x2138,
 
     DW_AT_LLVM_include_path  = 0x3e00,
     DW_AT_LLVM_config_macros = 0x3e01,

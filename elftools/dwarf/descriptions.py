@@ -523,6 +523,7 @@ _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
     DW_AT_associated=_location_list_extra,
     DW_AT_data_location=_location_list_extra,
     DW_AT_stride=_location_list_extra,
+    DW_AT_call_value=_location_list_extra,
     DW_AT_import=_import_extra,
     DW_AT_GNU_call_site_value=_location_list_extra,
     DW_AT_GNU_call_site_data_value=_location_list_extra,
@@ -651,7 +652,7 @@ class ExprDumper(object):
             return '%s: %x' % (opcode_name, args[0])
         elif opcode_name in self._ops_with_two_decimal_args:
             return '%s: %s %s' % (opcode_name, args[0], args[1])
-        elif opcode_name == 'DW_OP_GNU_entry_value':
+        elif opcode_name in ('DW_OP_GNU_entry_value', 'DW_OP_entry_value'):
             return '%s: (%s)' % (opcode_name, ','.join([self._dump_to_string(deo.op, deo.op_name, deo.args) for deo in args[0]]))
         elif opcode_name == 'DW_OP_implicit_value':
             return "%s %s byte block: %s" % (opcode_name, len(args[0]), ''.join(["%x " % b for b in args[0]]))
@@ -661,9 +662,9 @@ class ExprDumper(object):
             return "%s: <0x%x> %d" % (opcode_name, args[0], args[1])
         elif opcode_name == 'DW_OP_GNU_convert':
             return "%s <0x%x>" % (opcode_name, args[0] + cu_offset)
-        elif opcode_name == 'DW_OP_GNU_deref_type':
+        elif opcode_name in ('DW_OP_GNU_deref_type', 'DW_OP_deref_type'):
             return "%s: %d <0x%x>" % (opcode_name, args[0], args[1] + cu_offset)
-        elif opcode_name == 'DW_OP_GNU_const_type':
+        elif opcode_name in ('DW_OP_GNU_const_type', 'DW_OP_const_type'):
             return "%s: <0x%x>  %d byte block: %s " % (opcode_name, args[0] + cu_offset, len(args[1]), ' '.join("%x" % b for b in args[1]))
         elif opcode_name == 'DW_OP_GNU_regval_type':
             return "%s: %d (%s) <0x%x>" % (opcode_name, args[0], describe_reg_name(args[0], _MACHINE_ARCH), args[1] + cu_offset)
