@@ -10,6 +10,7 @@ import os
 from collections import namedtuple
 from bisect import bisect_right
 
+from ..construct.lib.container import Container
 from ..common.exceptions import DWARFError
 from ..common.utils import (struct_parse, dwarf_assert,
                             parse_cstring_from_stream)
@@ -496,9 +497,12 @@ class DWARFInfo(object):
         if lineprog_header.get('directories', False):
             lineprog_header.include_directory = tuple(d.DW_LNCT_path for d in lineprog_header.directories)
         if lineprog_header.get('file_names', False):
-            translate = namedtuple("file_entry", "name dir_index mtime length")
             lineprog_header.file_entry = tuple(
-                translate(e.get('DW_LNCT_path'), e.get('DW_LNCT_directory_index'), e.get('DW_LNCT_timestamp'), e.get('DW_LNCT_size'))
+                Container(**{
+                    'name':e.get('DW_LNCT_path'),
+                    'dir_index': e.get('DW_LNCT_directory_index'),
+                    'mtime': e.get('DW_LNCT_timestamp'),
+                    'length': e.get('DW_LNCT_size')})
                 for e in lineprog_header.file_names)
 
         # Calculate the offset to the next line program (see DWARF 6.2.4)
