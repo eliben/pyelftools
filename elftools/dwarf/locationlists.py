@@ -29,7 +29,7 @@ class LocationLists(object):
         self.stream = stream
         self.structs = structs
         self.dwarfinfo = dwarfinfo
-        self._version = version
+        self.version = version
         self._max_addr = 2 ** (self.structs.address_size * 8) - 1
 
     def get_location_list_at_offset(self, offset):
@@ -61,7 +61,7 @@ class LocationLists(object):
 
         stream.seek(0, os.SEEK_SET)        
 
-        if self._version >= 5:
+        if self.version >= 5:
             # Need to provide support for DW_AT_GNU_locviews. They are interspersed in
             # the locations section, no way to tell where short of checking all DIEs
             all_offsets = set() # Set of offsets where either a locview pair set can be found, or a view-less loclist
