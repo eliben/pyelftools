@@ -1477,7 +1477,7 @@ class ReadElf(object):
                 if isinstance(entry, LocationViewPair):
                     has_views = in_views = True
                     # The "v" before address is conditional in binutils, haven't figured out how
-                    self._emitline("    %08x v%07x v%07x location view pair" % (entry.entry_offset, entry.begin, entry.end))
+                    self._emitline("    %08x v%015x v%015x location view pair" % (entry.entry_offset, entry.begin, entry.end))
                 else:   
                     if in_views:
                         in_views = False             
