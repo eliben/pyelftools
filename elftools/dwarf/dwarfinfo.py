@@ -6,6 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import os
 from collections import namedtuple
 from bisect import bisect_right
 
@@ -74,7 +75,9 @@ class DWARFInfo(object):
             debug_pubnames_sec,
             debug_addr_sec,
             debug_str_offsets_sec,
-            debug_line_str_sec):
+            debug_line_str_sec,
+            debug_loclists_sec,
+            debug_rnglists_sec): # Not parsed for now
         """ config:
                 A DwarfConfig object
 
@@ -93,9 +96,12 @@ class DWARFInfo(object):
         self.debug_loc_sec = debug_loc_sec
         self.debug_ranges_sec = debug_ranges_sec
         self.debug_line_sec = debug_line_sec
+        self.debug_addr_sec = debug_addr_sec
         self.debug_line_str_sec = debug_line_str_sec
         self.debug_pubtypes_sec = debug_pubtypes_sec
         self.debug_pubnames_sec = debug_pubnames_sec
+        self.debug_loclists_sec = debug_loclists_sec
+        self.debug_rnglists_sec = debug_rnglists_sec # Ignored for now
 
         # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
@@ -339,7 +345,10 @@ class DWARFInfo(object):
         """ Get a LocationLists object representing the .debug_loc section of
             the DWARF data, or None if this section doesn't exist.
         """
-        if self.debug_loc_sec:
+        if self.debug_loclists_sec:
+            assert(self.debug_loc_sec is None) # Are there ever files with both kinds of location sections?
+            return LocationLists(self.debug_loclists_sec.stream, self.structs, 5, self)
+        elif self.debug_loc_sec:
             return LocationLists(self.debug_loc_sec.stream, self.structs)
         else:
             return None
@@ -502,3 +511,17 @@ class DWARFInfo(object):
             structs=structs,
             program_start_offset=self.debug_line_sec.stream.tell(),
             program_end_offset=end_offset)
+
+    @staticmethod
+    def _save_section(section, filename):
+        """Debug helper: dump section contents into a file
+        """
+        stream = section.stream
+        pos = stream.tell()
+        stream.seek(0, os.SEEK_SET)
+        section.stream.seek(0)
+        with open(filename, 'wb') as file:
+            data = stream.read(section.size)
+            file.write(data)
+        stream.seek(pos, os.SEEK_SET)
+        

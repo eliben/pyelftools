@@ -218,7 +218,8 @@ class ELFFile(object):
                          '.debug_str', '.debug_line', '.debug_frame',
                          '.debug_loc', '.debug_ranges', '.debug_pubtypes',
                          '.debug_pubnames', '.debug_addr',
-                         '.debug_str_offsets', '.debug_line_str')
+                         '.debug_str_offsets', '.debug_line_str',
+                         '.debug_loclists', '.debug_rnglists')
 
 
         compressed = bool(self.get_section_by_name('.zdebug_info'))
@@ -232,7 +233,8 @@ class ELFFile(object):
          debug_str_sec_name, debug_line_sec_name, debug_frame_sec_name,
          debug_loc_sec_name, debug_ranges_sec_name, debug_pubtypes_name,
          debug_pubnames_name, debug_addr_name, debug_str_offsets_name,
-         debug_line_str_name, eh_frame_sec_name) = section_names
+         debug_line_str_name, debug_loclists_sec_name, debug_rnglists_sec_name,
+         eh_frame_sec_name) = section_names
 
         debug_sections = {}
         for secname in section_names:
@@ -265,7 +267,9 @@ class ELFFile(object):
                 debug_pubnames_sec=debug_sections[debug_pubnames_name],
                 debug_addr_sec=debug_sections[debug_addr_name],
                 debug_str_offsets_sec=debug_sections[debug_str_offsets_name],
-                debug_line_str_sec=debug_sections[debug_line_str_name]
+                debug_line_str_sec=debug_sections[debug_line_str_name],
+                debug_loclists_sec=debug_sections[debug_loclists_sec_name],
+                debug_rnglists_sec=debug_sections[debug_rnglists_sec_name]
                 )
 
     def has_ehabi_info(self):

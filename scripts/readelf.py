@@ -62,7 +62,7 @@ from elftools.dwarf.descriptions import (
     )
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
-from elftools.dwarf.locationlists import LocationParser, LocationEntry
+from elftools.dwarf.locationlists import LocationParser, LocationEntry, LocationViewPair, BaseAddressEntry
 from elftools.dwarf.callframe import CIE, FDE, ZERO
 from elftools.ehabi.ehabiinfo import CorruptEHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry
 from elftools.dwarf.enums import ENUM_DW_UT
@@ -1427,7 +1427,7 @@ class ReadElf(object):
                     self._dwarfinfo.CFI_entries())
 
     def _dump_debug_locations(self):
-        """ Dump the location lists from .debug_location section
+        """ Dump the location lists from .debug_loc/.debug_loclists section
         """
         def _get_cu_base(cu):
             top_die = cu.get_top_DIE()
@@ -1447,11 +1447,13 @@ class ReadElf(object):
         loc_lists = list(loc_lists.iter_location_lists())
         if len(loc_lists) == 0:
             # Present but empty locations section - readelf outputs a message
-            self._emitline("\nSection '%s' has no debugging data." % di.debug_loc_sec.name)
+            self._emitline("\nSection '%s' has no debugging data." % (di.debug_loclists_sec or di.debug_loc_sec).name)
             return
 
         # To dump a location list, one needs to know the CU.
-        # Scroll through DIEs once, list the known location list offsets
+        # Scroll through DIEs once, list the known location list offsets.
+        # Don't need this CU/DIE scan if all entries are absolute or prefixed by base,
+        # but let's not optimize for that yet.
         cu_map = dict() # Loc list offset => CU
         for cu in di.iter_CUs():
             for die in cu.iter_DIEs():
@@ -1465,30 +1467,58 @@ class ReadElf(object):
         addr_width = addr_size * 2 # In hex digits, 8 or 16
         line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)
 
-        self._emitline('Contents of the %s section:\n' % di.debug_loc_sec.name)
+        self._emitline('Contents of the %s section:\n' % (di.debug_loclists_sec or di.debug_loc_sec).name)
         self._emitline('    Offset   Begin            End              Expression')
         for loc_list in loc_lists:
-            cu = cu_map.get(loc_list[0].entry_offset, False)
-            if not cu:
-                raise ValueError("Location list can't be tracked to a CU")
-            base_ip = _get_cu_base(cu)
+            in_views = False
+            has_views = False
+            base_ip = None
             for entry in loc_list:
-                # TODO: support BaseAddressEntry lines
-                expr = describe_DWARF_expr(entry.loc_expr, cu.structs, cu.cu_offset)
-                postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
-                self._emitline(line_template % (
-                    entry.entry_offset,
-                    base_ip + entry.begin_offset,
-                    base_ip + entry.end_offset,
-                    expr,
-                    postfix))
+                if isinstance(entry, LocationViewPair):
+                    has_views = in_views = True
+                    # The "v" before address is conditional in binutils, haven't figured out how
+                    self._emitline("    %08x v%07x v%07x location view pair" % (entry.entry_offset, entry.begin, entry.end))
+                else:   
+                    if in_views:
+                        in_views = False             
+                        self._emitline("")
+
+                    if isinstance(entry, LocationEntry):
+                        if base_ip is None and not entry.is_absolute:
+                            cu = cu_map.get(entry.entry_offset, False)
+                            if not cu:
+                                raise ValueError("Location list can't be tracked to a CU")
+                            base_ip = _get_cu_base(cu)                                
+
+                        begin_offset = (0 if entry.is_absolute else base_ip) + entry.begin_offset
+                        end_offset = (0 if entry.is_absolute else base_ip) + entry.end_offset
+                        expr = describe_DWARF_expr(entry.loc_expr, cu.structs, cu.cu_offset)
+                        if has_views:
+                            self._emitline('    %08x v%015x v%015x views at %08x for:' %(
+                                entry.entry_offset,
+                                loc_list[0].begin,
+                                loc_list[0].end,
+                                loc_list[0].entry_offset))
+                            self._emitline('             %016x %016x %s"' %(
+                                begin_offset,
+                                end_offset,
+                                expr))
+                        else:
+                            postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
+                            self._emitline(line_template % (
+                                entry.entry_offset,
+                                begin_offset,
+                                end_offset,
+                                expr,
+                                postfix))
+                    elif isinstance(entry, BaseAddressEntry):
+                        base_ip = entry.base_address
+                        self._emitline("    %08x %016x (base address)" % (entry.entry_offset, entry.base_address))
+
             # Pyelftools doesn't store the terminating entry,
             # but readelf emits its offset, so this should too.
             last = loc_list[-1]
-            last_len = 2*addr_size
-            if isinstance(last, LocationEntry):
-                last_len += 2 + len(last.loc_expr)
-            self._emitline("    %08x <End of list>" % (last.entry_offset + last_len))
+            self._emitline("    %08x <End of list>" % (last.entry_offset + last.entry_length))
 
     def _display_arch_specific_arm(self):
         """ Display the ARM architecture-specific info contained in the file.
