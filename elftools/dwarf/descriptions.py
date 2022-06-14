@@ -658,15 +658,15 @@ class ExprDumper(object):
             return "%s %s byte block: %s" % (opcode_name, len(args[0]), ''.join(["%x " % b for b in args[0]]))
         elif opcode_name == 'DW_OP_GNU_parameter_ref':
             return "%s: <0x%x>" % (opcode_name, args[0] + cu_offset)
-        elif opcode_name == 'DW_OP_GNU_implicit_pointer':
+        elif opcode_name in ('DW_OP_GNU_implicit_pointer', 'DW_OP_implicit_pointer'):
             return "%s: <0x%x> %d" % (opcode_name, args[0], args[1])
-        elif opcode_name == 'DW_OP_GNU_convert':
+        elif opcode_name in ('DW_OP_GNU_convert', 'DW_OP_convert'):
             return "%s <0x%x>" % (opcode_name, args[0] + cu_offset)
         elif opcode_name in ('DW_OP_GNU_deref_type', 'DW_OP_deref_type'):
             return "%s: %d <0x%x>" % (opcode_name, args[0], args[1] + cu_offset)
         elif opcode_name in ('DW_OP_GNU_const_type', 'DW_OP_const_type'):
             return "%s: <0x%x>  %d byte block: %s " % (opcode_name, args[0] + cu_offset, len(args[1]), ' '.join("%x" % b for b in args[1]))
-        elif opcode_name == 'DW_OP_GNU_regval_type':
+        elif opcode_name in ('DW_OP_GNU_regval_type', 'DW_OP_regval_type'):
             return "%s: %d (%s) <0x%x>" % (opcode_name, args[0], describe_reg_name(args[0], _MACHINE_ARCH), args[1] + cu_offset)
         else:
             return '<unknown %s>' % opcode_name
