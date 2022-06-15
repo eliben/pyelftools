@@ -33,6 +33,9 @@ testlog.addHandler(logging.StreamHandler(sys.stdout))
 # same minor release and keeping track is a headache.
 if platform.system() == "Darwin": # MacOS
     READELF_PATH = 'greadelf'
+elif platform.system() == "Windows":
+    # Point the environment variable READELF at Cygwin's readelf.exe, or some other Windows build
+    READELF_PATH = os.environ.get('READELF', "readelf.exe")
 else:
     READELF_PATH = 'test/external_tools/readelf'
     if not os.path.exists(READELF_PATH):
@@ -142,6 +145,7 @@ def compare_output(s1, s2):
         return False, 'Number of lines different: %s vs %s' % (
                 len(lines1), len(lines2))
 
+    view_col_position = None
     for i in range(len(lines1)):
         if lines1[i].endswith('debug_line section:'):
             # .debug_line or .zdebug_line
@@ -149,6 +153,19 @@ def compare_output(s1, s2):
 
         # readelf spelling error for GNU property notes
         lines1[i] = lines1[i].replace('procesor-specific type', 'processor-specific type')
+        
+        # The view column position may change from CU to CU:
+        if view_col_position and lines1[i].startswith('cu:'):
+            view_col_position = None    
+    
+        # Check if readelf..decodedline output contains the view column
+        if flag_in_debug_line_section and lines1[i].startswith('file name') and view_col_position is None:
+            view_col_position = lines1[i].find("view")
+            stmt_col_position = lines1[i].find("stmt")
+
+        # Excise the View column, if any
+        if view_col_position and not lines1[i].endswith(':'):
+            lines1[i] = lines1[i][:view_col_position] + lines1[i][stmt_col_position:]
 
         # Compare ignoring whitespace
         lines1_parts = lines1[i].split()
@@ -169,16 +186,7 @@ def compare_output(s1, s2):
             sm = SequenceMatcher()
             sm.set_seqs(lines1[i], lines2[i])
             changes = sm.get_opcodes()
-            if flag_in_debug_line_section:
-                # readelf outputs an additional "View" column: ignore it
-                if len(lines1_parts) >= 2 and lines1_parts[-2] == 'view':
-                    ok = True
-                else:
-                    # Fast check special-cased for the only ELF we have which
-                    # has this information (dwarf_gnuops4.so.elf)
-                    ok = (    lines1_parts[-2:] == ['1', 'x']
-                          and lines2_parts[-1] == 'x')
-            elif '[...]' in lines1[i]:
+            if '[...]' in lines1[i]:
                 # Special case truncations with ellipsis like these:
                 #     .note.gnu.bu[...]        redelf
                 #     .note.gnu.build-i        pyelftools
