@@ -1137,9 +1137,9 @@ class ReadElf(object):
                 cu_filename = '%s/%s' % (bytes2str(dir), cu_filename)
 
             self._emitline('CU: %s:' % cu_filename)
-            self._emitline('File name                            Line number    Starting address    View    Stmt' if ver5
-                else 'File name                            Line number    Starting address    Stmt')
-            # What goes into View on V5? To be seen...
+            self._emitline('File name                            Line number    Starting address    Stmt')
+            # GNU readelf has a View column that we don't try to replicate
+            # The autotest has logic in place to ignore that
 
             # Print each state's file, line and address information. For some
             # instructions other output is needed to be compatible with
@@ -1460,7 +1460,7 @@ class ReadElf(object):
                 for key in die.attributes:
                     attr = die.attributes[key]
                     if (LocationParser.attribute_has_location(attr, cu['version']) and
-                        not LocationParser._attribute_has_loc_expr(attr, cu['version'])):
+                        LocationParser._attribute_has_loc_list(attr, cu['version'])):
                         cu_map[attr.value] = cu
 
         addr_size = di.config.default_address_size # In bytes, 4 or 8
@@ -1473,36 +1473,46 @@ class ReadElf(object):
             in_views = False
             has_views = False
             base_ip = None
+            loc_entry_count = 0
+            cu = None
             for entry in loc_list:
                 if isinstance(entry, LocationViewPair):
                     has_views = in_views = True
                     # The "v" before address is conditional in binutils, haven't figured out how
                     self._emitline("    %08x v%015x v%015x location view pair" % (entry.entry_offset, entry.begin, entry.end))
-                else:   
+                else:
                     if in_views:
                         in_views = False             
                         self._emitline("")
+ 
+                    # Need the CU for this loclist, but the map is keyed by the offset
+                    # of the first entry in the loclist. Got to skip the views first.
+                    if cu is None:
+                        cu = cu_map.get(entry.entry_offset, False)
+                        if not cu:
+                            raise ValueError("Location list can't be tracked to a CU")                        
 
                     if isinstance(entry, LocationEntry):
                         if base_ip is None and not entry.is_absolute:
-                            cu = cu_map.get(entry.entry_offset, False)
-                            if not cu:
-                                raise ValueError("Location list can't be tracked to a CU")
                             base_ip = _get_cu_base(cu)                                
 
                         begin_offset = (0 if entry.is_absolute else base_ip) + entry.begin_offset
                         end_offset = (0 if entry.is_absolute else base_ip) + entry.end_offset
                         expr = describe_DWARF_expr(entry.loc_expr, cu.structs, cu.cu_offset)
                         if has_views:
+                            view = loc_list[loc_entry_count]
+                            postfix = ' (start == end)' if entry.begin_offset == entry.end_offset and view.begin == view.end else ''
                             self._emitline('    %08x v%015x v%015x views at %08x for:' %(
                                 entry.entry_offset,
-                                loc_list[0].begin,
-                                loc_list[0].end,
-                                loc_list[0].entry_offset))
-                            self._emitline('             %016x %016x %s"' %(
+                                view.begin,
+                                view.end,
+                                view.entry_offset))
+                            self._emitline('             %016x %016x %s%s' %(
                                 begin_offset,
                                 end_offset,
-                                expr))
+                                expr,
+                                postfix))
+                            loc_entry_count += 1
                         else:
                             postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
                             self._emitline(line_template % (
