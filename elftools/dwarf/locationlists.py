@@ -122,7 +122,7 @@ class LocationLists(object):
                         yield locview_pairs + entries
                         offset_index += 1
                     else: # We are at a gap - skip the gap to the next object or to the next CU
-                        if cu_end_offset > cu_end_offset: # Gap at the CU end - the next object is in the next CU
+                        if next_offset > cu_end_offset: # Gap at the CU end - the next object is in the next CU
                             next_offset = cu_end_offset # And implicitly quit the loop within the CU
                         stream.seek(next_offset, os.SEEK_SET)
         else:
