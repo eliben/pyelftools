@@ -3,7 +3,7 @@ from .lib import (BitStreamReader, BitStreamWriter, encode_bin,
     decode_bin)
 from .core import (Struct, MetaField, StaticField, FormatField,
     OnDemand, Pointer, Switch, Value, RepeatUntil, MetaArray, Sequence, Range,
-    Select, Pass, SizeofError, Buffered, Restream, Reconfig, Construct)
+    Select, Pass, SizeofError, Buffered, Restream, Reconfig)
 from .adapters import (BitIntegerAdapter, PaddingAdapter,
     ConstAdapter, CStringAdapter, LengthValueAdapter, IndexingAdapter,
     PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter)
@@ -632,24 +632,3 @@ def OnDemandPointer(offsetfunc, subcon, force_build = True):
 
 def Magic(data):
     return ConstAdapter(Field(None, len(data)), data)
-
-class StreamOffset(Construct):
-    """
-    Captures the current stream offset 
-
-    Parameters:
-    * name - the name of the value
-
-    Example:
-    StreamOffset("item_offset")
-    """
-    __slots__ = []
-    def __init__(self, name):
-        Construct.__init__(self, name)
-        self._set_flag(self.FLAG_DYNAMIC)
-    def _parse(self, stream, context):
-        return stream.tell()
-    def _build(self, obj, stream, context):
-        context[self.name] = stream.tell()
-    def _sizeof(self, context):
-        return 0    

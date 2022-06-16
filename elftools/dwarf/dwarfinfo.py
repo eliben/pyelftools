@@ -516,16 +516,3 @@ class DWARFInfo(object):
             program_start_offset=self.debug_line_sec.stream.tell(),
             program_end_offset=end_offset)
 
-    @staticmethod
-    def _save_section(section, filename):
-        """Debug helper: dump section contents into a file
-        """
-        stream = section.stream
-        pos = stream.tell()
-        stream.seek(0, os.SEEK_SET)
-        section.stream.seek(0)
-        with open(filename, 'wb') as file:
-            data = stream.read(section.size)
-            file.write(data)
-        stream.seek(pos, os.SEEK_SET)
-        

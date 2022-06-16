@@ -145,7 +145,9 @@ def compare_output(s1, s2):
         return False, 'Number of lines different: %s vs %s' % (
                 len(lines1), len(lines2))
 
-    view_col_position = None
+    # Numeric position of the View column in the output file, if parsing readelf..decodedline
+    # output, and the GNU readelf output contains the View column. Otherwise stays None.
+    view_col_position = None 
     for i in range(len(lines1)):
         if lines1[i].endswith('debug_line section:'):
             # .debug_line or .zdebug_line
@@ -163,7 +165,11 @@ def compare_output(s1, s2):
             view_col_position = lines1[i].find("view")
             stmt_col_position = lines1[i].find("stmt")
 
-        # Excise the View column, if any
+        # Excise the View column from the table, if any.
+        # View_col_position is only set to a nonzero number if one of the previous
+        # lines was a table header line with a "view" in it.
+        # We assume careful formatting on GNU readelf's part - View column values
+        # are not out of line with the View header.
         if view_col_position and not lines1[i].endswith(':'):
             lines1[i] = lines1[i][:view_col_position] + lines1[i][stmt_col_position:]
 

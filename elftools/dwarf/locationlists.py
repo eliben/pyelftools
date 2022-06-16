@@ -25,17 +25,26 @@ class LocationLists(object):
 
         The default location entries are returned as LocationEntry with 
         begin_offset == end_offset == -1
+
+        Version determines whether the executable contains a debug_loc
+        section, or a DWARFv5 style debug_loclists one. Only the 4/5
+        distinction matters.
+
+        Dwarfinfo is only needed for DWARFv5 location entry encodings
+        that contain references to other sections (e. g. DW_LLE_startx_endx),
+        and only for location list enumeration.
     """
-    def __init__(self, stream, structs, version = 4, dwarfinfo = None):
+    def __init__(self, stream, structs, version=4, dwarfinfo=None):
         self.stream = stream
         self.structs = structs
         self.dwarfinfo = dwarfinfo
         self.version = version
         self._max_addr = 2 ** (self.structs.address_size * 8) - 1
 
-    def get_location_list_at_offset(self, offset, die = None):
+    def get_location_list_at_offset(self, offset, die=None):
         """ Get a location list at the given offset in the section.
-        Passing the die is only neccessary in DWARF5+.
+        Passing the die is only neccessary in DWARF5+, for decoding
+        location entry encodings that contain references to other sections.
         """
         self.stream.seek(offset, os.SEEK_SET)
         return self._parse_location_list_from_stream_v5(die) if self.version >= 5 else self._parse_location_list_from_stream()
