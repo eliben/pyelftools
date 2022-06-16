@@ -62,7 +62,7 @@ from elftools.dwarf.descriptions import (
     )
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
-from elftools.dwarf.locationlists import LocationParser, LocationEntry
+from elftools.dwarf.locationlists import LocationParser, LocationEntry, LocationViewPair, BaseAddressEntry
 from elftools.dwarf.callframe import CIE, FDE, ZERO
 from elftools.ehabi.ehabiinfo import CorruptEHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry
 from elftools.dwarf.enums import ENUM_DW_UT
@@ -1137,9 +1137,9 @@ class ReadElf(object):
                 cu_filename = '%s/%s' % (bytes2str(dir), cu_filename)
 
             self._emitline('CU: %s:' % cu_filename)
-            self._emitline('File name                            Line number    Starting address    View    Stmt' if ver5
-                else 'File name                            Line number    Starting address    Stmt')
-            # What goes into View on V5? To be seen...
+            self._emitline('File name                            Line number    Starting address    Stmt')
+            # GNU readelf has a View column that we don't try to replicate
+            # The autotest has logic in place to ignore that
 
             # Print each state's file, line and address information. For some
             # instructions other output is needed to be compatible with
@@ -1427,7 +1427,7 @@ class ReadElf(object):
                     self._dwarfinfo.CFI_entries())
 
     def _dump_debug_locations(self):
-        """ Dump the location lists from .debug_location section
+        """ Dump the location lists from .debug_loc/.debug_loclists section
         """
         def _get_cu_base(cu):
             top_die = cu.get_top_DIE()
@@ -1447,48 +1447,88 @@ class ReadElf(object):
         loc_lists = list(loc_lists.iter_location_lists())
         if len(loc_lists) == 0:
             # Present but empty locations section - readelf outputs a message
-            self._emitline("\nSection '%s' has no debugging data." % di.debug_loc_sec.name)
+            self._emitline("\nSection '%s' has no debugging data." % (di.debug_loclists_sec or di.debug_loc_sec).name)
             return
 
         # To dump a location list, one needs to know the CU.
-        # Scroll through DIEs once, list the known location list offsets
+        # Scroll through DIEs once, list the known location list offsets.
+        # Don't need this CU/DIE scan if all entries are absolute or prefixed by base,
+        # but let's not optimize for that yet.
         cu_map = dict() # Loc list offset => CU
         for cu in di.iter_CUs():
             for die in cu.iter_DIEs():
                 for key in die.attributes:
                     attr = die.attributes[key]
                     if (LocationParser.attribute_has_location(attr, cu['version']) and
-                        not LocationParser._attribute_has_loc_expr(attr, cu['version'])):
+                        LocationParser._attribute_has_loc_list(attr, cu['version'])):
                         cu_map[attr.value] = cu
 
         addr_size = di.config.default_address_size # In bytes, 4 or 8
         addr_width = addr_size * 2 # In hex digits, 8 or 16
         line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)
 
-        self._emitline('Contents of the %s section:\n' % di.debug_loc_sec.name)
+        self._emitline('Contents of the %s section:\n' % (di.debug_loclists_sec or di.debug_loc_sec).name)
         self._emitline('    Offset   Begin            End              Expression')
         for loc_list in loc_lists:
-            cu = cu_map.get(loc_list[0].entry_offset, False)
-            if not cu:
-                raise ValueError("Location list can't be tracked to a CU")
-            base_ip = _get_cu_base(cu)
+            in_views = False
+            has_views = False
+            base_ip = None
+            loc_entry_count = 0
+            cu = None
             for entry in loc_list:
-                # TODO: support BaseAddressEntry lines
-                expr = describe_DWARF_expr(entry.loc_expr, cu.structs, cu.cu_offset)
-                postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
-                self._emitline(line_template % (
-                    entry.entry_offset,
-                    base_ip + entry.begin_offset,
-                    base_ip + entry.end_offset,
-                    expr,
-                    postfix))
+                if isinstance(entry, LocationViewPair):
+                    has_views = in_views = True
+                    # The "v" before address is conditional in binutils, haven't figured out how
+                    self._emitline("    %08x v%015x v%015x location view pair" % (entry.entry_offset, entry.begin, entry.end))
+                else:
+                    if in_views:
+                        in_views = False             
+                        self._emitline("")
+ 
+                    # Need the CU for this loclist, but the map is keyed by the offset
+                    # of the first entry in the loclist. Got to skip the views first.
+                    if cu is None:
+                        cu = cu_map.get(entry.entry_offset, False)
+                        if not cu:
+                            raise ValueError("Location list can't be tracked to a CU")                        
+
+                    if isinstance(entry, LocationEntry):
+                        if base_ip is None and not entry.is_absolute:
+                            base_ip = _get_cu_base(cu)                                
+
+                        begin_offset = (0 if entry.is_absolute else base_ip) + entry.begin_offset
+                        end_offset = (0 if entry.is_absolute else base_ip) + entry.end_offset
+                        expr = describe_DWARF_expr(entry.loc_expr, cu.structs, cu.cu_offset)
+                        if has_views:
+                            view = loc_list[loc_entry_count]
+                            postfix = ' (start == end)' if entry.begin_offset == entry.end_offset and view.begin == view.end else ''
+                            self._emitline('    %08x v%015x v%015x views at %08x for:' %(
+                                entry.entry_offset,
+                                view.begin,
+                                view.end,
+                                view.entry_offset))
+                            self._emitline('             %016x %016x %s%s' %(
+                                begin_offset,
+                                end_offset,
+                                expr,
+                                postfix))
+                            loc_entry_count += 1
+                        else:
+                            postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
+                            self._emitline(line_template % (
+                                entry.entry_offset,
+                                begin_offset,
+                                end_offset,
+                                expr,
+                                postfix))
+                    elif isinstance(entry, BaseAddressEntry):
+                        base_ip = entry.base_address
+                        self._emitline("    %08x %016x (base address)" % (entry.entry_offset, entry.base_address))
+
             # Pyelftools doesn't store the terminating entry,
             # but readelf emits its offset, so this should too.
             last = loc_list[-1]
-            last_len = 2*addr_size
-            if isinstance(last, LocationEntry):
-                last_len += 2 + len(last.loc_expr)
-            self._emitline("    %08x <End of list>" % (last.entry_offset + last_len))
+            self._emitline("    %08x <End of list>" % (last.entry_offset + last.entry_length))
 
     def _display_arch_specific_arm(self):
         """ Display the ARM architecture-specific info contained in the file.

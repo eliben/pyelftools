@@ -6,9 +6,11 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import os
 from collections import namedtuple
 from bisect import bisect_right
 
+from ..construct.lib.container import Container
 from ..common.exceptions import DWARFError
 from ..common.utils import (struct_parse, dwarf_assert,
                             parse_cstring_from_stream)
@@ -74,7 +76,9 @@ class DWARFInfo(object):
             debug_pubnames_sec,
             debug_addr_sec,
             debug_str_offsets_sec,
-            debug_line_str_sec):
+            debug_line_str_sec,
+            debug_loclists_sec,
+            debug_rnglists_sec): # Not parsed for now
         """ config:
                 A DwarfConfig object
 
@@ -93,9 +97,12 @@ class DWARFInfo(object):
         self.debug_loc_sec = debug_loc_sec
         self.debug_ranges_sec = debug_ranges_sec
         self.debug_line_sec = debug_line_sec
+        self.debug_addr_sec = debug_addr_sec
         self.debug_line_str_sec = debug_line_str_sec
         self.debug_pubtypes_sec = debug_pubtypes_sec
         self.debug_pubnames_sec = debug_pubnames_sec
+        self.debug_loclists_sec = debug_loclists_sec
+        self.debug_rnglists_sec = debug_rnglists_sec # Ignored for now
 
         # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
@@ -339,7 +346,10 @@ class DWARFInfo(object):
         """ Get a LocationLists object representing the .debug_loc section of
             the DWARF data, or None if this section doesn't exist.
         """
-        if self.debug_loc_sec:
+        if self.debug_loclists_sec:
+            assert(self.debug_loc_sec is None) # Are there ever files with both kinds of location sections?
+            return LocationLists(self.debug_loclists_sec.stream, self.structs, 5, self)
+        elif self.debug_loc_sec:
             return LocationLists(self.debug_loc_sec.stream, self.structs)
         else:
             return None
@@ -487,9 +497,12 @@ class DWARFInfo(object):
         if lineprog_header.get('directories', False):
             lineprog_header.include_directory = tuple(d.DW_LNCT_path for d in lineprog_header.directories)
         if lineprog_header.get('file_names', False):
-            translate = namedtuple("file_entry", "name dir_index mtime length")
             lineprog_header.file_entry = tuple(
-                translate(e.get('DW_LNCT_path'), e.get('DW_LNCT_directory_index'), e.get('DW_LNCT_timestamp'), e.get('DW_LNCT_size'))
+                Container(**{
+                    'name':e.get('DW_LNCT_path'),
+                    'dir_index': e.get('DW_LNCT_directory_index'),
+                    'mtime': e.get('DW_LNCT_timestamp'),
+                    'length': e.get('DW_LNCT_size')})
                 for e in lineprog_header.file_names)
 
         # Calculate the offset to the next line program (see DWARF 6.2.4)
@@ -502,3 +515,4 @@ class DWARFInfo(object):
             structs=structs,
             program_start_offset=self.debug_line_sec.stream.tell(),
             program_end_offset=end_offset)
+

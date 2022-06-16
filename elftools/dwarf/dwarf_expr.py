@@ -244,6 +244,15 @@ def _init_dispatch_table(structs):
     add('DW_OP_call4', parse_arg_struct(structs.Dwarf_uint32('')))
     add('DW_OP_call_ref', parse_arg_struct(structs.Dwarf_offset('')))
     add('DW_OP_implicit_value', parse_blob())
+    add('DW_OP_entry_value', parse_nestedexpr())
+    add('DW_OP_const_type', parse_typedblob())
+    add('DW_OP_regval_type', parse_arg_struct2(structs.Dwarf_uleb128(''),
+                                                   structs.Dwarf_uleb128('')))    
+    add('DW_OP_deref_type', parse_arg_struct2(structs.Dwarf_uint8(''),
+                                              structs.Dwarf_uleb128('')))   
+    add('DW_OP_implicit_pointer', parse_arg_struct2(structs.Dwarf_offset(''),
+                                                        structs.Dwarf_sleb128(''))) 
+    add('DW_OP_convert', parse_arg_struct(structs.Dwarf_uleb128('')))                                              
     add('DW_OP_GNU_entry_value', parse_nestedexpr())
     add('DW_OP_GNU_const_type', parse_typedblob())
     add('DW_OP_GNU_regval_type', parse_arg_struct2(structs.Dwarf_uleb128(''),

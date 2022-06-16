@@ -7,15 +7,16 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from elftools.construct.core import Subconstruct
-from elftools.construct.macros import Embedded
+from logging.config import valid_ident
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, Enum, Array, PrefixedArray,
-    CString, Embed, StaticField, IfThenElse, Construct, Rename, Sequence
+    CString, Embed, StaticField, IfThenElse, Construct, Rename, Sequence,
+    Switch
     )
-from ..common.construct_utils import RepeatUntilExcluding, ULEB128, SLEB128
+from ..common.construct_utils import (RepeatUntilExcluding, ULEB128, SLEB128,
+    StreamOffset)
 from .enums import *
 
 
@@ -142,6 +143,7 @@ class DWARFStructs(object):
         self._create_nameLUT_header()
         self._create_string_offsets_table_header()
         self._create_address_table_header()
+        self._create_loclists_parsers()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -396,6 +398,41 @@ class DWARFStructs(object):
                     subcon=self.Dwarf_uint8('elem'),
                     length_field=length_field(''))
 
+    def _create_loclists_parsers(self):
+        """ Create a struct for debug_loclists CU header, DWARFv5, 7,29
+        """
+        self.Dwarf_loclists_CU_header = Struct('Dwarf_loclists_CU_header',
+            # Unit_length parsed separately
+            self.Dwarf_uint16('version'),
+            self.Dwarf_uint8('address_size'),
+            self.Dwarf_uint8('segment_selector_size'),
+            PrefixedArray(
+                self.Dwarf_offset('offsets'),
+                self.Dwarf_uint32('')))
+
+        cld = self.Dwarf_loclists_counted_location_description = PrefixedArray(self.Dwarf_uint8('loc_expr'), self.Dwarf_uleb128(''))
+
+        self.Dwarf_loclists_entries = RepeatUntilExcluding(
+            lambda obj, ctx: obj.entry_type == 'DW_LLE_end_of_list',
+            Struct('entry',
+                StreamOffset('entry_offset'),
+                Enum(self.Dwarf_uint8('entry_type'), **ENUM_DW_LLE),
+                Embed(Switch('', lambda ctx: ctx.entry_type,
+                {
+                    'DW_LLE_end_of_list'      : Struct('end_of_list'),
+                    'DW_LLE_base_addressx'    : Struct('base_addressx', self.Dwarf_uleb128('index')),
+                    'DW_LLE_startx_endx'      : Struct('startx_endx', self.Dwarf_uleb128('start_index'), self.Dwarf_uleb128('end_index'), cld),
+                    'DW_LLE_startx_length'    : Struct('startx_endx', self.Dwarf_uleb128('start_index'), self.Dwarf_uleb128('length'), cld),
+                    'DW_LLE_offset_pair'      : Struct('startx_endx', self.Dwarf_uleb128('start_offset'), self.Dwarf_uleb128('end_offset'), cld),
+                    'DW_LLE_default_location' : Struct('default_location', cld),
+                    'DW_LLE_base_address'     : Struct('base_address', self.Dwarf_target_addr('address')),
+                    'DW_LLE_start_end'        : Struct('start_end', self.Dwarf_target_addr('start_address'), self.Dwarf_target_addr('end_address'), cld),
+                    'DW_LLE_start_length'     : Struct('start_length', self.Dwarf_target_addr('start_address'), self.Dwarf_uleb128('length'), cld),
+                })),
+                StreamOffset('entry_end_offset')))
+
+        self.Dwarf_locview_pair = Struct('locview_pair',
+            StreamOffset('entry_offset'), self.Dwarf_uleb128('begin'), self.Dwarf_uleb128('end'))
 
 class _InitialLengthAdapter(Adapter):
     """ A standard Construct adapter that expects a sub-construct
