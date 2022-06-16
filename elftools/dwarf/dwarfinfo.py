@@ -359,7 +359,7 @@ class DWARFInfo(object):
             the DWARF data, or None if this section doesn't exist.
         """
         if self.debug_ranges_sec:
-            return RangeLists(self.debug_ranges_sec.stream, self.structs)
+            return RangeLists(self.debug_ranges_sec.stream, self.structs, self)
         else:
             return None
 
