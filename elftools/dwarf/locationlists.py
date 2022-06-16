@@ -155,7 +155,7 @@ class LocationLists(object):
             elif begin_offset == self._max_addr:
                 # Base address selection entry
                 entry_length = self.stream.tell() - entry_offset
-                lst.append(BaseAddressEntry(entry_offset=entry_offset, entry_length = entry_length, base_address=end_offset))
+                lst.append(BaseAddressEntry(entry_offset=entry_offset, entry_length=entry_length, base_address=end_offset))
             else:
                 # Location list entry
                 expr_len = struct_parse(
@@ -166,7 +166,7 @@ class LocationLists(object):
                 entry_length = self.stream.tell() - entry_offset
                 lst.append(LocationEntry(
                     entry_offset=entry_offset,
-                    entry_length = entry_length,
+                    entry_length=entry_length,
                     begin_offset=begin_offset,
                     end_offset=end_offset,
                     loc_expr=loc_expr,
@@ -177,10 +177,10 @@ class LocationLists(object):
     # Can't possibly support indexed values, since parsing those requires
     # knowing the DIE context it came from
     def _parse_location_list_from_stream_v5(self, die = None):
-        lst = struct_parse(self.structs.Dwarf_loclists_entries, self.stream)
         # This won't contain the terminator entry
-
-        lst = [self._translate_entry_v5(entry, die) for entry in lst]
+        lst = [self._translate_entry_v5(entry, die)
+            for entry
+            in struct_parse(self.structs.Dwarf_loclists_entries, self.stream)]
         return lst
 
     # From V5 style entries to a LocationEntry/BaseAddressEntry

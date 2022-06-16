@@ -145,9 +145,9 @@ def compare_output(s1, s2):
         return False, 'Number of lines different: %s vs %s' % (
                 len(lines1), len(lines2))
 
-    # Numeric position of the View column in the output file, if parsing readelf..decodedline
-    # output, and the GNU readelf output contains the View column. Otherwise stays None.
-    view_col_position = None 
+    # Position of the View column in the output file, if parsing readelf..decodedline
+    # output, and the GNU readelf output contains the View column. Otherwise stays -1.
+    view_col_position = -1 
     for i in range(len(lines1)):
         if lines1[i].endswith('debug_line section:'):
             # .debug_line or .zdebug_line
@@ -157,11 +157,11 @@ def compare_output(s1, s2):
         lines1[i] = lines1[i].replace('procesor-specific type', 'processor-specific type')
         
         # The view column position may change from CU to CU:
-        if view_col_position and lines1[i].startswith('cu:'):
-            view_col_position = None    
+        if view_col_position >= 0 and lines1[i].startswith('cu:'):
+            view_col_position = -1    
     
-        # Check if readelf..decodedline output contains the view column
-        if flag_in_debug_line_section and lines1[i].startswith('file name') and view_col_position is None:
+        # Check if readelf..decodedline output line contains the view column
+        if flag_in_debug_line_section and lines1[i].startswith('file name') and view_col_position < 0:
             view_col_position = lines1[i].find("view")
             stmt_col_position = lines1[i].find("stmt")
 
@@ -170,7 +170,7 @@ def compare_output(s1, s2):
         # lines was a table header line with a "view" in it.
         # We assume careful formatting on GNU readelf's part - View column values
         # are not out of line with the View header.
-        if view_col_position and not lines1[i].endswith(':'):
+        if view_col_position >= 0 and not lines1[i].endswith(':'):
             lines1[i] = lines1[i][:view_col_position] + lines1[i][stmt_col_position:]
 
         # Compare ignoring whitespace
