@@ -112,6 +112,7 @@ def run_test_on_file(filename, verbose=False, opt=None):
         else:
             success = False
             testlog.info('.......................FAIL')
+            testlog.info('....for file %s' % filename)
             testlog.info('....for option "%s"' % option)
             testlog.info('....Output #1 is readelf, Output #2 is pyelftools')
             testlog.info('@@ ' + errmsg)
