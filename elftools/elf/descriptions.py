@@ -264,7 +264,7 @@ def describe_note_gnu_property_x86_isa_1(value):
     for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS:
         if value & mask:
             descs.append(desc)
-    return 'x86 ISA needed: ' + ', '.join(descs)    
+    return 'x86 ISA needed: ' + ', '.join(descs)
 
 def describe_note_gnu_properties(properties):
     descriptions = []

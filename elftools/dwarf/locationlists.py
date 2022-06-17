@@ -23,7 +23,7 @@ class LocationLists(object):
         Starting with DWARF5, it may also contain LocationViewPair, but only
         if scanning the section, never when requested for a DIE attribute.
 
-        The default location entries are returned as LocationEntry with 
+        The default location entries are returned as LocationEntry with
         begin_offset == end_offset == -1
 
         Version determines whether the executable contains a debug_loc
@@ -55,11 +55,11 @@ class LocationLists(object):
         """
         # The location lists section was never meant for sequential access.
         # Location lists are referenced by DIE attributes by offset or by index.
-        
+
         # As of DWARFv5, it may contain, in addition to proper location lists,
         #location list view pairs, which are referenced by the nonstandard DW_AT_GNU_locviews
         # attribute. A set of locview pairs (which is a couple of ULEB128 values) may preceed
-        # a location list; the former is referenced by the DW_AT_GNU_locviews attribute, the 
+        # a location list; the former is referenced by the DW_AT_GNU_locviews attribute, the
         # latter - by DW_AT_location (in the same DIE). Binutils' readelf dumps those.
         # There is a view pair for each location-type entry in the list.
         #
@@ -71,7 +71,7 @@ class LocationLists(object):
         stream.seek(0, os.SEEK_END)
         endpos = stream.tell()
 
-        stream.seek(0, os.SEEK_SET)        
+        stream.seek(0, os.SEEK_SET)
 
         if self.version >= 5:
             # Need to provide support for DW_AT_GNU_locviews. They are interspersed in
@@ -121,7 +121,7 @@ class LocationLists(object):
 
                 cu_end_offset = offset_past_len + unit_length
                 # Unit_length includes the header but doesn't include the length
-                
+
                 while stream.tell() < cu_end_offset:
                     # Skip the gap to the next object
                     next_offset = all_offsets[offset_index]
@@ -198,7 +198,7 @@ class LocationLists(object):
             return LocationEntry(off, len, entry.start_address, entry.end_address, entry.loc_expr, True)
         elif type == 'DW_LLE_default_location': # No test for this either, and this is new in the API
             return LocationEntry(off, len, -1, -1, entry.loc_expr, True)
-        elif type in ('DW_LLE_base_addressx', 'DW_LLE_startx_endx', 'DW_LLE_startx_length'):           
+        elif type in ('DW_LLE_base_addressx', 'DW_LLE_startx_endx', 'DW_LLE_startx_length'):
             # We don't have sample binaries for those LLEs. Their proper parsing would
             # require knowing the CU context (so that indices can be resolved to code offsets)
             raise NotImplementedError("Location list entry type %s is not supported yet" % (type,))
@@ -246,7 +246,7 @@ class LocationParser(object):
                 return self.location_lists.get_location_list_at_offset(
                     attr.value, die)
                 # We don't yet know if the DIE context will be needed.
-                # We might get it without a full tree traversal using 
+                # We might get it without a full tree traversal using
                 # attr.offset as a key, but we assume a good DWARF5
                 # aware consumer would pass a DIE along.
         else:

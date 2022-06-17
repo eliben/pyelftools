@@ -149,7 +149,7 @@ def compare_output(s1, s2):
 
     # Position of the View column in the output file, if parsing readelf..decodedline
     # output, and the GNU readelf output contains the View column. Otherwise stays -1.
-    view_col_position = -1 
+    view_col_position = -1
     for i in range(len(lines1)):
         if lines1[i].endswith('debug_line section:'):
             # .debug_line or .zdebug_line
@@ -157,11 +157,11 @@ def compare_output(s1, s2):
 
         # readelf spelling error for GNU property notes
         lines1[i] = lines1[i].replace('procesor-specific type', 'processor-specific type')
-        
+
         # The view column position may change from CU to CU:
         if view_col_position >= 0 and lines1[i].startswith('cu:'):
-            view_col_position = -1    
-    
+            view_col_position = -1
+
         # Check if readelf..decodedline output line contains the view column
         if flag_in_debug_line_section and lines1[i].startswith('file name') and view_col_position < 0:
             view_col_position = lines1[i].find("view")

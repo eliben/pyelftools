@@ -119,7 +119,7 @@ def save_dwarf_section(section, filename):
     with open(filename, 'wb') as file:
         data = stream.read(section.size)
         file.write(data)
-    stream.seek(pos, os.SEEK_SET)    
+    stream.seek(pos, os.SEEK_SET)
 
 #------------------------- PRIVATE -------------------------
 

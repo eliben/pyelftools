@@ -93,8 +93,8 @@ class TestParseExpr(unittest.TestCase):
         # lit0
         # skip 3
         # lit4
-        # minus 
-        # deref        
+        # minus
+        # deref
         lst = p.parse_expr([0x97,0x6,0x12,0x28,0x4,0x0,0x30,0x2F,0x3,0x0,0x34,0x1C,0x6])
         self.assertEqual(len(lst), 9)
         self.assertEqual(lst, [

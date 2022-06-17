@@ -427,7 +427,7 @@ ENUM_DW_LLE = dict(
     DW_LLE_default_location = 0x05,
     DW_LLE_base_address     = 0x06,
     DW_LLE_start_end        = 0x07,
-    DW_LLE_start_length     = 0x08    
+    DW_LLE_start_length     = 0x08
 )
 
 ENUM_DW_RLE = dict(

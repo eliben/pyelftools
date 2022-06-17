@@ -92,7 +92,7 @@ def SLEB128(name):
 
 class StreamOffset(Construct):
     """
-    Captures the current stream offset 
+    Captures the current stream offset
 
     Parameters:
     * name - the name of the value
@@ -109,4 +109,4 @@ class StreamOffset(Construct):
     def _build(self, obj, stream, context):
         context[self.name] = stream.tell()
     def _sizeof(self, context):
-        return 0     
+        return 0

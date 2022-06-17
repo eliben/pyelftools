@@ -1146,7 +1146,7 @@ class ReadElf(object):
                 self._emitline('%s:' % cu_filename)
             else:
                 self._emitline('CU: %s:' % cu_filename)
-                
+
             self._emitline('File name                            Line number    Starting address    Stmt')
             # GNU readelf has a View column that we don't try to replicate
             # The autotest has logic in place to ignore that
@@ -1482,19 +1482,19 @@ class ReadElf(object):
                     self._emitline("    %08x v%015x v%015x location view pair" % (entry.entry_offset, entry.begin, entry.end))
                 else:
                     if in_views:
-                        in_views = False             
+                        in_views = False
                         self._emitline("")
- 
+
                     # Need the CU for this loclist, but the map is keyed by the offset
                     # of the first entry in the loclist. Got to skip the views first.
                     if cu is None:
                         cu = cu_map.get(entry.entry_offset, False)
                         if not cu:
-                            raise ValueError("Location list can't be tracked to a CU")                        
+                            raise ValueError("Location list can't be tracked to a CU")
 
                     if isinstance(entry, LocationEntry):
                         if base_ip is None and not entry.is_absolute:
-                            base_ip = _get_cu_base(cu)                                
+                            base_ip = _get_cu_base(cu)
 
                         begin_offset = (0 if entry.is_absolute else base_ip) + entry.begin_offset
                         end_offset = (0 if entry.is_absolute else base_ip) + entry.end_offset
@@ -1558,7 +1558,7 @@ class ReadElf(object):
 
         self._emitline('Contents of the %s section:\n' % (di.debug_rnglists_sec or di.debug_ranges_sec).name)
         self._emitline('    Offset   Begin    End')
-        
+
         for range_list in range_lists:
             # Weird discrepancy in binutils: for DWARFv5 it outputs entry offset,
             # for DWARF<=4 list offset.
@@ -1580,7 +1580,7 @@ class ReadElf(object):
                 else:
                     raise NotImplementedError("Unknown object in a range list")
             last = range_list[-1]
-            self._emitline('    %08x <End of list>' % (last.entry_offset + last.entry_length if ver5 else first.entry_offset))            
+            self._emitline('    %08x <End of list>' % (last.entry_offset + last.entry_length if ver5 else first.entry_offset))
 
     def _display_arch_specific_arm(self):
         """ Display the ARM architecture-specific info contained in the file.
