@@ -12,23 +12,41 @@ from collections import namedtuple
 from ..common.utils import struct_parse
 
 
-RangeEntry = namedtuple('RangeEntry', 'entry_offset begin_offset end_offset')
+RangeEntry = namedtuple('RangeEntry', 'entry_offset entry_length begin_offset end_offset is_absolute')
 BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset base_address')
 
+def not_implemented(e):
+    raise NotImplementedError("Range list entry %s is not supported yet" % (e.entry_type,))
+
+# Maps parsed entry types to RangeEntry/BaseAddressEntry objects
+entry_translate = {
+    'DW_RLE_base_address' : lambda e: BaseAddressEntry(e.entry_offset, e.address),
+    'DW_RLE_offset_pair'  : lambda e: RangeEntry(e.entry_offset, e.entry_length, e.start_offset, e.end_offset, False),
+    'DW_RLE_start_end'    : lambda e: RangeEntry(e.entry_offset, e.entry_length, e.start_address, e.end_address, True),
+    'DW_RLE_start_length' : lambda e: RangeEntry(e.entry_offset, e.entry_length, e.start_address, e.start_address + e.length, True),
+    'DW_RLE_base_addressx': not_implemented,
+    'DW_RLE_startx_endx'  : not_implemented,
+    'DW_RLE_startx_length': not_implemented
+}
 
 class RangeLists(object):
     """ A single range list is a Python list consisting of RangeEntry or
         BaseAddressEntry objects.
 
-        The dwarfinfo is needed for enumeration, because it requires
-        scanning the DIEs, because ranges may overlap.
+        version is used to distinguish DWARFv5 rnglists section from
+        the DWARF<=4 ranges section. Only the 4/5 distinction matters.
+
+        The dwarfinfo is needed for enumeration, because enumeration
+        requires scanning the DIEs, because ranges may overlap, even on DWARF<=4
     """
     # Since dwarfinfo is not a required parameter, there is fallback to the
-    # broken enumeration logic, in case there is an old consumer
-    def __init__(self, stream, structs, dwarfinfo = None):
+    # broken (binutils incompatible) enumeration logic, in case there is an old consumer
+    # that creates RangeLists directly rather than using DWARFInfo.range_lists()
+    def __init__(self, stream, structs, version=4, dwarfinfo=None):
         self.stream = stream
         self.structs = structs
         self._max_addr = 2 ** (self.structs.address_size * 8) - 1
+        self.version = version
         self._dwarfinfo = dwarfinfo
 
     def get_range_list_at_offset(self, offset):
@@ -62,23 +80,30 @@ class RangeLists(object):
     #------ PRIVATE ------#
 
     def _parse_range_list_from_stream(self):
-        lst = []
-        while True:
-            entry_offset = self.stream.tell()
-            begin_offset = struct_parse(
-                self.structs.Dwarf_target_addr(''), self.stream)
-            end_offset = struct_parse(
-                self.structs.Dwarf_target_addr(''), self.stream)
-            if begin_offset == 0 and end_offset == 0:
-                # End of list - we're done.
-                break
-            elif begin_offset == self._max_addr:
-                # Base address selection entry
-                lst.append(BaseAddressEntry(entry_offset=entry_offset, base_address=end_offset))
-            else:
-                # Range entry
-                lst.append(RangeEntry(
-                    entry_offset=entry_offset,
-                    begin_offset=begin_offset,
-                    end_offset=end_offset))
-        return lst
+        if self.version >= 5:
+            return list(entry_translate[entry.entry_type](entry)
+                for entry
+                in struct_parse(self.structs.Dwarf_rnglists_entries, self.stream))
+        else:
+            lst = []
+            while True:
+                entry_offset = self.stream.tell()
+                begin_offset = struct_parse(
+                    self.structs.Dwarf_target_addr(''), self.stream)
+                end_offset = struct_parse(
+                    self.structs.Dwarf_target_addr(''), self.stream)
+                if begin_offset == 0 and end_offset == 0:
+                    # End of list - we're done.
+                    break
+                elif begin_offset == self._max_addr:
+                    # Base address selection entry
+                    lst.append(BaseAddressEntry(entry_offset=entry_offset, base_address=end_offset))
+                else:
+                    # Range entry
+                    lst.append(RangeEntry(
+                        entry_offset=entry_offset,
+                        entry_length=self.stream.tell() - entry_offset,
+                        begin_offset=begin_offset,
+                        end_offset=end_offset,
+                        is_absolute=False))
+            return lst

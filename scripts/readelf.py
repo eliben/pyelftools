@@ -1537,6 +1537,7 @@ class ReadElf(object):
         # TODO: GNU readelf format doesn't need entry_length?
         di = self._dwarfinfo
         range_lists = di.range_lists()
+        ver5 = range_lists.version >= 5
         if not range_lists: # No ranges section - readelf outputs nothing
             return
 
@@ -1562,25 +1563,27 @@ class ReadElf(object):
         self._emitline('    Offset   Begin    End')
         
         for range_list in range_lists:
+            # Weird discrepancy in binutils: for DWARFv5 it outputs entry offset,
+            # for DWARF<=4 list offset.
             first = range_list[0]
             base_ip = _get_cu_base(cu_map[first.entry_offset])
             for entry in range_list:
                 if isinstance(entry, RangeEntry):
                     postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
                     self._emitline(line_template % (
-                        first.entry_offset,
-                        base_ip + entry.begin_offset,
-                        base_ip + entry.end_offset,
+                        entry.entry_offset if ver5 else first.entry_offset,
+                        (0 if entry.is_absolute else base_ip) + entry.begin_offset,
+                        (0 if entry.is_absolute else base_ip) + entry.end_offset,
                         postfix))
                 elif isinstance(entry, elftools.dwarf.ranges.BaseAddressEntry):
                     base_ip = entry.base_address
                     self._emitline(base_template % (
-                        first.entry_offset,
+                        entry.entry_offset if ver5 else first.entry_offset,
                         entry.base_address))
                 else:
                     raise NotImplementedError("Unknown object in a range list")
             last = range_list[-1]
-            self._emitline('    %08x <End of list>' % (first.entry_offset))            
+            self._emitline('    %08x <End of list>' % (last.entry_offset + last.entry_length if ver5 else first.entry_offset))            
 
     def _display_arch_specific_arm(self):
         """ Display the ARM architecture-specific info contained in the file.
