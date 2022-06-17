@@ -102,7 +102,7 @@ class DWARFInfo(object):
         self.debug_pubtypes_sec = debug_pubtypes_sec
         self.debug_pubnames_sec = debug_pubnames_sec
         self.debug_loclists_sec = debug_loclists_sec
-        self.debug_rnglists_sec = debug_rnglists_sec # Ignored for now
+        self.debug_rnglists_sec = debug_rnglists_sec
 
         # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
