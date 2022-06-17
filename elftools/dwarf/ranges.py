@@ -33,16 +33,15 @@ class RangeLists(object):
     """ A single range list is a Python list consisting of RangeEntry or
         BaseAddressEntry objects.
 
+        Since v0.29, two new parameters - version and dwarfinfo
+
         version is used to distinguish DWARFv5 rnglists section from
         the DWARF<=4 ranges section. Only the 4/5 distinction matters.
 
         The dwarfinfo is needed for enumeration, because enumeration
         requires scanning the DIEs, because ranges may overlap, even on DWARF<=4
     """
-    # Since dwarfinfo is not a required parameter, there is fallback to the
-    # broken (binutils incompatible) enumeration logic, in case there is an old consumer
-    # that creates RangeLists directly rather than using DWARFInfo.range_lists()
-    def __init__(self, stream, structs, version=4, dwarfinfo=None):
+    def __init__(self, stream, structs, version, dwarfinfo):
         self.stream = stream
         self.structs = structs
         self._max_addr = 2 ** (self.structs.address_size * 8) - 1
@@ -60,22 +59,14 @@ class RangeLists(object):
         """
         # Calling parse until the stream ends is wrong, because ranges can overlap.
         # Need to scan the DIEs to know all range locations
-        if self._dwarfinfo:
-            all_offsets = list(set(die.attributes['DW_AT_ranges'].value
-                for cu in self._dwarfinfo.iter_CUs()
-                for die in cu.iter_DIEs()
-                if 'DW_AT_ranges' in die.attributes))
-            all_offsets.sort()
+        all_offsets = list(set(die.attributes['DW_AT_ranges'].value
+            for cu in self._dwarfinfo.iter_CUs()
+            for die in cu.iter_DIEs()
+            if 'DW_AT_ranges' in die.attributes))
+        all_offsets.sort()
 
-            for offset in all_offsets:
-                yield self.get_range_list_at_offset(offset)
-        else: # Flawed logic for legacy consumers, if any
-            self.stream.seek(0, os.SEEK_END)
-            endpos = self.stream.tell()
-
-            self.stream.seek(0, os.SEEK_SET)
-            while self.stream.tell() < endpos:
-                yield self._parse_range_list_from_stream()
+        for offset in all_offsets:
+            yield self.get_range_list_at_offset(offset)
 
     #------ PRIVATE ------#
 
