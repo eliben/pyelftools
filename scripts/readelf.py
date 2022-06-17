@@ -1537,10 +1537,10 @@ class ReadElf(object):
         # TODO: GNU readelf format doesn't need entry_length?
         di = self._dwarfinfo
         range_lists = di.range_lists()
-        ver5 = range_lists.version >= 5
         if not range_lists: # No ranges section - readelf outputs nothing
             return
 
+        ver5 = range_lists.version >= 5
         range_lists = list(range_lists.iter_range_lists())
         if len(range_lists) == 0:
             # Present but empty locations section - readelf outputs a message
@@ -1675,7 +1675,7 @@ def main(stream=None):
             action='store', dest='debug_dump_what', metavar='<what>',
             help=(
                 'Display the contents of DWARF debug sections. <what> can ' +
-                'one of {info,decodedline,frames,frames-interp,aranges,pubtypes,pubnames,loc}'))
+                'one of {info,decodedline,frames,frames-interp,aranges,pubtypes,pubnames,loc,Ranges}'))
     argparser.add_argument('--traceback',
                            action='store_true', dest='show_traceback',
                            help='Dump the Python traceback on ELFError'
