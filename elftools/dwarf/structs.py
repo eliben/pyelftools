@@ -13,7 +13,7 @@ from ..construct import (
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, Enum, Array, PrefixedArray,
     CString, Embed, StaticField, IfThenElse, Construct, Rename, Sequence,
-    Switch
+    Switch, Value
     )
 from ..common.construct_utils import (RepeatUntilExcluding, ULEB128, SLEB128,
     StreamOffset)
@@ -144,6 +144,7 @@ class DWARFStructs(object):
         self._create_string_offsets_table_header()
         self._create_address_table_header()
         self._create_loclists_parsers()
+        self._create_rnglists_parsers()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -433,6 +434,27 @@ class DWARFStructs(object):
 
         self.Dwarf_locview_pair = Struct('locview_pair',
             StreamOffset('entry_offset'), self.Dwarf_uleb128('begin'), self.Dwarf_uleb128('end'))
+
+    def _create_rnglists_parsers(self):
+        self.Dwarf_rnglists_entries = RepeatUntilExcluding(
+            lambda obj, ctx: obj.entry_type == 'DW_RLE_end_of_list',
+            Struct('entry',
+                StreamOffset('entry_offset'),
+                Enum(self.Dwarf_uint8('entry_type'), **ENUM_DW_RLE),
+                Embed(Switch('', lambda ctx: ctx.entry_type,
+                {
+                    'DW_RLE_end_of_list'      : Struct('end_of_list'),
+                    'DW_RLE_base_addressx'    : Struct('base_addressx', self.Dwarf_uleb128('index')),
+                    'DW_RLE_startx_endx'      : Struct('startx_endx', self.Dwarf_uleb128('start_index'), self.Dwarf_uleb128('end_index')),
+                    'DW_RLE_startx_length'    : Struct('startx_endx', self.Dwarf_uleb128('start_index'), self.Dwarf_uleb128('length')),
+                    'DW_RLE_offset_pair'      : Struct('startx_endx', self.Dwarf_uleb128('start_offset'), self.Dwarf_uleb128('end_offset')),
+                    'DW_RLE_base_address'     : Struct('base_address', self.Dwarf_target_addr('address')),
+                    'DW_RLE_start_end'        : Struct('start_end', self.Dwarf_target_addr('start_address'), self.Dwarf_target_addr('end_address')),
+                    'DW_RLE_start_length'     : Struct('start_length', self.Dwarf_target_addr('start_address'), self.Dwarf_uleb128('length'))
+                })),
+                StreamOffset('entry_end_offset'),
+                Value('entry_length', lambda ctx: ctx.entry_end_offset - ctx.entry_offset)))
+
 
 class _InitialLengthAdapter(Adapter):
     """ A standard Construct adapter that expects a sub-construct

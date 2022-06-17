@@ -102,7 +102,7 @@ class DWARFInfo(object):
         self.debug_pubtypes_sec = debug_pubtypes_sec
         self.debug_pubnames_sec = debug_pubnames_sec
         self.debug_loclists_sec = debug_loclists_sec
-        self.debug_rnglists_sec = debug_rnglists_sec # Ignored for now
+        self.debug_rnglists_sec = debug_rnglists_sec
 
         # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
@@ -358,8 +358,11 @@ class DWARFInfo(object):
         """ Get a RangeLists object representing the .debug_ranges section of
             the DWARF data, or None if this section doesn't exist.
         """
-        if self.debug_ranges_sec:
-            return RangeLists(self.debug_ranges_sec.stream, self.structs)
+        if self.debug_rnglists_sec:
+            assert(self.debug_ranges_sec is None)
+            return RangeLists(self.debug_rnglists_sec.stream, self.structs, 5, self)
+        elif self.debug_ranges_sec:
+            return RangeLists(self.debug_ranges_sec.stream, self.structs, 4, self)
         else:
             return None
 
