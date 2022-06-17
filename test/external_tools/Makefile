@@ -14,5 +14,3 @@ clean:
 	rm -f *.so
 	rm -f *.a
 	rm -f elf_creator
-
-
