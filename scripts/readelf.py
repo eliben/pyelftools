@@ -1142,14 +1142,11 @@ class ReadElf(object):
 
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
             if len(lineprogram['include_directory']) > 0:
-                dir_index = lineprogram['file_entry'][0].dir_index
-                if dir_index > 0:
-                    dir = lineprogram['include_directory'][dir_index - 1]
-                else:
-                    dir = b'.'
-                cu_filename = '%s/%s' % (bytes2str(dir), cu_filename)
-
-            self._emitline('CU: %s:' % cu_filename)
+                # GNU readelf 2.38 only outputs directory in wide mode
+                self._emitline('%s:' % cu_filename)
+            else:
+                self._emitline('CU: %s:' % cu_filename)
+                
             self._emitline('File name                            Line number    Starting address    Stmt')
             # GNU readelf has a View column that we don't try to replicate
             # The autotest has logic in place to ignore that
