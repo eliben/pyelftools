@@ -157,7 +157,7 @@ class CompileUnit(object):
                 sibling = child.attributes["DW_AT_sibling"]
                 if sibling.form in ('DW_FORM_ref1', 'DW_FORM_ref2',
                                     'DW_FORM_ref4', 'DW_FORM_ref8',
-                                    'DW_FORM_ref'):
+                                    'DW_FORM_ref', 'DW_FORM_ref_udata'):
                     cur_offset = sibling.value + self.cu_offset
                 elif sibling.form == 'DW_FORM_ref_addr':
                     cur_offset = sibling.value
