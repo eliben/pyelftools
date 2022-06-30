@@ -13,7 +13,7 @@ from ..construct import (
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, Enum, Array, PrefixedArray,
     CString, Embed, StaticField, IfThenElse, Construct, Rename, Sequence,
-    Switch, Value
+    String, Switch, Value
     )
 from ..common.construct_utils import (RepeatUntilExcluding, ULEB128, SLEB128,
     StreamOffset)
@@ -146,6 +146,9 @@ class DWARFStructs(object):
         self._create_loclists_parsers()
         self._create_rnglists_parsers()
 
+        self._create_debugsup()
+        self._create_gnu_debugaltlink()
+
     def _create_initial_length(self):
         def _InitialLength(name):
             # Adapts a Struct that parses forward a full initial length field.
@@ -191,6 +194,18 @@ class DWARFStructs(object):
                     If(lambda ctx: ctx['form'] == 'DW_FORM_implicit_const',
                         self.Dwarf_sleb128('value')))))
 
+    def _create_debugsup(self):
+        # We don't care about checksums, for now.
+        self.Dwarf_debugsup = Struct('Elf_debugsup',
+            self.Dwarf_int16('version'),
+            self.Dwarf_uint8('is_supplementary'),
+            CString('sup_filename'))
+
+    def _create_gnu_debugaltlink(self):
+        self.Dwarf_debugaltlink = Struct('Elf_debugaltlink',
+            CString("sup_filename"),
+            String("sup_checksum", length=20))
+
     def _create_dw_form(self):
         self.Dwarf_dw_form = dict(
             DW_FORM_addr=self.Dwarf_target_addr(''),
@@ -215,6 +230,7 @@ class DWARFStructs(object):
 
             DW_FORM_string=CString(''),
             DW_FORM_strp=self.Dwarf_offset(''),
+            DW_FORM_strp_sup=self.Dwarf_offset(''),
             DW_FORM_line_strp=self.Dwarf_offset(''),
             DW_FORM_strx1=self.Dwarf_uint8(''),
             DW_FORM_strx2=self.Dwarf_uint16(''),
@@ -226,7 +242,9 @@ class DWARFStructs(object):
             DW_FORM_ref1=self.Dwarf_uint8(''),
             DW_FORM_ref2=self.Dwarf_uint16(''),
             DW_FORM_ref4=self.Dwarf_uint32(''),
+            DW_FORM_ref_sup4=self.Dwarf_uint32(''),
             DW_FORM_ref8=self.Dwarf_uint64(''),
+            DW_FORM_ref_sup8=self.Dwarf_uint64(''),
             DW_FORM_ref_udata=self.Dwarf_uleb128(''),
             DW_FORM_ref_addr=self.Dwarf_target_addr('') if self.dwarf_version == 2 else self.Dwarf_offset(''),
 

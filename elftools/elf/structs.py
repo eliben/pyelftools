@@ -380,6 +380,11 @@ class ELFStructs(object):
             self.Elf_word('abi_tiny'),
         )
 
+    def _create_gnu_debugaltlink(self):
+        self.Elf_debugaltlink = Struct('Elf_debugaltlink',
+            CString("sup_filename"),
+            String("sup_checksum", length=20))
+
     def _create_gnu_property(self):
         # Structure of GNU property notes is documented in
         # https://github.com/hjl-tools/linux-abi/wiki/linux-abi-draft.pdf
