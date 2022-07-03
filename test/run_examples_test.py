@@ -63,7 +63,7 @@ def run_example_and_compare(example_path):
         return True
     else:
         testlog.info('.......FAIL comparison')
-        dump_output_to_temp_files(testlog, example_out, ref_str)
+        dump_output_to_temp_files(testlog, example_path, '', example_out, ref_str)
         return False
 
 

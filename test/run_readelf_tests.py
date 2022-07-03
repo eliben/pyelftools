@@ -117,7 +117,7 @@ def run_test_on_file(filename, verbose=False, opt=None):
             testlog.info('....for option "%s"' % option)
             testlog.info('....Output #1 is readelf, Output #2 is pyelftools')
             testlog.info('@@ ' + errmsg)
-            dump_output_to_temp_files(testlog, *stdouts)
+            dump_output_to_temp_files(testlog, filename, option, *stdouts)
     return success
 
 
