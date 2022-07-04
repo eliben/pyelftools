@@ -403,13 +403,15 @@ class DWARFStructs(object):
         """ Create a struct for debug_loclists CU header, DWARFv5, 7,29
         """
         self.Dwarf_loclists_CU_header = Struct('Dwarf_loclists_CU_header',
-            # Unit_length parsed separately
+            StreamOffset('cu_offset'),
+            self.Dwarf_initial_length('unit_length'),
+            Value('is64', lambda ctx: ctx.is64),
+            StreamOffset('offset_after_length'),
             self.Dwarf_uint16('version'),
             self.Dwarf_uint8('address_size'),
             self.Dwarf_uint8('segment_selector_size'),
-            PrefixedArray(
-                self.Dwarf_offset('offsets'),
-                self.Dwarf_uint32('')))
+            self.Dwarf_uint32('offset_count'),
+            StreamOffset('offset_table_offset'))
 
         cld = self.Dwarf_loclists_counted_location_description = PrefixedArray(self.Dwarf_uint8('loc_expr'), self.Dwarf_uleb128(''))
 
@@ -436,6 +438,17 @@ class DWARFStructs(object):
             StreamOffset('entry_offset'), self.Dwarf_uleb128('begin'), self.Dwarf_uleb128('end'))
 
     def _create_rnglists_parsers(self):
+        self.Dwarf_rnglists_CU_header = Struct('Dwarf_rnglists_CU_header',
+            StreamOffset('cu_offset'),
+            self.Dwarf_initial_length('unit_length'),
+            Value('is64', lambda ctx: ctx.is64),
+            StreamOffset('offset_after_length'),
+            self.Dwarf_uint16('version'),
+            self.Dwarf_uint8('address_size'),
+            self.Dwarf_uint8('segment_selector_size'),
+            self.Dwarf_uint32('offset_count'),
+            StreamOffset('offset_table_offset'))
+
         self.Dwarf_rnglists_entries = RepeatUntilExcluding(
             lambda obj, ctx: obj.entry_type == 'DW_RLE_end_of_list',
             Struct('entry',
@@ -462,9 +475,11 @@ class _InitialLengthAdapter(Adapter):
     """
     def _decode(self, obj, context):
         if obj.first < 0xFFFFFF00:
+            context['is64'] = False
             return obj.first
         else:
             if obj.first == 0xFFFFFFFF:
+                context['is64'] = True
                 return obj.second
             else:
                 raise ConstructError("Failed decoding initial length for %X" % (

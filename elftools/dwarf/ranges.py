@@ -10,6 +10,8 @@ import os
 from collections import namedtuple
 
 from ..common.utils import struct_parse
+from ..common.exceptions import DWARFError
+from .dwarf_util import _iter_CUs_in_section
 
 
 RangeEntry = namedtuple('RangeEntry', 'entry_offset entry_length begin_offset end_offset is_absolute')
@@ -54,6 +56,12 @@ class RangeLists(object):
         self.stream.seek(offset, os.SEEK_SET)
         return self._parse_range_list_from_stream()
 
+    def get_range_list_at_offset_ex(self, offset):
+        """Get a DWARF v5 range list, addresses and offsets unresolved,
+        at the given offset in the section
+        """
+        return struct_parse(self.structs.Dwarf_rnglists_entries, self.stream, offset)
+
     def iter_range_lists(self):
         """ Yield all range lists found in the section.
         """
@@ -67,6 +75,24 @@ class RangeLists(object):
 
         for offset in all_offsets:
             yield self.get_range_list_at_offset(offset)
+
+    def iter_CUs(self):
+        """For DWARF5 returns an array of objects, where each one has an array of offsets
+        """
+        if self.version < 5:
+            raise DWARFError("CU iteration in rnglists is not supported with DWARF<5")
+
+        structs = next(self._dwarfinfo.iter_CUs()).structs # Just pick one
+        return _iter_CUs_in_section(self.stream, structs, structs.Dwarf_rnglists_CU_header)
+
+    def iter_CU_range_lists_ex(self, cu):
+        """For DWARF5, returns untranslated rangelists in the CU, where CU comes from iter_CUs above
+        """
+        stream = self.stream
+        stream.seek(cu.offset_table_offset + (64 if cu.is64 else 32) * cu.offset_count)
+        while stream.tell() < cu.offset_after_length + cu.unit_length:
+            yield struct_parse(self.structs.Dwarf_rnglists_entries, stream);
+
 
     #------ PRIVATE ------#
 

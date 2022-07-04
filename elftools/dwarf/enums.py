@@ -440,3 +440,81 @@ ENUM_DW_RLE = dict(
     DW_RLE_start_end     = 0x06,
     DW_RLE_start_length  = 0x07
 )
+
+ENUM_DW_LANG = dict(
+    DW_LANG_C89            = 0x0001,
+    DW_LANG_C              = 0x0002,
+    DW_LANG_Ada83          = 0x0003,
+    DW_LANG_C_plus_plus    = 0x0004,
+    DW_LANG_Cobol74        = 0x0005,
+    DW_LANG_Cobol85        = 0x0006,
+    DW_LANG_Fortran77      = 0x0007,
+    DW_LANG_Fortran90      = 0x0008,
+    DW_LANG_Pascal83       = 0x0009,
+    DW_LANG_Modula2        = 0x000a,
+    DW_LANG_Java           = 0x000b,
+    DW_LANG_C99            = 0x000c,
+    DW_LANG_Ada95          = 0x000d,
+    DW_LANG_Fortran95      = 0x000e,
+    DW_LANG_PLI            = 0x000f,
+    DW_LANG_ObjC           = 0x0010,
+    DW_LANG_ObjC_plus_plus = 0x0011,
+    DW_LANG_UPC            = 0x0012,
+    DW_LANG_D              = 0x0013,
+    DW_LANG_Python         = 0x0014,
+    DW_LANG_OpenCL         = 0x0015,
+    DW_LANG_Go             = 0x0016,
+    DW_LANG_Modula3        = 0x0017,
+    DW_LANG_Haskell        = 0x0018,
+    DW_LANG_C_plus_plus_03 = 0x0019,
+    DW_LANG_C_plus_plus_11 = 0x001a,
+    DW_LANG_OCaml          = 0x001b,
+    DW_LANG_Rust           = 0x001c,
+    DW_LANG_C11            = 0x001d,
+    DW_LANG_Swift          = 0x001e,
+    DW_LANG_Julia          = 0x001f,
+    DW_LANG_Dylan          = 0x0020,
+    DW_LANG_C_plus_plus_14 = 0x0021,
+    DW_LANG_Fortran03      = 0x0022,
+    DW_LANG_Fortran08      = 0x0023,
+    DW_LANG_RenderScript   = 0x0024,
+    DW_LANG_BLISS          = 0x0025,
+    DW_LANG_lo_user        = 0x8000,
+    DW_LANG_hi_user        = 0xffff
+)
+
+ENUM_DW_ATE = dict(
+    DW_ATE_address         = 0x01,
+    DW_ATE_boolean         = 0x02,
+    DW_ATE_complex_float   = 0x03,
+    DW_ATE_float           = 0x04,
+    DW_ATE_signed          = 0x05,
+    DW_ATE_signed_char     = 0x06,
+    DW_ATE_unsigned        = 0x07,
+    DW_ATE_unsigned_char   = 0x08,
+    DW_ATE_imaginary_float = 0x09,
+    DW_ATE_packed_decimal  = 0x0a,
+    DW_ATE_numeric_string  = 0x0b,
+    DW_ATE_edited          = 0x0c,
+    DW_ATE_signed_fixed    = 0x0d,
+    DW_ATE_unsigned_fixed  = 0x0e,
+    DW_ATE_decimal_float   = 0x0f,
+    DW_ATE_UTF             = 0x10,
+    DW_ATE_UCS             = 0x11,
+    DW_ATE_ASCII           = 0x12,
+    DW_ATE_lo_user         = 0x80,
+    DW_ATE_hi_user         = 0xff
+)
+
+ENUM_DW_ACCESS = dict(
+    DW_ACCESS_public    = 0x01,
+    DW_ACCESS_protected = 0x02,
+    DW_ACCESS_private   = 0x03
+)
+
+ENUM_DW_INL = dict(
+    DW_INL_not_inlined          = 0x00,
+    DW_INL_inlined              = 0x01,
+    DW_INL_declared_not_inlined = 0x02,
+    DW_INL_declared_inlined     = 0x03
+)
