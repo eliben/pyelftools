@@ -110,8 +110,6 @@ class LocationLists(object):
             offset_index = 0
             while stream.tell() < endpos:
                 # We are at the start of the CU block in the loclists now
-                unit_length = struct_parse(self.structs.Dwarf_initial_length(''), stream)
-                offset_past_len = stream.tell()
                 cu_header = struct_parse(self.structs.Dwarf_loclists_CU_header, stream)
                 assert(cu_header.version == 5)
 
@@ -119,7 +117,7 @@ class LocationLists(object):
                 # We don't have a binary for the former yet. On an off chance that we one day might,
                 # let's parse the header anyway.
 
-                cu_end_offset = offset_past_len + unit_length
+                cu_end_offset = cu_header.offset_after_length + cu_header.unit_length
                 # Unit_length includes the header but doesn't include the length
 
                 while stream.tell() < cu_end_offset:
