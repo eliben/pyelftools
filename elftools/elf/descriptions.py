@@ -259,12 +259,19 @@ def describe_note_gnu_property_x86_feature_1(value):
             descs.append(desc)
     return 'x86 feature: ' + ', '.join(descs)
 
-def describe_note_gnu_property_x86_isa_1(value):
+def describe_note_gnu_property_x86_feature_2_used(value):
+    descs = []
+    for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_2_FLAGS:
+        if value & mask:
+            descs.append(desc)
+    return 'x86 feature used: ' + ', '.join(descs)
+
+def describe_note_gnu_property_x86_isa_1(value, verb):
     descs = []
     for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS:
         if value & mask:
             descs.append(desc)
-    return 'x86 ISA needed: ' + ', '.join(descs)
+    return 'x86 ISA %s: %s' % (verb, ', '.join(descs))
 
 def describe_note_gnu_properties(properties):
     descriptions = []
@@ -285,11 +292,21 @@ def describe_note_gnu_properties(properties):
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
                 prop_desc = describe_note_gnu_property_x86_feature_1(d)
+        elif t == 'GNU_PROPERTY_X86_FEATURE_2_USED':
+            if sz != 4:
+                prop_desc = ' <corrupt length: 0x%x>' % sz
+            else:
+                prop_desc = describe_note_gnu_property_x86_feature_2_used(d)                
         elif t == 'GNU_PROPERTY_X86_ISA_1_NEEDED':
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_x86_isa_1(d)
+                prop_desc = describe_note_gnu_property_x86_isa_1(d, "needed")
+        elif t == 'GNU_PROPERTY_X86_ISA_1_USED':
+            if sz != 4:
+                prop_desc = ' <corrupt length: 0x%x>' % sz
+            else:
+                prop_desc = describe_note_gnu_property_x86_isa_1(d, "used")
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
             prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
@@ -613,6 +630,17 @@ _DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_1_FLAGS = (
     (2, 'SHSTK'),
     (4, 'LAM_U48'),
     (8, 'LAM_U57'),
+)
+
+# Bit masks for GNU_PROPERTY_X86_FEATURE_2_xxx flags in the form
+# (mask, flag_description) in the desired output order
+_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_2_FLAGS = (
+    (1, 'x86'),
+    (2, 'x87'),
+    (4, 'MMX'),
+    (8, 'XMM'),
+    (16, 'YMM'),
+    (32, 'ZMM'),
 )
 
 # Same for GNU_PROPERTY_X86_SET_1_xxx
