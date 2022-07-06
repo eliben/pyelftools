@@ -56,7 +56,7 @@ class ARanges(object):
 
 
     #------ PRIVATE ------#
-    def _get_entries(self):
+    def _get_entries(self, need_empty=False):
         """ Populate self.entries with ARangeEntry tuples for each range of addresses
         """
         self.stream.seek(0)
@@ -77,10 +77,15 @@ class ARanges(object):
                 seek_to = int(math.ceil(fp/float(tuple_size)) * tuple_size)
                 self.stream.seek(seek_to)
 
+                # We now have a binary with empty arange sections - nothing but a NULL entry.
+                # To keep compatibility with readelf, we need to return those.
+                # A two level list would be a prettier solution, but this will be compatible.
+                got_entries = False
+
                 # entries in this set/CU
                 addr = struct_parse(addr_size('addr'), self.stream)
                 length = struct_parse(addr_size('length'), self.stream)
-                while addr != 0 or length != 0:
+                while addr != 0 or length != 0 or (not got_entries and need_empty):
                     # 'begin_addr length info_offset version address_size segment_size'
                     entries.append(
                         ARangeEntry(begin_addr=addr,
@@ -90,8 +95,11 @@ class ARanges(object):
                             version=aranges_header["version"],
                             address_size=aranges_header["address_size"],
                             segment_size=aranges_header["segment_size"]))
-                    addr = struct_parse(addr_size('addr'), self.stream)
-                    length = struct_parse(addr_size('length'), self.stream)
+                    got_entries = True
+                    if addr != 0 or length != 0:
+                        addr = struct_parse(addr_size('addr'), self.stream)
+                        length = struct_parse(addr_size('length'), self.stream)
+                    
             # Segmentation exists in executable
             elif aranges_header["segment_size"] != 0:
                 raise NotImplementedError("Segmentation not implemented")
