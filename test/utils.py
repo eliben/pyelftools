@@ -34,7 +34,8 @@ def is_in_rootdir():
 
 def dump_output_to_temp_files(testlog, filename, option, *args):
     """ Dumps the output strings given in 'args' to temp files: one for each
-        arg.
+        arg. The filename and option arguments contribute to the file name,
+        so that one knows which test did the output dump come from.
     """
     for i, s in enumerate(args):
         fd, path = tempfile.mkstemp(

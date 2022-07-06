@@ -83,16 +83,23 @@ def _desc_ref(attr, die, extra=''):
         die.cu.cu_offset + attr.raw_value,
         extra)
 
+def _desc_data(attr, die):
+    """ Hex with length driven by form
+    """
+    len = int(attr.form[12:]) * 2
+    return "0x%0*x" % (len, attr.value,)
+
 FORM_DESCRIPTIONS = dict(
     DW_FORM_string=lambda attr, die: "\"%s\"" % (bytes2str(attr.value),),
     DW_FORM_strp=lambda attr, die: " .debug_str[0x%08x] = \"%s\"" % (attr.raw_value, bytes2str(attr.value).replace("\\", "\\\\")),
     DW_FORM_line_strp=lambda attr, die: ".debug_line_str[0x%08x] = \"%s\"" % (attr.raw_value, bytes2str(attr.value).replace("\\", "\\\\")),
     DW_FORM_flag_present=lambda attr, die: "true",
+    DW_FORM_flag=lambda attr, die: "0x%02x" % int(attr.value),
     DW_FORM_addr=lambda attr, die: "0x%0*x" % (_addr_str_length(die), attr.value),
-    DW_FORM_data1=lambda attr, die: "0x%02x" % (attr.value,),
-    DW_FORM_data2=lambda attr, die: "0x%04x" % (attr.value,),
-    DW_FORM_data4=lambda attr, die: "0x%08x" % (attr.value,),
-    DW_FORM_data8=lambda attr, die: "0x%016x" % (attr.value,),
+    DW_FORM_data1=_desc_data,
+    DW_FORM_data2=_desc_data,
+    DW_FORM_data4=_desc_data,
+    DW_FORM_data8=_desc_data,
     DW_FORM_block1=lambda attr, die: "<0x%02x> %s " % (len(attr.value), " ".join("%02x" %b for b in attr.value)),
     DW_FORM_block2=lambda attr, die: "<0x%04x> %s " % (len(attr.value), " ".join("%02x" %b for b in attr.value)),
     DW_FORM_block4=lambda attr, die: "<0x%08x> %s " % (len(attr.value), " ".join("%02x" %b for b in attr.value)),
@@ -109,6 +116,9 @@ def _desc_enum(attr, enum):
     """
     return next((k for (k, v) in enum.items() if v == attr.value), str(attr.value))
 
+def _cu_comp_dir(cu):
+    return bytes2str(cu.get_top_DIE().attributes['DW_AT_comp_dir'].value)
+
 def _desc_decl_file(attr, die):
     cu = die.cu
     if not hasattr(cu, "_lineprogram"):
@@ -117,7 +127,12 @@ def _desc_decl_file(attr, die):
     if cu._lineprogram and val > 0 and val <= len(cu._lineprogram.header.file_entry):
         file_entry = cu._lineprogram.header.file_entry[val-1]
         includes = cu._lineprogram.header.include_directory
-        dir = bytes2str(includes[file_entry.dir_index - 1] if file_entry.dir_index > 0 else cu.get_top_DIE().attributes['DW_AT_comp_dir'].value)
+        if file_entry.dir_index > 0:
+            dir = bytes2str(includes[file_entry.dir_index - 1])
+            if dir.startswith('.'):
+                dir = posixpath.join(_cu_comp_dir(cu), dir)
+        else:
+            dir = _cu_comp_dir(cu)
         return "\"%s\"" % (posixpath.join(dir, bytes2str(file_entry.name)),)
     else:
         return '(N/A)'
@@ -282,11 +297,13 @@ ATTR_DESCRIPTIONS = dict(
     DW_AT_decl_line=_desc_value,
     DW_AT_ranges=_desc_ranges,
     DW_AT_location=_desc_locations,
+    DW_AT_data_member_location=lambda attr, die: _desc_data(attr, die) if attr.form.startswith('DW_FORM_data') else _desc_locations(attr, die),
+    DW_AT_frame_base=_desc_locations,
     DW_AT_type=_desc_datatype,
     DW_AT_call_line=_desc_value,
     DW_AT_call_file=_desc_decl_file,
     DW_AT_abstract_origin=_desc_origin,
-    DW_AT_specification=_desc_spec 
+    DW_AT_specification=_desc_spec
 )
 
 class ReadElf(object):
@@ -319,9 +336,15 @@ class ReadElf(object):
         self.output.write(str(s).rstrip() + '\n')
 
     def dump_info(self):
+        # TODO: DWARF64 will cause discrepancies in hex offset sizes
         self._emitline(".debug_info contents:")
         for cu in self._dwarfinfo.iter_CUs():
-            unit_type_str = " unit_type = %s," % next(k for (k,v) in ENUM_DW_UT.items() if v == cu.header.unit_type) if cu.header.version >= 5 else ''
+            if cu.header.version >= 5:
+                ut = next(k for (k,v) in ENUM_DW_UT.items() if v == cu.header.unit_type)
+                unit_type_str = " unit_type = %s," % ut
+            else:
+                unit_type_str = ''
+
             self._emitline("0x%08x: Compile Unit: length = 0x%08x, format = DWARF%d, version = 0x%04x,%s abbr_offset = 0x%04x, addr_size = 0x%02x (next unit at 0x%08x)" %(
                 cu.cu_offset,
                 cu.header.unit_length,
@@ -332,11 +355,9 @@ class ReadElf(object):
                 cu.header.address_size,
                 cu.cu_offset + (4 if cu.structs.dwarf_format == 32 else 12) + cu.header.unit_length))
             self._emitline()
-            level = 1
             parent = cu.get_top_DIE()
             for die in cu.iter_DIEs():
                 if die.get_parent() == parent:
-                    level += 1
                     parent = die
                 if not die.is_null(): 
                     self._emitline("0x%08x: %s [%d] %s %s" % (
@@ -350,7 +371,6 @@ class ReadElf(object):
                         self._emitline("              %s [%s]	(%s)" % (attr_name, attr.form, self.describe_attr_value(die, attr)))
                 else:
                     self._emitline("0x%08x: NULL" % (die.offset,))
-                    level -= 1
                     parent = die.get_parent()
                 self._emitline()
 
@@ -369,13 +389,7 @@ class ReadElf(object):
         pass
 
     def dump_loclists(self):
-        self._emitline(".debug_loclists contents:")
-        loclists_sec = self._dwarfinfo.location_lists()
-        if loclists_sec.version < 5:
-            return
-
-        #for cu in loclists_sec.iter_CUs():
-
+        pass
 
     def dump_ranges(self):
         pass
@@ -426,7 +440,6 @@ class ReadElf(object):
             max_type_len = max(len(entry.entry_type) for rangelist in rangelists for entry in rangelist)
             for rangelist in rangelists:
                 self.dump_v5_rangelist(rangelist, cu_map, max_type_len)
-
 
     def dump_v5_rangelist(self, rangelist, cu_map, max_type_len):
         cu = cu_map[rangelist[0].entry_offset]
@@ -482,7 +495,7 @@ def main(stream=None):
             help=('For compatibility with dwarfdump. Non-verbose mode is not implemented.'))
 
     # Section dumpers
-    sections = ('info', 'loc', 'loclists', 'ranges', 'rnglists')
+    sections = ('info', 'loclists', 'rnglists') # 'loc', 'ranges' not implemented yet
     for section in sections:
         argparser.add_argument('--debug-%s' % section,
             action='store_true', dest=section,
@@ -505,14 +518,14 @@ def main(stream=None):
             readelf = ReadElf(args.file, file, stream or sys.stdout)
             if args.info:
                 readelf.dump_info()
-            if args.loc:
-                readelf.dump_loc()
             if args.loclists:
                 readelf.dump_loclists()
-            if args.ranges:
-                readelf.dump_ranges()
             if args.rnglists:
                 readelf.dump_rnglists()
+            #if args.loc:
+            #    readelf.dump_loc()
+            #if args.ranges:
+            #    readelf.dump_ranges()
         except ELFError as ex:
             sys.stdout.flush()
             sys.stderr.write('ELF error: %s\n' % ex)
