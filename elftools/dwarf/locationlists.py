@@ -110,8 +110,6 @@ class LocationLists(object):
             offset_index = 0
             while stream.tell() < endpos:
                 # We are at the start of the CU block in the loclists now
-                unit_length = struct_parse(self.structs.Dwarf_initial_length(''), stream)
-                offset_past_len = stream.tell()
                 cu_header = struct_parse(self.structs.Dwarf_loclists_CU_header, stream)
                 assert(cu_header.version == 5)
 
@@ -119,7 +117,7 @@ class LocationLists(object):
                 # We don't have a binary for the former yet. On an off chance that we one day might,
                 # let's parse the header anyway.
 
-                cu_end_offset = offset_past_len + unit_length
+                cu_end_offset = cu_header.offset_after_length + cu_header.unit_length
                 # Unit_length includes the header but doesn't include the length
 
                 while stream.tell() < cu_end_offset:
@@ -263,7 +261,7 @@ class LocationParser(object):
     @staticmethod
     def _attribute_has_loc_list(attr, dwarf_version):
         return ((dwarf_version < 4 and
-                 attr.form in ('DW_FORM_data4', 'DW_FORM_data8') and
+                 attr.form in ('DW_FORM_data1', 'DW_FORM_data2', 'DW_FORM_data4', 'DW_FORM_data8') and
                  not attr.name == 'DW_AT_const_value') or
                 attr.form == 'DW_FORM_sec_offset')
 
@@ -275,6 +273,7 @@ class LocationParser(object):
                                'DW_AT_frame_base', 'DW_AT_segment',
                                'DW_AT_static_link', 'DW_AT_use_location',
                                'DW_AT_vtable_elem_location',
+                               'DW_AT_call_value',
                                'DW_AT_GNU_call_site_value',
                                'DW_AT_GNU_call_site_target',
                                'DW_AT_GNU_call_site_data_value'))
