@@ -88,7 +88,10 @@ def run_test_on_file(filename, verbose=False, opt=None):
         # patched from 0x07 0x10 to 00 00.
         # Those represented the second instruction in the first FDE in .eh_frame. This changed the instruction
         # from "DW_CFA_undefined 16" to two NOPs.
-        # GNU readelf had a bug here, had to work around. See PR #411.
+        # GNU readelf 2.38 had a bug here, had to work around:
+        # https://sourceware.org/bugzilla/show_bug.cgi?id=29250
+        # It's been fixed in the binutils' master since, but the latest master will break a lot.
+        # Same patch in  dwarf_test_versions_mix.elf at 0x2061: 07 10 -> 00 00
 
         # stdouts will be a 2-element list: output of readelf and output
         # of scripts/readelf.py

@@ -19,8 +19,8 @@ from .compileunit import CompileUnit
 from .abbrevtable import AbbrevTable
 from .lineprogram import LineProgram
 from .callframe import CallFrameInfo
-from .locationlists import LocationLists
-from .ranges import RangeLists
+from .locationlists import LocationLists, LocationListsPair
+from .ranges import RangeLists, RangeListsPair
 from .aranges import ARanges
 from .namelut import NameLUT
 
@@ -343,26 +343,32 @@ class DWARFInfo(object):
             return None
 
     def location_lists(self):
-        """ Get a LocationLists object representing the .debug_loc section of
+        """ Get a LocationLists object representing the .debug_loc/debug_loclists section of
             the DWARF data, or None if this section doesn't exist.
+
+            If both sections exist, it returns a LocationListsPair.
         """
-        if self.debug_loclists_sec:
-            assert(self.debug_loc_sec is None) # Are there ever files with both kinds of location sections?
+        if self.debug_loclists_sec and self.debug_loc_sec is None:
             return LocationLists(self.debug_loclists_sec.stream, self.structs, 5, self)
-        elif self.debug_loc_sec:
-            return LocationLists(self.debug_loc_sec.stream, self.structs)
+        elif self.debug_loc_sec and self.debug_loclists_sec is None:
+            return LocationLists(self.debug_loc_sec.stream, self.structs, 4, self)
+        elif self.debug_loc_sec and self.debug_loclists_sec:
+            return LocationListsPair(self.debug_loclists_sec.stream, self.debug_loclists_sec.stream, self.structs, self)
         else:
             return None
 
     def range_lists(self):
-        """ Get a RangeLists object representing the .debug_ranges section of
+        """ Get a RangeLists object representing the .debug_ranges/.debug_rnglists section of
             the DWARF data, or None if this section doesn't exist.
+
+            If both sections exist, it returns a RangeListsPair.
         """
-        if self.debug_rnglists_sec:
-            assert(self.debug_ranges_sec is None)
+        if self.debug_rnglists_sec and self.debug_ranges_sec is None:
             return RangeLists(self.debug_rnglists_sec.stream, self.structs, 5, self)
-        elif self.debug_ranges_sec:
+        elif self.debug_ranges_sec and self.debug_rnglists_sec is None:
             return RangeLists(self.debug_ranges_sec.stream, self.structs, 4, self)
+        elif self.debug_ranges_sec and self.debug_rnglists_sec:
+            return RangeListsPair(self.debug_ranges_sec.stream, self.debug_rnglists_sec.stream, self.structs, self)
         else:
             return None
 
