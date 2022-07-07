@@ -58,6 +58,11 @@ class ARanges(object):
     #------ PRIVATE ------#
     def _get_entries(self, need_empty=False):
         """ Populate self.entries with ARangeEntry tuples for each range of addresses
+
+            Terminating null entries of CU blocks are not returned, unless
+            need_empty is set to True and the CU block contains nothing but
+            a null entry. The null entry will have both address and length
+            set to 0. 
         """
         self.stream.seek(0)
         entries = []

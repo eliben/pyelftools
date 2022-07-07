@@ -1312,7 +1312,7 @@ class ReadElf(object):
         aranges_table = self._dwarfinfo.get_aranges()
         if aranges_table == None:
             return
-        # Seems redundent, but we need to get the unsorted set of entries
+        # Seems redundant, but we need to get the unsorted set of entries
         # to match system readelf.
         # Also, sometimes there are blank sections in aranges, but readelf
         # dumps them, so we should too.
