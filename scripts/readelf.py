@@ -62,9 +62,8 @@ from elftools.dwarf.descriptions import (
     )
 from elftools.dwarf.constants import (
     DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
-from elftools.dwarf.locationlists import LocationParser, LocationEntry, LocationViewPair, BaseAddressEntry
-from elftools.dwarf.ranges import RangeEntry # ranges.BaseAddressEntry collides with the one above
-import elftools.dwarf.ranges
+from elftools.dwarf.locationlists import LocationParser, LocationEntry, LocationViewPair, BaseAddressEntry as LocBaseAddressEntry, LocationListsPair
+from elftools.dwarf.ranges import RangeEntry, BaseAddressEntry as RangeBaseAddressEntry, RangeListsPair
 from elftools.dwarf.callframe import CIE, FDE, ZERO
 from elftools.ehabi.ehabiinfo import CorruptEHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry
 from elftools.dwarf.enums import ENUM_DW_UT
@@ -76,6 +75,24 @@ def _get_cu_base(cu):
         return attr['DW_AT_low_pc'].value
     elif 'DW_AT_entry_pc' in attr:
         return attr['DW_AT_entry_pc'].value
+    elif 'DW_AT_ranges' in attr:
+        # Rare case but happens: rangelist in the top DIE.
+        # If there is a base or at least one absolute entry,
+        # this will give us the base IP for the CU.
+        rl = cu.dwarfinfo.range_lists().get_range_list_at_offset(attr['DW_AT_ranges'].value, cu)
+        base_ip = None
+        for r in rl:
+            if isinstance(r, RangeBaseAddressEntry):
+                ip = r.base_address
+            elif isinstance(r, RangeEntry) and r.is_absolute:
+                ip = r.begin_offset
+            else:
+                ip = None
+            if ip is not None and (base_ip is None or ip < base_ip):
+                base_ip = ip
+        if base_ip is None:
+            raise ValueError("Can't find the base IP (low_pc) for a CU")
+        return base_ip
     else:
         raise ValueError("Can't find the base IP (low_pc) for a CU")
 
@@ -1178,14 +1195,13 @@ class ReadElf(object):
                         '0' if state.address == 0 else self._format_hex(state.address),
                         'x' if state.is_stmt and not state.end_sequence else ''))
                 else:
-                    # What's the deal with op_index after address on DWARF 5? Is omitting it
-                    # a function of DWARF version, or ISA, or what?
-                    # Used to be unconditional, even on non-VLIW machines.
+                    # In readelf, on non-VLIW machines there is no op_index postfix after address.
+                    # It used to be unconditional.
                     self._emitline('%-35s  %s  %18s%s %s' % (
                         bytes2str(lineprogram['file_entry'][state.file - 1].name),
                         "%11d" % (state.line,) if not state.end_sequence else '-',
                         '0' if state.address == 0 else self._format_hex(state.address),
-                        '' if ver5 else '[%d]' % (state.op_index,),
+                        '' if lineprogram.header.maximum_operations_per_instruction == 1 else '[%d]' % (state.op_index,),
                         'x' if state.is_stmt and not state.end_sequence else ''))
                 if entry.command == DW_LNS_copy:
                     # Another readelf oddity...
@@ -1296,8 +1312,11 @@ class ReadElf(object):
         aranges_table = self._dwarfinfo.get_aranges()
         if aranges_table == None:
             return
-        # seems redundent, but we need to get the unsorted set of entries to match system readelf
-        unordered_entries = aranges_table._get_entries()
+        # Seems redundant, but we need to get the unsorted set of entries
+        # to match system readelf.
+        # Also, sometimes there are blank sections in aranges, but readelf
+        # dumps them, so we should too.
+        unordered_entries = aranges_table._get_entries(need_empty=True)
 
         if len(unordered_entries) == 0:
             self._emitline()
@@ -1320,9 +1339,10 @@ class ReadElf(object):
                 self._emitline('  Segment Size:             %d' % (entry.segment_size))
                 self._emitline()
                 self._emitline('    Address            Length')
-            self._emitline('    %s %s' % (
-                self._format_hex(entry.begin_addr, fullhex=True, lead0x=False),
-                self._format_hex(entry.length, fullhex=True, lead0x=False)))
+            if entry.begin_addr != 0 or entry.length != 0:
+                self._emitline('    %s %s' % (
+                    self._format_hex(entry.begin_addr, fullhex=True, lead0x=False),
+                    self._format_hex(entry.length, fullhex=True, lead0x=False)))
             prev_offset = entry.info_offset
         self._emitline('    %s %s' % (
                 self._format_hex(0, fullhex=True, lead0x=False),
@@ -1440,15 +1460,21 @@ class ReadElf(object):
         """ Dump the location lists from .debug_loc/.debug_loclists section
         """
         di = self._dwarfinfo
-        loc_lists = di.location_lists()
-        if not loc_lists: # No locations section - readelf outputs nothing
+        loc_lists_sec = di.location_lists()
+        if not loc_lists_sec: # No locations section - readelf outputs nothing
             return
 
-        loc_lists = list(loc_lists.iter_location_lists())
-        if len(loc_lists) == 0:
-            # Present but empty locations section - readelf outputs a message
-            self._emitline("\nSection '%s' has no debugging data." % (di.debug_loclists_sec or di.debug_loc_sec).name)
-            return
+        if isinstance(loc_lists_sec, LocationListsPair):
+            self._dump_debug_locsection(di, loc_lists_sec._loc)
+            self._dump_debug_locsection(di, loc_lists_sec._loclists)
+        else:
+            self._dump_debug_locsection(di, loc_lists_sec)
+        
+    def _dump_debug_locsection(self, di, loc_lists_sec):        
+        """ Dump the location lists from .debug_loc/.debug_loclists section
+        """
+        ver5 = loc_lists_sec.version >= 5
+        section_name = (di.debug_loclists_sec if ver5 else di.debug_loc_sec).name
 
         # To dump a location list, one needs to know the CU.
         # Scroll through DIEs once, list the known location list offsets.
@@ -1467,81 +1493,106 @@ class ReadElf(object):
         addr_width = addr_size * 2 # In hex digits, 8 or 16
         line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)
 
-        self._emitline('Contents of the %s section:\n' % (di.debug_loclists_sec or di.debug_loc_sec).name)
+        loc_lists = list(loc_lists_sec.iter_location_lists())
+        if len(loc_lists) == 0:
+            # Present but empty locations section - readelf outputs a message
+            self._emitline("\nSection '%s' has no debugging data." % (section_name,))
+            return
+
+        self._emitline('Contents of the %s section:\n' % (section_name,))
         self._emitline('    Offset   Begin            End              Expression')
         for loc_list in loc_lists:
-            in_views = False
-            has_views = False
-            base_ip = None
-            loc_entry_count = 0
-            cu = None
-            for entry in loc_list:
-                if isinstance(entry, LocationViewPair):
-                    has_views = in_views = True
-                    # The "v" before address is conditional in binutils, haven't figured out how
-                    self._emitline("    %08x v%015x v%015x location view pair" % (entry.entry_offset, entry.begin, entry.end))
-                else:
-                    if in_views:
-                        in_views = False
-                        self._emitline("")
+            self._dump_loclist(loc_list, line_template, cu_map)
 
-                    # Need the CU for this loclist, but the map is keyed by the offset
-                    # of the first entry in the loclist. Got to skip the views first.
-                    if cu is None:
-                        cu = cu_map.get(entry.entry_offset, False)
-                        if not cu:
-                            raise ValueError("Location list can't be tracked to a CU")
+    def _dump_loclist(self, loc_list, line_template, cu_map):
+        in_views = False
+        has_views = False
+        base_ip = None
+        loc_entry_count = 0
+        cu = None
+        for entry in loc_list:
+            if isinstance(entry, LocationViewPair):
+                has_views = in_views = True
+                # The "v" before address is conditional in binutils, haven't figured out how
+                self._emitline("    %08x v%015x v%015x location view pair" % (entry.entry_offset, entry.begin, entry.end))
+            else:
+                if in_views:
+                    in_views = False
+                    self._emitline("")
 
-                    if isinstance(entry, LocationEntry):
-                        if base_ip is None and not entry.is_absolute:
-                            base_ip = _get_cu_base(cu)
+                # Readelf quirk: indexed loclists don't show the real base IP
+                if cu_map is None:
+                    base_ip = 0
+                elif cu is None:
+                    cu = cu_map.get(entry.entry_offset, False)
+                    if not cu:
+                        raise ValueError("Location list can't be tracked to a CU")
 
-                        begin_offset = (0 if entry.is_absolute else base_ip) + entry.begin_offset
-                        end_offset = (0 if entry.is_absolute else base_ip) + entry.end_offset
-                        expr = describe_DWARF_expr(entry.loc_expr, cu.structs, cu.cu_offset)
-                        if has_views:
-                            view = loc_list[loc_entry_count]
-                            postfix = ' (start == end)' if entry.begin_offset == entry.end_offset and view.begin == view.end else ''
-                            self._emitline('    %08x v%015x v%015x views at %08x for:' %(
-                                entry.entry_offset,
-                                view.begin,
-                                view.end,
-                                view.entry_offset))
-                            self._emitline('             %016x %016x %s%s' %(
-                                begin_offset,
-                                end_offset,
-                                expr,
-                                postfix))
-                            loc_entry_count += 1
-                        else:
-                            postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
-                            self._emitline(line_template % (
-                                entry.entry_offset,
-                                begin_offset,
-                                end_offset,
-                                expr,
-                                postfix))
-                    elif isinstance(entry, BaseAddressEntry):
-                        base_ip = entry.base_address
-                        self._emitline("    %08x %016x (base address)" % (entry.entry_offset, entry.base_address))
+                if isinstance(entry, LocationEntry):
+                    if base_ip is None and not entry.is_absolute:
+                        base_ip = _get_cu_base(cu)
 
-            # Pyelftools doesn't store the terminating entry,
-            # but readelf emits its offset, so this should too.
-            last = loc_list[-1]
-            self._emitline("    %08x <End of list>" % (last.entry_offset + last.entry_length))
+                    begin_offset = (0 if entry.is_absolute else base_ip) + entry.begin_offset
+                    end_offset = (0 if entry.is_absolute else base_ip) + entry.end_offset
+                    expr = describe_DWARF_expr(entry.loc_expr, cu.structs, cu.cu_offset)
+                    if has_views:
+                        view = loc_list[loc_entry_count]
+                        postfix = ' (start == end)' if entry.begin_offset == entry.end_offset and view.begin == view.end else ''
+                        self._emitline('    %08x v%015x v%015x views at %08x for:' %(
+                            entry.entry_offset,
+                            view.begin,
+                            view.end,
+                            view.entry_offset))
+                        self._emitline('             %016x %016x %s%s' %(
+                            begin_offset,
+                            end_offset,
+                            expr,
+                            postfix))
+                        loc_entry_count += 1
+                    else:
+                        postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
+                        self._emitline(line_template % (
+                            entry.entry_offset,
+                            begin_offset,
+                            end_offset,
+                            expr,
+                            postfix))
+                elif isinstance(entry, LocBaseAddressEntry):
+                    base_ip = entry.base_address
+                    self._emitline("    %08x %016x (base address)" % (entry.entry_offset, entry.base_address))
+
+        # Pyelftools doesn't store the terminating entry,
+        # but readelf emits its offset, so this should too.
+        last = loc_list[-1]
+        self._emitline("    %08x <End of list>" % (last.entry_offset + last.entry_length))
 
     def _dump_debug_ranges(self):
         # TODO: GNU readelf format doesn't need entry_length?
         di = self._dwarfinfo
-        range_lists = di.range_lists()
-        if not range_lists: # No ranges section - readelf outputs nothing
+        range_lists_sec = di.range_lists()
+        if not range_lists_sec: # No ranges section - readelf outputs nothing
             return
 
-        ver5 = range_lists.version >= 5
-        range_lists = list(range_lists.iter_range_lists())
+        if isinstance(range_lists_sec, RangeListsPair):
+            self._dump_debug_rangesection(di, range_lists_sec._ranges)
+            self._dump_debug_rangesection(di, range_lists_sec._rnglists)
+        else:
+            self._dump_debug_rangesection(di, range_lists_sec)
+
+    def _dump_debug_rangesection(self, di, range_lists_sec):
+        # In the master branch of binutils, the v5 dump format is way different by now.
+
+        ver5 = range_lists_sec.version >= 5
+        section_name = (di.debug_rnglists_sec if ver5 else di.debug_ranges_sec).name
+        addr_size = di.config.default_address_size # In bytes, 4 or 8
+        addr_width = addr_size * 2 # In hex digits, 8 or 16
+        line_template = "    %%08x %%0%dx %%0%dx %%s" % (addr_width, addr_width)
+        base_template = "    %%08x %%0%dx (base address)" % (addr_width)        
+
+        range_lists = list(range_lists_sec.iter_range_lists())
         if len(range_lists) == 0:
             # Present but empty locations section - readelf outputs a message
-            self._emitline("\nSection '%s' has no debugging data." % (di.debug_rnglists_sec or di.debug_ranges_sec).name)
+            self._emitline("\nSection '%s' has no debugging data." % section_name)
             return
 
         # In order to determine the base address of the range
@@ -1551,36 +1602,34 @@ class ReadElf(object):
             for die in cu.iter_DIEs()
             if 'DW_AT_ranges' in die.attributes}
 
-        addr_size = di.config.default_address_size # In bytes, 4 or 8
-        addr_width = addr_size * 2 # In hex digits, 8 or 16
-        line_template = "    %%08x %%0%dx %%0%dx %%s" % (addr_width, addr_width)
-        base_template = "    %%08x %%0%dx (base address)" % (addr_width)
-
-        self._emitline('Contents of the %s section:\n' % (di.debug_rnglists_sec or di.debug_ranges_sec).name)
+        self._emitline('Contents of the %s section:\n' % section_name)
         self._emitline('    Offset   Begin    End')
 
         for range_list in range_lists:
-            # Weird discrepancy in binutils: for DWARFv5 it outputs entry offset,
-            # for DWARF<=4 list offset.
-            first = range_list[0]
-            base_ip = _get_cu_base(cu_map[first.entry_offset])
-            for entry in range_list:
-                if isinstance(entry, RangeEntry):
-                    postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
-                    self._emitline(line_template % (
-                        entry.entry_offset if ver5 else first.entry_offset,
-                        (0 if entry.is_absolute else base_ip) + entry.begin_offset,
-                        (0 if entry.is_absolute else base_ip) + entry.end_offset,
-                        postfix))
-                elif isinstance(entry, elftools.dwarf.ranges.BaseAddressEntry):
-                    base_ip = entry.base_address
-                    self._emitline(base_template % (
-                        entry.entry_offset if ver5 else first.entry_offset,
-                        entry.base_address))
-                else:
-                    raise NotImplementedError("Unknown object in a range list")
-            last = range_list[-1]
-            self._emitline('    %08x <End of list>' % (last.entry_offset + last.entry_length if ver5 else first.entry_offset))
+            self._dump_rangelist(range_list, cu_map, ver5, line_template, base_template)
+
+    def _dump_rangelist(self, range_list, cu_map, ver5, line_template, base_template):
+        # Weird discrepancy in binutils: for DWARFv5 it outputs entry offset,
+        # for DWARF<=4 list offset.
+        first = range_list[0]
+        base_ip = _get_cu_base(cu_map[first.entry_offset])
+        for entry in range_list:
+            if isinstance(entry, RangeEntry):
+                postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
+                self._emitline(line_template % (
+                    entry.entry_offset if ver5 else first.entry_offset,
+                    (0 if entry.is_absolute else base_ip) + entry.begin_offset,
+                    (0 if entry.is_absolute else base_ip) + entry.end_offset,
+                    postfix))
+            elif isinstance(entry,RangeBaseAddressEntry):
+                base_ip = entry.base_address
+                self._emitline(base_template % (
+                    entry.entry_offset if ver5 else first.entry_offset,
+                    entry.base_address))
+            else:
+                raise NotImplementedError("Unknown object in a range list")
+        last = range_list[-1]
+        self._emitline('    %08x <End of list>' % (last.entry_offset + last.entry_length if ver5 else first.entry_offset))
 
     def _display_arch_specific_arm(self):
         """ Display the ARM architecture-specific info contained in the file.

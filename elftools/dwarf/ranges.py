@@ -31,6 +31,51 @@ entry_translate = {
     'DW_RLE_startx_length': not_implemented
 }
 
+class RangeListsPair(object):
+    """For those binaries that contain both a debug_ranges and a debug_rnglists section,
+    it holds a RangeLists object for both and forwards API calls to the right one based
+    on the CU version.
+    """
+    def __init__(self, streamv4, streamv5, structs, dwarfinfo=None):
+        self._ranges = RangeLists(streamv4, structs, 4, dwarfinfo)
+        self._rnglists = RangeLists(streamv5, structs, 5, dwarfinfo)
+
+    def get_range_list_at_offset(self, offset, cu=None):
+        """Forwards the call to either v4 section or v5 one,
+        depending on DWARF version in the CU.
+        """
+        if cu is None:
+            raise DWARFError("For this binary, \"cu\" needs to be provided")
+        section = self._rnglists if cu.header.version >= 5 else self._ranges
+        return section.get_range_list_at_offset(offset, cu)
+
+    def get_range_list_at_offset_ex(self, offset):
+        """Gets an untranslated v5 rangelist from the v5 section.
+        """
+        return self._rnglists.get_range_list_at_offset_ex(offset)
+
+    def iter_range_lists(self):
+        """Tricky proposition, since the structure of ranges and rnglists
+        is not identical. A realistic readelf implementation needs to be aware of both.
+        """
+        raise DWARFError("Iterating through two sections is not supported")
+
+    def iter_CUs(self):
+        """See RangeLists.iter_CUs()
+        
+        CU structure is only present in DWARFv5 rnglists sections. A well written
+        section dumper should check if one is present.
+        """
+        return self._rnglists.iter_CUs()
+
+    def iter_CU_range_lists_ex(self, cu):
+        """See RangeLists.iter_CU_range_lists_ex()
+
+        CU structure is only present in DWARFv5 rnglists sections. A well written
+        section dumper should check if one is present.
+        """
+        return self._rnglists.iter_CU_range_lists_ex(cu)
+
 class RangeLists(object):
     """ A single range list is a Python list consisting of RangeEntry or
         BaseAddressEntry objects.
@@ -50,7 +95,7 @@ class RangeLists(object):
         self.version = version
         self._dwarfinfo = dwarfinfo
 
-    def get_range_list_at_offset(self, offset):
+    def get_range_list_at_offset(self, offset, cu=None):
         """ Get a range list at the given offset in the section.
         """
         self.stream.seek(offset, os.SEEK_SET)
@@ -63,14 +108,16 @@ class RangeLists(object):
         return struct_parse(self.structs.Dwarf_rnglists_entries, self.stream, offset)
 
     def iter_range_lists(self):
-        """ Yield all range lists found in the section.
+        """ Yield all range lists found in the section according to readelf rules.
+        Scans the DIEs for rangelist offsets, then pulls those.
         """
         # Calling parse until the stream ends is wrong, because ranges can overlap.
         # Need to scan the DIEs to know all range locations
+        ver5 = self.version >= 5
         all_offsets = list(set(die.attributes['DW_AT_ranges'].value
             for cu in self._dwarfinfo.iter_CUs()
             for die in cu.iter_DIEs()
-            if 'DW_AT_ranges' in die.attributes))
+            if 'DW_AT_ranges' in die.attributes and (cu.header.version >= 5) == ver5))
         all_offsets.sort()
 
         for offset in all_offsets:

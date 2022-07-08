@@ -10,11 +10,41 @@ import os
 from collections import namedtuple
 from ..common.exceptions import DWARFError
 from ..common.utils import struct_parse
+from .dwarf_util import _iter_CUs_in_section
 
 LocationExpr = namedtuple('LocationExpr', 'loc_expr')
 LocationEntry = namedtuple('LocationEntry', 'entry_offset entry_length begin_offset end_offset loc_expr is_absolute')
 BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset entry_length base_address')
 LocationViewPair = namedtuple('LocationViewPair', 'entry_offset begin end')
+
+class LocationListsPair(object):
+    """For those binaries that contain both a debug_loc and a debug_loclists section,
+    it holds a LocationLists object for both and forwards API calls to the right one.
+    """
+    def __init__(self, streamv4, streamv5, structs, dwarfinfo=None):
+        self._loc = LocationLists(streamv4, structs, 4, dwarfinfo)
+        self._loclists = LocationLists(streamv5, structs, 5, dwarfinfo)
+
+    def get_location_list_at_offset(self, offset, die=None):
+        """See LocationLists.get_location_list_at_offset().
+        """
+        if die is None:
+            raise DWARFError("For this binary, \"die\" needs to be provided")
+        section = self._loclists if die.cu.version >= 5 else self._loc
+        return section.get_location_list_at_offset(offset, die)
+
+    def iter_location_lists(self):
+        """Tricky proposition, since the structure of loc and loclists
+        is not identical. A realistic readelf implementation needs to be aware of both
+        """
+        raise DWARFError("Iterating through two sections is not supported")
+
+    def iter_CUs(self):
+        """See LocationLists.iter_CUs()
+
+        There are no CUs in DWARFv4 sections.
+        """
+        raise DWARFError("Iterating through two sections is not supported")
 
 class LocationLists(object):
     """ A single location list is a Python list consisting of LocationEntry or
@@ -57,7 +87,7 @@ class LocationLists(object):
         # Location lists are referenced by DIE attributes by offset or by index.
 
         # As of DWARFv5, it may contain, in addition to proper location lists,
-        #location list view pairs, which are referenced by the nonstandard DW_AT_GNU_locviews
+        # location list view pairs, which are referenced by the nonstandard DW_AT_GNU_locviews
         # attribute. A set of locview pairs (which is a couple of ULEB128 values) may preceed
         # a location list; the former is referenced by the DW_AT_GNU_locviews attribute, the
         # latter - by DW_AT_location (in the same DIE). Binutils' readelf dumps those.
@@ -67,20 +97,21 @@ class LocationLists(object):
         #
         # Taking a cue from binutils, we would have to scan this section while looking at
         # what's in DIEs.
+        ver5 = self.version >= 5
         stream = self.stream
         stream.seek(0, os.SEEK_END)
         endpos = stream.tell()
 
         stream.seek(0, os.SEEK_SET)
 
-        if self.version >= 5:
-            # Need to provide support for DW_AT_GNU_locviews. They are interspersed in
-            # the locations section, no way to tell where short of checking all DIEs
-            all_offsets = set() # Set of offsets where either a locview pair set can be found, or a view-less loclist
-            locviews = dict() # Map of locview offset to the respective loclist offset
-            cu_map = dict() # Map of loclist offsets to CUs
-            for cu in self.dwarfinfo.iter_CUs():
-                cu_ver = cu['version']
+        # Need to provide support for DW_AT_GNU_locviews. They are interspersed in
+        # the locations section, no way to tell where short of checking all DIEs
+        all_offsets = set() # Set of offsets where either a locview pair set can be found, or a view-less loclist
+        locviews = dict() # Map of locview offset to the respective loclist offset
+        cu_map = dict() # Map of loclist offsets to CUs
+        for cu in self.dwarfinfo.iter_CUs():
+            cu_ver = cu['version']
+            if (cu_ver >= 5) == ver5:
                 for die in cu.iter_DIEs():
                     # A combination of location and locviews means there is a location list
                     # preceed by several locview pairs
@@ -96,15 +127,16 @@ class LocationLists(object):
                     # Scan other attributes for location lists
                     for key in die.attributes:
                         attr = die.attributes[key]
-                        if (key != 'DW_AT_location' and
+                        if ((key != 'DW_AT_location' or 'DW_AT_GNU_locviews' not in die.attributes) and
                             LocationParser.attribute_has_location(attr, cu_ver) and
                             LocationParser._attribute_has_loc_list(attr, cu_ver)):
                             list_offset = attr.value
                             all_offsets.add(list_offset)
                             cu_map[list_offset] = cu
-            all_offsets = list(all_offsets)
-            all_offsets.sort()
+        all_offsets = list(all_offsets)
+        all_offsets.sort()
 
+        if ver5:
             # Loclists section is organized as an array of CUs, each length prefixed.
             # We don't assume that the CUs go in the same order as the ones in info.
             offset_index = 0
@@ -133,9 +165,22 @@ class LocationLists(object):
                             next_offset = cu_end_offset # And implicitly quit the loop within the CU
                         stream.seek(next_offset, os.SEEK_SET)
         else:
-            # Just call _parse_location_list_from_stream until the stream ends
-            while stream.tell() < endpos:
-                yield self._parse_location_list_from_stream()
+            for offset in all_offsets:
+                list_offset = locviews.get(offset, offset)
+                if cu_map[list_offset].header.version < 5:
+                    stream.seek(offset, os.SEEK_SET)
+                    locview_pairs = self._parse_locview_pairs(locviews)
+                    entries = self._parse_location_list_from_stream()
+                    yield locview_pairs + entries
+
+    def iter_CUs(self):
+        """For DWARF5 returns an array of objects, where each one has an array of offsets
+        """
+        if self.version < 5:
+            raise DWARFError("CU iteration in loclists is not supported with DWARF<5")
+
+        structs = next(self.dwarfinfo.iter_CUs()).structs # Just pick one
+        return _iter_CUs_in_section(self.stream, structs, structs.Dwarf_loclists_CU_header)
 
     #------ PRIVATE ------#
 
