@@ -13,6 +13,7 @@ from ..common.exceptions import DWARFError
 from ..common.py3compat import bytes2str, iteritems
 from ..common.utils import struct_parse, preserve_stream_pos
 from .enums import DW_FORM_raw2name
+from .dwarf_util import _resolve_via_offset_table, _get_base_offset
 
 
 # AttributeValue - describes an attribute value in the DIE:
@@ -261,6 +262,12 @@ class DIE(object):
     def _translate_attr_value(self, form, raw_value):
         """ Translate a raw attr value according to the form
         """
+        # Indirect forms can only be parsed if the top DIE of this CU has already been parsed
+        # and listed in the CU, since the top DIE would have to contain the DW_AT_xxx_base attributes.
+        # This breaks if there is an indirect encoding in the top DIE itself before the
+        # corresponding _base, and it was seen in the wild.
+        # There is a hook in get_top_DIE() to resolve those lazily.
+        translate_indirect = self.cu.has_top_DIE() or self.offset != self.cu.cu_die_offset        
         value = None
         if form == 'DW_FORM_strp':
             with preserve_stream_pos(self.stream):
@@ -284,6 +291,39 @@ class DIE(object):
                 self.cu.structs.Dwarf_dw_form[form], self.stream)
             # Let's hope this doesn't get too deep :-)
             return self._translate_attr_value(form, raw_value)
+        elif form in ('DW_FORM_addrx', 'DW_FORM_addrx1', 'DW_FORM_addrx2', 'DW_FORM_addrx3', 'DW_FORM_addrx4') and translate_indirect:
+            value = self.cu.dwarfinfo.get_addr(self.cu, raw_value)
+        elif form in ('DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4') and translate_indirect:
+            stream = self.dwarfinfo.debug_str_offsets_sec.stream
+            base_offset = _get_base_offset(self.cu, 'DW_AT_str_offsets_base')
+            offset_size = 4 if self.cu.structs.dwarf_format == 32 else 8
+            with preserve_stream_pos(stream):
+                str_offset = struct_parse(self.cu.structs.Dwarf_offset(''), stream, base_offset + raw_value*offset_size)
+            value = self.dwarfinfo.get_string_from_table(str_offset)
+        elif form == 'DW_FORM_loclistx' and translate_indirect:
+            value = _resolve_via_offset_table(self.dwarfinfo.debug_loclists_sec.stream, self.cu, raw_value, 'DW_AT_loclists_base')
+        elif form == 'DW_FORM_rnglistx' and translate_indirect:
+            value = _resolve_via_offset_table(self.dwarfinfo.debug_rnglists_sec.stream, self.cu, raw_value, 'DW_AT_rnglists_base')
         else:
             value = raw_value
         return value
+
+    def _translate_indirect_attributes(self):
+        """ This is a hook to translate the DW_FORM_...x values in the top DIE
+            once the top DIE is parsed to the end. They can't be translated 
+            while the top DIE is being parsed, because they implicitly make a
+            reference to the DW_AT_xxx_base attribute in the same DIE that may
+            not have been parsed yet.
+        """
+        for key in self.attributes:
+            attr = self.attributes[key]
+            if attr.form in ('DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4',
+                'DW_FORM_addrx', 'DW_FORM_addrx1', 'DW_FORM_addrx2', 'DW_FORM_addrx3', 'DW_FORM_addrx4',
+                'DW_FORM_loclistx', 'DW_FORM_rnglistx'):
+                # Can't change value in place, got to replace the whole attribute record
+                self.attributes[key] = AttributeValue(
+                    name=attr.name,
+                    form=attr.form,
+                    value=self._translate_attr_value(attr.form, attr.raw_value),
+                    raw_value=attr.raw_value,
+                    offset=attr.offset)        
