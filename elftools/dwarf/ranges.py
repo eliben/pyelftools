@@ -122,10 +122,11 @@ class RangeLists(object):
         # Need to scan the DIEs to know all range locations
 
         # This maps list offset to CU
+        ver5 = self.version >= 5
         cu_map = {die.attributes['DW_AT_ranges'].value : cu
             for cu in self._dwarfinfo.iter_CUs()
             for die in cu.iter_DIEs()
-            if 'DW_AT_ranges' in die.attributes}
+            if 'DW_AT_ranges' in die.attributes and (cu['version'] >= 5) == ver5}
         all_offsets = list(cu_map.keys())
         all_offsets.sort()
 
