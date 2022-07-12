@@ -19,7 +19,6 @@ BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset base_address')
 # If we ever see a list with a base entry at the end, there will be an error that entry_length is not a field.
 
 def _translate_startx_length(e, cu):
-    # Avoid retrieving the start offset twice - I don't think Python can do inline assignments
     start_offset = cu.dwarfinfo.get_addr(cu, e.start_index)
     return RangeEntry(e.entry_offset, e.entry_length, start_offset, start_offset + e.length, True)
 

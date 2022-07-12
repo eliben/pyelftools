@@ -7,6 +7,9 @@
 #
 # Sources under https://github.com/llvm/llvm-project/tree/main/llvm/tools/llvm-dwarfdump
 #
+# Utterly incompatible with 64-bit DWARF or DWARFv2 targeting a 64-bit machine.
+# Also incompatible with machines that have a selector/segment in the address.
+#
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
@@ -311,7 +314,7 @@ ATTR_DESCRIPTIONS = dict(
     DW_AT_encoding=lambda attr, die: _desc_enum(attr, ENUM_DW_ATE),
     DW_AT_accessibility=lambda attr, die: _desc_enum(attr, ENUM_DW_ACCESS),
     DW_AT_inline=lambda attr, die: _desc_enum(attr, ENUM_DW_INL),
-    DW_AT_calling_convention=lambda attr, duie: _desc_enum(attr, ENUM_DW_CC),
+    DW_AT_calling_convention=lambda attr, die: _desc_enum(attr, ENUM_DW_CC),
     DW_AT_decl_file=_desc_decl_file,
     DW_AT_decl_line=_desc_value,
     DW_AT_ranges=_desc_ranges,
