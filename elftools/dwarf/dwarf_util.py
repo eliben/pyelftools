@@ -10,7 +10,7 @@
 import os
 from ..construct.macros import UBInt32, UBInt64, ULInt32, ULInt64, Array
 from ..common.exceptions import DWARFError
-from ..common.utils import struct_parse
+from ..common.utils import preserve_stream_pos, struct_parse
 
 def _get_base_offset(cu, base_attribute_name):
     """Retrieves a required, base offset-type atribute
@@ -37,7 +37,8 @@ def _resolve_via_offset_table(stream, cu, index, base_attribute_name):
     # the offset table for this CU's block in that section, which in turn is indexed by the index.
 
     offset_size = 4 if cu.structs.dwarf_format == 32 else 8
-    return base_offset + struct_parse(cu.structs.Dwarf_offset(''), stream, base_offset + index*offset_size, True)
+    with preserve_stream_pos(stream):
+        return base_offset + struct_parse(cu.structs.Dwarf_offset(''), stream, base_offset + index*offset_size)
 
 def _iter_CUs_in_section(stream, structs, parser):
     """Iterates through the list of CU sections in loclists or rangelists. Almost identical structures there.

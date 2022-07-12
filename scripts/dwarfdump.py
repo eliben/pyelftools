@@ -2,7 +2,13 @@
 #-------------------------------------------------------------------------------
 # scripts/dwarfdump.py
 #
-# A clone of 'llvm-dwarfdump-11' in Python, based on the pyelftools library
+# A clone of 'llvm-dwarfdump' in Python, based on the pyelftools library
+# Roughly corresponding to v15
+#
+# Sources under https://github.com/llvm/llvm-project/tree/main/llvm/tools/llvm-dwarfdump
+#
+# Utterly incompatible with 64-bit DWARF or DWARFv2 targeting a 64-bit machine.
+# Also incompatible with machines that have a selector/segment in the address.
 #
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
@@ -24,7 +30,7 @@ from elftools.dwarf.ranges import RangeEntry # ranges.BaseAddressEntry collides 
 import elftools.dwarf.ranges
 from elftools.dwarf.enums import *
 from elftools.dwarf.dwarf_expr import DWARFExprParser, DWARFExprOp
-from elftools.dwarf.datatype_cpp import describe_cpp_datatype
+from elftools.dwarf.datatype_cpp import DIE_name, describe_cpp_datatype
 from elftools.dwarf.descriptions import describe_reg_name
 
 # ------------------------------
@@ -89,13 +95,21 @@ def _desc_data(attr, die):
     len = int(attr.form[12:]) * 2
     return "0x%0*x" % (len, attr.value,)
 
+def _desc_strx(attr, die):
+    return "indexed (%08x) string = \"%s\"" % (attr.raw_value, bytes2str(attr.value).replace("\\", "\\\\"))
+
 FORM_DESCRIPTIONS = dict(
     DW_FORM_string=lambda attr, die: "\"%s\"" % (bytes2str(attr.value),),
     DW_FORM_strp=lambda attr, die: " .debug_str[0x%08x] = \"%s\"" % (attr.raw_value, bytes2str(attr.value).replace("\\", "\\\\")),
+    DW_FORM_strx1=_desc_strx,
+    DW_FORM_strx2=_desc_strx,
+    DW_FORM_strx3=_desc_strx,
+    DW_FORM_strx4=_desc_strx,
     DW_FORM_line_strp=lambda attr, die: ".debug_line_str[0x%08x] = \"%s\"" % (attr.raw_value, bytes2str(attr.value).replace("\\", "\\\\")),
     DW_FORM_flag_present=lambda attr, die: "true",
     DW_FORM_flag=lambda attr, die: "0x%02x" % int(attr.value),
     DW_FORM_addr=lambda attr, die: "0x%0*x" % (_addr_str_length(die), attr.value),
+    DW_FORM_addrx=lambda attr, die: "indexed (%08x) address = 0x%0*x" % (attr.raw_value, _addr_str_length(die), attr.value),
     DW_FORM_data1=_desc_data,
     DW_FORM_data2=_desc_data,
     DW_FORM_data4=_desc_data,
@@ -120,28 +134,33 @@ def _cu_comp_dir(cu):
     return bytes2str(cu.get_top_DIE().attributes['DW_AT_comp_dir'].value)
 
 def _desc_decl_file(attr, die):
+    # Filename/dirname arrays are 0 based in DWARFv5
     cu = die.cu
     if not hasattr(cu, "_lineprogram"):
         cu._lineprogram = die.dwarfinfo.line_program_for_CU(cu)
-    val = attr.value
-    if cu._lineprogram and val > 0 and val <= len(cu._lineprogram.header.file_entry):
-        file_entry = cu._lineprogram.header.file_entry[val-1]
+    ver5 = cu._lineprogram.header.version >= 5
+    file_index = attr.value if ver5 else attr.value-1
+    if cu._lineprogram and file_index >= 0 and file_index < len(cu._lineprogram.header.file_entry):
+        file_entry = cu._lineprogram.header.file_entry[file_index]
+        dir_index = file_entry.dir_index if ver5 else file_entry.dir_index - 1
         includes = cu._lineprogram.header.include_directory
-        if file_entry.dir_index > 0:
-            dir = bytes2str(includes[file_entry.dir_index - 1])
+        if dir_index >= 0:
+            dir = bytes2str(includes[dir_index])
             if dir.startswith('.'):
                 dir = posixpath.join(_cu_comp_dir(cu), dir)
         else:
             dir = _cu_comp_dir(cu)
-        return "\"%s\"" % (posixpath.join(dir, bytes2str(file_entry.name)),)
+        file_name = bytes2str(file_entry.name)
     else:
-        return '(N/A)'
+        raise DWARFError("Invalid source filename entry index in a decl_file attribute")
+    return "\"%s\"" % (posixpath.join(dir, file_name),)
+
 
 def _desc_ranges(attr, die):
     di = die.cu.dwarfinfo
     if not hasattr(di, '_rnglists'):
         di._rangelists = di.range_lists()
-    rangelist = di._rangelists.get_range_list_at_offset(attr.value)
+    rangelist = di._rangelists.get_range_list_at_offset(attr.value, die.cu)
     base_ip = _get_cu_base(die.cu)
     lines = []
     addr_str_len = die.cu.header.address_size*2
@@ -156,7 +175,8 @@ def _desc_ranges(attr, die):
             base_ip = entry.base_address
         else:
             raise NotImplementedError("Unknown object in a range list")
-    return ("0x%08x\n" % attr.value) + "\n".join(lines)
+    prefix = "indexed (0x%x) rangelist = " % attr.raw_value if attr.form == 'DW_FORM_rnglistx' else ''
+    return ("%s0x%08x\n" % (prefix, attr.value)) + "\n".join(lines)
 
 def _desc_locations(attr, die):
     cu = die.cu
@@ -184,7 +204,8 @@ def _desc_locations(attr, die):
                 base_ip = entry.base_address
             else:
                 raise NotImplementedError("Unknown object in a location list")
-        return ("0x%08x:\n" % attr.value) + "\n".join(lines)
+        prefix = "indexed (0x%x) loclist = " % attr.raw_value if attr.form == 'DW_FORM_loclistx' else ''
+        return ("%s0x%08x:\n" % (prefix, attr.value)) + "\n".join(lines)
 
 # By default, numeric arguments are spelled in hex with a leading 0x
 def _desc_operationarg(s, cu):
@@ -213,7 +234,7 @@ def _desc_operation(op, op_name, args, cu):
             op_name,
             _desc_reg(op - 0x70, cu),
             args[0])
-    elif op_name in ('DW_OP_fbreg', 'DW_OP_bra', 'DW_OP_skip'): # Argument is decimal with a leading sign
+    elif op_name in ('DW_OP_fbreg', 'DW_OP_bra', 'DW_OP_skip', 'DW_OP_consts', ): # Argument is decimal with a leading sign
         return op_name + ' ' + "%+d" % (args[0])
     elif op_name in ('DW_OP_const1s', 'DW_OP_const2s'): # Argument is decimal without a leading sign
         return op_name + ' ' + "%d" % (args[0])
@@ -293,6 +314,7 @@ ATTR_DESCRIPTIONS = dict(
     DW_AT_encoding=lambda attr, die: _desc_enum(attr, ENUM_DW_ATE),
     DW_AT_accessibility=lambda attr, die: _desc_enum(attr, ENUM_DW_ACCESS),
     DW_AT_inline=lambda attr, die: _desc_enum(attr, ENUM_DW_INL),
+    DW_AT_calling_convention=lambda attr, die: _desc_enum(attr, ENUM_DW_CC),
     DW_AT_decl_file=_desc_decl_file,
     DW_AT_decl_line=_desc_value,
     DW_AT_ranges=_desc_ranges,

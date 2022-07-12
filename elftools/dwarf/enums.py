@@ -518,3 +518,13 @@ ENUM_DW_INL = dict(
     DW_INL_declared_not_inlined = 0x02,
     DW_INL_declared_inlined     = 0x03
 )
+
+ENUM_DW_CC = dict(
+    DW_CC_normal            = 0x01,
+    DW_CC_program           = 0x02,
+    DW_CC_nocall            = 0x03,
+    DW_CC_pass_by_reference = 0x04,
+    DW_CC_pass_by_value     = 0x05,
+    DW_CC_lo_user           = 0x40,
+    DW_CC_hi_user           = 0xff
+)

@@ -16,19 +16,21 @@ from .dwarf_util import _iter_CUs_in_section
 
 RangeEntry = namedtuple('RangeEntry', 'entry_offset entry_length begin_offset end_offset is_absolute')
 BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset base_address')
+# If we ever see a list with a base entry at the end, there will be an error that entry_length is not a field.
 
-def not_implemented(e):
-    raise NotImplementedError("Range list entry %s is not supported yet" % (e.entry_type,))
+def _translate_startx_length(e, cu):
+    start_offset = cu.dwarfinfo.get_addr(cu, e.start_index)
+    return RangeEntry(e.entry_offset, e.entry_length, start_offset, start_offset + e.length, True)
 
 # Maps parsed entry types to RangeEntry/BaseAddressEntry objects
 entry_translate = {
-    'DW_RLE_base_address' : lambda e: BaseAddressEntry(e.entry_offset, e.address),
-    'DW_RLE_offset_pair'  : lambda e: RangeEntry(e.entry_offset, e.entry_length, e.start_offset, e.end_offset, False),
-    'DW_RLE_start_end'    : lambda e: RangeEntry(e.entry_offset, e.entry_length, e.start_address, e.end_address, True),
-    'DW_RLE_start_length' : lambda e: RangeEntry(e.entry_offset, e.entry_length, e.start_address, e.start_address + e.length, True),
-    'DW_RLE_base_addressx': not_implemented,
-    'DW_RLE_startx_endx'  : not_implemented,
-    'DW_RLE_startx_length': not_implemented
+    'DW_RLE_base_address' : lambda e, cu: BaseAddressEntry(e.entry_offset, e.address),
+    'DW_RLE_offset_pair'  : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, e.start_offset, e.end_offset, False),
+    'DW_RLE_start_end'    : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, e.start_address, e.end_address, True),
+    'DW_RLE_start_length' : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, e.start_address, e.start_address + e.length, True),
+    'DW_RLE_base_addressx': lambda e, cu: BaseAddressEntry(e.entry_offset, cu.dwarfinfo.get_addr(cu, e.index)),
+    'DW_RLE_startx_endx'  : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, cu.dwarfinfo.get_addr(cu, e.start_index), cu.dwarfinfo.get_addr(cu, e.end_index), True),
+    'DW_RLE_startx_length': _translate_startx_length
 }
 
 class RangeListsPair(object):
@@ -97,9 +99,13 @@ class RangeLists(object):
 
     def get_range_list_at_offset(self, offset, cu=None):
         """ Get a range list at the given offset in the section.
+
+            The cu argument is necessary if the ranges section is a
+            DWARFv5 debug_rnglists one, and the target rangelist
+            contains indirect encodings
         """
         self.stream.seek(offset, os.SEEK_SET)
-        return self._parse_range_list_from_stream()
+        return self._parse_range_list_from_stream(cu)
 
     def get_range_list_at_offset_ex(self, offset):
         """Get a DWARF v5 range list, addresses and offsets unresolved,
@@ -113,15 +119,18 @@ class RangeLists(object):
         """
         # Calling parse until the stream ends is wrong, because ranges can overlap.
         # Need to scan the DIEs to know all range locations
+
+        # This maps list offset to CU
         ver5 = self.version >= 5
-        all_offsets = list(set(die.attributes['DW_AT_ranges'].value
+        cu_map = {die.attributes['DW_AT_ranges'].value : cu
             for cu in self._dwarfinfo.iter_CUs()
             for die in cu.iter_DIEs()
-            if 'DW_AT_ranges' in die.attributes and (cu.header.version >= 5) == ver5))
+            if 'DW_AT_ranges' in die.attributes and (cu['version'] >= 5) == ver5}
+        all_offsets = list(cu_map.keys())
         all_offsets.sort()
 
         for offset in all_offsets:
-            yield self.get_range_list_at_offset(offset)
+            yield self.get_range_list_at_offset(offset, cu_map[offset])
 
     def iter_CUs(self):
         """For DWARF5 returns an array of objects, where each one has an array of offsets
@@ -143,9 +152,9 @@ class RangeLists(object):
 
     #------ PRIVATE ------#
 
-    def _parse_range_list_from_stream(self):
+    def _parse_range_list_from_stream(self, cu):
         if self.version >= 5:
-            return list(entry_translate[entry.entry_type](entry)
+            return list(entry_translate[entry.entry_type](entry, cu)
                 for entry
                 in struct_parse(self.structs.Dwarf_rnglists_entries, self.stream))
         else:

@@ -83,7 +83,7 @@ def parse_cpp_datatype(var_die):
         dt.tag = "ptr_to_member_type" # Not a function pointer per se
         return dt
     elif t.tag == 'array':
-        t.dimensions = (sub.attributes['DW_AT_upper_bound'].value + 1 if 'DW_AT_upper_bound' in sub.attributes else -1
+        t.dimensions = (_array_subtype_size(sub)
             for sub
             in type_die.iter_children()
             if sub.tag == 'DW_TAG_subrange_type')
@@ -230,3 +230,12 @@ def DIE_is_ptr_to_member_struct(type_die):
 def _strip_type_tag(die):
     """Given a DIE with DW_TAG_foo_type, returns foo"""
     return die.tag[7:-5]
+
+def _array_subtype_size(sub):
+    if 'DW_AT_upper_bound' in sub.attributes:
+        return sub.attributes['DW_AT_upper_bound'].value + 1
+    if 'DW_AT_count' in sub.attributes:
+        return sub.attributes['DW_AT_count'].value
+    else:
+        return -1
+

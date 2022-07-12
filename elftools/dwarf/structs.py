@@ -241,6 +241,10 @@ class DWARFStructs(object):
             DW_FORM_GNU_strp_alt=self.Dwarf_offset(''),
             DW_FORM_GNU_ref_alt=self.Dwarf_offset(''),
             DW_AT_GNU_all_call_sites=self.Dwarf_uleb128(''),
+
+            # New forms in DWARFv5
+            DW_FORM_loclistx=self.Dwarf_uleb128(''),
+            DW_FORM_rnglistx=self.Dwarf_uleb128('')            
         )
 
     def _create_aranges_header(self):
@@ -432,7 +436,8 @@ class DWARFStructs(object):
                     'DW_LLE_start_end'        : Struct('start_end', self.Dwarf_target_addr('start_address'), self.Dwarf_target_addr('end_address'), cld),
                     'DW_LLE_start_length'     : Struct('start_length', self.Dwarf_target_addr('start_address'), self.Dwarf_uleb128('length'), cld),
                 })),
-                StreamOffset('entry_end_offset')))
+                StreamOffset('entry_end_offset'),
+                Value('entry_length', lambda ctx: ctx.entry_end_offset - ctx.entry_offset)))
 
         self.Dwarf_locview_pair = Struct('locview_pair',
             StreamOffset('entry_offset'), self.Dwarf_uleb128('begin'), self.Dwarf_uleb128('end'))

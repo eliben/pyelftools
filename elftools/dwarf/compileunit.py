@@ -97,7 +97,15 @@ class CompileUnit(object):
         self._dielist.insert(0, top)
         self._diemap.insert(0, self.cu_die_offset)
 
+        top._translate_indirect_attributes() # Can't translate indirect attributes until the top DIE has been parsed to the end
+
         return top
+
+    def has_top_DIE(self):
+        """ Returns whether the top DIE in this CU has already been parsed and cached.
+            No parsing on demand!
+        """
+        return len(self._diemap) > 0        
 
     @property
     def size(self):

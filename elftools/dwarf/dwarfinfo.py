@@ -23,6 +23,7 @@ from .locationlists import LocationLists, LocationListsPair
 from .ranges import RangeLists, RangeListsPair
 from .aranges import ARanges
 from .namelut import NameLUT
+from .dwarf_util import _get_base_offset
 
 
 # Describes a debug section
@@ -98,6 +99,7 @@ class DWARFInfo(object):
         self.debug_ranges_sec = debug_ranges_sec
         self.debug_line_sec = debug_line_sec
         self.debug_addr_sec = debug_addr_sec
+        self.debug_str_offsets_sec = debug_str_offsets_sec
         self.debug_line_str_sec = debug_line_str_sec
         self.debug_pubtypes_sec = debug_pubtypes_sec
         self.debug_pubnames_sec = debug_pubnames_sec
@@ -371,6 +373,15 @@ class DWARFInfo(object):
             return RangeListsPair(self.debug_ranges_sec.stream, self.debug_rnglists_sec.stream, self.structs, self)
         else:
             return None
+
+    def get_addr(self, cu, addr_index):
+        """Provided a CU and an index, retrieves an address from the debug_addr section
+        """
+        if not self.debug_addr_sec:
+            raise DWARFError('The file does not contain a debug_addr section for indirect address access')
+        # Selectors are not supported, but no assert on that. TODO?
+        cu_addr_base = _get_base_offset(cu, 'DW_AT_addr_base')
+        return struct_parse(cu.structs.Dwarf_target_addr(''), self.debug_addr_sec.stream, cu_addr_base + addr_index*cu.header.address_size)            
 
     #------ PRIVATE ------#
 

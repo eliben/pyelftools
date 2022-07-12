@@ -17,6 +17,22 @@ LocationEntry = namedtuple('LocationEntry', 'entry_offset entry_length begin_off
 BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset entry_length base_address')
 LocationViewPair = namedtuple('LocationViewPair', 'entry_offset begin end')
 
+def _translate_startx_length(e, cu):
+    start_offset = cu.dwarfinfo.get_addr(cu, e.start_index)
+    return LocationEntry(e.entry_offset, e.entry_length, start_offset, start_offset + e.length, e.loc_expr, True)
+
+# Maps parsed entries to the tuples above; LocationViewPair is mapped elsewhere
+entry_translate = {
+    'DW_LLE_base_address'    : lambda e, cu: BaseAddressEntry(e.entry_offset, e.entry_length, e.address),
+    'DW_LLE_offset_pair'     : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, e.start_offset, e.end_offset, e.loc_expr, False),
+    'DW_LLE_start_length'    : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, e.start_address, e.start_address + e.length, e.loc_expr, True),
+    'DW_LLE_start_end'       : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, e.start_address, e.end_address, e.loc_expr, True),
+    'DW_LLE_default_location': lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, -1, -1, e.loc_expr, True),
+    'DW_LLE_base_addressx'   : lambda e, cu: BaseAddressEntry(e.entry_offset, e.entry_length, cu.dwarfinfo.get_addr(cu, e.index)),
+    'DW_LLE_startx_endx'     : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, cu.dwarfinfo.get_addr(cu, e.start_index), cu.dwarfinfo.get_addr(cu, e.end_index), e.loc_expr, True),
+    'DW_LLE_startx_length'   : _translate_startx_length
+}
+
 class LocationListsPair(object):
     """For those binaries that contain both a debug_loc and a debug_loclists section,
     it holds a LocationLists object for both and forwards API calls to the right one.
@@ -77,7 +93,7 @@ class LocationLists(object):
         location entry encodings that contain references to other sections.
         """
         self.stream.seek(offset, os.SEEK_SET)
-        return self._parse_location_list_from_stream_v5(die) if self.version >= 5 else self._parse_location_list_from_stream()
+        return self._parse_location_list_from_stream_v5(die.cu) if self.version >= 5 else self._parse_location_list_from_stream()
 
     def iter_location_lists(self):
         """ Iterates through location lists and view pairs. Returns lists of
@@ -157,7 +173,7 @@ class LocationLists(object):
                     next_offset = all_offsets[offset_index]
                     if next_offset == stream.tell(): # At an object, either a loc list or a loc view pair
                         locview_pairs = self._parse_locview_pairs(locviews)
-                        entries = self._parse_location_list_from_stream_v5()
+                        entries = self._parse_location_list_from_stream_v5(cu_map[stream.tell()])
                         yield locview_pairs + entries
                         offset_index += 1
                     else: # We are at a gap - skip the gap to the next object or to the next CU
@@ -216,15 +232,17 @@ class LocationLists(object):
                     is_absolute = False))
         return lst
 
-    # Also returns an array with BaseAddressEntry and LocationEntry
-    # Can't possibly support indexed values, since parsing those requires
-    # knowing the DIE context it came from
-    def _parse_location_list_from_stream_v5(self, die = None):
-        # This won't contain the terminator entry
-        lst = [self._translate_entry_v5(entry, die)
+    def _parse_location_list_from_stream_v5(self, cu=None):
+        """ Returns an array with BaseAddressEntry and LocationEntry.
+            No terminator entries.
+
+            The cu argument is necessary if the section is a
+            DWARFv5 debug_loclists one, and the target loclist
+            contains indirect encodings.
+        """
+        return [entry_translate[entry.entry_type](entry, cu)
             for entry
             in struct_parse(self.structs.Dwarf_loclists_entries, self.stream)]
-        return lst
 
     # From V5 style entries to a LocationEntry/BaseAddressEntry
     def _translate_entry_v5(self, entry, die):
@@ -308,7 +326,7 @@ class LocationParser(object):
         return ((dwarf_version < 4 and
                  attr.form in ('DW_FORM_data1', 'DW_FORM_data2', 'DW_FORM_data4', 'DW_FORM_data8') and
                  not attr.name == 'DW_AT_const_value') or
-                attr.form == 'DW_FORM_sec_offset')
+                attr.form in ('DW_FORM_sec_offset', 'DW_FORM_loclistx'))
 
     @staticmethod
     def _attribute_is_loclistptr_class(attr):
