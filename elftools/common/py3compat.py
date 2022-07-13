@@ -18,7 +18,7 @@ if PY3:
 
     # Functions for acting on bytestrings and strings. In Python 2 and 3,
     # strings and bytes are the same and chr/ord can be used to convert between
-    # numeric byte values and their string pepresentations. In Python 3, bytes
+    # numeric byte values and their string representations. In Python 3, bytes
     # and strings are different types and bytes hold numeric values when
     # iterated over.
 
