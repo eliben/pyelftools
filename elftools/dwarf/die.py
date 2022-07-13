@@ -64,7 +64,7 @@ class DIE(object):
 
             abbrev_code:
                 The abbreviation code pointing to an abbreviation entry (note
-                that this is for informational pusposes only - this object
+                that this is for informational purposes only - this object
                 interacts with its abbreviation table transparently).
 
         See also the public methods.
