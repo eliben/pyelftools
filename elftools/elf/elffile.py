@@ -71,6 +71,8 @@ class ELFFile(object):
     """
     def __init__(self, stream):
         self.stream = stream
+        self.stream_len = self.stream.seek(0, io.SEEK_END)
+
         self._identify_file()
         self.structs = ELFStructs(
             little_endian=self.little_endian,
@@ -555,10 +557,15 @@ class ELFFile(object):
     def _get_section_header(self, n):
         """ Find the header of section #n, parse it and return the struct
         """
+
+        stream_pos = self._section_offset(n)
+        if stream_pos > self.stream_len:
+            return None
+
         return struct_parse(
             self.structs.Elf_Shdr,
             self.stream,
-            stream_pos=self._section_offset(n))
+            stream_pos=stream_pos)
 
     def _get_section_name(self, section_header):
         """ Given a section header, find this section's name in the file's
@@ -698,8 +705,13 @@ class ELFFile(object):
             table.
         """
         stringtable_section_num = self.get_shstrndx()
+
+        stringtable_section_header = self._get_section_header(stringtable_section_num)
+        if stringtable_section_header is None:
+            return None
+
         return StringTableSection(
-                header=self._get_section_header(stringtable_section_num),
+                header=stringtable_section_header,
                 name='',
                 elffile=self)
 
