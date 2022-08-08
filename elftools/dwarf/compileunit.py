@@ -165,7 +165,7 @@ class CompileUnit(object):
                 sibling = child.attributes["DW_AT_sibling"]
                 if sibling.form in ('DW_FORM_ref1', 'DW_FORM_ref2',
                                     'DW_FORM_ref4', 'DW_FORM_ref8',
-                                    'DW_FORM_ref'):
+                                    'DW_FORM_ref', 'DW_FORM_ref_udata'):
                     cur_offset = sibling.value + self.cu_offset
                 elif sibling.form == 'DW_FORM_ref_addr':
                     cur_offset = sibling.value
@@ -198,10 +198,14 @@ class CompileUnit(object):
         """ Given a DIE, this yields it with its subtree including null DIEs
             (child list terminators).
         """
+        # If the die is an imported unit, replace it with what it refers to if
+        # we can
+        if die.tag == 'DW_TAG_imported_unit' and self.dwarfinfo.supplementary_dwarfinfo:
+            die = die.get_DIE_from_attribute('DW_AT_import')
         yield die
         if die.has_children:
             for c in die.iter_children():
-                for d in self._iter_DIE_subtree(c):
+                for d in die.cu._iter_DIE_subtree(c):
                     yield d
             yield die._terminator
 

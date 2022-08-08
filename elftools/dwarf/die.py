@@ -108,7 +108,7 @@ class DIE(object):
         """
         attr = self.attributes[name]
         if attr.form in ('DW_FORM_ref1', 'DW_FORM_ref2', 'DW_FORM_ref4',
-                         'DW_FORM_ref8', 'DW_FORM_ref'):
+                         'DW_FORM_ref8', 'DW_FORM_ref', 'DW_FORM_ref_udata'):
             refaddr = self.cu.cu_offset + attr.raw_value
             return self.cu.get_DIE_from_refaddr(refaddr)
         elif attr.form in ('DW_FORM_ref_addr'):
@@ -116,7 +116,10 @@ class DIE(object):
         elif attr.form in ('DW_FORM_ref_sig8'):
             # Implement search type units for matching signature
             raise NotImplementedError('%s (type unit by signature)' % attr.form)
-        elif attr.form in ('DW_FORM_ref_sup4', 'DW_FORM_ref_sup8'):
+        elif attr.form in ('DW_FORM_ref_sup4', 'DW_FORM_ref_sup8', 'DW_FORM_GNU_ref_alt'):
+            if self.dwarfinfo.supplementary_dwarfinfo:
+                return self.dwarfinfo.supplementary_dwarfinfo.get_DIE_from_refaddr(attr.raw_value)
+            # FIXME: how to distinguish supplementary files from dwo ?
             raise NotImplementedError('%s to dwo' % attr.form)
         else:
             raise DWARFError('%s is not a reference class form attribute' % attr)
@@ -275,6 +278,11 @@ class DIE(object):
         elif form == 'DW_FORM_line_strp':
             with preserve_stream_pos(self.stream):
                 value = self.dwarfinfo.get_string_from_linetable(raw_value)
+        elif form in ('DW_FORM_GNU_strp_alt', 'DW_FORM_strp_sup'):
+            if self.dwarfinfo.supplementary_dwarfinfo:
+                return self.dwarfinfo.supplementary_dwarfinfo.get_string_from_table(raw_value)
+            else:
+                value = raw_value
         elif form == 'DW_FORM_flag':
             value = not raw_value == 0
         elif form == 'DW_FORM_flag_present':

@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import io
+import os
 import struct
 import zlib
 
@@ -46,6 +47,12 @@ class ELFFile(object):
     """ Creation: the constructor accepts a stream (file-like object) with the
         contents of an ELF file.
 
+        Optionally, a stream_loader function can be passed as the second
+        argument. This stream_loader function takes a relative file path to
+        load a supplementary object file, and returns a stream suitable for
+        creating a new ELFFile. Currently, the only such relative file path is
+        obtained from the supplementary object files.
+
         Accessible attributes:
 
             stream:
@@ -69,7 +76,7 @@ class ELFFile(object):
             e_ident_raw:
                 the raw e_ident field of the header
     """
-    def __init__(self, stream):
+    def __init__(self, stream, stream_loader=None):
         self.stream = stream
         self._identify_file()
         self.structs = ELFStructs(
@@ -88,6 +95,23 @@ class ELFFile(object):
         self._section_header_stringtable = \
             self._get_section_header_stringtable()
         self._section_name_map = None
+        self.stream_loader = stream_loader
+
+    @classmethod
+    def load_from_path(cls, path):
+        """Takes a path to a file on the local filesystem, and returns an
+        ELFFile from it, setting up a correct stream_loader relative to the
+        original file.
+        """
+        base_directory = os.path.dirname(path)
+        def loader(elf_path):
+            # FIXME: use actual path instead of str/bytes
+            if not os.path.isabs(elf_path):
+                elf_path = os.path.join(base_directory,
+                                        elf_path)
+            return open(elf_path, 'rb')
+        stream = open(path, 'rb')
+        return ELFFile(stream, loader)
 
     def num_sections(self):
         """ Number of sections in the file
@@ -203,12 +227,15 @@ class ELFFile(object):
             self.get_section_by_name('.zdebug_info') or
             self.get_section_by_name('.eh_frame'))
 
-    def get_dwarf_info(self, relocate_dwarf_sections=True):
+    def get_dwarf_info(self, relocate_dwarf_sections=True, follow_links=True):
         """ Return a DWARFInfo object representing the debugging information in
             this file.
 
             If relocate_dwarf_sections is True, relocations for DWARF sections
             are looked up and applied.
+
+            If follow_links is True, we will try to load the supplementary
+            object file (if any), and use it to resolve references and imports.
         """
         # Expect that has_dwarf_info was called, so at least .debug_info is
         # present.
@@ -219,8 +246,8 @@ class ELFFile(object):
                          '.debug_loc', '.debug_ranges', '.debug_pubtypes',
                          '.debug_pubnames', '.debug_addr',
                          '.debug_str_offsets', '.debug_line_str',
-                         '.debug_loclists', '.debug_rnglists')
-
+                         '.debug_loclists', '.debug_rnglists',
+                         '.debug_sup', '.gnu_debugaltlink')
 
         compressed = bool(self.get_section_by_name('.zdebug_info'))
         if compressed:
@@ -234,7 +261,7 @@ class ELFFile(object):
          debug_loc_sec_name, debug_ranges_sec_name, debug_pubtypes_name,
          debug_pubnames_name, debug_addr_name, debug_str_offsets_name,
          debug_line_str_name, debug_loclists_sec_name, debug_rnglists_sec_name,
-         eh_frame_sec_name) = section_names
+         debug_sup_name, gnu_debugaltlink_name, eh_frame_sec_name) = section_names
 
         debug_sections = {}
         for secname in section_names:
@@ -249,7 +276,11 @@ class ELFFile(object):
                     dwarf_section = self._decompress_dwarf_section(dwarf_section)
                 debug_sections[secname] = dwarf_section
 
-        return DWARFInfo(
+        # Lookup if we have any of the .gnu_debugaltlink (GNU proprietary
+        # implementation) or .debug_sup sections, referencing a supplementary
+        # DWARF file
+
+        dwarfinfo = DWARFInfo(
                 config=DwarfConfig(
                     little_endian=self.little_endian,
                     default_address_size=self.elfclass // 8,
@@ -269,8 +300,29 @@ class ELFFile(object):
                 debug_str_offsets_sec=debug_sections[debug_str_offsets_name],
                 debug_line_str_sec=debug_sections[debug_line_str_name],
                 debug_loclists_sec=debug_sections[debug_loclists_sec_name],
-                debug_rnglists_sec=debug_sections[debug_rnglists_sec_name]
+                debug_rnglists_sec=debug_sections[debug_rnglists_sec_name],
+                debug_sup_sec=debug_sections[debug_sup_name],
+                gnu_debugaltlink_sec=debug_sections[gnu_debugaltlink_name]
                 )
+        if follow_links:
+            dwarfinfo.supplementary_dwarfinfo = self.get_supplementary_dwarfinfo(dwarfinfo)
+        return dwarfinfo
+
+
+    def get_supplementary_dwarfinfo(self, dwarfinfo):
+        """
+        Read supplementary dwarfinfo, from either the standared .debug_sup
+        section or the GNU proprietary .gnu_debugaltlink.
+        """
+        supfilepath = dwarfinfo.parse_debugsupinfo()
+        if supfilepath is not None and self.stream_loader is not None:
+            stream = self.stream_loader(supfilepath)
+            supelffile = ELFFile(stream)
+            dwarf_info = supelffile.get_dwarf_info()
+            stream.close()
+            return dwarf_info
+        return None
+
 
     def has_ehabi_info(self):
         """ Check whether this file appears to have arm exception handler index table.
@@ -765,3 +817,12 @@ class ELFFile(object):
                 )
 
         return section._replace(stream=uncompressed_stream, size=size)
+
+    def close(self):
+        self.stream.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()

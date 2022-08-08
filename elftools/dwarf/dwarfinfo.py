@@ -79,7 +79,10 @@ class DWARFInfo(object):
             debug_str_offsets_sec,
             debug_line_str_sec,
             debug_loclists_sec,
-            debug_rnglists_sec): # Not parsed for now
+            debug_rnglists_sec,
+            debug_sup_sec,
+            gnu_debugaltlink_sec
+            ):
         """ config:
                 A DwarfConfig object
 
@@ -105,6 +108,13 @@ class DWARFInfo(object):
         self.debug_pubnames_sec = debug_pubnames_sec
         self.debug_loclists_sec = debug_loclists_sec
         self.debug_rnglists_sec = debug_rnglists_sec
+        self.debug_sup_sec = debug_sup_sec
+        self.gnu_debugaltlink_sec = gnu_debugaltlink_sec
+
+        # Sets the supplementary_dwarfinfo to None. Client code can set this
+        # to something else, typically a DWARFInfo file read from an ELFFile
+        # which path is stored in the debug_sup_sec or gnu_debugaltlink_sec.
+        self.supplementary_dwarfinfo = None
 
         # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
@@ -507,6 +517,11 @@ class DWARFInfo(object):
                         replace_value(data, field.content_type, self.get_string_from_linetable)
                     elif field.form == 'DW_FORM_strp':
                         replace_value(data, field.content_type, self.get_string_from_table)
+                    elif field.form in ('DW_FORM_strp_sup', 'DW_FORM_GNU_strp_alt'):
+                        if self.supplementary_dwarfinfo:
+                            replace_value(data, field.content_type, self.supplementary_dwarfinfo.get_string_fromtable)
+                        else:
+                            replace_value(data, field.content_type, lambda x: str(x))
                     elif field.form in ('DW_FORM_strp_sup', 'DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4'):
                         raise NotImplementedError()
 
@@ -535,4 +550,19 @@ class DWARFInfo(object):
             structs=structs,
             program_start_offset=self.debug_line_sec.stream.tell(),
             program_end_offset=end_offset)
+
+    def parse_debugsupinfo(self):
+        """
+        Extract a filename from either .debug_sup or .gnu_debualtlink sections.
+        """
+        if self.debug_sup_sec is not None:
+            self.debug_sup_sec.stream.seek(0)
+            suplink = self.structs.Dwarf_debugsup.parse_stream(self.debug_sup_sec.stream)
+            if suplink.is_supplementary == 0:
+                return suplink.sup_filename
+        if self.gnu_debugaltlink_sec is not None:
+            self.gnu_debugaltlink_sec.stream.seek(0)
+            suplink = self.structs.Dwarf_debugaltlink.parse_stream(self.gnu_debugaltlink_sec.stream)
+            return suplink.sup_filename
+        return None
 

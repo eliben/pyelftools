@@ -13,6 +13,7 @@ PY3 = sys.version_info[0] == 3
 if PY3:
     import io
     from pathlib import Path
+
     StringIO = io.StringIO
     BytesIO = io.BytesIO
 
