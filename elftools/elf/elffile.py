@@ -23,7 +23,7 @@ except ImportError:
         PAGESIZE = 4096
 
 from ..common.py3compat import BytesIO
-from ..common.exceptions import ELFError
+from ..common.exceptions import ELFError, ELFParseError
 from ..common.utils import struct_parse, elf_assert
 from .structs import ELFStructs
 from .sections import (
@@ -571,6 +571,9 @@ class ELFFile(object):
         """ Given a section header, find this section's name in the file's
             string table
         """
+        if self._section_header_stringtable is None:
+            raise ELFParseError("String Table not found")
+            
         name_offset = section_header['sh_name']
         return self._section_header_stringtable.get_string(name_offset)
 
