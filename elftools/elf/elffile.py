@@ -71,7 +71,8 @@ class ELFFile(object):
     """
     def __init__(self, stream):
         self.stream = stream
-        self.stream_len = self.stream.seek(0, io.SEEK_END)
+        self.stream.seek(0, io.SEEK_END)
+        self.stream_len = self.stream.tell()
 
         self._identify_file()
         self.structs = ELFStructs(
