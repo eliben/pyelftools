@@ -1,6 +1,16 @@
 Changelog
 =========
 
++ Version 0.29 (2022.08.09)
+
+  - Lots of improvements to DWARFv5 support (#400, #411, #418, #419, #429 and
+    additional PRs)
+  - Support for compressed relocation sections (#395)
+  - Support for supplementary object files - debug fission (#426)
+  - Improved support for corrupted ELF headers (#434)
+  - Readelf used for testing upgraded to 2.38 (#420)
+  - Add auto-testing vs. llvm-dwarfdump (#428)
+
 + Version 0.28 (2022.02.03)
 
   - Added a method for returning the index of a section by name (#331)
