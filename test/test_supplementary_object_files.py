@@ -23,7 +23,7 @@ class TestDWARFSupplementaryObjects(unittest.TestCase):
 
     def test_gnudebugaltlink_no_followlinks(self):
         path = os.path.join('test', 'testfiles_for_unittests',
-                            'test_gnudebugaltlink1')
+                            'test_gnudebugaltlink1.debug')
         with open(path, 'rb') as f:
             elffile = ELFFile(f)
             # Check that we don't have a supplementary_dwarfinfo
@@ -44,7 +44,7 @@ class TestDWARFSupplementaryObjects(unittest.TestCase):
 
     def test_gnudebugaltlink_followlinks(self):
         base_dir = os.path.join(b'test', b'testfiles_for_unittests')
-        path = os.path.join(base_dir, b'test_gnudebugaltlink1')
+        path = os.path.join(base_dir, b'test_gnudebugaltlink1.debug')
         with ELFFile.load_from_path(path) as elffile:
             # Check that we do have a supplementary_dwarfinfo
             dwarfinfo = elffile.get_dwarf_info()
@@ -63,7 +63,7 @@ class TestDWARFSupplementaryObjects(unittest.TestCase):
 
     def test_debugsup_no_followlinks(self):
         path = os.path.join('test', 'testfiles_for_unittests',
-                            'test_debugsup1')
+                            'test_debugsup1.debug')
         with ELFFile.load_from_path(path) as elffile:
             # Check that we don't have a supplementary_dwarfinfo
             dwarfinfo = elffile.get_dwarf_info(follow_links=False)
@@ -83,7 +83,7 @@ class TestDWARFSupplementaryObjects(unittest.TestCase):
 
     def test_debugsup_followlinks(self):
         base_dir = os.path.join(b'test', b'testfiles_for_unittests')
-        path = os.path.join(base_dir, b'test_debugsup1')
+        path = os.path.join(base_dir, b'test_debugsup1.debug')
         with ELFFile.load_from_path(path) as elffile:
             # Check that we do have a supplementary_dwarfinfo
             dwarfinfo = elffile.get_dwarf_info()
