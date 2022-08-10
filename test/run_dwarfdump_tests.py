@@ -30,7 +30,7 @@ testlog.addHandler(logging.StreamHandler(sys.stdout))
 
 # Following the readelf example, we ship our own.
 if platform.system() == "Darwin": # MacOS
-   raise NotImplementedError("Not supported on MacOS")
+    raise NotImplementedError("Not supported on MacOS")
 elif platform.system() == "Windows":
     raise NotImplementedError("Not supported on Windows")
 else:
