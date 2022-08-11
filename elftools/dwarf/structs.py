@@ -76,8 +76,10 @@ class DWARFStructs(object):
 
         See also the documentation of public methods.
     """
-    def __init__(self,
-                 little_endian, dwarf_format, address_size, dwarf_version=2):
+
+    __StructsCache = {}
+
+    def __new__(cls, little_endian, dwarf_format, address_size, dwarf_version=2):
         """ dwarf_version:
                 Numeric DWARF version
 
@@ -91,6 +93,12 @@ class DWARFStructs(object):
                 Target machine address size, in bytes (4 or 8). (See spec
                 section 7.5.1)
         """
+        key = (little_endian, dwarf_format, address_size, dwarf_version)
+
+        if key in cls.__StructsCache:
+            return cls.__StructsCache[key]
+
+        self = super().__new__(cls)
         assert dwarf_format == 32 or dwarf_format == 64
         assert address_size == 8 or address_size == 4, str(address_size)
         self.little_endian = little_endian
@@ -98,6 +106,8 @@ class DWARFStructs(object):
         self.address_size = address_size
         self.dwarf_version = dwarf_version
         self._create_structs()
+        cls.__StructsCache[key] = self
+        return self
 
     def initial_length_field_size(self):
         """ Size of an initial length field.
