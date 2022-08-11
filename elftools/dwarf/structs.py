@@ -225,6 +225,7 @@ class DWARFStructs(object):
             DW_FORM_data2=self.Dwarf_uint16(''),
             DW_FORM_data4=self.Dwarf_uint32(''),
             DW_FORM_data8=self.Dwarf_uint64(''),
+            DW_FORM_data16=Array(16, self.Dwarf_uint8('')), # Used for hashes and such, not for integers
             DW_FORM_sdata=self.Dwarf_sleb128(''),
             DW_FORM_udata=self.Dwarf_uleb128(''),
 
