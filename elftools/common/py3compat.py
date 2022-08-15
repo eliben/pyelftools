@@ -8,6 +8,10 @@
 #-------------------------------------------------------------------------------
 import sys
 PY3 = sys.version_info[0] == 3
+assert PY3, '''\
+Python 2 is no longer supported by pyelftools; if you need to use Python 2,
+please download an older pyelftools version (such as version 0.29).
+'''
 
 
 if PY3:

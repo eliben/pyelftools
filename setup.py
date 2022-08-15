@@ -31,7 +31,6 @@ setup(
     url='https://github.com/eliben/pyelftools',
     platforms='Cross Platform',
     classifiers = [
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
         ],
 
