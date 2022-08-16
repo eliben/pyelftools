@@ -78,21 +78,3 @@ else:
 
     def path_to_posix(s):
         return posixpath.join(*os.path.split(s))
-
-
-def iterkeys(d):
-    """Return an iterator over the keys of a dictionary."""
-    return getattr(d, 'keys' if PY3 else 'iterkeys')()
-
-def itervalues(d):
-    """Return an iterator over the values of a dictionary."""
-    return getattr(d, 'values' if PY3 else 'itervalues')()
-
-def iteritems(d):
-    """Return an iterator over the items of a dictionary."""
-    return getattr(d, 'items' if PY3 else 'iteritems')()
-
-try:
-    from collections.abc import Mapping  # python >= 3.3
-except ImportError:
-    from collections import Mapping  # python < 3.3

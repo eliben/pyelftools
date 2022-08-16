@@ -6,7 +6,7 @@
 #-------------------------------------------------------------------------------
 import unittest
 
-from elftools.common.py3compat import BytesIO, iteritems
+from elftools.common.py3compat import BytesIO
 from elftools.dwarf.lineprogram import LineProgram, LineState, LineProgramEntry
 from elftools.dwarf.structs import DWARFStructs
 from elftools.dwarf.constants import *
@@ -40,7 +40,7 @@ class TestLineProgram(unittest.TestCase):
         """ Assert that the state attributes specified in kwargs have the given
             values (the rest are default).
         """
-        for k, v in iteritems(kwargs):
+        for k, v in kwargs.items():
             self.assertEqual(getattr(state, k), v)
 
     def test_spec_sample_59(self):

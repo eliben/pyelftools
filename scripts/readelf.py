@@ -27,7 +27,7 @@ sys.path.insert(0, '.')
 from elftools import __version__
 from elftools.common.exceptions import ELFError
 from elftools.common.py3compat import (
-        ifilter, byte2int, bytes2str, itervalues, str2bytes, iterbytes)
+        ifilter, byte2int, bytes2str, str2bytes, iterbytes)
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG
@@ -1120,7 +1120,7 @@ class ReadElf(object):
                     die_depth -= 1
                     continue
 
-                for attr in itervalues(die.attributes):
+                for attr in die.attributes.values():
                     name = attr.name
                     # Unknown attribute values are passed-through as integers
                     if isinstance(name, int):

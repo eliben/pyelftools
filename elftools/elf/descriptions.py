@@ -13,7 +13,7 @@ from .enums import (
     ENUM_RELOC_TYPE_MIPS, ENUM_ATTR_TAG_ARM, ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
-from ..common.py3compat import bytes2hex, iteritems
+from ..common.py3compat import bytes2hex
 
 
 def describe_ei_class(x):
@@ -660,7 +660,7 @@ def _reverse_dict(d, low_priority=()):
     not override any other entries of the same value.
     """
     out = {}
-    for k, v in iteritems(d):
+    for k, v in d.items():
         if v in out and k in low_priority:
             continue
         out[v] = k

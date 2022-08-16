@@ -26,7 +26,6 @@ import sys
 # examples/ dir of the source distribution.
 sys.path[0:0] = ['.', '..']
 
-from elftools.common.py3compat import itervalues
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf.descriptions import (
     describe_DWARF_expr, set_global_machine_arch)
@@ -72,7 +71,7 @@ def process_file(filename):
                 # Go over all attributes of the DIE. Each attribute is an
                 # AttributeValue object (from elftools.dwarf.die), which we
                 # can examine.
-                for attr in itervalues(DIE.attributes):
+                for attr in DIE.attributes.values():
                     # Check if this attribute contains location information
                     if loc_parser.attribute_has_location(attr, CU['version']):
                         print('   DIE %s. attr %s.' % (DIE.tag, attr.name))

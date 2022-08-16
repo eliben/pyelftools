@@ -9,8 +9,8 @@
 import os
 import collections
 from collections import OrderedDict
+from collections.abc import Mapping
 from ..common.utils import struct_parse
-from ..common.py3compat import Mapping
 from bisect import bisect_right
 import math
 from ..construct import CString, Struct, If

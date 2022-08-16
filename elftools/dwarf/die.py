@@ -10,7 +10,7 @@ from collections import namedtuple, OrderedDict
 import os
 
 from ..common.exceptions import DWARFError
-from ..common.py3compat import bytes2str, iteritems
+from ..common.py3compat import bytes2str
 from ..common.utils import struct_parse, preserve_stream_pos
 from .enums import DW_FORM_raw2name
 from .dwarf_util import _resolve_via_offset_table, _get_base_offset
@@ -210,7 +210,7 @@ class DIE(object):
     def __repr__(self):
         s = 'DIE %s, size=%s, has_children=%s\n' % (
             self.tag, self.size, self.has_children)
-        for attrname, attrval in iteritems(self.attributes):
+        for attrname, attrval in self.attributes.items():
             s += '    |%-18s:  %s\n' % (attrname, attrval)
         return s
 

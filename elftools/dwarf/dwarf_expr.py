@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 from collections import namedtuple
 
-from ..common.py3compat import BytesIO, iteritems
+from ..common.py3compat import BytesIO
 from ..common.utils import struct_parse, bytelist2string, read_blob
 
 
@@ -109,7 +109,7 @@ _generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_reg', 0, 31, 0x50)
 _generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_breg', 0, 31, 0x70)
 
 # opcode -> name mapping
-DW_OP_opcode2name = dict((v, k) for k, v in iteritems(DW_OP_name2opcode))
+DW_OP_opcode2name = dict((v, k) for k, v in DW_OP_name2opcode.items())
 
 
 # Each parsed DWARF expression is returned as this type with its numeric opcode,
