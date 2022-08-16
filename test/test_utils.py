@@ -8,14 +8,13 @@ import unittest
 from io import BytesIO
 from random import randint
 
-from elftools.common.py3compat import int2byte
 from elftools.common.utils import (parse_cstring_from_stream, merge_dicts,
         preserve_stream_pos)
 
 
 class Test_parse_cstring_from_stream(unittest.TestCase):
     def _make_random_bytes(self, n):
-        return b''.join(int2byte(randint(32, 127)) for i in range(n))
+        return b''.join(bytes((randint(32, 127),)) for i in range(n))
 
     def test_small1(self):
         sio = BytesIO(b'abcdefgh\x0012345')

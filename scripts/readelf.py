@@ -27,7 +27,7 @@ sys.path.insert(0, '.')
 from elftools import __version__
 from elftools.common.exceptions import ELFError
 from elftools.common.py3compat import (
-        byte2int, bytes2str, str2bytes)
+         bytes2str, str2bytes)
 from elftools.common.utils import iterbytes
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
@@ -122,7 +122,7 @@ class ReadElf(object):
         """
         self._emitline('ELF Header:')
         self._emit('  Magic:   ')
-        self._emit(' '.join('%2.2x' % byte2int(b)
+        self._emit(' '.join('%2.2x' % b
                    for b in self.elffile.e_ident_raw))
         self._emitline('      ')
         header = self.elffile.header
@@ -801,7 +801,7 @@ class ReadElf(object):
             self._emit('  %s ' % self._format_hex(addr, fieldsize=8))
             for i in range(16):
                 if i < linebytes:
-                    self._emit('%2.2x' % byte2int(data[dataptr + i]))
+                    self._emit('%2.2x' % data[dataptr + i])
                 else:
                     self._emit('  ')
                 if i % 4 == 3:
@@ -809,7 +809,7 @@ class ReadElf(object):
 
             for i in range(linebytes):
                 c = data[dataptr + i : dataptr + i + 1]
-                if byte2int(c[0]) >= 32 and byte2int(c[0]) < 0x7f:
+                if c[0] >= 32 and c[0] < 0x7f:
                     self._emit(bytes2str(c))
                 else:
                     self._emit(bytes2str(b'.'))
@@ -844,14 +844,14 @@ class ReadElf(object):
 
         while dataptr < len(data):
             while ( dataptr < len(data) and
-                    not (32 <= byte2int(data[dataptr]) <= 127)):
+                    not (32 <= data[dataptr] <= 127)):
                 dataptr += 1
 
             if dataptr >= len(data):
                 break
 
             endptr = dataptr
-            while endptr < len(data) and byte2int(data[endptr]) != 0:
+            while endptr < len(data) and data[endptr] != 0:
                 endptr += 1
 
             found = True

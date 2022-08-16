@@ -8,7 +8,6 @@
 #-------------------------------------------------------------------------------
 from contextlib import contextmanager
 from .exceptions import ELFParseError, ELFError, DWARFError
-from .py3compat import int2byte
 from ..construct import ConstructError, ULInt8
 import os
 
@@ -25,7 +24,7 @@ def bytelist2string(bytelist):
     """ Convert a list of byte values (e.g. [0x10 0x20 0x00]) to a bytes object
         (e.g. b'\x10\x20\x00').
     """
-    return b''.join(int2byte(b) for b in bytelist)
+    return b''.join(bytes((b,)) for b in bytelist)
 
 
 def struct_parse(struct, stream, stream_pos=None):

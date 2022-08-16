@@ -24,13 +24,3 @@ if PY3:
 
     def bytes2str(b): return b.decode('latin-1')
     def str2bytes(s): return s.encode('latin-1')
-    def int2byte(i): return bytes((i,))
-    def byte2int(b): return b
-
-else:
-    def bytes2str(b): return b
-    def str2bytes(s): return s
-    int2byte = chr
-    byte2int = ord
-    def iterbytes(b):
-        return iter(b)
