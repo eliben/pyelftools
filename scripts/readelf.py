@@ -26,9 +26,7 @@ sys.path.insert(0, '.')
 
 from elftools import __version__
 from elftools.common.exceptions import ELFError
-from elftools.common.py3compat import (
-         bytes2str, str2bytes)
-from elftools.common.utils import iterbytes
+from elftools.common.utils import bytes2str, iterbytes
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.enums import ENUM_D_TAG

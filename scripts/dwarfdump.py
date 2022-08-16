@@ -23,7 +23,7 @@ sys.path.insert(0, '.')
 
 from elftools import __version__
 from elftools.common.exceptions import DWARFError, ELFError
-from elftools.common.py3compat import bytes2str
+from elftools.common.utils import bytes2str
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf.locationlists import LocationParser, LocationEntry, LocationExpr, LocationViewPair, BaseAddressEntry as LocBaseAddressEntry
 from elftools.dwarf.ranges import RangeEntry # ranges.BaseAddressEntry collides with the one above

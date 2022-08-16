@@ -7,7 +7,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.py3compat import bytes2str
+from ..common.utils import bytes2str
 
 cpp_symbols = dict(
     pointer   = "*",
@@ -20,7 +20,7 @@ def describe_cpp_datatype(var_die):
 def parse_cpp_datatype(var_die):
     """Given a DIE that describes a variable, a parameter, or a member
     with DW_AT_type in it, tries to return the C++ datatype as a string
-    
+
     Returns a TypeDesc.
 
     Does not follow typedefs, doesn't  resolve array element types
@@ -48,7 +48,7 @@ def parse_cpp_datatype(var_die):
     # From this point on, type_die doesn't change
     t.tag = _strip_type_tag(type_die)
     t.modifiers = tuple(mods)
-    
+
     if t.tag in ('ptr_to_member', 'subroutine'):
         if t.tag == 'ptr_to_member':
             ptr_prefix = DIE_name(type_die.get_DIE_from_attribute('DW_AT_containing_type')) + "::"
@@ -103,8 +103,8 @@ def parse_cpp_datatype(var_die):
         # If unnamed scope, fall back to scope type - like "structure "
         parent = parent.get_parent()
     t.scopes = tuple(scopes)
-    
-    return t  
+
+    return t
 
 #--------------------------------------------------
 
@@ -133,7 +133,7 @@ class TypeDesc(object):
         self.name = None
         self.modifiers = () # Reads left to right
         self.scopes = () # Reads left to right
-        self.tag = None 
+        self.tag = None
         self.dimensions = None
 
     def __str__(self):
@@ -191,7 +191,7 @@ def get_class_spec_if_member(func_spec, the_func):
         class_spec = ClassDesc()
         class_spec.scopes = this_type.scopes + (this_type.name,)
         class_spec.const_member = any(("const", "pointer") == this_type.modifiers[i:i+2]
-            for i in range(len(this_type.modifiers))) # const -> pointer -> const for this arg of const 
+            for i in range(len(this_type.modifiers))) # const -> pointer -> const for this arg of const
         return class_spec
 
     # Check the parent element chain - could be a class
@@ -225,7 +225,7 @@ def DIE_is_ptr_to_member_struct(type_die):
     if type_die.tag == 'DW_TAG_structure_type':
         members = tuple(die for die in type_die.iter_children() if die.tag == "DW_TAG_member")
         return len(members) == 2 and safe_DIE_name(members[0]) == "__pfn" and safe_DIE_name(members[1]) == "__delta"
-    return False                        
+    return False
 
 def _strip_type_tag(die):
     """Given a DIE with DW_TAG_foo_type, returns foo"""

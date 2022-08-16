@@ -10,8 +10,7 @@ from collections import namedtuple, OrderedDict
 import os
 
 from ..common.exceptions import DWARFError
-from ..common.py3compat import bytes2str
-from ..common.utils import struct_parse, preserve_stream_pos
+from ..common.utils import bytes2str, struct_parse, preserve_stream_pos
 from .enums import DW_FORM_raw2name
 from .dwarf_util import _resolve_via_offset_table, _get_base_offset
 

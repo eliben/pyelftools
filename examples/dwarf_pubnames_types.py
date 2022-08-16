@@ -17,7 +17,7 @@ import sys
 sys.path[0:0] = ['.', '..']
 
 from elftools.elf.elffile import ELFFile
-from elftools.common.py3compat import bytes2str
+from elftools.common.utils import bytes2str
 
 def process_file(filename):
     print('Processing file:', filename)

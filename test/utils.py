@@ -22,8 +22,7 @@ def run_exe(exe_path, args=[], echo=False):
       print('[cmd]', ' '.join(popen_cmd))
     proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc_stdout = proc.communicate()[0]
-    from elftools.common.py3compat import bytes2str
-    return proc.returncode, bytes2str(proc_stdout)
+    return proc.returncode, proc_stdout.decode('latin-1')
 
 
 def is_in_rootdir():

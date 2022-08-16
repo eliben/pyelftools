@@ -19,6 +19,9 @@ def merge_dicts(*dicts):
         result.update(d)
     return result
 
+def bytes2str(b):
+    """Decode a bytes object into a string."""
+    return b.decode('latin-1')
 
 def bytelist2string(bytelist):
     """ Convert a list of byte values (e.g. [0x10 0x20 0x00]) to a bytes object

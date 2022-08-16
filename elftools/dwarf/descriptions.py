@@ -11,8 +11,7 @@ from collections import defaultdict
 from .constants import *
 from .dwarf_expr import DWARFExprParser
 from .die import DIE
-from ..common.utils import preserve_stream_pos, dwarf_assert
-from ..common.py3compat import bytes2str
+from ..common.utils import preserve_stream_pos, dwarf_assert, bytes2str
 from .callframe import instruction_name, CIE, FDE
 
 
