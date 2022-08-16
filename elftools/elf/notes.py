@@ -6,8 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.py3compat import bytes2hex, bytes2str
-from ..common.utils import struct_parse, roundup
+from ..common.py3compat import bytes2str
+from ..common.utils import struct_parse, bytes2hex, roundup
 from ..construct import CString
 
 

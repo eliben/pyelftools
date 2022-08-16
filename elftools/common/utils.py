@@ -121,6 +121,19 @@ def save_dwarf_section(section, filename):
         file.write(data)
     stream.seek(pos, os.SEEK_SET)
 
+def iterbytes(b):
+    """Return an iterator over the elements of a bytes object.
+
+    For example, for b'abc' yields b'a', b'b' and then b'c'.
+    """
+    for i in range(len(b)):
+        yield b[i:i+1]
+
+def bytes2hex(b, sep=''):
+    if not sep:
+        return b.hex()
+    return sep.join(map('{:02x}'.format, b))
+
 #------------------------- PRIVATE -------------------------
 
 def _assert_with_exception(cond, msg, exception_type):

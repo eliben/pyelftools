@@ -13,7 +13,7 @@ from .enums import (
     ENUM_RELOC_TYPE_MIPS, ENUM_ATTR_TAG_ARM, ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
-from ..common.py3compat import bytes2hex
+from ..common.utils import bytes2hex
 
 
 def describe_ei_class(x):

@@ -16,7 +16,7 @@ sys.path[0:0] = ['.', '..']
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import NoteSection
-from elftools.common.py3compat import bytes2hex
+from elftools.common.utils import bytes2hex
 
 
 def process_file(filename):

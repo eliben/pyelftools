@@ -27,25 +27,11 @@ if PY3:
     # and strings are different types and bytes hold numeric values when
     # iterated over.
 
-    def bytes2hex(b, sep=''):
-        if not sep:
-            return b.hex()
-        return sep.join(map('{:02x}'.format, b))
 
     def bytes2str(b): return b.decode('latin-1')
     def str2bytes(s): return s.encode('latin-1')
     def int2byte(i): return bytes((i,))
     def byte2int(b): return b
-
-    def iterbytes(b):
-        """Return an iterator over the elements of a bytes object.
-
-        For example, for b'abc' yields b'a', b'b' and then b'c'.
-        """
-        for i in range(len(b)):
-            yield b[i:i+1]
-
-    ifilter = filter
 
     maxint = sys.maxsize
 
@@ -59,20 +45,12 @@ else:
 
     StringIO = BytesIO = cStringIO.StringIO
 
-    def bytes2hex(b, sep=''):
-        res = b.encode('hex')
-        if not sep:
-            return res
-        return sep.join(res[i:i+2] for i in range(0, len(res), 2))
-
     def bytes2str(b): return b
     def str2bytes(s): return s
     int2byte = chr
     byte2int = ord
     def iterbytes(b):
         return iter(b)
-
-    from itertools import ifilter
 
     maxint = sys.maxint
 
