@@ -15,11 +15,6 @@ please download an older pyelftools version (such as version 0.29).
 
 
 if PY3:
-    import io
-
-    StringIO = io.StringIO
-    BytesIO = io.BytesIO
-
     # Functions for acting on bytestrings and strings. In Python 2 and 3,
     # strings and bytes are the same and chr/ord can be used to convert between
     # numeric byte values and their string representations. In Python 3, bytes
@@ -33,11 +28,6 @@ if PY3:
     def byte2int(b): return b
 
 else:
-    import cStringIO
-    import os
-
-    StringIO = BytesIO = cStringIO.StringIO
-
     def bytes2str(b): return b
     def str2bytes(s): return s
     int2byte = chr

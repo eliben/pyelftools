@@ -5,9 +5,10 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import unittest
+from io import BytesIO
 from random import randint
 
-from elftools.common.py3compat import int2byte, BytesIO
+from elftools.common.py3compat import int2byte
 from elftools.common.utils import (parse_cstring_from_stream, merge_dicts,
         preserve_stream_pos)
 

@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import io
+from io import BytesIO
 import os
 import struct
 import zlib
@@ -23,7 +24,6 @@ except ImportError:
         # Jython
         PAGESIZE = 4096
 
-from ..common.py3compat import BytesIO
 from ..common.exceptions import ELFError, ELFParseError
 from ..common.utils import struct_parse, elf_assert
 from .structs import ELFStructs

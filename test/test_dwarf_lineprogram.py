@@ -5,8 +5,8 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import unittest
+from io import BytesIO
 
-from elftools.common.py3compat import BytesIO
 from elftools.dwarf.lineprogram import LineProgram, LineState, LineProgramEntry
 from elftools.dwarf.structs import DWARFStructs
 from elftools.dwarf.constants import *

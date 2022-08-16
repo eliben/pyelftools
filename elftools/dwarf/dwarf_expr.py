@@ -7,8 +7,8 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from collections import namedtuple
+from io import BytesIO
 
-from ..common.py3compat import BytesIO
 from ..common.utils import struct_parse, bytelist2string, read_blob
 
 

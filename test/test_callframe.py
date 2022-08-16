@@ -5,8 +5,8 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import unittest
+from io import BytesIO
 
-from elftools.common.py3compat import BytesIO
 from elftools.dwarf.callframe import (
     CallFrameInfo, CIE, FDE, instruction_name, CallFrameInstruction,
     RegisterRule, DecodedCallFrameTable, CFARule)

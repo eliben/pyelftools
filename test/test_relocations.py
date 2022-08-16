@@ -1,8 +1,8 @@
 import os
+from io import BytesIO
 import sys
 import unittest
 
-from elftools.common.py3compat import BytesIO
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSegment, DynamicSection
 
