@@ -16,7 +16,6 @@ please download an older pyelftools version (such as version 0.29).
 
 if PY3:
     import io
-    from pathlib import Path
 
     StringIO = io.StringIO
     BytesIO = io.BytesIO
@@ -33,15 +32,9 @@ if PY3:
     def int2byte(i): return bytes((i,))
     def byte2int(b): return b
 
-    maxint = sys.maxsize
-
-    def path_to_posix(s):
-        return Path(s).as_posix()
-
 else:
     import cStringIO
     import os
-    import posixpath
 
     StringIO = BytesIO = cStringIO.StringIO
 
@@ -51,8 +44,3 @@ else:
     byte2int = ord
     def iterbytes(b):
         return iter(b)
-
-    maxint = sys.maxint
-
-    def path_to_posix(s):
-        return posixpath.join(*os.path.split(s))
