@@ -77,7 +77,10 @@ class DWARFStructs(object):
         See also the documentation of public methods.
     """
 
-    __StructsCache = {}
+    # Cache for structs instances based on creation parameters. Structs
+    # initialization is expensive and we don't won't to repeat it
+    # unnecessarily.
+    _structs_cache = {}
 
     def __new__(cls, little_endian, dwarf_format, address_size, dwarf_version=2):
         """ dwarf_version:
@@ -95,8 +98,8 @@ class DWARFStructs(object):
         """
         key = (little_endian, dwarf_format, address_size, dwarf_version)
 
-        if key in cls.__StructsCache:
-            return cls.__StructsCache[key]
+        if key in cls._structs_cache:
+            return cls._structs_cache[key]
 
         self = super().__new__(cls)
         assert dwarf_format == 32 or dwarf_format == 64
@@ -106,7 +109,7 @@ class DWARFStructs(object):
         self.address_size = address_size
         self.dwarf_version = dwarf_version
         self._create_structs()
-        cls.__StructsCache[key] = self
+        cls._structs_cache[key] = self
         return self
 
     def initial_length_field_size(self):
@@ -273,7 +276,7 @@ class DWARFStructs(object):
 
             # New forms in DWARFv5
             DW_FORM_loclistx=self.Dwarf_uleb128(''),
-            DW_FORM_rnglistx=self.Dwarf_uleb128('')            
+            DW_FORM_rnglistx=self.Dwarf_uleb128('')
         )
 
     def _create_aranges_header(self):

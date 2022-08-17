@@ -626,7 +626,7 @@ class ELFFile(object):
         """
         if self._section_header_stringtable is None:
             raise ELFParseError("String Table not found")
-            
+
         name_offset = section_header['sh_name']
         return self._section_header_stringtable.get_string(name_offset)
 
