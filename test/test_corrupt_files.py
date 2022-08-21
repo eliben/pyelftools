@@ -23,6 +23,20 @@ class TestCorruptFile(unittest.TestCase):
 
             self.assertIsInstance(elf, ELFFile, "ELFFile initialization should have detected the out of bounds read")
 
+    def test_elffile_corrupt_e_shstrndx(self):
+        """ Test that ELFFile does not crash when parsing an ELF file with corrupt e_shstrndx
+        """
+        filepath = os.path.join('test', 'testfiles_for_unittests', 'corrupt_e_shstrndx.elf')
+        with open(filepath, 'rb') as f:
+            elf = None
+
+            try:
+                elf = ELFFile(f)
+            except ELFParseError:
+                pass
+
+            self.assertIsInstance(elf, ELFFile, "ELFFile could not load file with corrupt e_shstrndx")
+
 
 if __name__ == '__main__':
     unittest.main()
