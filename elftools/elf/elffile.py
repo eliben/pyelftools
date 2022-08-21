@@ -549,7 +549,11 @@ class ELFFile(object):
         if self['e_shstrndx'] != SHN_INDICES.SHN_XINDEX:
             return self['e_shstrndx']
         else:
-            return self._get_section_header(0)['sh_link']
+            header = self._get_section_header(0)
+            if header is None:
+                return None
+            else:
+                return header['sh_link']
 
     #-------------------------------- PRIVATE --------------------------------#
 
@@ -761,6 +765,8 @@ class ELFFile(object):
             table.
         """
         stringtable_section_num = self.get_shstrndx()
+        if stringtable_section_num is None:
+            return None
 
         stringtable_section_header = self._get_section_header(stringtable_section_num)
         if stringtable_section_header is None:
