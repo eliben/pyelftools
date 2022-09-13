@@ -98,7 +98,7 @@ def _get_cu_base(cu):
 class ReadElf(object):
     """ display_* methods are used to emit output into the output stream
     """
-    def __init__(self, file, output):
+    def __init__(self, file, output, args):
         """ file:
                 stream object with the ELF file to read
 
@@ -107,6 +107,7 @@ class ReadElf(object):
         """
         self.elffile = ELFFile(file)
         self.output = output
+        self.args = args
 
         # Lazily initialized if a debug dump is requested
         self._dwarfinfo = None
@@ -269,6 +270,8 @@ class ReadElf(object):
 
         self._emitline('Program Headers:')
 
+        sep = ' ' if self.args.wide else '\n                 '
+
         # Now comes the table of program headers with their attributes. Note
         # that due to different formatting constraints of 32-bit and 64-bit
         # addresses, there are some conditions on elfclass here.
@@ -278,8 +281,9 @@ class ReadElf(object):
         if self.elffile.elfclass == 32:
             self._emitline('  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align')
         else:
-            self._emitline('  Type           Offset             VirtAddr           PhysAddr')
-            self._emitline('                 FileSiz            MemSiz              Flags  Align')
+            self._emitline(
+                '  Type           Offset             VirtAddr           PhysAddr' + sep +
+                '          FileSiz            MemSiz              Flags  Align')
 
         # Now the entries
         #
@@ -296,11 +300,11 @@ class ReadElf(object):
                     describe_p_flags(segment['p_flags']),
                     self._format_hex(segment['p_align'])))
             else: # 64
-                self._emitline('%s %s %s' % (
+                fmt = '%s %s %s' + sep + '%s %s  %-3s    %s'
+                self._emitline(fmt % (
                     self._format_hex(segment['p_offset'], fullhex=True),
                     self._format_hex(segment['p_vaddr'], fullhex=True),
-                    self._format_hex(segment['p_paddr'], fullhex=True)))
-                self._emitline('                 %s %s  %-3s    %s' % (
+                    self._format_hex(segment['p_paddr'], fullhex=True),
                     self._format_hex(segment['p_filesz'], fullhex=True),
                     self._format_hex(segment['p_memsz'], fullhex=True),
                     describe_p_flags(segment['p_flags']),
@@ -349,13 +353,15 @@ class ReadElf(object):
         self._emitline('\nSection Header%s:' % (
             's' if self.elffile.num_sections() > 1 else ''))
 
+        sep = '' if self.args.wide else '\n'
         # Different formatting constraints of 32-bit and 64-bit addresses
         #
         if self.elffile.elfclass == 32:
             self._emitline('  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al')
         else:
-            self._emitline('  [Nr] Name              Type             Address           Offset')
-            self._emitline('       Size              EntSize          Flags  Link  Info  Align')
+            self._emitline(
+                '  [Nr] Name              Type             Address           Offset'+ sep +  
+                '    Size              EntSize           Flags    Link  Info  Align')
 
         # Now the entries
         #
@@ -373,12 +379,12 @@ class ReadElf(object):
                     section['sh_link'], section['sh_info'],
                     section['sh_addralign']))
             else: # 64
-                self._emitline(' %s  %s' % (
+                fmt  = ' %s  %s' + sep + '  %s  %s %3s      %2s   %3s     %s'
+                self._emitline(fmt % (
                     self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
                     self._format_hex(section['sh_offset'],
                         fieldsize=16 if section['sh_offset'] > 0xffffffff else 8,
-                        lead0x=False)))
-                self._emitline('       %s  %s %3s      %2s   %3s     %s' % (
+                        lead0x=False),
                     self._format_hex(section['sh_size'], fullhex=True, lead0x=False),
                     self._format_hex(section['sh_entsize'], fullhex=True, lead0x=False),
                     describe_sh_flags(section['sh_flags']),
@@ -1080,7 +1086,8 @@ class ReadElf(object):
         """
         if not self._dwarfinfo.has_debug_info:
             return
-        self._emitline('Contents of the %s section:\n' % self._dwarfinfo.debug_info_sec.name)
+        self._emitline('\nContents of the %s section:' % self._dwarfinfo.debug_info_sec.name)
+        self._emitline()
 
         # Offset of the .debug_info section in the stream
         section_offset = self._dwarfinfo.debug_info_sec.global_offset
@@ -1716,6 +1723,9 @@ def main(stream=None):
     argparser.add_argument('-A', '--arch-specific',
             action='store_true', dest='show_arch_specific',
             help='Display the architecture-specific information (if present)')
+    argparser.add_argument('-W', '--wide',
+            action='store_true', dest='wide',
+            help='Allow output width to exceed 80 characters')
     argparser.add_argument('--debug-dump',
             action='store', dest='debug_dump_what', metavar='<what>',
             help=(
@@ -1741,7 +1751,7 @@ def main(stream=None):
 
     with open(args.file, 'rb') as file:
         try:
-            readelf = ReadElf(file, stream or sys.stdout)
+            readelf = ReadElf(file, stream or sys.stdout, args)
             if do_file_header:
                 readelf.display_file_header()
             if do_section_header:
