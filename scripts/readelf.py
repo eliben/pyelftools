@@ -252,7 +252,8 @@ class ReadElf(object):
             (Elf file type is...)
         """
         self._emitline()
-        if self.elffile.num_segments() == 0:
+        nseg = self.elffile.num_segments()
+        if nseg == 0:
             self._emitline('There are no program headers in this file.')
             return
 
@@ -260,17 +261,18 @@ class ReadElf(object):
         if show_heading:
             self._emitline('Elf file type is %s' %
                 describe_e_type(elfheader['e_type'], self.elffile))
-            self._emitline('Entry point is %s' %
+            self._emitline('Entry point %s' %
                 self._format_hex(elfheader['e_entry']))
             # readelf weirness - why isn't e_phoff printed as hex? (for section
             # headers, it is...)
-            self._emitline('There are %s program headers, starting at offset %s' % (
-                self.elffile.num_segments(), elfheader['e_phoff']))
+            if nseg == 1:
+                self._emit('There is %s program header' % nseg)
+            else:
+                self._emit('There are %s program headers' % nseg)
+            self._emitline(', starting at offset %s' % elfheader['e_phoff'])
             self._emitline()
 
         self._emitline('Program Headers:')
-
-        sep = ' ' if self.args.wide else '\n                 '
 
         # Now comes the table of program headers with their attributes. Note
         # that due to different formatting constraints of 32-bit and 64-bit
@@ -278,20 +280,26 @@ class ReadElf(object):
         #
         # First comes the table heading
         #
+
         if self.elffile.elfclass == 32:
-            self._emitline('  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align')
+            hdr = '  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align'
+            fmt = '  %-14s %s %s %s %s %s %-3s %s'
         else:
-            self._emitline(
-                '  Type           Offset             VirtAddr           PhysAddr' + sep +
-                '          FileSiz            MemSiz              Flags  Align')
+            if self.args.wide:
+                hdr = '  Type           Offset   VirtAddr           PhysAddr           FileSiz  MemSiz Flg Align'
+                fmt = '  %-14s %s %s %s %s %s  %-3s    %s'
+            else:
+                hdr = '  Type           Offset   VirtAddr           PhysAddr\n          FileSiz            MemSiz              Flags  Align'
+                fmt = '  %-14s %s %s %s\n          %s %s  %-3s    %s'
+
+        self._emitline(hdr)
 
         # Now the entries
         #
         for segment in self.elffile.iter_segments():
-            self._emit('  %-14s ' % describe_p_type(segment['p_type']))
-
             if self.elffile.elfclass == 32:
-                self._emitline('%s %s %s %s %s %-3s %s' % (
+                self._emitline(fmt % (
+                    describe_p_type(segment['p_type']),
                     self._format_hex(segment['p_offset'], fieldsize=6),
                     self._format_hex(segment['p_vaddr'], fullhex=True),
                     self._format_hex(segment['p_paddr'], fullhex=True),
@@ -300,17 +308,30 @@ class ReadElf(object):
                     describe_p_flags(segment['p_flags']),
                     self._format_hex(segment['p_align'])))
             else: # 64
-                fmt = '%s %s %s' + sep + '%s %s  %-3s    %s'
-                self._emitline(fmt % (
-                    self._format_hex(segment['p_offset'], fullhex=True),
-                    self._format_hex(segment['p_vaddr'], fullhex=True),
-                    self._format_hex(segment['p_paddr'], fullhex=True),
-                    self._format_hex(segment['p_filesz'], fullhex=True),
-                    self._format_hex(segment['p_memsz'], fullhex=True),
-                    describe_p_flags(segment['p_flags']),
-                    # lead0x set to False for p_align, to mimic readelf.
-                    # No idea why the difference from 32-bit mode :-|
-                    self._format_hex(segment['p_align'], lead0x=False)))
+                if self.args.wide:
+                    self._emitline(fmt % (
+                        describe_p_type(segment['p_type']),
+                        self._format_hex(segment['p_offset'], fieldsize=6),
+                        self._format_hex(segment['p_vaddr'], fullhex=True),
+                        self._format_hex(segment['p_paddr'], fullhex=True),
+                        self._format_hex(segment['p_filesz'], fieldsize=6),
+                        self._format_hex(segment['p_memsz'], fieldsize=6),
+                        describe_p_flags(segment['p_flags']),
+                        # lead0x set to False for p_align, to mimic readelf.
+                        # No idea why the difference from 32-bit mode :-|
+                        self._format_hex(segment['p_align'], lead0x=False)))
+                else:
+                    self._emitline(fmt % (
+                        describe_p_type(segment['p_type']),
+                        self._format_hex(segment['p_offset'], fullhex=True),
+                        self._format_hex(segment['p_vaddr'], fullhex=True),
+                        self._format_hex(segment['p_paddr'], fullhex=True),
+                        self._format_hex(segment['p_filesz'], fullhex=True),
+                        self._format_hex(segment['p_memsz'], fullhex=True),
+                        describe_p_flags(segment['p_flags']),
+                        # lead0x set to False for p_align, to mimic readelf.
+                        # No idea why the difference from 32-bit mode :-|
+                        self._format_hex(segment['p_align'], lead0x=False)))
 
             if isinstance(segment, InterpSegment):
                 self._emitline('      [Requesting program interpreter: %s]' %
@@ -342,35 +363,38 @@ class ReadElf(object):
         """ Display the ELF section headers
         """
         elfheader = self.elffile.header
-        if show_heading:
-            self._emitline('There are %s section headers, starting at offset %s' % (
-                elfheader['e_shnum'], self._format_hex(elfheader['e_shoff'])))
-
         if self.elffile.num_sections() == 0:
             self._emitline('There are no sections in this file.')
             return
 
+        if show_heading:
+            self._emitline('There are %s section headers, starting at offset %s:' % (
+                elfheader['e_shnum'], self._format_hex(elfheader['e_shoff'])))
+
         self._emitline('\nSection Header%s:' % (
             's' if self.elffile.num_sections() > 1 else ''))
 
-        sep = '' if self.args.wide else '\n'
         # Different formatting constraints of 32-bit and 64-bit addresses
         #
         if self.elffile.elfclass == 32:
-            self._emitline('  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al')
+            hdr = '  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al'
+            fmt = '  [%2u] %-17s %-15.15s %s %s %s %s %3s %2s %3s %2s'
         else:
-            self._emitline(
-                '  [Nr] Name              Type             Address           Offset'+ sep +  
-                '    Size              EntSize           Flags    Link  Info  Align')
+            if self.args.wide:
+                hdr = '  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al'
+                fmt = '  [%2u] %-17s %-15.15s %s %s %s %s %3s %2s %3s %2s'
+            else:
+                hdr = '  [Nr] Name              Type            Address          Offset\n    Size              EntSize           Flags    Link  Info  Align'
+                fmt = '  [%2u] %-17.17s %-15.15s  %s  %s\n  %s  %s %3s      %2s   %3s     %s'
+
+        self._emitline(hdr)
 
         # Now the entries
         #
         for nsec, section in enumerate(self.elffile.iter_sections()):
-            self._emit('  [%2u] %-17.17s %-15.15s ' % (
-                nsec, section.name, describe_sh_type(section['sh_type'])))
-
             if self.elffile.elfclass == 32:
-                self._emitline('%s %s %s %s %3s %2s %3s %2s' % (
+                self._emitline(fmt % (
+                        nsec, section.name, describe_sh_type(section['sh_type']),
                     self._format_hex(section['sh_addr'], fieldsize=8, lead0x=False),
                     self._format_hex(section['sh_offset'], fieldsize=6, lead0x=False),
                     self._format_hex(section['sh_size'], fieldsize=6, lead0x=False),
@@ -379,17 +403,28 @@ class ReadElf(object):
                     section['sh_link'], section['sh_info'],
                     section['sh_addralign']))
             else: # 64
-                fmt  = ' %s  %s' + sep + '  %s  %s %3s      %2s   %3s     %s'
-                self._emitline(fmt % (
-                    self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
-                    self._format_hex(section['sh_offset'],
-                        fieldsize=16 if section['sh_offset'] > 0xffffffff else 8,
-                        lead0x=False),
-                    self._format_hex(section['sh_size'], fullhex=True, lead0x=False),
-                    self._format_hex(section['sh_entsize'], fullhex=True, lead0x=False),
-                    describe_sh_flags(section['sh_flags']),
-                    section['sh_link'], section['sh_info'],
-                    section['sh_addralign']))
+                if self.args.wide:
+                    self._emitline(fmt % (
+                        nsec, section.name, describe_sh_type(section['sh_type']),
+                        self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
+                        self._format_hex(section['sh_offset'], fieldsize=6, lead0x=False),
+                        self._format_hex(section['sh_size'], fieldsize=6, lead0x=False),
+                        self._format_hex(section['sh_entsize'], fieldsize=2, lead0x=False),
+                        describe_sh_flags(section['sh_flags']),
+                        section['sh_link'], section['sh_info'],
+                        section['sh_addralign']))
+                else:
+                    self._emitline(fmt % (
+                        nsec, section.name, describe_sh_type(section['sh_type']),
+                        self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
+                        self._format_hex(section['sh_offset'],
+                            fieldsize=16 if section['sh_offset'] > 0xffffffff else 8,
+                            lead0x=False),
+                        self._format_hex(section['sh_size'], fullhex=True, lead0x=False),
+                        self._format_hex(section['sh_entsize'], fullhex=True, lead0x=False),
+                        describe_sh_flags(section['sh_flags']),
+                        section['sh_link'], section['sh_info'],
+                        section['sh_addralign']))
 
         self._emitline('Key to Flags:')
         self._emitline('  W (write), A (alloc), X (execute), M (merge),'
@@ -401,6 +436,8 @@ class ReadElf(object):
         self._emit('  ')
         if self.elffile['e_machine'] == 'EM_ARM':
             self._emit('y (purecode), ')
+        if self.elffile['e_machine'] == 'EM_AARCH64':
+            self._emit('D (mbind), ')
         self._emitline('p (processor specific)')
 
     def display_symbol_tables(self):

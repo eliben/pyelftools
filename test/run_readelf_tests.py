@@ -62,6 +62,10 @@ def run_test_on_file(filename, verbose=False, opt=None):
     testlog.info("Test file '%s'" % filename)
     if opt is None:
         options = [
+            # '-W -h', 
+            # '-W -l', 
+            # '-W -S', # TODO fails on many_sections.o.elf
+            '-W -e',
             '-e', '-d', '-s', '-n', '-r', '-x.text', '-p.shstrtab', '-V',
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp',
@@ -70,7 +74,7 @@ def run_test_on_file(filename, verbose=False, opt=None):
             '--debug-dump=Ranges'
             ]
     else:
-        options = [opt]
+        options = opt.split() if opt else []
 
     for option in options:
         if verbose: testlog.info("..option='%s'" % option)
@@ -97,9 +101,9 @@ def run_test_on_file(filename, verbose=False, opt=None):
         # of scripts/readelf.py
         stdouts = []
         for exe_path in [READELF_PATH, 'scripts/readelf.py']:
-            args = [option, filename]
+            args = option.split() + [filename]
             if verbose: testlog.info("....executing: '%s %s'" % (
-                exe_path, ' '.join(args)))
+                exe_path, ' '.join(args))) 
             t1 = time.time()
             rc, stdout = run_exe(exe_path, args)
             if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
@@ -260,7 +264,7 @@ def main():
         help="Run all tests, don't stop at the first failure")
     argparser.add_argument('--opt',
         action='store', dest='opt', metavar='<readelf-option>',
-        help= 'Limit the test one one readelf option.')
+        help= 'Limit the test to one readelf option.')
     args = argparser.parse_args()
 
     if args.parallel:
