@@ -180,18 +180,46 @@ class DWARFStructs(object):
         self.Dwarf_sleb128 = SLEB128
 
     def _create_cu_header(self):
+        dwarfv4_CU_header = Struct('',
+            self.Dwarf_offset('debug_abbrev_offset'),
+            self.Dwarf_uint8('address_size')
+        )
+        # DWARFv5 reverses the order of address_size and debug_abbrev_offset.
+        # DWARFv5 7.5.1.1
+        dwarfv5_CP_CU_header = Struct('',                  
+            self.Dwarf_uint8('address_size'),
+            self.Dwarf_offset('debug_abbrev_offset')
+        )
+        # DWARFv5 7.5.1.2
+        dwarfv5_SS_CU_header = Struct('',
+            self.Dwarf_uint8('address_size'),
+            self.Dwarf_offset('debug_abbrev_offset'),
+            self.Dwarf_uint64('dwo_id')
+        )
+        # DWARFv5 7.5.1.3
+        dwarfv5_TS_CU_header = Struct('',
+            self.Dwarf_uint8('address_size'),
+            self.Dwarf_offset('debug_abbrev_offset'),
+            self.Dwarf_uint64('type_signature'),
+            self.Dwarf_offset('type_offset')
+        )
+        dwarfv5_CU_header = Struct('',
+            Enum(self.Dwarf_uint8('unit_type'), **ENUM_DW_UT),
+            Embed(Switch('', lambda ctx: ctx.unit_type,
+            {
+                'DW_UT_compile'       : dwarfv5_CP_CU_header,
+                'DW_UT_partial'       : dwarfv5_CP_CU_header,
+                'DW_UT_skeleton'      : dwarfv5_SS_CU_header,
+                'DW_UT_split_compile' : dwarfv5_SS_CU_header,
+                'DW_UT_type'          : dwarfv5_TS_CU_header,
+                'DW_UT_split_type'    : dwarfv5_TS_CU_header,
+            })))
         self.Dwarf_CU_header = Struct('Dwarf_CU_header',
             self.Dwarf_initial_length('unit_length'),
             self.Dwarf_uint16('version'),
-            # DWARFv5 reverses the order of address_size and debug_abbrev_offset.
             IfThenElse('', lambda ctx: ctx['version'] >= 5,
-                Embed(Struct('',
-                    self.Dwarf_uint8('unit_type'),
-                    self.Dwarf_uint8('address_size'),
-                    self.Dwarf_offset('debug_abbrev_offset'))),
-                Embed(Struct('',
-                    self.Dwarf_offset('debug_abbrev_offset'),
-                    self.Dwarf_uint8('address_size'))),
+                Embed(dwarfv5_CU_header),
+                Embed(dwarfv4_CU_header),
             ))
 
     def _create_abbrev_declaration(self):

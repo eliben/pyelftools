@@ -60,7 +60,7 @@ DwarfConfig = namedtuple('DwarfConfig',
 
 class DWARFInfo(object):
     """ Acts also as a "context" to other major objects, bridging between
-        various parts of the debug infromation.
+        various parts of the debug information.
     """
     def __init__(self,
             config,
@@ -126,7 +126,9 @@ class DWARFInfo(object):
 
         # Cache for abbrev tables: a dict keyed by offset
         self._abbrevtable_cache = {}
-
+        # Cache for program lines tables: a dict keyed by offset
+        self._linetable_cache = {}
+ 
         # Cache of compile units and map of their offsets for bisect lookup.
         # Access with .iter_CUs(), .get_CU_containing(), and/or .get_CU_at().
         self._cu_cache = []
@@ -494,15 +496,19 @@ class DWARFInfo(object):
         """
         return 2 <= version <= 5
 
-    def _parse_line_program_at_offset(self, debug_line_offset, structs):
+    def _parse_line_program_at_offset(self, offset, structs):
         """ Given an offset to the .debug_line section, parse the line program
             starting at this offset in the section and return it.
             structs is the DWARFStructs object used to do this parsing.
         """
+
+        if offset in self._linetable_cache:
+            return self._linetable_cache[offset]
+
         lineprog_header = struct_parse(
             structs.Dwarf_lineprog_header,
             self.debug_line_sec.stream,
-            debug_line_offset)
+            offset)
 
         # DWARF5: resolve names
         def resolve_strings(self, lineprog_header, format_field, data_field):
@@ -541,15 +547,18 @@ class DWARFInfo(object):
                 for e in lineprog_header.file_names)
 
         # Calculate the offset to the next line program (see DWARF 6.2.4)
-        end_offset = (  debug_line_offset + lineprog_header['unit_length'] +
+        end_offset = (  offset + lineprog_header['unit_length'] +
                         structs.initial_length_field_size())
 
-        return LineProgram(
+        lineprogram = LineProgram(
             header=lineprog_header,
             stream=self.debug_line_sec.stream,
             structs=structs,
             program_start_offset=self.debug_line_sec.stream.tell(),
             program_end_offset=end_offset)
+
+        self._linetable_cache[offset] = lineprogram
+        return lineprogram
 
     def parse_debugsupinfo(self):
         """

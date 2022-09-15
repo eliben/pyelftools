@@ -187,6 +187,9 @@ _MACHINE_ARCH = None
 def _describe_attr_ref(attr, die, section_offset):
     return '<0x%x>' % (attr.value + die.cu.cu_offset)
 
+def _describe_attr_ref_sig8(attr, die, section_offset):
+    return 'signature: 0x%x' % (attr.value)
+
 def _describe_attr_value_passthrough(attr, die, section_offset):
     return attr.value
 
@@ -257,7 +260,7 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_block=_describe_attr_block,
     DW_FORM_flag_present=_describe_attr_present,
     DW_FORM_exprloc=_describe_attr_block,
-    DW_FORM_ref_sig8=_describe_attr_ref,
+    DW_FORM_ref_sig8=_describe_attr_ref_sig8,
 )
 
 _FORM_CLASS = dict(
