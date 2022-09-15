@@ -104,6 +104,8 @@ class ReadElf(object):
 
             output:
                 output stream to write to
+            args:
+                command line arguments to apply
         """
         self.elffile = ELFFile(file)
         self.output = output
@@ -252,8 +254,7 @@ class ReadElf(object):
             (Elf file type is...)
         """
         self._emitline()
-        nseg = self.elffile.num_segments()
-        if nseg == 0:
+        if self.elffile.num_segments() == 0:
             self._emitline('There are no program headers in this file.')
             return
 
@@ -265,10 +266,10 @@ class ReadElf(object):
                 self._format_hex(elfheader['e_entry']))
             # readelf weirness - why isn't e_phoff printed as hex? (for section
             # headers, it is...)
-            if nseg == 1:
-                self._emit('There is %s program header' % nseg)
+            if self.elffile.num_segments() == 1:
+                self._emit('There is %s program header' % self.elffile.num_segments())
             else:
-                self._emit('There are %s program headers' % nseg)
+                self._emit('There are %s program headers' % self.elffile.num_segments())
             self._emitline(', starting at offset %s' % elfheader['e_phoff'])
             self._emitline()
 
