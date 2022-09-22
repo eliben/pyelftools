@@ -362,8 +362,7 @@ class ReadElf(object):
         self._emitline(".debug_info contents:")
         for cu in self._dwarfinfo.iter_CUs():
             if cu.header.version >= 5:
-                ut = next(k for (k,v) in ENUM_DW_UT.items() if v == cu.header.unit_type)
-                unit_type_str = " unit_type = %s," % ut
+                unit_type_str = " unit_type = %s," % cu.header.unit_type
             else:
                 unit_type_str = ''
 

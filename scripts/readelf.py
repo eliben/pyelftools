@@ -1092,12 +1092,23 @@ class ReadElf(object):
                 self._format_hex(cu['unit_length']),
                 '%s-bit' % cu.dwarf_format()))
             self._emitline('   Version:       %s' % cu['version'])
-            if cu.header.get("unit_type", False):
-                ut = next((key for key, value in ENUM_DW_UT.items() if value == cu.header.unit_type), '?')
-                self._emitline('   Unit Type:     %s (%d)' % (ut, cu.header.unit_type))
-            self._emitline('   Abbrev Offset: %s' % (
-                self._format_hex(cu['debug_abbrev_offset']))),
-            self._emitline('   Pointer Size:  %s' % cu['address_size'])
+            if cu['version'] >= 5:
+                if cu.header.get("unit_type", ''):
+                    unit_type = cu.header.unit_type
+                    self._emitline('   Unit Type:     %s (%d)' % (
+                        unit_type, ENUM_DW_UT.get(cu.header.unit_type, 0)))
+                    self._emitline('   Abbrev Offset: %s' % (
+                        self._format_hex(cu['debug_abbrev_offset'])))
+                    self._emitline('   Pointer Size:  %s' % cu['address_size'])
+                    if unit_type in ('DW_UT_skeleton', 'DW_UT_split_compile'):
+                        self._emitline('   Dwo id:        %s' % cu['dwo_id'])
+                    elif unit_type in ('DW_UT_type', 'DW_UT_split_type'):
+                        self._emitline('   Signature:     0x%x' % cu['type_signature'])
+                        self._emitline('   Type Offset:   0x%x' % cu['type_offset'])
+            else:
+                self._emitline('   Abbrev Offset: %s' % (
+                    self._format_hex(cu['debug_abbrev_offset']))),
+                self._emitline('   Pointer Size:  %s' % cu['address_size'])
 
             # The nesting depth of each DIE within the tree of DIEs must be
             # displayed. To implement this, a counter is incremented each time
@@ -1151,9 +1162,16 @@ class ReadElf(object):
             return
         self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_line_sec.name)
         self._emitline()
+        lineprogram_list = []
 
         for cu in self._dwarfinfo.iter_CUs():
+            # Avoid dumping same lineprogram multiple times
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
+
+            if lineprogram in lineprogram_list:
+                continue 
+
+            lineprogram_list.append(lineprogram)
             ver5 = lineprogram.header.version >= 5
 
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
