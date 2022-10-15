@@ -1,0 +1,13 @@
+Processing file: ./examples/sample_exe64.elf
+  Note section ".note.ABI-tag" at offset 0x00000254 with size 32
+    Name: GNU
+    Type: NT_GNU_ABI_TAG
+    Desc: ELF_NOTE_OS_LINUX, ABI: 2.6.4
+  Note section ".note.SuSE" at offset 0x00000274 with size 24
+    Name: SuSE
+    Type: 1163097427
+    Desc: 01000a02
+  Note section ".note.gnu.build-id" at offset 0x0000028c with size 36
+    Name: GNU
+    Type: NT_GNU_BUILD_ID
+    Desc: 8e50cda8e25993499ac4aa2d8deaf58d0949d47d

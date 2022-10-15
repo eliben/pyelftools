@@ -1,0 +1,29 @@
+Processing file: ./examples/sample_exe64.elf
+5 entries found in .debug_pubnames
+Trying pubnames example ...
+_IO_stdin_used: cu_ofs = 119, die_ofs = 230
+Fetching the actual die for _IO_stdin_used ...
+Die Name: _IO_stdin_used
+main: cu_ofs = 258, die_ofs = 303
+Fetching the actual die for main ...
+Die Name: main
+glob: cu_ofs = 258, die_ofs = 395
+Fetching the actual die for glob ...
+Die Name: glob
+__libc_csu_fini: cu_ofs = 418, die_ofs = 495
+Fetching the actual die for __libc_csu_fini ...
+Die Name: __libc_csu_fini
+__libc_csu_init: cu_ofs = 418, die_ofs = 523
+Fetching the actual die for __libc_csu_init ...
+Die Name: __libc_csu_init
+Dumping .debug_pubnames table ...
+------------------------------------------------------------------
+                                            Symbol  CU_OFS DIE_OFS
+------------------------------------------------------------------
+                                    _IO_stdin_used     119     230
+                                              main     258     303
+                                              glob     258     395
+                                   __libc_csu_fini     418     495
+                                   __libc_csu_init     418     523
+------------------------------------------------------------------
+ERROR: No .debug_pubtypes section found in ELF
