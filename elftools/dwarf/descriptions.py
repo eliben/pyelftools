@@ -30,8 +30,6 @@ def describe_attr_value(attr, die, section_offset):
         section_offset: offset in the stream of the section the DIE belongs to
     """
     descr_func = _ATTR_DESCRIPTION_MAP[attr.form]
-    # if(attr.name=="DW_AT_location"):
-    #     print(f'form: {attr.form}')
     val_description = descr_func(attr, die, section_offset)
 
     # For some attributes we can display further information
