@@ -342,7 +342,7 @@ class ReadElf(object):
         self.elffile = ELFFile(file)
         self.output = output
         self._dwarfinfo = self.elffile.get_dwarf_info()
-        arches = {"EM_386": "i386", "EM_X86_64": "x86-64", "EM_AARCH64": "littleaarch64"}
+        arches = {"EM_386": "i386", "EM_X86_64": "x86-64", "EM_ARM": "littlearm", "EM_AARCH64": "littleaarch64"}
         arch = arches[self.elffile['e_machine']]
         bits = self.elffile.elfclass
         self._emitline("%s:	file format elf%d-%s" % (filename, bits, arch))
