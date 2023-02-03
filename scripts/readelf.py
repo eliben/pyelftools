@@ -47,7 +47,7 @@ from elftools.elf.descriptions import (
     describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
     describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
     describe_dt_flags, describe_dt_flags_1, describe_ver_flags, describe_note,
-    describe_attr_tag_arm, describe_symbol_other
+    describe_attr_tag_arm, describe_attr_tag_riscv, describe_symbol_other
     )
 from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import E_FLAGS_MASKS
@@ -242,6 +242,22 @@ class ReadElf(object):
                 description += ", mips32"
             if (flags & E_FLAGS.EF_MIPS_ARCH) == E_FLAGS.EF_MIPS_ARCH_64:
                 description += ", mips64"
+
+        elif self.elffile['e_machine'] == "EM_RISCV":
+            if flags & E_FLAGS.EF_RISCV_RVC:
+                description += ", RVC"
+            if (flags & E_FLAGS.EF_RISCV_RVE):
+                description += ", RVE"
+            if (flags & E_FLAGS.EF_RISCV_TSO):
+                description += ", TSO"
+            if (flags & E_FLAGS.EF_RISCV_FLOAT_ABI) == E_FLAGS.EF_RISCV_FLOAT_ABI_SOFT:
+                description += ", soft-float ABI"
+            if (flags & E_FLAGS.EF_RISCV_FLOAT_ABI) == E_FLAGS.EF_RISCV_FLOAT_ABI_SINGLE:
+                description += ", single-float ABI"
+            if (flags & E_FLAGS.EF_RISCV_FLOAT_ABI) == E_FLAGS.EF_RISCV_FLOAT_ABI_DOUBLE:
+                description += ", double-float ABI"
+            if (flags & E_FLAGS.EF_RISCV_FLOAT_ABI) == E_FLAGS.EF_RISCV_FLOAT_ABI_QUAD:
+                description += ", quad-float ABI"
 
         return description
 
@@ -768,6 +784,8 @@ class ReadElf(object):
         """
         if self.elffile['e_machine'] == 'EM_ARM':
             self._display_arch_specific_arm()
+        elif self.elffile['e_machine'] == 'EM_RISCV':
+            self._display_arch_specific_riscv()
 
     def display_hex_dump(self, section_spec):
         """ Display a hex dump of a section. section_spec is either a section
@@ -1648,22 +1666,30 @@ class ReadElf(object):
         last = range_list[-1]
         self._emitline('    %08x <End of list>' % (last.entry_offset + last.entry_length if ver5 else first.entry_offset))
 
-    def _display_arch_specific_arm(self):
-        """ Display the ARM architecture-specific info contained in the file.
+    def _display_attributes(self, attr_sec, descriptor):
+        """ Display the attributes contained in the section.
         """
-        attr_sec = self.elffile.get_section_by_name('.ARM.attributes')
-
         for s in attr_sec.iter_subsections():
             self._emitline("Attribute Section: %s" % s.header['vendor_name'])
             for ss in s.iter_subsubsections():
                 h_val = "" if ss.header.extra is None else " ".join("%d" % x for x in ss.header.extra)
-                self._emitline(describe_attr_tag_arm(ss.header.tag, h_val, None))
+                self._emitline(descriptor(ss.header.tag, h_val, None))
 
                 for attr in ss.iter_attributes():
                     self._emit('  ')
-                    self._emitline(describe_attr_tag_arm(attr.tag,
-                                                         attr.value,
-                                                         attr.extra))
+                    self._emitline(descriptor(attr.tag, attr.value, attr.extra))
+
+    def _display_arch_specific_arm(self):
+        """ Display the ARM architecture-specific info contained in the file.
+        """
+        attr_sec = self.elffile.get_section_by_name('.ARM.attributes')
+        self._display_attributes(attr_sec, describe_attr_tag_arm)
+
+    def _display_arch_specific_riscv(self):
+        """ Display the RISC-V architecture-specific info contained in the file.
+        """
+        attr_sec = self.elffile.get_section_by_name('.riscv.attributes')
+        self._display_attributes(attr_sec, describe_attr_tag_riscv)
 
     def _emit(self, s=''):
         """ Emit an object to output
