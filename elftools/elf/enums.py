@@ -329,6 +329,10 @@ ENUM_SH_TYPE_ARM = merge_dicts(
             SHT_ARM_ATTRIBUTES=0x70000003,
             SHT_ARM_DEBUGOVERLAY=0x70000004))
 
+ENUM_SH_TYPE_RISCV = merge_dicts(
+        ENUM_SH_TYPE_BASE,
+        dict(SHT_RISCV_ATTRIBUTES=0x70000003))
+
 ENUM_SH_TYPE_MIPS = merge_dicts(
         ENUM_SH_TYPE_BASE,
         dict(
@@ -421,6 +425,10 @@ ENUM_P_TYPE_AARCH64 = merge_dicts(
 ENUM_P_TYPE_MIPS = merge_dicts(
         ENUM_P_TYPE_BASE,
         dict(PT_MIPS_ABIFLAGS=0x70000003))
+
+ENUM_P_TYPE_RISCV = merge_dicts(
+        ENUM_P_TYPE_BASE,
+        dict(PT_RISCV_ATTRIBUTES=0x70000003))
 
 # st_info bindings in the symbol header
 ENUM_ST_INFO_BIND = dict(
@@ -1178,6 +1186,15 @@ ENUM_ATTR_TAG_ARM = dict(
     TAG_CONFORMANCE=67,
     TAG_VIRTUALIZATION_USE=68,
     TAG_MPEXTENSION_USE_OLD=70,
+)
+
+ENUM_ATTR_TAG_RISCV = dict(
+    TAG_FILE=1,
+    TAG_SECTION=2,
+    TAG_SYMBOL=3,
+    TAG_STACK_ALIGN=4,
+    TAG_ARCH=5,
+    TAG_UNALIGNED_ACCESS=6,
 )
 
 # https://openpowerfoundation.org/wp-content/uploads/2016/03/ABI64BitOpenPOWERv1.1_16July2015_pub4.pdf

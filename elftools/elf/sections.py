@@ -298,68 +298,34 @@ class StabSection(Section):
             self.stream.seek(offset)
             yield stabs
 
-
-class ARMAttribute(object):
-    """ ARM attribute object - representing a build attribute of ARM ELF files.
+class Attribute(object):
+    """ Attribute object - representing a build attribute of ELF files.
     """
-    def __init__(self, structs, stream):
-        self._tag = struct_parse(structs.Elf_Attribute_Tag, stream)
+    def __init__(self, tag):
+        self._tag = tag
         self.extra = None
-
-        if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
-            self.value = struct_parse(structs.Elf_word('value'), stream)
-
-            if self.tag != 'TAG_FILE':
-                self.extra = []
-                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
-
-                while s_number != 0:
-                    self.extra.append(s_number)
-                    s_number = struct_parse(structs.Elf_uleb128('s_number'),
-                                            stream
-                               )
-
-        elif self.tag in ('TAG_CPU_RAW_NAME', 'TAG_CPU_NAME', 'TAG_CONFORMANCE'):
-            self.value = struct_parse(structs.Elf_ntbs('value',
-                                                       encoding='utf-8'),
-                                      stream)
-
-        elif self.tag == 'TAG_COMPATIBILITY':
-            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
-            self.extra = struct_parse(structs.Elf_ntbs('vendor_name',
-                                                       encoding='utf-8'),
-                                      stream)
-
-        elif self.tag == 'TAG_ALSO_COMPATIBLE_WITH':
-            self.value = ARMAttribute(structs, stream)
-
-            if type(self.value.value) is not str:
-                nul = struct_parse(structs.Elf_byte('nul'), stream)
-                elf_assert(nul == 0,
-                           "Invalid terminating byte %r, expecting NUL." % nul)
-
-        else:
-            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
 
     @property
     def tag(self):
         return self._tag['tag']
 
     def __repr__(self):
-        s = '<ARMAttribute (%s): %r>' % (self.tag, self.value)
+        s = '<%s (%s): %r>' % \
+            (self.__class__.__name__, self.tag, self.value)
         s += ' %s' % self.extra if self.extra is not None else ''
         return s
 
 
-class ARMAttributesSubsubsection(object):
-    """ Subsubsection of an ELF .ARM.attributes section's subsection.
+class AttributesSubsubsection(Section):
+    """ Subsubsection of an ELF attribute section's subsection.
     """
-    def __init__(self, stream, structs, offset):
+    def __init__(self, stream, structs, offset, attribute):
         self.stream = stream
         self.offset = offset
         self.structs = structs
+        self.attribute = attribute
 
-        self.header = ARMAttribute(self.structs, self.stream)
+        self.header = self.attribute(self.structs, self.stream)
 
         self.attr_start = self.stream.tell()
 
@@ -391,25 +357,24 @@ class ARMAttributesSubsubsection(object):
         self.stream.seek(self.attr_start)
 
         while self.stream.tell() != end:
-            yield ARMAttribute(self.structs, self.stream)
+            yield self.attribute(self.structs, self.stream)
 
     def __repr__(self):
-        s = "<ARMAttributesSubsubsection (%s): %d bytes>"
-        return s % (self.header.tag[4:], self.header.value)
+        s = "<%s (%s): %d bytes>"
+        return s % (self.__class__.__name__,
+                    self.header.tag[4:], self.header.value)
 
 
-class ARMAttributesSubsection(object):
-    """ Subsection of an ELF .ARM.attributes section.
+class AttributesSubsection(Section):
+    """ Subsection of an ELF attributes section.
     """
-    def __init__(self, stream, structs, offset):
+    def __init__(self, stream, structs, offset, header, subsubsection):
         self.stream = stream
         self.offset = offset
         self.structs = structs
+        self.subsubsection = subsubsection
 
-        self.header = struct_parse(self.structs.Elf_Attr_Subsection_Header,
-                                   self.stream,
-                                   self.offset
-                      )
+        self.header = struct_parse(header, self.stream, self.offset)
 
         self.subsubsec_start = self.stream.tell()
 
@@ -440,9 +405,9 @@ class ARMAttributesSubsection(object):
         self.stream.seek(self.subsubsec_start)
 
         while self.stream.tell() != end:
-            subsubsec = ARMAttributesSubsubsection(self.stream,
-                                                   self.structs,
-                                                   self.stream.tell())
+            subsubsec = self.subsubsection(self.stream,
+                                           self.structs,
+                                           self.stream.tell())
             self.stream.seek(self.subsubsec_start + subsubsec.header.value)
             yield subsubsec
 
@@ -452,24 +417,24 @@ class ARMAttributesSubsection(object):
         return self.header[name]
 
     def __repr__(self):
-        s = "<ARMAttributesSubsection (%s): %d bytes>"
-        return s  % (self.header['vendor_name'], self.header['length'])
+        s = "<%s (%s): %d bytes>"
+        return s  % (self.__class__.__name__,
+                     self.header['vendor_name'], self.header['length'])
 
 
-class ARMAttributesSection(Section):
-    """ ELF .ARM.attributes section.
+class AttributesSection(Section):
+    """ ELF attributes section.
     """
-    def __init__(self, header, name, elffile):
-        super(ARMAttributesSection, self).__init__(header, name, elffile)
+    def __init__(self, header, name, elffile, subsection):
+        super(AttributesSection, self).__init__(header, name, elffile)
+        self.subsection = subsection
 
         fv = struct_parse(self.structs.Elf_byte('format_version'),
                           self.stream,
-                          self['sh_offset']
-             )
+                          self['sh_offset'])
 
         elf_assert(chr(fv) == 'A',
-                   "Unknown attributes version %s, expecting 'A'." % chr(fv)
-        )
+                   "Unknown attributes version %s, expecting 'A'." % chr(fv))
 
         self.subsec_start = self.stream.tell()
 
@@ -500,8 +465,130 @@ class ARMAttributesSection(Section):
         self.stream.seek(self.subsec_start)
 
         while self.stream.tell() != end:
-            subsec = ARMAttributesSubsection(self.stream,
-                                             self.structs,
-                                             self.stream.tell())
+            subsec = self.subsection(self.stream,
+                                     self.structs,
+                                     self.stream.tell())
             self.stream.seek(self.subsec_start + subsec['length'])
             yield subsec
+
+
+class ARMAttribute(Attribute):
+    """ ARM attribute object - representing a build attribute of ARM ELF files.
+    """
+    def __init__(self, structs, stream):
+        super(ARMAttribute, self).__init__(
+            struct_parse(structs.Elf_Arm_Attribute_Tag, stream))
+
+        if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
+            self.value = struct_parse(structs.Elf_word('value'), stream)
+
+            if self.tag != 'TAG_FILE':
+                self.extra = []
+                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
+
+                while s_number != 0:
+                    self.extra.append(s_number)
+                    s_number = struct_parse(structs.Elf_uleb128('s_number'),
+                                            stream)
+
+        elif self.tag in ('TAG_CPU_RAW_NAME', 'TAG_CPU_NAME', 'TAG_CONFORMANCE'):
+            self.value = struct_parse(structs.Elf_ntbs('value',
+                                                       encoding='utf-8'),
+                                      stream)
+
+        elif self.tag == 'TAG_COMPATIBILITY':
+            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
+            self.extra = struct_parse(structs.Elf_ntbs('vendor_name',
+                                                       encoding='utf-8'),
+                                      stream)
+
+        elif self.tag == 'TAG_ALSO_COMPATIBLE_WITH':
+            self.value = ARMAttribute(structs, stream)
+
+            if type(self.value.value) is not str:
+                nul = struct_parse(structs.Elf_byte('nul'), stream)
+                elf_assert(nul == 0,
+                           "Invalid terminating byte %r, expecting NUL." % nul)
+
+        else:
+            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
+
+
+class ARMAttributesSubsubsection(AttributesSubsubsection):
+    """ Subsubsection of an ELF .ARM.attributes section's subsection.
+    """
+    def __init__(self, stream, structs, offset):
+        super(ARMAttributesSubsubsection, self).__init__(
+            stream, structs, offset, ARMAttribute)
+
+
+class ARMAttributesSubsection(AttributesSubsection):
+    """ Subsection of an ELF .ARM.attributes section.
+    """
+    def __init__(self, stream, structs, offset):
+        super(ARMAttributesSubsection, self).__init__(
+            stream, structs, offset,
+            structs.Elf_Attr_Subsection_Header,
+            ARMAttributesSubsubsection)
+
+
+class ARMAttributesSection(AttributesSection):
+    """ ELF .ARM.attributes section.
+    """
+    def __init__(self, header, name, elffile):
+        super(ARMAttributesSection, self).__init__(
+            header, name, elffile, ARMAttributesSubsection)
+
+
+class RISCVAttribute(Attribute):
+    """ Attribute of an ELF .riscv.attributes section.
+    """
+    def __init__(self, structs, stream):
+        super(RISCVAttribute, self).__init__(
+            struct_parse(structs.Elf_RiscV_Attribute_Tag, stream))
+
+        if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
+            self.value = struct_parse(structs.Elf_word('value'), stream)
+
+            if self.tag != 'TAG_FILE':
+                self.extra = []
+                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
+
+                while s_number != 0:
+                    self.extra.append(s_number)
+                    s_number = struct_parse(structs.Elf_uleb128('s_number'),
+                                            stream)
+
+        elif self.tag == 'TAG_ARCH':
+            self.value = struct_parse(structs.Elf_ntbs('value',
+                                                       encoding='utf-8'),
+                                      stream)
+
+        else:
+            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
+
+
+class RISCVAttributesSubsubsection(AttributesSubsubsection):
+    """ Subsubsection of an ELF .riscv.attributes subsection.
+    """
+    def __init__(self, stream, structs, offset):
+        super(RISCVAttributesSubsubsection, self).__init__(
+            stream, structs, offset, RISCVAttribute)
+
+
+class RISCVAttributesSubsection(AttributesSubsection):
+    """ Subsection of an ELF .riscv.attributes section.
+    """
+    def __init__(self, stream, structs, offset):
+        super(RISCVAttributesSubsection, self).__init__(
+            stream, structs, offset,
+            structs.Elf_Attr_Subsection_Header,
+            RISCVAttributesSubsubsection)
+
+
+class RISCVAttributesSection(AttributesSection):
+    """ ELF .riscv.attributes section.
+    """
+    def __init__(self, header, name, elffile):
+        super(RISCVAttributesSection, self).__init__(
+            header, name, elffile, RISCVAttributesSubsection)

@@ -107,7 +107,9 @@ class ELFStructs(object):
         self._create_gnu_property()
         self._create_note(e_type)
         self._create_stabs()
+        self._create_attributes_subsection()
         self._create_arm_attributes()
+        self._create_riscv_attributes()
         self._create_elf_hash()
         self._create_gnu_hash()
 
@@ -153,6 +155,8 @@ class ELFStructs(object):
             p_type_dict = ENUM_P_TYPE_AARCH64
         elif self.e_machine == 'EM_MIPS':
             p_type_dict = ENUM_P_TYPE_MIPS
+        elif self.e_machine == 'EM_RISCV':
+            p_type_dict = ENUM_P_TYPE_RISCV
 
         if self.elfclass == 32:
             self.Elf_Phdr = Struct('Elf_Phdr',
@@ -189,6 +193,8 @@ class ELFStructs(object):
             sh_type_dict = ENUM_SH_TYPE_AMD64
         elif self.e_machine == 'EM_MIPS':
             sh_type_dict = ENUM_SH_TYPE_MIPS
+        if self.e_machine == 'EM_RISCV':
+            sh_type_dict = ENUM_SH_TYPE_RISCV
 
         self.Elf_Shdr = Struct('Elf_Shdr',
             self.Elf_word('sh_name'),
@@ -499,7 +505,7 @@ class ELFStructs(object):
             self.Elf_word('n_value'),
         )
 
-    def _create_arm_attributes(self):
+    def _create_attributes_subsection(self):
         # Structure of a build attributes subsection header. A subsection is
         # either public to all tools that process the ELF file or private to
         # the vendor's tools.
@@ -509,10 +515,18 @@ class ELFStructs(object):
                                                                encoding='utf-8')
         )
 
-        # Structure of a build attribute tag.
-        self.Elf_Attribute_Tag = Struct('Elf_Attribute_Tag',
+    def _create_arm_attributes(self):
+        # Structure of an ARM build attribute tag.
+        self.Elf_Arm_Attribute_Tag = Struct('Elf_Arm_Attribute_Tag',
+                                             Enum(self.Elf_uleb128('tag'),
+                                                  **ENUM_ATTR_TAG_ARM)
+        )
+
+    def _create_riscv_attributes(self):
+        # Structure of a RISC-V build attribute tag.
+        self.Elf_RiscV_Attribute_Tag = Struct('Elf_RiscV_Attribute_Tag',
                                         Enum(self.Elf_uleb128('tag'),
-                                             **ENUM_ATTR_TAG_ARM)
+                                             **ENUM_ATTR_TAG_RISCV)
         )
 
     def _create_elf_hash(self):
