@@ -80,6 +80,7 @@ def decode_file_line(dwarfinfo, address):
     for CU in dwarfinfo.iter_CUs():
         # First, look at line programs to find the file/line for the address
         lineprog = dwarfinfo.line_program_for_CU(CU)
+        delta = 1 if lineprog.header.version < 5 else 0
         prevstate = None
         for entry in lineprog.get_entries():
             # We're interested in those entries where a new state is assigned
@@ -88,7 +89,7 @@ def decode_file_line(dwarfinfo, address):
             # Looking for a range of addresses in two consecutive states that
             # contain the required address.
             if prevstate and prevstate.address <= address < entry.state.address:
-                filename = lineprog['file_entry'][prevstate.file - 1].name
+                filename = lineprog['file_entry'][prevstate.file - delta].name
                 line = prevstate.line
                 return filename, line
             if entry.state.end_sequence:
