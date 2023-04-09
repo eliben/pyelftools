@@ -820,6 +820,16 @@ ENUM_RELOC_TYPE_x64 = dict(
     _default_=Pass,
 )
 
+ENUM_RELOC_TYPE_BPF = dict(
+    R_BPF_NONE=0,
+    R_BPF_64_64=1,
+    R_BPF_64_ABS64=2,
+    R_BPF_64_ABS32=3,
+    R_BPF_64_NODYLD32=4,
+    R_BPF_64_32=10,
+    _default_=Pass,
+)
+
 # Sunw Syminfo Bound To special values
 ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_SELF=0xffff,
