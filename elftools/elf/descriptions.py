@@ -26,7 +26,7 @@ def describe_ei_data(x):
 
 
 def describe_ei_version(x):
-    s = '%d' % ENUM_E_VERSION[x]
+    s = f"{ENUM_E_VERSION.get(x, _unknown)}"
     if x == 'EV_CURRENT':
         s += ' (current)'
     return s
@@ -51,7 +51,7 @@ def describe_e_machine(x):
 
 
 def describe_e_version_numeric(x):
-    return '0x%x' % ENUM_E_VERSION[x]
+    return hex(x) if type(x) == int else hex(ENUM_E_VERSION.get(x, _unknown))
 
 
 def describe_p_type(x):
