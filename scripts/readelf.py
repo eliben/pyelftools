@@ -259,6 +259,18 @@ class ReadElf(object):
             if (flags & E_FLAGS.EF_RISCV_FLOAT_ABI) == E_FLAGS.EF_RISCV_FLOAT_ABI_QUAD:
                 description += ", quad-float ABI"
 
+        elif self.elffile['e_machine'] == "EM_LOONGARCH":
+            if (flags & E_FLAGS.EF_LOONGARCH_FLOAT_ABI) == E_FLAGS.EF_LOONGARCH_FLOAT_ABI_SOFT:
+                description += ", SOFT-FLOAT"
+            if (flags & E_FLAGS.EF_LOONGARCH_FLOAT_ABI) == E_FLAGS.EF_LOONGARCH_FLOAT_ABI_SINGLE:
+                description += ", SINGLE-FLOAT"
+            if (flags & E_FLAGS.EF_LOONGARCH_FLOAT_ABI) == E_FLAGS.EF_LOONGARCH_FLOAT_ABI_DOUBLE:
+                description += ", DOUBLE-FLOAT"
+            if (flags & E_FLAGS.EF_LOONGARCH_ABI) == E_FLAGS.EF_LOONGARCH_ABI_V0:
+                description += ", OBJ-v0"
+            if (flags & E_FLAGS.EF_LOONGARCH_ABI) == E_FLAGS.EF_LOONGARCH_ABI_V1:
+                description += ", OBJ-v1"
+
         return description
 
     def display_program_headers(self, show_heading=True):
