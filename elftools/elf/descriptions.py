@@ -404,6 +404,7 @@ _DESCR_E_MACHINE = dict(
     EM_PPC='PowerPC',
     EM_PPC64='PowerPC64',
     EM_RISCV='RISC-V',
+    EM_LOONGARCH='LoongArch',
     RESERVED='RESERVED',
 )
 
