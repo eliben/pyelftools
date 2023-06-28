@@ -17,11 +17,11 @@ class TestFormData16(unittest.TestCase):
             elffile = ELFFile(f)
             dwarfinfo = elffile.get_dwarf_info(follow_links=False)
             cu = next(dwarfinfo.iter_CUs())
-            # Without DW_FORM_data16, the following line errors out:
+            # That DIE in that binary has an attribute with form DW_FORM_indirect
             die = next(die for die in cu.iter_DIEs() if die.tag == 'DW_TAG_pointer_type')
             attr = die.attributes["DW_AT_type"]
-            self.assertEqual(attr.form, "DW_FORM_ref2")
-            self.assertEqual(attr.indirection_length, 1)
+            self.assertEqual(attr.form, "DW_FORM_ref2") # That's the real form
+            self.assertEqual(attr.indirection_length, 1) # But the fact of indirection is captured
 
 if __name__ == '__main__':
     unittest.main()
