@@ -254,8 +254,9 @@ class DIE(object):
             if form == 'DW_FORM_implicit_const':
                 value = spec.value
                 raw_value = value
+            # Another special case: the attribute value is form code followed by the real value in that form
             elif form == 'DW_FORM_indirect':
-                (form, raw_value, indirection_length) = self._resolve_indirect(raw_value)
+                (form, raw_value, indirection_length) = self._resolve_indirect()
                 value = self._translate_attr_value(form, raw_value)
             else:
                 raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
@@ -270,27 +271,26 @@ class DIE(object):
 
         self.size = self.stream.tell() - self.offset
 
-    def _resolve_indirect(self, real_form):
+    def _resolve_indirect(self):
         # Supports arbitrary indirection nesting (the standard doesn't prohibit that).
-        # Expects the stream to be after the real form.
+        # Expects the stream to be at the real form.
         # Returns (form, raw_value, length).
+        structs = self.cu.structs
         length = 1
+        real_form_code = struct_parse(structs.Dwarf_uleb128(''), self.stream) # Numeric form code
         while True:
             try:
-                real_form = DW_FORM_raw2name[real_form]
+                real_form = DW_FORM_raw2name[real_form_code] # Form name or exception if bogus code
             except KeyError as err:
-                raise DWARFError(
-                        'Found DW_FORM_indirect with unknown raw_value=' +
-                        str(real_form))
+                raise DWARFError('Found DW_FORM_indirect with unknown real form 0x%x' % real_form_code)
             
-            raw_value = struct_parse(
-                    self.cu.structs.Dwarf_dw_form[real_form], self.stream)
+            raw_value = struct_parse(structs.Dwarf_dw_form[real_form], self.stream)
             
             if real_form != 'DW_FORM_indirect': # Happy path: one level of indirection
                 return (real_form, raw_value, length)
             else: # Indirection cascade
                 length += 1
-                real_form = raw_value
+                real_form_code = raw_value
                 # And continue parsing
             # No explicit infinite loop guard because the stream will end eventually
 
