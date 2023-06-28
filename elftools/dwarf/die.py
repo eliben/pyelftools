@@ -254,7 +254,7 @@ class DIE(object):
             if form == 'DW_FORM_implicit_const':
                 value = spec.value
                 raw_value = value
-            # Another special case: the attribute value is form code followed by the real value in that form
+            # Another special case: the attribute value is a form code followed by the real value in that form
             elif form == 'DW_FORM_indirect':
                 (form, raw_value, indirection_length) = self._resolve_indirect()
                 value = self._translate_attr_value(form, raw_value)
