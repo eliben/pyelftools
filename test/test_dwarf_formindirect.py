@@ -9,8 +9,8 @@ import os
 
 from elftools.elf.elffile import ELFFile
 
-class TestFormData16(unittest.TestCase):
-    def test_formdata16(self):
+class TestFormIndirect(unittest.TestCase):
+    def test_formindirect(self):
         path = os.path.join('test', 'testfiles_for_unittests',
                             'gmtime_r.o.elf')
         with open(path, 'rb') as f:
