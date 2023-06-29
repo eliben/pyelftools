@@ -35,8 +35,12 @@ from .dwarf_util import _resolve_via_offset_table, _get_base_offset
 #   Offset of this attribute's value in the stream (absolute offset, relative
 #   the beginning of the whole stream)
 #
+# indirection_length:
+#   If the form of the attribute is DW_FORM_indirect, the form will contain
+#   the resolved form, and this will contain the length of the indirection chain.
+#   0 means no indirection.
 AttributeValue = namedtuple(
-    'AttributeValue', 'name form value raw_value offset')
+    'AttributeValue', 'name form value raw_value offset indirection_length')
 
 
 class DIE(object):
@@ -244,11 +248,16 @@ class DIE(object):
             form = spec.form
             name = spec.name
             attr_offset = self.stream.tell()
+            indirection_length = 0
             # Special case here: the attribute value is stored in the attribute
             # definition in the abbreviation spec, not in the DIE itself.
             if form == 'DW_FORM_implicit_const':
                 value = spec.value
                 raw_value = value
+            # Another special case: the attribute value is a form code followed by the real value in that form
+            elif form == 'DW_FORM_indirect':
+                (form, raw_value, indirection_length) = self._resolve_indirect()
+                value = self._translate_attr_value(form, raw_value)
             else:
                 raw_value = struct_parse(structs.Dwarf_dw_form[form], self.stream)
                 value = self._translate_attr_value(form, raw_value)
@@ -257,9 +266,33 @@ class DIE(object):
                 form=form,
                 value=value,
                 raw_value=raw_value,
-                offset=attr_offset)
+                offset=attr_offset,
+                indirection_length = indirection_length)
 
         self.size = self.stream.tell() - self.offset
+
+    def _resolve_indirect(self):
+        # Supports arbitrary indirection nesting (the standard doesn't prohibit that).
+        # Expects the stream to be at the real form.
+        # Returns (form, raw_value, length).
+        structs = self.cu.structs
+        length = 1
+        real_form_code = struct_parse(structs.Dwarf_uleb128(''), self.stream) # Numeric form code
+        while True:
+            try:
+                real_form = DW_FORM_raw2name[real_form_code] # Form name or exception if bogus code
+            except KeyError as err:
+                raise DWARFError('Found DW_FORM_indirect with unknown real form 0x%x' % real_form_code)
+            
+            raw_value = struct_parse(structs.Dwarf_dw_form[real_form], self.stream)
+            
+            if real_form != 'DW_FORM_indirect': # Happy path: one level of indirection
+                return (real_form, raw_value, length)
+            else: # Indirection cascade
+                length += 1
+                real_form_code = raw_value
+                # And continue parsing
+            # No explicit infinite loop guard because the stream will end eventually
 
     def _translate_attr_value(self, form, raw_value):
         """ Translate a raw attr value according to the form
@@ -286,18 +319,6 @@ class DIE(object):
             value = not raw_value == 0
         elif form == 'DW_FORM_flag_present':
             value = True
-        elif form == 'DW_FORM_indirect':
-            try:
-                form = DW_FORM_raw2name[raw_value]
-            except KeyError as err:
-                raise DWARFError(
-                        'Found DW_FORM_indirect with unknown raw_value=' +
-                        str(raw_value))
-
-            raw_value = struct_parse(
-                self.cu.structs.Dwarf_dw_form[form], self.stream)
-            # Let's hope this doesn't get too deep :-)
-            return self._translate_attr_value(form, raw_value)
         elif form in ('DW_FORM_addrx', 'DW_FORM_addrx1', 'DW_FORM_addrx2', 'DW_FORM_addrx3', 'DW_FORM_addrx4') and translate_indirect:
             value = self.cu.dwarfinfo.get_addr(self.cu, raw_value)
         elif form in ('DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4') and translate_indirect:
@@ -333,4 +354,5 @@ class DIE(object):
                     form=attr.form,
                     value=self._translate_attr_value(attr.form, attr.raw_value),
                     raw_value=attr.raw_value,
-                    offset=attr.offset)        
+                    offset=attr.offset,
+                    indirection_length=attr.indirection_length)
