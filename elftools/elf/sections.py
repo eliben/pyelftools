@@ -160,7 +160,7 @@ class SymbolTableIndexSection(Section):
             The section contains an array of Elf32_word values with one entry
             for every symbol in the associated symbol table.
         """
-        return struct_parse(self.elffile.structs.Elf_word(''), self.stream,
+        return struct_parse(self.elffile.structs.Elf_word, self.stream,
                             self['sh_offset'] + n * self['sh_entsize'])
 
 
@@ -429,7 +429,7 @@ class AttributesSection(Section):
         super(AttributesSection, self).__init__(header, name, elffile)
         self.subsection = subsection
 
-        fv = struct_parse(self.structs.Elf_byte('format_version'),
+        fv = struct_parse(self.structs.Elf_byte,
                           self.stream,
                           self['sh_offset'])
 
@@ -480,38 +480,34 @@ class ARMAttribute(Attribute):
             struct_parse(structs.Elf_Arm_Attribute_Tag, stream))
 
         if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
-            self.value = struct_parse(structs.Elf_word('value'), stream)
+            self.value = struct_parse(structs.Elf_word, stream)
 
             if self.tag != 'TAG_FILE':
                 self.extra = []
-                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
+                s_number = struct_parse(structs.Elf_uleb128, stream)
 
                 while s_number != 0:
                     self.extra.append(s_number)
-                    s_number = struct_parse(structs.Elf_uleb128('s_number'),
-                                            stream)
+                    s_number = struct_parse(structs.Elf_uleb128, stream)
 
         elif self.tag in ('TAG_CPU_RAW_NAME', 'TAG_CPU_NAME', 'TAG_CONFORMANCE'):
-            self.value = struct_parse(structs.Elf_ntbs('value',
-                                                       encoding='utf-8'),
-                                      stream)
+            self.value = struct_parse(structs.Elf_ntbs, stream)
 
         elif self.tag == 'TAG_COMPATIBILITY':
-            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
-            self.extra = struct_parse(structs.Elf_ntbs('vendor_name',
-                                                       encoding='utf-8'),
-                                      stream)
+            self.value = struct_parse(structs.Elf_uleb128, stream)
+            # vendor_name
+            self.extra = struct_parse(structs.Elf_ntbs, stream)
 
         elif self.tag == 'TAG_ALSO_COMPATIBLE_WITH':
             self.value = ARMAttribute(structs, stream)
 
-            if type(self.value.value) is not str:
-                nul = struct_parse(structs.Elf_byte('nul'), stream)
+            if not isinstance(self.value.value, str):
+                nul = struct_parse(structs.Elf_byte, stream)
                 elf_assert(nul == 0,
                            "Invalid terminating byte %r, expecting NUL." % nul)
 
         else:
-            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
+            self.value = struct_parse(structs.Elf_uleb128, stream)
 
 
 class ARMAttributesSubsubsection(AttributesSubsubsection):
@@ -548,24 +544,23 @@ class RISCVAttribute(Attribute):
             struct_parse(structs.Elf_RiscV_Attribute_Tag, stream))
 
         if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
-            self.value = struct_parse(structs.Elf_word('value'), stream)
+            self.value = struct_parse(structs.Elf_word, stream)
 
             if self.tag != 'TAG_FILE':
                 self.extra = []
-                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
+                s_number = struct_parse(structs.Elf_uleb128, stream)
 
                 while s_number != 0:
                     self.extra.append(s_number)
-                    s_number = struct_parse(structs.Elf_uleb128('s_number'),
+                    s_number = struct_parse(structs.Elf_uleb128,
                                             stream)
 
         elif self.tag == 'TAG_ARCH':
-            self.value = struct_parse(structs.Elf_ntbs('value',
-                                                       encoding='utf-8'),
+            self.value = struct_parse(structs.Elf_ntbs,
                                       stream)
 
         else:
-            self.value = struct_parse(structs.Elf_uleb128('value'), stream)
+            self.value = struct_parse(structs.Elf_uleb128, stream)
 
 
 class RISCVAttributesSubsubsection(AttributesSubsubsection):

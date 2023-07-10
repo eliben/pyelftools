@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 from contextlib import contextmanager
 from .exceptions import ELFParseError, ELFError, DWARFError
-from ..construct import ConstructError, ULInt8
+from construct import ConstructError, Int8ul
 import os
 
 
@@ -108,7 +108,7 @@ def roundup(num, bits):
 def read_blob(stream, length):
     """Read length bytes from stream, return a list of ints
     """
-    return [struct_parse(ULInt8(''), stream) for i in range(length)]
+    return [struct_parse(Int8ul, stream) for i in range(length)]
 
 def save_dwarf_section(section, filename):
     """Debug helper: dump section contents into a file
