@@ -8,7 +8,7 @@
 # This code is in the public domain
 # -------------------------------------------------------------------------------
 
-from ..construct import UBInt32, ULInt32, Struct
+from construct import Int32ub, Int32ul, Struct
 
 
 class EHABIStructs(object):
@@ -27,21 +27,19 @@ class EHABIStructs(object):
 
     def _create_structs(self):
         if self._little_endian:
-            self.EHABI_uint32 = ULInt32
+            self.EHABI_uint32 = Int32ul
         else:
-            self.EHABI_uint32 = UBInt32
+            self.EHABI_uint32 = Int32ub
         self._create_exception_handler_index()
         self._create_exception_handler_table()
 
     def _create_exception_handler_index(self):
         self.EH_index_struct = Struct(
-            'EH_index',
-            self.EHABI_uint32('word0'),
-            self.EHABI_uint32('word1')
+            'word0' / self.EHABI_uint32,
+            'word1' / self.EHABI_uint32
         )
 
     def _create_exception_handler_table(self):
         self.EH_table_struct = Struct(
-            'EH_table',
-            self.EHABI_uint32('word0'),
+            'word0' / self.EHABI_uint32,
         )

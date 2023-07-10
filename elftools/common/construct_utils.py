@@ -6,45 +6,22 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import (
-    Subconstruct, ConstructError, ArrayError, Adapter, Field, RepeatUntil,
-    Rename, SizeofError, Construct
-    )
+import itertools
+
+from construct import (
+    Subconstruct, Adapter, Bytes, RepeatUntil, Container, StopFieldError,
+    singleton, GreedyBytes, NullTerminated, Struct, Array
+)
 
 
-class RepeatUntilExcluding(Subconstruct):
-    """ A version of construct's RepeatUntil that doesn't include the last
-        element (which casued the repeat to exit) in the return value.
+def exclude_last_value(predicate):
+    def _exclude_last_value(obj, list, ctx):
+        result = predicate(obj, list, ctx)
+        if result:
+            del list[-1]
+        return result
 
-        Only parsing is currently implemented.
-
-        P.S. removed some code duplication
-    """
-    __slots__ = ["predicate"]
-    def __init__(self, predicate, subcon):
-        Subconstruct.__init__(self, subcon)
-        self.predicate = predicate
-        self._clear_flag(self.FLAG_COPY_CONTEXT)
-        self._set_flag(self.FLAG_DYNAMIC)
-    def _parse(self, stream, context):
-        obj = []
-        try:
-            context_for_subcon = context
-            if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                context_for_subcon = context.__copy__()
-
-            while True:
-                subobj = self.subcon._parse(stream, context_for_subcon)
-                if self.predicate(subobj, context):
-                    break
-                obj.append(subobj)
-        except ConstructError as ex:
-            raise ArrayError("missing terminator", ex)
-        return obj
-    def _build(self, obj, stream, context):
-        raise NotImplementedError('no building')
-    def _sizeof(self, context):
-        raise SizeofError("can't calculate size")
+    return _exclude_last_value
 
 
 def _LEB128_reader():
@@ -52,24 +29,14 @@ def _LEB128_reader():
         by a byte with 0 in its highest bit.
     """
     return RepeatUntil(
-                lambda obj, ctx: ord(obj) < 0x80,
-                Field(None, 1))
-
-
-class _ULEB128Adapter(Adapter):
-    """ An adapter for ULEB128, given a sequence of bytes in a sub-construct.
-    """
-    def _decode(self, obj, context):
-        value = 0
-        for b in reversed(obj):
-            value = (value << 7) + (ord(b) & 0x7F)
-        return value
-
+        lambda obj, list, ctx: ord(obj) < 0x80,
+        Bytes(1)
+    )
 
 class _SLEB128Adapter(Adapter):
     """ An adapter for SLEB128, given a sequence of bytes in a sub-construct.
     """
-    def _decode(self, obj, context):
+    def _decode(self, obj, context, path):
         value = 0
         for b in reversed(obj):
             value = (value << 7) + (ord(b) & 0x7F)
@@ -77,36 +44,87 @@ class _SLEB128Adapter(Adapter):
             # negative -> sign extend
             value |= - (1 << (7 * len(obj)))
         return value
+    
+    def _emitparse(self, code):
+        block = f"""
+            def parse_sleb128(io, this):
+                l = []
+                while True:
+                    b = io.read(1)[0]
+                    l.append(b)
+                    if b < 0x80:
+                        break
+                value = 0
+                for b in reversed(l):
+                    value = (value << 7) + (b & 0x7F)
+                if l[-1] & 0x40:
+                    value |= - (1 << (7 * len(l)))
+                return value
+        """
+        code.append(block)
+        return f"parse_sleb128(io, this)"
+    
+    def _emitbuild(self, code):
+        return "None"
 
+# ULEB128 was here, but construct has a drop-in replacement called VarInt
 
-def ULEB128(name):
-    """ A construct creator for ULEB128 encoding.
-    """
-    return Rename(name, _ULEB128Adapter(_LEB128_reader()))
-
-
-def SLEB128(name):
+@singleton
+def SLEB128():
     """ A construct creator for SLEB128 encoding.
     """
-    return Rename(name, _SLEB128Adapter(_LEB128_reader()))
+    return _SLEB128Adapter(_LEB128_reader())
 
-class StreamOffset(Construct):
+
+class EmbeddableStruct(Struct):
+    r"""
+    A special Struct that allows embedding of fields with type Embed.
     """
-    Captures the current stream offset
 
-    Parameters:
-    * name - the name of the value
+    def __init__(self, *subcons, **subconskw):
+        super().__init__(*subcons, **subconskw)
 
-    Example:
-    StreamOffset("item_offset")
+    def _parse(self, stream, context, path):
+        obj = Container()
+        obj._io = stream
+        context = Container(_ = context, _params = context._params, _root = None, _parsing = context._parsing, _building = context._building, _sizing = context._sizing, _subcons = self._subcons, _io = stream, _index = context.get("_index", None), _parent = obj)
+        context._root = context._.get("_root", context)
+        for sc in self.subcons:
+            try:
+                subobj = sc._parsereport(stream, context, path)
+                if sc.name:
+                    obj[sc.name] = subobj
+                    context[sc.name] = subobj
+                elif subobj and isinstance(sc, Embed):
+                    obj.update(subobj)
+
+            except StopFieldError:
+                break
+        return obj
+
+
+class Embed(Subconstruct):
+    r"""
+    Special wrapper that allows outer multiple-subcons construct to merge fields from another multiple-subcons construct.
+    Parsing building and sizeof are deferred to subcon.
+    :param subcon: Construct instance, its fields to embed inside a struct or sequence
+    Example::
+        >>> outer = EmbeddableStruct(
+        ...     Embed(Struct(
+        ...         "data" / Bytes(4),
+        ...     )),
+        ... )
+        >>> outer.parse(b"1234")
+        Container(data=b'1234')
     """
-    __slots__ = []
-    def __init__(self, name):
-        Construct.__init__(self, name)
-        self._set_flag(self.FLAG_DYNAMIC)
-    def _parse(self, stream, context):
-        return stream.tell()
-    def _build(self, obj, stream, context):
-        context[self.name] = stream.tell()
-    def _sizeof(self, context):
-        return 0
+
+    def __init__(self, subcon):
+        super().__init__(subcon)
+
+
+@singleton
+def CStringBytes():
+    """
+    A stripped back version of CString that returns bytes instead of a unicode string.
+    """
+    return NullTerminated(GreedyBytes)

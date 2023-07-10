@@ -14,9 +14,9 @@ from .sections import Section
 from .enums import (
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
-    ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_BPF, ENUM_RELOC_TYPE_LOONGARCH,
-    ENUM_D_TAG)
-from ..construct import Container
+    ENUM_RELOC_TYPE_BPF, ENUM_D_TAG, ENUM_RELOC_TYPE_LOONGARCH,
+    ENUM_RELOC_TYPE_S390X)
+from construct.core import Container
 
 
 class Relocation(object):
@@ -176,7 +176,7 @@ class RelrRelocationTable(object):
                 # Advance 'base' past the current bitmap (8 == CHAR_BIT). There
                 # are 63 (or 31 for 32-bit ELFs) entries in each bitmap, and
                 # every bit corresponds to an ELF_addr-sized relocation.
-                base += (8 * self._entrysize - 1) * self._elffile.structs.Elf_addr('').sizeof()
+                base += (8 * self._entrysize - 1) * self._elffile.structs.Elf_addr.sizeof()
             # Advance to the next entry
             relr += self._entrysize
 
@@ -299,13 +299,13 @@ class RelocationHandler(object):
         # 0. Find out which struct we're going to be using to read this value
         #    from the stream and write it back.
         if recipe.bytesize == 4:
-            value_struct = self.elffile.structs.Elf_word('')
+            value_struct = self.elffile.structs.Elf_word
         elif recipe.bytesize == 8:
-            value_struct = self.elffile.structs.Elf_word64('')
+            value_struct = self.elffile.structs.Elf_word64
         elif recipe.bytesize == 1:
-            value_struct = self.elffile.structs.Elf_byte('')
+            value_struct = self.elffile.structs.Elf_byte
         elif recipe.bytesize == 2:
-            value_struct = self.elffile.structs.Elf_half('')
+            value_struct = self.elffile.structs.Elf_half
         else:
             raise ELFRelocationError('Invalid bytesize %s for relocation' %
                     recipe.bytesize)

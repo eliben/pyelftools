@@ -106,7 +106,7 @@ class TestDynamic(unittest.TestCase):
 
                 seen = set()
                 for tag in dyn.iter_tags():
-                    if type(tag.entry.d_tag) is str and \
+                    if isinstance(tag.entry.d_tag, str) and \
                             tag.entry.d_tag.startswith("DT_SUNW"):
                         seen.add(tag.entry.d_tag)
 

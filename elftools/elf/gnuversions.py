@@ -6,7 +6,6 @@
 # Yann Rouillard (yann@pleiades.fr.eu.org)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-from ..construct import CString
 from ..common.utils import struct_parse, elf_assert
 from .sections import Section, Symbol
 
