@@ -260,15 +260,15 @@ class ReadElf(object):
                 description += ", quad-float ABI"
 
         elif self.elffile['e_machine'] == "EM_LOONGARCH":
-            if (flags & E_FLAGS.EF_LOONGARCH_FLOAT_ABI) == E_FLAGS.EF_LOONGARCH_FLOAT_ABI_SOFT:
+            if (flags & E_FLAGS.EF_LOONGARCH_ABI_MODIFIER_MASK) == E_FLAGS.EF_LOONGARCH_ABI_SOFT_FLOAT:
                 description += ", SOFT-FLOAT"
-            if (flags & E_FLAGS.EF_LOONGARCH_FLOAT_ABI) == E_FLAGS.EF_LOONGARCH_FLOAT_ABI_SINGLE:
+            if (flags & E_FLAGS.EF_LOONGARCH_ABI_MODIFIER_MASK) == E_FLAGS.EF_LOONGARCH_ABI_SINGLE_FLOAT:
                 description += ", SINGLE-FLOAT"
-            if (flags & E_FLAGS.EF_LOONGARCH_FLOAT_ABI) == E_FLAGS.EF_LOONGARCH_FLOAT_ABI_DOUBLE:
+            if (flags & E_FLAGS.EF_LOONGARCH_ABI_MODIFIER_MASK) == E_FLAGS.EF_LOONGARCH_ABI_DOUBLE_FLOAT:
                 description += ", DOUBLE-FLOAT"
-            if (flags & E_FLAGS.EF_LOONGARCH_ABI) == E_FLAGS.EF_LOONGARCH_ABI_V0:
+            if (flags & E_FLAGS.EF_LOONGARCH_OBJABI_MASK) == E_FLAGS.EF_LOONGARCH_OBJABI_V0:
                 description += ", OBJ-v0"
-            if (flags & E_FLAGS.EF_LOONGARCH_ABI) == E_FLAGS.EF_LOONGARCH_ABI_V1:
+            if (flags & E_FLAGS.EF_LOONGARCH_OBJABI_MASK) == E_FLAGS.EF_LOONGARCH_OBJABI_V1:
                 description += ", OBJ-v1"
 
         return description
