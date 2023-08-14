@@ -1,0 +1,70 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+
+            "asargs": ["--debug-info", "test\\testfiles_for_dwarfdump\\dwarf_v5ops-11.so.elf"],
+
+            "aaaargs": ["--debug-dump=loc", "test\\testfiles_for_readelf\\dwarf_v5ops.so.elf"],
+            "aargs": ["--debug-info", "test\\testfiles_for_dwarfdump\\libelf0_8_13_32bit.so.elf"],
+            "aaargs": ["--debug-info", "test\\testfiles_for_dwarfdump\\dwarf_v5ops.so.elf"],
+            "aargs": ["--debug-dump=info", "test\\testfiles_for_dwarfdump\\dwarf_lineprogramv5.elf"],
+            "xxargs": ["--debug-dump=decodedline", "test\\testfiles_for_readelf\\dwarf_v5ops-11.so.elf"],
+
+            "asargs": ["--debug-dump=Ranges", "test\\testfiles_for_readelf\\dwarf_test_versions_mix.elf"],
+            "args": ["--debug-info", "test\\testfiles_for_readelf\\dwarf_test_versions_mix.elf"],
+
+            "aargs": ["--debug-dump=Ranges", "test\\testfiles_for_readelf\\dwarf_gnuops4.so.elf"],
+            "zz-args": ["--opt=--debug-dump=Ranges", "test\\testfiles_for_readelf\\dwarf_gnuops4.so.elf"],
+            "x-args": ["--opt=--debug-dump=decodedline", "test\\testfiles_for_readelf\\dwarf_v5ops.so.elf"],
+            "env": {"READELF":"C:\\cygwin64\\bin\\readelf.exe"}
+        },
+        {
+            "name": "Python: No args",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Python: runelftests",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "args": ["--opt=--debug-dump=loc", "test\\testfiles_for_readelf\\dwarf_v5ops.so.elf"],
+            "sargs": ["--opt=--debug-dump=info", "test\\testfiles_for_readelf\\dwarf_v5ops-11.so.elf"],
+            "ssargs": ["--opt=--debug-dump=Ranges", "test\\testfiles_for_readelf\\dwarf_gnuops4.so.elf"],
+            "yargs": ["--opt=--debug-dump=Ranges", "-k"],
+            "env": {"READELF":"C:\\cygwin64\\bin\\readelf.exe"}
+        },
+        {
+            "name": "Python: example",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}",
+            "xx-args": ["--debug-dump=info", "test\\testfiles_for_readelf\\dwarf_v5ops.so.elf"],
+            "x-args": ["--debug-dump=info", "test\\testfiles_for_readelf\\dwarf_lineprogramv5.elf"],
+            "se-args": ["--test", "./examples/sample_exe64.elf"],
+            "a-args": ["--test", "ambassador.ko"],
+            "args": ["--test", "test\\testfiles_for_readelf\\dwarf_v5ops.so.elf"],
+        }
+    ]
+}
