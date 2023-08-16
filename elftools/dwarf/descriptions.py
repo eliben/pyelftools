@@ -160,6 +160,8 @@ def describe_reg_name(regnum, machine_arch=None, default=True):
         return _REG_NAMES_x64[regnum]
     elif machine_arch == 'AArch64':
         return _REG_NAMES_AArch64[regnum]
+    elif machine_arch == 'ARM':
+        return _REG_NAMES_ARM[regnum]
     elif default:
         return 'r%s' % regnum
     else:
@@ -572,6 +574,25 @@ _REG_NAMES_AArch64 = [
     'z8', 'z9', 'z10', 'z11', 'z12', 'z13', 'z14', 'z15',
     'z16', 'z17', 'z18', 'z19', 'z20', 'z21', 'z22', 'z23',
     'z24', 'z25', 'z26', 'z27', 'z28', 'z29', 'z30', 'z31'
+]
+
+# Source: https://github.com/ARM-software/abi-aa/blob/main/aadwarf32/aadwarf32.rst#dwarf-register-names
+_REG_NAMES_ARM = [
+    'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7',
+    'r8', 'r9', 'r10', 'r11', 'r12', 'sp', 'lr', 'pc'
+] + ['<none>']*48 + ["s%d" %(n,) for n in range(32)] + [
+    'f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7',
+    'acc0', 'acc1', 'acc2', 'acc3', 'acc4', 'acc5', 'acc6', 'acc7', #AKA wcgr0..7
+    'wr0', 'wr1', 'wr2', 'wr3', 'wr4', 'wr5', 'wr6', 'wr7',
+    'wr8', 'wr9', 'wr10', 'wr11', 'wr12', 'wr13', 'wr14', 'wr15',
+    'spsr', 'spsr_fiq', 'spsr_irq', 'spsr_abt', 'spsr_und', 'spsr_svc'] + ['<none>']*9 + [
+    'ra_auth_code', 'r8_usr', 'r9_usr', 'r10_usr', 'r11_usr', 'r12_usr', 'r13_usr', 'r14_usr',
+    'r8_fiq', 'r9_fiq', 'r10_fiq', 'r11_fiq', 'r12_fiq', 'r13_fiq', 'r14_fiq',
+    'r13_irq', 'r14_irq', 'r13_abt', 'r14_abt',
+    'r13_und', 'r14_und', 'r13_svc', 'r14_svc'] + ['<none>']*26 + [
+    'wc0', 'wc1', 'wc2', 'wc3', 'wc4', 'wc5', 'wc6', 'wc7'] + ['<none>']*56 + [
+        "d%d" %(n,) for n in range(32)] + ['<none>']*32 + [
+     'tpidruro', 'tpidrurw', 'tpidpr', 'htpidpr'
 ]
 
 
