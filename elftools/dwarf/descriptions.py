@@ -160,7 +160,7 @@ def describe_reg_name(regnum, machine_arch=None, default=True):
         return _REG_NAMES_x64[regnum]
     elif machine_arch == 'AArch64':
         return _REG_NAMES_AArch64[regnum]
-    elif machine_arch == 'ARM':
+    elif machine_arch == 'ARM' and not regnum in (13, 14, 15): # Readelf emits unfriendly names for r13..15
         return _REG_NAMES_ARM[regnum]
     elif default:
         return 'r%s' % regnum
