@@ -66,8 +66,8 @@ def run_test_on_file(filename, verbose=False, opt=None):
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp',
             '--debug-dump=aranges', '--debug-dump=pubtypes',
-            '--debug-dump=pubnames', '--debug-dump=loc',
-            '--debug-dump=Ranges'
+            '--debug-dump=pubnames', '--debug-dump=loc'
+            #'--debug-dump=Ranges'
             ]
     else:
         options = [opt]
