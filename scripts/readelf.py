@@ -1643,9 +1643,8 @@ class ReadElf(object):
             for die in cu.iter_DIEs()
             if 'DW_AT_ranges' in die.attributes}        
 
-        self._emitline('Contents of the %s section:\n\n\n' % section_name)
-
         if ver5: # Dump by CUs - unsure at this point what does readelf do, ranges dump is buggy in 2.41
+            self._emitline('Contents of the %s section:\n\n\n' % section_name)
             for cu in range_lists_sec.iter_CUs():
                 self._emitline(' Table at Offset: %s:' % self._format_hex(cu.cu_offset, alternate=True))
                 self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
@@ -1663,10 +1662,11 @@ class ReadElf(object):
         else: # Dump by DIE reference offset
             range_lists = list(range_lists_sec.iter_range_lists())
             if len(range_lists) == 0:
-                # Present but empty locations section - readelf outputs a message
+                # Present but empty ranges section - readelf outputs a message
                 self._emitline("\nSection '%s' has no debugging data." % section_name)
                 return
 
+            self._emitline('Contents of the %s section:\n\n\n' % section_name)
             self._emitline('    Offset   Begin    End')
 
             for range_list in range_lists:

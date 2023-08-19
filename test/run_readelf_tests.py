@@ -66,11 +66,16 @@ def run_test_on_file(filename, verbose=False, opt=None):
             '--debug-dump=info', '--debug-dump=decodedline',
             '--debug-dump=frames', '--debug-dump=frames-interp',
             '--debug-dump=aranges', '--debug-dump=pubtypes',
-            '--debug-dump=pubnames', '--debug-dump=loc'
-            #'--debug-dump=Ranges'
+            '--debug-dump=pubnames', '--debug-dump=loc',
+            '--debug-dump=Ranges'
             ]
     else:
         options = [opt]
+
+    # TODO(sevaa): excluding two files from the --debug-dump=Ranges test until the maintainers
+    # of GNU binutils fix https://sourceware.org/bugzilla/show_bug.cgi?id=30781
+    if filename.endswith('dwarf_test_versions_mix.elf') or filename.endswith('dwarf_v5ops.so.elf'):
+        options.remove('--debug-dump=Ranges')
 
     for option in options:
         if verbose: testlog.info("..option='%s'" % option)
