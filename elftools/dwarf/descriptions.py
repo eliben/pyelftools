@@ -604,6 +604,29 @@ _REG_NAMES_MIPS = [
         '$fp%d' % n for n in range(35)] + ['<none>'] + [
         '$cp%d' % n for n in range(15)] + ['$prid']
 
+# Source: https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-dwarf.adoc
+_REG_NAMES_RISCV = [
+    'zero', 'ra', 'sp', 'gp', 'tp', 't0', 't1', 't2',
+    'fp', 's1', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5',
+    'a6', 'a7', 's2', 's3', 's4', 's5', 's6', 's7',
+    't8', 't9', 's10', 's11', 't3', 't4', 't5', 't6'] + [
+        'f%d' % n for n in range(32)] + ['afrc'] + ['<none>']*31 + [
+        'v%d' % n for n in range(32)]
+
+# Source for 64 bit: https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi.html
+# Source for 32 bit: http://refspecs.linux-foundation.org/elf/elfspec_ppc.pdf
+# They are sufficiently similar
+# There are some more kernel level registers defined in the ABI at #356 and further, not listed here
+_REG_NAMES_POWERPC = ['r%d' % n for n in range(32)] + [
+      'f%d' % n for n in range(32)] +[
+    'cr', 'fpscr', 'msr', '<none>', '<none>', '<none>',
+    'sr0', 'sr1', 'sr2', 'sr3', 'sr4', 'sr5', 'sr6', 'sr7',
+    'sr8', 'sr9', 'sr10', 'sr11', 'sr12', 'sr13', 'sr14', 'sr15'] + ['<none>']*14 + [
+    'mq', 'xer', '<none>', '<none>', 'rtcu', 'rtcl', '<none>', '<none>',
+    'lr', 'ctr', '<none>', '<none>', '<none>', '<none>', '<none>', '<none>',
+    '<none>', '<none>', 'dsisr', 'dar', '<none>', '<none>', 'dec', '<none>',
+    '<none>', 'sdr1', 'srr0', 'srr1']
+
 
 class ExprDumper(object):
     """ A dumper for DWARF expressions that dumps a textual
