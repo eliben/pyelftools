@@ -114,14 +114,21 @@ class RangeLists(object):
         return struct_parse(self.structs.Dwarf_rnglists_entries, self.stream, offset)
 
     def iter_range_lists(self):
-        """ Yield all range lists found in the section according to readelf rules.
+        """ Yields all range lists found in the section according to readelf rules.
         Scans the DIEs for rangelist offsets, then pulls those.
+        Returned rangelists are always translated into lists of BaseAddressEntry/RangeEntry objects.
         """
-        # Calling parse until the stream ends is wrong, because ranges can overlap.
-        # Need to scan the DIEs to know all range locations
+        # Rangelists can overlap. That is, one DIE points at the rangelist beginning, and another
+        # points at the middle of the same. Therefore, enumerating them is not a well defined
+        # operation - do you count those as two different (but overlapping) ones, or as a single one?
+        # For debugging utility, you want two. That's what readelf does. For faithfully
+        # representing the section contents, you want one.
+        # That was the behaviour of pyelftools 0.28 and below - calling
+        # parse until the stream end. Leaving aside the question of correctless,
+        # that's uncompatible with readelf.
 
-        # This maps list offset to CU
         ver5 = self.version >= 5
+        # This maps list offset to CU
         cu_map = {die.attributes['DW_AT_ranges'].value : cu
             for cu in self._dwarfinfo.iter_CUs()
             for die in cu.iter_DIEs()
@@ -147,8 +154,13 @@ class RangeLists(object):
         stream = self.stream
         stream.seek(cu.offset_table_offset + (64 if cu.is64 else 32) * cu.offset_count)
         while stream.tell() < cu.offset_after_length + cu.unit_length:
-            yield struct_parse(self.structs.Dwarf_rnglists_entries, stream);
+            yield struct_parse(self.structs.Dwarf_rnglists_entries, stream)
 
+    def translate_v5_entry(self, entry, cu):
+        """Translates entries in a DWARFv5 rangelist from raw parsed format to 
+        a list of BaseAddressEntry/RangeEntry, using the CU
+        """
+        return entry_translate[entry.entry_type](entry, cu)
 
     #------ PRIVATE ------#
 

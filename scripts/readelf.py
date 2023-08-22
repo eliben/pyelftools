@@ -949,7 +949,8 @@ class ReadElf(object):
                 lead0x = False
             else:
                 lead0x = True
-                fieldsize -= 2
+                if fieldsize is not None:
+                    fieldsize -= 2
 
         s = '0x' if lead0x else ''
         if fullhex:
@@ -980,7 +981,7 @@ class ReadElf(object):
             self._format_hex(
                 version_section['sh_addr'], fieldsize=16, lead0x=lead0x),
             self._format_hex(
-                version_section['sh_offset'], fieldsize=6, lead0x=True),
+                version_section['sh_offset'], fieldsize=8, lead0x=True),
             version_section['sh_link'],
                 self.elffile.get_section(version_section['sh_link']).name
             )
@@ -1117,7 +1118,7 @@ class ReadElf(object):
 
         for cu in self._dwarfinfo.iter_CUs():
             self._emitline('  Compilation Unit @ offset %s:' %
-                self._format_hex(cu.cu_offset))
+                self._format_hex(cu.cu_offset, alternate=True))
             self._emitline('   Length:        %s (%s)' % (
                 self._format_hex(cu['unit_length']),
                 '%s-bit' % cu.dwarf_format()))
@@ -1128,7 +1129,7 @@ class ReadElf(object):
                     self._emitline('   Unit Type:     %s (%d)' % (
                         unit_type, ENUM_DW_UT.get(cu.header.unit_type, 0)))
                     self._emitline('   Abbrev Offset: %s' % (
-                        self._format_hex(cu['debug_abbrev_offset'])))
+                        self._format_hex(cu['debug_abbrev_offset'], alternate=True)))
                     self._emitline('   Pointer Size:  %s' % cu['address_size'])
                     if unit_type in ('DW_UT_skeleton', 'DW_UT_split_compile'):
                         self._emitline('   Dwo id:        %s' % cu['dwo_id'])
@@ -1137,7 +1138,7 @@ class ReadElf(object):
                         self._emitline('   Type Offset:   0x%x' % cu['type_offset'])
             else:
                 self._emitline('   Abbrev Offset: %s' % (
-                    self._format_hex(cu['debug_abbrev_offset']))),
+                    self._format_hex(cu['debug_abbrev_offset'], alternate=True))),
                 self._emitline('   Pointer Size:  %s' % cu['address_size'])
 
             # The nesting depth of each DIE within the tree of DIEs must be
@@ -1627,33 +1628,54 @@ class ReadElf(object):
             self._dump_debug_rangesection(di, range_lists_sec)
 
     def _dump_debug_rangesection(self, di, range_lists_sec):
-        # In the master branch of binutils, the v5 dump format is way different by now.
-
+        # Last amended to match readelf 2.41
         ver5 = range_lists_sec.version >= 5
         section_name = (di.debug_rnglists_sec if ver5 else di.debug_ranges_sec).name
         addr_size = di.config.default_address_size # In bytes, 4 or 8
         addr_width = addr_size * 2 # In hex digits, 8 or 16
         line_template = "    %%08x %%0%dx %%0%dx %%s" % (addr_width, addr_width)
-        base_template = "    %%08x %%0%dx (base address)" % (addr_width)        
-
-        range_lists = list(range_lists_sec.iter_range_lists())
-        if len(range_lists) == 0:
-            # Present but empty locations section - readelf outputs a message
-            self._emitline("\nSection '%s' has no debugging data." % section_name)
-            return
+        base_template = "    %%08x %%0%dx (base address)" % (addr_width)
 
         # In order to determine the base address of the range
         # We need to know the corresponding CU.
         cu_map = {die.attributes['DW_AT_ranges'].value : cu  # Range list offset => CU
             for cu in di.iter_CUs()
             for die in cu.iter_DIEs()
-            if 'DW_AT_ranges' in die.attributes}
+            if 'DW_AT_ranges' in die.attributes}        
 
-        self._emitline('Contents of the %s section:\n' % section_name)
-        self._emitline('    Offset   Begin    End')
+        if ver5: # Dump by CUs - unsure at this point what does readelf do, ranges dump is buggy in 2.41
+            self._emitline('Contents of the %s section:\n\n\n' % section_name)
+            for cu in range_lists_sec.iter_CUs():
+                self._emitline(' Table at Offset: %s:' % self._format_hex(cu.cu_offset, alternate=True))
+                self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
+                self._emitline('  DWARF version:   %d' % cu.version)
+                self._emitline('  Address size:    %d' % cu.address_size)
+                self._emitline('  Segment size:    %d' % cu.segment_selector_size)
+                self._emitline('  Offset entries:  %d\n' % cu.offset_count)
+                # Is the offset table dumped too?
+                for (i, range_list) in enumerate(range_lists_sec.iter_CU_range_lists_ex(cu)):
+                    list_offset = range_list[0].entry_offset
+                    range_list = list(range_lists_sec.translate_v5_entry(entry, cu_map[list_offset]) for entry in range_list)
+                    self._emitline('  Offset: %s, Index: %d' % (self._format_hex(list_offset, alternate=True), i))
+                    self._emitline('    Offset   Begin    End')
+                    self._dump_rangelist(range_list, cu_map, ver5, line_template, base_template)
+        else: # Dump by DIE reference offset
+            range_lists = list(range_lists_sec.iter_range_lists())
+            if len(range_lists) == 0:
+                # Present but empty ranges section - readelf outputs a message
+                self._emitline("\nSection '%s' has no debugging data." % section_name)
+                return
 
-        for range_list in range_lists:
-            self._dump_rangelist(range_list, cu_map, ver5, line_template, base_template)
+            self._emitline('Contents of the %s section:\n\n\n' % section_name)
+            self._emitline('    Offset   Begin    End')
+
+            for range_list in range_lists:
+                if len(range_list) == 0: # working around a bogus behavior in readelf 2.41
+                    # No entries means no offset. Dirty hack: peek the stream position
+                    range_list_offset = range_lists_sec.stream.tell() - self._dwarfinfo.config.default_address_size*2
+                    self._emitline('    %08x <End of list>' % (range_list_offset))
+                else:
+                    self._dump_rangelist(range_list, cu_map, ver5, line_template, base_template)
 
     def _dump_rangelist(self, range_list, cu_map, ver5, line_template, base_template):
         # Weird discrepancy in binutils: for DWARFv5 it outputs entry offset,

@@ -183,34 +183,37 @@ def describe_form_class(form):
 #
 _MACHINE_ARCH = None
 
+# Implements the alternative format of readelf: lowercase hex, prefixed with 0x unless 0
+def _format_hex(n):
+    return '0x%x' % n if n != 0 else '0'
 
 def _describe_attr_ref(attr, die, section_offset):
-    return '<0x%x>' % (attr.value + die.cu.cu_offset)
+    return '<%s>' % _format_hex(attr.value + die.cu.cu_offset)
 
 def _describe_attr_ref_sig8(attr, die, section_offset):
-    return 'signature: 0x%x' % (attr.value)
+    return 'signature: %s' % _format_hex(attr.value)
 
 def _describe_attr_value_passthrough(attr, die, section_offset):
     return attr.value
 
 def _describe_attr_hex(attr, die, section_offset):
-    return '0x%x' % (attr.value)
+    return '%s' % _format_hex(attr.value)
 
 def _describe_attr_hex_addr(attr, die, section_offset):
-    return '<0x%x>' % (attr.value)
+    return '<%s>' % _format_hex(attr.value)
 
 def _describe_attr_split_64bit(attr, die, section_offset):
     low_word = attr.value & 0xFFFFFFFF
     high_word = (attr.value >> 32) & 0xFFFFFFFF
-    return '0x%x 0x%x' % (low_word, high_word)
+    return '%s %s' % (_format_hex(low_word), _format_hex(high_word))
 
 def _describe_attr_strp(attr, die, section_offset):
-    return '(indirect string, offset: 0x%x): %s' % (
-        attr.raw_value, bytes2str(attr.value))
+    return '(indirect string, offset: %s): %s' % (
+        _format_hex(attr.raw_value), bytes2str(attr.value))
 
 def _describe_attr_line_strp(attr, die, section_offset):
-    return '(indirect line string, offset: 0x%x): %s' % (
-        attr.raw_value, bytes2str(attr.value))
+    return '(indirect line string, offset: %s): %s' % (
+        _format_hex(attr.raw_value), bytes2str(attr.value))
 
 def _describe_attr_string(attr, die, section_offset):
     return bytes2str(attr.value)
