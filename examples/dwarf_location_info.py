@@ -76,7 +76,7 @@ def process_file(filename):
                     if loc_parser.attribute_has_location(attr, CU['version']):
                         print('   DIE %s. attr %s.' % (DIE.tag, attr.name))
                         loc = loc_parser.parse_from_attribute(attr,
-                                                              CU['version'])
+                                                              CU['version'], DIE)
                         # We either get a list (in case the attribute is a
                         # reference to the .debug_loc section) or a LocationExpr
                         # object (in case the attribute itself contains location
