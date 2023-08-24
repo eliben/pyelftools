@@ -284,7 +284,7 @@ class RelocationHandler(object):
             value=original_value,
             sym_value=sym_value,
             offset=reloc['r_offset'],
-            addend=reloc['r_addend'] if recipe.has_addend else 0)
+            addend=reloc.entry.get('r_addend', 0))
         # 3. Write the relocated value back into the stream
         stream.seek(reloc['r_offset'])
 
@@ -297,12 +297,11 @@ class RelocationHandler(object):
     # Relocations are represented by "recipes". Each recipe specifies:
     #  bytesize: The number of bytes to read (and write back) to the section.
     #            This is the unit of data on which relocation is performed.
-    #  has_addend: Does this relocation have an extra addend?
     #  calc_func: A function that performs the relocation on an extracted
     #             value, and returns the updated value.
     #
     _RELOCATION_RECIPE_TYPE = namedtuple('_RELOCATION_RECIPE_TYPE',
-        'bytesize has_addend calc_func')
+        'bytesize calc_func')
 
     def _reloc_calc_identity(value, sym_value, offset, addend=0):
         return value
@@ -327,83 +326,83 @@ class RelocationHandler(object):
 
     _RELOCATION_RECIPES_ARM = {
         ENUM_RELOC_TYPE_ARM['R_ARM_ABS32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False,
+            bytesize=4,
             calc_func=_reloc_calc_sym_plus_value),
         ENUM_RELOC_TYPE_ARM['R_ARM_CALL']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False,
+            bytesize=4,
             calc_func=_arm_reloc_calc_sym_plus_value_pcrel),
     }
 
     _RELOCATION_RECIPES_AARCH64 = {
         ENUM_RELOC_TYPE_AARCH64['R_AARCH64_ABS64']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+            bytesize=8, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_AARCH64['R_AARCH64_ABS32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+            bytesize=4, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_AARCH64['R_AARCH64_PREL32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True,
+            bytesize=4,
             calc_func=_reloc_calc_sym_plus_addend_pcrel),
     }
 
     # https://dmz-portal.mips.com/wiki/MIPS_relocation_types
     _RELOCATION_RECIPES_MIPS = {
         ENUM_RELOC_TYPE_MIPS['R_MIPS_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
+            bytesize=4, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_MIPS['R_MIPS_32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True,
+            bytesize=4,
             calc_func=_reloc_calc_sym_plus_value),
         ENUM_RELOC_TYPE_MIPS['R_MIPS_64']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=True,
+            bytesize=8,
             calc_func=_reloc_calc_sym_plus_value),
     }
 
     _RELOCATION_RECIPES_PPC64 = {
         ENUM_RELOC_TYPE_PPC64['R_PPC64_ADDR32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+            bytesize=4, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_PPC64['R_PPC64_REL32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend_pcrel),
+            bytesize=4, calc_func=_reloc_calc_sym_plus_addend_pcrel),
         ENUM_RELOC_TYPE_PPC64['R_PPC64_ADDR64']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+            bytesize=8, calc_func=_reloc_calc_sym_plus_addend),
     }
 
     _RELOCATION_RECIPES_X86 = {
         ENUM_RELOC_TYPE_i386['R_386_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
+            bytesize=4, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_i386['R_386_32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False,
+            bytesize=4,
             calc_func=_reloc_calc_sym_plus_value),
         ENUM_RELOC_TYPE_i386['R_386_PC32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False,
+            bytesize=4,
             calc_func=_reloc_calc_sym_plus_value_pcrel),
     }
 
     _RELOCATION_RECIPES_X64 = {
         ENUM_RELOC_TYPE_x64['R_X86_64_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=True, calc_func=_reloc_calc_identity),
+            bytesize=8, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_x64['R_X86_64_64']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+            bytesize=8, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_x64['R_X86_64_PC32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True,
+            bytesize=4,
             calc_func=_reloc_calc_sym_plus_addend_pcrel),
         ENUM_RELOC_TYPE_x64['R_X86_64_32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+            bytesize=4, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_x64['R_X86_64_32S']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+            bytesize=4, calc_func=_reloc_calc_sym_plus_addend),
     }
 
     # https://www.kernel.org/doc/html/latest/bpf/llvm_reloc.html#different-relocation-types
     _RELOCATION_RECIPES_EBPF = {
         ENUM_RELOC_TYPE_BPF['R_BPF_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=False, calc_func=_reloc_calc_identity),
+            bytesize=8, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_BPF['R_BPF_64_64']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=False, calc_func=_reloc_calc_identity),
+            bytesize=8, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_BPF['R_BPF_64_32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=False, calc_func=_bpf_64_32_reloc_calc_sym_plus_addend),
+            bytesize=8, calc_func=_bpf_64_32_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_BPF['R_BPF_64_NODYLD32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
+            bytesize=4, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_BPF['R_BPF_64_ABS64']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=False, calc_func=_reloc_calc_identity),
+            bytesize=8, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_BPF['R_BPF_64_ABS32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
+            bytesize=4, calc_func=_reloc_calc_identity),
     }
 
 
