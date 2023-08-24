@@ -13,7 +13,6 @@ import logging
 from multiprocessing import Pool
 import os
 import platform
-import re
 import sys
 import time
 
@@ -44,6 +43,15 @@ def discover_testfiles(rootdir):
         if ext == '.elf':
             yield os.path.join(rootdir, filename)
 
+def fix_llvm_dwarfdump_bug(output):
+    """ For some reason, llvm-dwarfdump misses a relocation for the MIPS64 .o file.
+        However, gcc's objdump does the relocation like pyelftools.
+        So just fix the output. Very ugly.
+    """
+    # Assert there are 2 'DW_OP_addr 0x0' strings. Replace the first one with 'DW_OP_addr 0x4'.
+    parts = output.split('DW_OP_addr 0x0')
+    assert len(parts) == 3
+    return parts[0] + 'DW_OP_addr 0x4' + parts[1] + 'DW_OP_addr 0x0' + parts[2]
 
 def run_test_on_file(filename, verbose=False, opt=None):
     """ Runs a test on the given input filename. Return True if all test
@@ -80,6 +88,8 @@ def run_test_on_file(filename, verbose=False, opt=None):
             stdouts.append(stdout)
         if verbose: testlog.info('....comparing output...')
         t1 = time.time()
+        if 'mips64' in filename:
+            stdouts[0] = fix_llvm_dwarfdump_bug(stdouts[0])
         rc, errmsg = compare_output(*stdouts)
         if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
         if rc:
