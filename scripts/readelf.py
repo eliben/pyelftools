@@ -9,6 +9,7 @@
 #-------------------------------------------------------------------------------
 import argparse
 import os, sys
+import re
 import string
 import traceback
 import itertools
@@ -94,6 +95,13 @@ def _get_cu_base(cu):
         return base_ip
     else:
         raise ValueError("Can't find the base IP (low_pc) for a CU")
+
+# Matcher for all control characters, for transforming them into "^X" form when
+# formatting symbol names for display.
+_CONTROL_CHAR_RE = re.compile(r'[\x01-\x1f]')
+
+def _format_symbol_name(s):
+    return _CONTROL_CHAR_RE.sub(lambda match: '^' + chr(0x40 + ord(match[0])), s)
 
 class ReadElf(object):
     """ display_* methods are used to emit output into the output stream
@@ -495,7 +503,7 @@ class ReadElf(object):
                     describe_symbol_shndx(self._get_symbol_shndx(symbol,
                                                                  nsym,
                                                                  section_index)),
-                    symbol_name,
+                    _format_symbol_name(symbol_name),
                     version_info))
 
     def display_dynamic_tags(self):
@@ -632,7 +640,7 @@ class ReadElf(object):
                         self._format_hex(
                             symbol['st_value'],
                             fullhex=True, lead0x=False),
-                        symbol_name))
+                        _format_symbol_name(symbol_name)))
                     if section.is_RELA():
                         self._emit(' %s %x' % (
                             '+' if rel['r_addend'] >= 0 else '-',
