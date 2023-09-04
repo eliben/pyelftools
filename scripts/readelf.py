@@ -1459,24 +1459,20 @@ class ReadElf(object):
 
             # Look at the registers the decoded table describes.
             # We build reg_order here to match readelf's order. In particular,
-            # registers are sorted by their number, and the register matching
-            # ra_regnum is always listed last with a special heading.
+            # registers are sorted by their number, so that the register
+            # matching ra_regnum is usually listed last with a special heading.
+            # (LoongArch is a notable exception in that its return register's
+            # DWARF register number is not greater than other GPRs.)
             decoded_table = entry.get_decoded()
-            reg_order = sorted(filter(
-                lambda r: r != ra_regnum,
-                decoded_table.reg_order))
+            reg_order = sorted(decoded_table.reg_order)
             if len(decoded_table.reg_order):
-
                 # Headings for the registers
                 for regnum in reg_order:
+                    if regnum == ra_regnum:
+                        self._emit('ra      ')
+                        continue
                     self._emit('%-6s' % describe_reg_name(regnum))
-                self._emitline('ra      ')
-
-                # Now include ra_regnum in reg_order to print its values
-                # similarly to the other registers.
-                reg_order.append(ra_regnum)
-            else:
-                self._emitline()
+            self._emitline()
 
             for line in decoded_table.table:
                 self._emit(self._format_hex(
