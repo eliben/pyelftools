@@ -241,9 +241,13 @@ class RelocationHandler(object):
             recipe = self._RELOCATION_RECIPES_X64.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'MIPS':
             if reloc.is_RELA():
-                raise ELFRelocationError(
-                    'Unexpected RELA relocation for MIPS: %s' % reloc)
-            recipe = self._RELOCATION_RECIPES_MIPS.get(reloc_type, None)
+                if reloc_type == ENUM_RELOC_TYPE_MIPS['R_MIPS_64']:
+                    if reloc['r_type2'] != 0 or reloc['r_type3'] != 0 or reloc['r_ssym'] != 0:
+                        raise ELFRelocationError(
+                            'Multiple relocations in R_MIPS_64 are not implemented: %s' % reloc)
+                recipe = self._RELOCATION_RECIPES_MIPS_RELA.get(reloc_type, None)
+            else:
+                recipe = self._RELOCATION_RECIPES_MIPS_REL.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'ARM':
             if reloc.is_RELA():
                 raise ELFRelocationError(
@@ -307,7 +311,7 @@ class RelocationHandler(object):
         return value
 
     def _reloc_calc_sym_plus_value(value, sym_value, offset, addend=0):
-        return sym_value + value
+        return sym_value + value + addend
 
     def _reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
         return sym_value + value - offset
@@ -344,11 +348,21 @@ class RelocationHandler(object):
     }
 
     # https://dmz-portal.mips.com/wiki/MIPS_relocation_types
-    _RELOCATION_RECIPES_MIPS = {
+    _RELOCATION_RECIPES_MIPS_REL = {
         ENUM_RELOC_TYPE_MIPS['R_MIPS_NONE']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_MIPS['R_MIPS_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False,
+            calc_func=_reloc_calc_sym_plus_value),
+    }
+    _RELOCATION_RECIPES_MIPS_RELA = {
+        ENUM_RELOC_TYPE_MIPS['R_MIPS_NONE']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_identity),
+        ENUM_RELOC_TYPE_MIPS['R_MIPS_32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True,
+            calc_func=_reloc_calc_sym_plus_value),
+        ENUM_RELOC_TYPE_MIPS['R_MIPS_64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True,
             calc_func=_reloc_calc_sym_plus_value),
     }
 
