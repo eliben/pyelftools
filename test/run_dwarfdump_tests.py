@@ -102,14 +102,16 @@ def compare_output(s1, s2):
         and errmsg is empty. Otherwise success is False and errmsg holds a
         description of the mismatch.
     """
-    def remove_zero_address_symbol(s):
-        return s.replace('(0x0000000000000000 ".text")', '(0x0000000000000000)')
+    # llvm-dwarfdump sometimes adds a comment to addresses. We still haven't invested the
+    # effort to understand exactly when. For now, removing the section comment helps us pass
+    # the test.
+    s1 = s1.replace('(0x0000000000000000 ".text")', '(0x0000000000000000)')
 
     def prepare_lines(s):
         return [line for line in s.lower().splitlines() if line.strip() != '']
 
-    lines1 = prepare_lines(remove_zero_address_symbol(s1))
-    lines2 = prepare_lines(remove_zero_address_symbol(s2))
+    lines1 = prepare_lines(s1)
+    lines2 = prepare_lines(s2)
 
     if len(lines1) != len(lines2):
         return False, 'Number of lines different: %s vs %s' % (
