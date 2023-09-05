@@ -14,7 +14,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import argparse
-import os, sys, posixpath
+import os, sys
 import traceback
 
 # For running from development directory. It should take precedence over the
@@ -147,13 +147,13 @@ def _desc_decl_file(attr, die):
         if dir_index >= 0:
             dir = bytes2str(includes[dir_index])
             if dir.startswith('.'):
-                dir = posixpath.join(_cu_comp_dir(cu), dir)
+                dir = os.path.join(_cu_comp_dir(cu), dir)
         else:
             dir = _cu_comp_dir(cu)
         file_name = bytes2str(file_entry.name)
     else:
         raise DWARFError("Invalid source filename entry index in a decl_file attribute")
-    return "\"%s\"" % (posixpath.join(dir, file_name),)
+    return "\"%s\"" % (os.path.join(dir, file_name),)
 
 
 def _desc_ranges(attr, die):
