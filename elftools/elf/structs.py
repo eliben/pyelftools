@@ -7,14 +7,14 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import (
-    UBInt8, UBInt16, UBInt32, UBInt64,
-    ULInt8, ULInt16, ULInt32, ULInt64,
-    SBInt32, SLInt32, SBInt64, SLInt64,
-    Struct, Array, Enum, Padding, BitStruct, BitField, Value, String, CString,
-    Switch, Field
-    )
-from ..common.construct_utils import ULEB128
+from construct import (
+    Int8ub, Int16ub, Int32ub, Int64ub,
+    Int8ul, Int16ul, Int32ul, Int64ul,
+    Int32sb, Int32sl, Int64sb, Int64sl,
+    Struct, Array, Enum, Padding, BitStruct,
+    BitsInteger, Computed, CString, Switch, Bytes
+)
+from ..common.construct_utils import ULEB128, CStringBytes
 from ..common.utils import roundup
 from .enums import *
 
@@ -62,25 +62,25 @@ class ELFStructs(object):
             initial determining of ELF type.
         """
         if self.little_endian:
-            self.Elf_byte = ULInt8
-            self.Elf_half = ULInt16
-            self.Elf_word = ULInt32
-            self.Elf_word64 = ULInt64
-            self.Elf_addr = ULInt32 if self.elfclass == 32 else ULInt64
+            self.Elf_byte = Int8ul
+            self.Elf_half = Int16ul
+            self.Elf_word = Int32ul
+            self.Elf_word64 = Int64ul
+            self.Elf_addr = Int32ul if self.elfclass == 32 else Int64ul
             self.Elf_offset = self.Elf_addr
-            self.Elf_sword = SLInt32
-            self.Elf_xword = ULInt32 if self.elfclass == 32 else ULInt64
-            self.Elf_sxword = SLInt32 if self.elfclass == 32 else SLInt64
+            self.Elf_sword = Int32sl
+            self.Elf_xword = Int32ul if self.elfclass == 32 else Int64ul
+            self.Elf_sxword = Int32sl if self.elfclass == 32 else Int64sl
         else:
-            self.Elf_byte = UBInt8
-            self.Elf_half = UBInt16
-            self.Elf_word = UBInt32
-            self.Elf_word64 = UBInt64
-            self.Elf_addr = UBInt32 if self.elfclass == 32 else UBInt64
+            self.Elf_byte = Int8ub
+            self.Elf_half = Int16ub
+            self.Elf_word = Int32ub
+            self.Elf_word64 = Int64ub
+            self.Elf_addr = Int32ub if self.elfclass == 32 else Int64ub
             self.Elf_offset = self.Elf_addr
-            self.Elf_sword = SBInt32
-            self.Elf_xword = UBInt32 if self.elfclass == 32 else UBInt64
-            self.Elf_sxword = SBInt32 if self.elfclass == 32 else SBInt64
+            self.Elf_sword = Int32sb
+            self.Elf_xword = Int32ub if self.elfclass == 32 else Int64ub
+            self.Elf_sxword = Int32sb if self.elfclass == 32 else Int64sb
         self._create_ehdr()
         self._create_leb128()
         self._create_ntbs()
@@ -116,36 +116,36 @@ class ELFStructs(object):
     #-------------------------------- PRIVATE --------------------------------#
 
     def _create_ehdr(self):
-        self.Elf_Ehdr = Struct('Elf_Ehdr',
-            Struct('e_ident',
-                Array(4, self.Elf_byte('EI_MAG')),
-                Enum(self.Elf_byte('EI_CLASS'), **ENUM_EI_CLASS),
-                Enum(self.Elf_byte('EI_DATA'), **ENUM_EI_DATA),
-                Enum(self.Elf_byte('EI_VERSION'), **ENUM_E_VERSION),
-                Enum(self.Elf_byte('EI_OSABI'), **ENUM_EI_OSABI),
-                self.Elf_byte('EI_ABIVERSION'),
+        self.Elf_Ehdr = Struct(
+            'e_ident' / Struct(
+                'EI_MAG' / Array(4, self.Elf_byte),
+                'EI_CLASS' / Enum(self.Elf_byte, **ENUM_EI_CLASS),
+                'EI_DATA' / Enum(self.Elf_byte, **ENUM_EI_DATA),
+                'EI_VERSION' / Enum(self.Elf_byte, **ENUM_E_VERSION),
+                'EI_OSABI' / Enum(self.Elf_byte, **ENUM_EI_OSABI),
+                'EI_ABIVERSION' / self.Elf_byte,
                 Padding(7)
             ),
-            Enum(self.Elf_half('e_type'), **ENUM_E_TYPE),
-            Enum(self.Elf_half('e_machine'), **ENUM_E_MACHINE),
-            Enum(self.Elf_word('e_version'), **ENUM_E_VERSION),
-            self.Elf_addr('e_entry'),
-            self.Elf_offset('e_phoff'),
-            self.Elf_offset('e_shoff'),
-            self.Elf_word('e_flags'),
-            self.Elf_half('e_ehsize'),
-            self.Elf_half('e_phentsize'),
-            self.Elf_half('e_phnum'),
-            self.Elf_half('e_shentsize'),
-            self.Elf_half('e_shnum'),
-            self.Elf_half('e_shstrndx'),
+            'e_type' / Enum(self.Elf_half, **ENUM_E_TYPE),
+            'e_machine' / Enum(self.Elf_half, **ENUM_E_MACHINE),
+            'e_version' / Enum(self.Elf_word, **ENUM_E_VERSION),
+            'e_entry' / self.Elf_addr,
+            'e_phoff' / self.Elf_offset,
+            'e_shoff' / self.Elf_offset,
+            'e_flags' / self.Elf_word,
+            'e_ehsize' / self.Elf_half,
+            'e_phentsize' / self.Elf_half,
+            'e_phnum' / self.Elf_half,
+            'e_shentsize' / self.Elf_half,
+            'e_shnum' / self.Elf_half,
+            'e_shstrndx' / self.Elf_half,
         )
 
     def _create_leb128(self):
         self.Elf_uleb128 = ULEB128
 
     def _create_ntbs(self):
-        self.Elf_ntbs = CString
+        self.Elf_ntbs = CString('utf8')
 
     def _create_phdr(self):
         p_type_dict = ENUM_P_TYPE_BASE
@@ -159,26 +159,26 @@ class ELFStructs(object):
             p_type_dict = ENUM_P_TYPE_RISCV
 
         if self.elfclass == 32:
-            self.Elf_Phdr = Struct('Elf_Phdr',
-                Enum(self.Elf_word('p_type'), **p_type_dict),
-                self.Elf_offset('p_offset'),
-                self.Elf_addr('p_vaddr'),
-                self.Elf_addr('p_paddr'),
-                self.Elf_word('p_filesz'),
-                self.Elf_word('p_memsz'),
-                self.Elf_word('p_flags'),
-                self.Elf_word('p_align'),
+            self.Elf_Phdr = Struct(
+                'p_type' / Enum(self.Elf_word, **p_type_dict),
+                'p_offset' / self.Elf_offset,
+                'p_vaddr' / self.Elf_addr,
+                'p_paddr' / self.Elf_addr,
+                'p_filesz' / self.Elf_word,
+                'p_memsz' / self.Elf_word,
+                'p_flags' / self.Elf_word,
+                'p_align' / self.Elf_word,
             )
         else: # 64
-            self.Elf_Phdr = Struct('Elf_Phdr',
-                Enum(self.Elf_word('p_type'), **p_type_dict),
-                self.Elf_word('p_flags'),
-                self.Elf_offset('p_offset'),
-                self.Elf_addr('p_vaddr'),
-                self.Elf_addr('p_paddr'),
-                self.Elf_xword('p_filesz'),
-                self.Elf_xword('p_memsz'),
-                self.Elf_xword('p_align'),
+            self.Elf_Phdr = Struct(
+                'p_type' / Enum(self.Elf_word, **p_type_dict),
+                'p_flags' / self.Elf_word,
+                'p_offset' / self.Elf_offset,
+                'p_vaddr' / self.Elf_addr,
+                'p_paddr' / self.Elf_addr,
+                'p_filesz' / self.Elf_xword,
+                'p_memsz' / self.Elf_xword,
+                'p_align' / self.Elf_xword,
             )
 
     def _create_shdr(self):
@@ -196,17 +196,17 @@ class ELFStructs(object):
         if self.e_machine == 'EM_RISCV':
             sh_type_dict = ENUM_SH_TYPE_RISCV
 
-        self.Elf_Shdr = Struct('Elf_Shdr',
-            self.Elf_word('sh_name'),
-            Enum(self.Elf_word('sh_type'), **sh_type_dict),
-            self.Elf_xword('sh_flags'),
-            self.Elf_addr('sh_addr'),
-            self.Elf_offset('sh_offset'),
-            self.Elf_xword('sh_size'),
-            self.Elf_word('sh_link'),
-            self.Elf_word('sh_info'),
-            self.Elf_xword('sh_addralign'),
-            self.Elf_xword('sh_entsize'),
+        self.Elf_Shdr = Struct(
+            'sh_name' / self.Elf_word,
+            'sh_type' / Enum(self.Elf_word, **sh_type_dict),
+            'sh_flags' / self.Elf_xword,
+            'sh_addr' / self.Elf_addr,
+            'sh_offset' / self.Elf_offset,
+            'sh_size' / self.Elf_xword,
+            'sh_link' / self.Elf_word,
+            'sh_info' / self.Elf_word,
+            'sh_addralign' / self.Elf_xword,
+            'sh_entsize' / self.Elf_xword,
         )
 
     def _create_chdr(self):
@@ -215,72 +215,74 @@ class ELFStructs(object):
         # Interface, Chapter 13 Object File Format, Section Compression:
         # https://docs.oracle.com/cd/E53394_01/html/E54813/section_compression.html
         fields = [
-            Enum(self.Elf_word('ch_type'), **ENUM_ELFCOMPRESS_TYPE),
-            self.Elf_xword('ch_size'),
-            self.Elf_xword('ch_addralign'),
+            'ch_type' / Enum(self.Elf_word, **ENUM_ELFCOMPRESS_TYPE),
+            'ch_size' / self.Elf_xword,
+            'ch_addralign' / self.Elf_xword,
         ]
+
         if self.elfclass == 64:
-            fields.insert(1, self.Elf_word('ch_reserved'))
-        self.Elf_Chdr = Struct('Elf_Chdr', *fields)
+            fields.insert(1, 'ch_reserved' / self.Elf_word)
+
+        self.Elf_Chdr = Struct(*fields)
 
     def _create_rel(self):
         # r_info is also taken apart into r_info_sym and r_info_type. This is
         # done in Value to avoid endianity issues while parsing.
         if self.elfclass == 32:
-            fields = [self.Elf_xword('r_info'),
-                      Value('r_info_sym',
-                            lambda ctx: (ctx['r_info'] >> 8) & 0xFFFFFF),
-                      Value('r_info_type',
-                            lambda ctx: ctx['r_info'] & 0xFF)]
+            fields = [
+                'r_info' / self.Elf_xword,
+                'r_info_sym' / Computed(lambda ctx: (ctx['r_info'] >> 8) & 0xFFFFFF),
+                'r_info_type' / Computed(lambda ctx: ctx['r_info'] & 0xFF)
+            ]
         elif self.e_machine == 'EM_MIPS': # ELF64 MIPS
             fields = [
                 # The MIPS ELF64 specification
                 # (https://www.linux-mips.org/pub/linux/mips/doc/ABI/elf64-2.4.pdf)
                 # provides a non-standard relocation structure definition.
-                self.Elf_word('r_sym'),
-                self.Elf_byte('r_ssym'),
-                self.Elf_byte('r_type3'),
-                self.Elf_byte('r_type2'),
-                self.Elf_byte('r_type'),
+                'r_sym' / self.Elf_word,
+                'r_ssym' / self.Elf_byte,
+                'r_type3' / self.Elf_byte,
+                'r_type2' / self.Elf_byte,
+                'r_type' / self.Elf_byte,
 
                 # Synthetize usual fields for compatibility with other
                 # architectures. This allows relocation consumers (including
                 # our readelf tests) to work without worrying about MIPS64
                 # oddities.
-                Value('r_info_sym', lambda ctx: ctx['r_sym']),
-                Value('r_info_ssym', lambda ctx: ctx['r_ssym']),
-                Value('r_info_type', lambda ctx: ctx['r_type']),
-                Value('r_info_type2', lambda ctx: ctx['r_type2']),
-                Value('r_info_type3', lambda ctx: ctx['r_type3']),
-                Value('r_info',
-                      lambda ctx: (ctx['r_sym'] << 32)
+                'r_info_sym' / Computed(lambda ctx: ctx['r_sym']),
+                'r_info_ssym' / Computed(lambda ctx: ctx['r_ssym']),
+                'r_info_type' / Computed(lambda ctx: ctx['r_type']),
+                'r_info_type2' / Computed(lambda ctx: ctx['r_type2']),
+                'r_info_type3' / Computed(lambda ctx: ctx['r_type3']),
+                'r_info' / Computed(lambda ctx: (ctx['r_sym'] << 32)
                                   | (ctx['r_ssym'] << 24)
                                   | (ctx['r_type3'] << 16)
                                   | (ctx['r_type2'] << 8)
-                                  | ctx['r_type']),
+                                  | ctx['r_type'])
             ]
         else: # Other 64 ELFs
-            fields = [self.Elf_xword('r_info'),
-                      Value('r_info_sym',
-                            lambda ctx: (ctx['r_info'] >> 32) & 0xFFFFFFFF),
-                      Value('r_info_type',
-                            lambda ctx: ctx['r_info'] & 0xFFFFFFFF)]
+            fields = [
+                'r_info' / self.Elf_xword,
+                'r_info_sym' / Computed(lambda ctx: (ctx['r_info'] >> 32) & 0xFFFFFFFF),
+                'r_info_type' / Computed(lambda ctx: ctx['r_info'] & 0xFFFFFFFF)
+            ]
 
-        self.Elf_Rel = Struct('Elf_Rel',
-                              self.Elf_addr('r_offset'),
-                              *fields)
+        self.Elf_Rel = Struct(
+            'r_offset' / self.Elf_addr,
+            *fields
+        )
 
-        fields_and_addend = fields + [self.Elf_sxword('r_addend')]
-        self.Elf_Rela = Struct('Elf_Rela',
-                               self.Elf_addr('r_offset'),
-                               *fields_and_addend
+        fields_and_addend = fields + ['r_addend' / self.Elf_sxword]
+        self.Elf_Rela = Struct(
+            'r_offset' / self.Elf_addr,
+            *fields_and_addend
         )
 
         # Elf32_Relr is typedef'd as Elf32_Word, Elf64_Relr as Elf64_Xword
         # (see the glibc patch, for example:
         # https://sourceware.org/pipermail/libc-alpha/2021-October/132029.html)
         # For us, this is the same as self.Elf_addr (or self.Elf_xword).
-        self.Elf_Relr = Struct('Elf_Relr', self.Elf_addr('r_offset'))
+        self.Elf_Relr = Struct('r_offset' / self.Elf_addr)
 
     def _create_dyn(self):
         d_tag_dict = dict(ENUM_D_TAG_COMMON)
@@ -289,107 +291,110 @@ class ELFStructs(object):
         elif self.e_ident_osabi == 'ELFOSABI_SOLARIS':
             d_tag_dict.update(ENUM_D_TAG_SOLARIS)
 
-        self.Elf_Dyn = Struct('Elf_Dyn',
-            Enum(self.Elf_sxword('d_tag'), **d_tag_dict),
-            self.Elf_xword('d_val'),
-            Value('d_ptr', lambda ctx: ctx['d_val']),
+        self.Elf_Dyn = Struct(
+            'd_tag' / Enum(self.Elf_sxword, **d_tag_dict),
+            'd_val' / self.Elf_xword,
+            'd_ptr' / Computed(lambda ctx: ctx['d_val']),
         )
 
     def _create_sym(self):
         # st_info is hierarchical. To access the type, use
         # container['st_info']['type']
-        st_info_struct = BitStruct('st_info',
-            Enum(BitField('bind', 4), **ENUM_ST_INFO_BIND),
-            Enum(BitField('type', 4), **ENUM_ST_INFO_TYPE))
+        st_info_struct = BitStruct(
+            'bind' / Enum(BitsInteger(4), **ENUM_ST_INFO_BIND),
+            'type' / Enum(BitsInteger(4), **ENUM_ST_INFO_TYPE)
+        )
         # st_other is hierarchical. To access the visibility,
         # use container['st_other']['visibility']
-        st_other_struct = BitStruct('st_other',
+        st_other_struct = BitStruct(
             # https://openpowerfoundation.org/wp-content/uploads/2016/03/ABI64BitOpenPOWERv1.1_16July2015_pub4.pdf
             # See 3.4.1 Symbol Values.
-            Enum(BitField('local', 3), **ENUM_ST_LOCAL),
+            'local' / Enum(BitsInteger(3), **ENUM_ST_LOCAL),
             Padding(2),
-            Enum(BitField('visibility', 3), **ENUM_ST_VISIBILITY))
+            'visibility' / Enum(BitsInteger(3), **ENUM_ST_VISIBILITY)
+        )
         if self.elfclass == 32:
-            self.Elf_Sym = Struct('Elf_Sym',
-                self.Elf_word('st_name'),
-                self.Elf_addr('st_value'),
-                self.Elf_word('st_size'),
-                st_info_struct,
-                st_other_struct,
-                Enum(self.Elf_half('st_shndx'), **ENUM_ST_SHNDX),
+            self.Elf_Sym = Struct(
+                'st_name' / self.Elf_word,
+                'st_value' / self.Elf_addr,
+                'st_size' / self.Elf_word,
+                'st_info' / st_info_struct,
+                'st_other' / st_other_struct,
+                'st_shndx' / Enum(self.Elf_half, **ENUM_ST_SHNDX),
             )
         else:
-            self.Elf_Sym = Struct('Elf_Sym',
-                self.Elf_word('st_name'),
-                st_info_struct,
-                st_other_struct,
-                Enum(self.Elf_half('st_shndx'), **ENUM_ST_SHNDX),
-                self.Elf_addr('st_value'),
-                self.Elf_xword('st_size'),
+            self.Elf_Sym = Struct(
+                'st_name' / self.Elf_word,
+                'st_info' / st_info_struct,
+                'st_other' / st_other_struct,
+                'st_shndx' / Enum(self.Elf_half, **ENUM_ST_SHNDX),
+                'st_value' / self.Elf_addr,
+                'st_size' / self.Elf_xword,
             )
 
     def _create_sunw_syminfo(self):
-        self.Elf_Sunw_Syminfo = Struct('Elf_Sunw_Syminfo',
-            Enum(self.Elf_half('si_boundto'), **ENUM_SUNW_SYMINFO_BOUNDTO),
-            self.Elf_half('si_flags'),
+        self.Elf_Sunw_Syminfo = Struct(
+            'si_boundto' / Enum(self.Elf_half, **ENUM_SUNW_SYMINFO_BOUNDTO),
+            'si_flags' / self.Elf_half,
         )
 
     def _create_gnu_verneed(self):
         # Structure of "version needed" entries is documented in
         # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
-        self.Elf_Verneed = Struct('Elf_Verneed',
-            self.Elf_half('vn_version'),
-            self.Elf_half('vn_cnt'),
-            self.Elf_word('vn_file'),
-            self.Elf_word('vn_aux'),
-            self.Elf_word('vn_next'),
+        self.Elf_Verneed = Struct(
+            'vn_version' / self.Elf_half,
+            'vn_cnt' / self.Elf_half,
+            'vn_file' / self.Elf_word,
+            'vn_aux' / self.Elf_word,
+            'vn_next' / self.Elf_word,
         )
-        self.Elf_Vernaux = Struct('Elf_Vernaux',
-            self.Elf_word('vna_hash'),
-            self.Elf_half('vna_flags'),
-            self.Elf_half('vna_other'),
-            self.Elf_word('vna_name'),
-            self.Elf_word('vna_next'),
+        self.Elf_Vernaux = Struct(
+            'vna_hash' / self.Elf_word,
+            'vna_flags' / self.Elf_half,
+            'vna_other' / self.Elf_half,
+            'vna_name' / self.Elf_word,
+            'vna_next' / self.Elf_word,
         )
 
     def _create_gnu_verdef(self):
         # Structure of "version definition" entries are documented in
         # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
-        self.Elf_Verdef = Struct('Elf_Verdef',
-            self.Elf_half('vd_version'),
-            self.Elf_half('vd_flags'),
-            self.Elf_half('vd_ndx'),
-            self.Elf_half('vd_cnt'),
-            self.Elf_word('vd_hash'),
-            self.Elf_word('vd_aux'),
-            self.Elf_word('vd_next'),
+        self.Elf_Verdef = Struct(
+            'vd_version' / self.Elf_half,
+            'vd_flags' / self.Elf_half,
+            'vd_ndx' / self.Elf_half,
+            'vd_cnt' / self.Elf_half,
+            'vd_hash' / self.Elf_word,
+            'vd_aux' / self.Elf_word,
+            'vd_next' / self.Elf_word,
         )
-        self.Elf_Verdaux = Struct('Elf_Verdaux',
-            self.Elf_word('vda_name'),
-            self.Elf_word('vda_next'),
+        self.Elf_Verdaux = Struct(
+            'vda_name' / self.Elf_word,
+            'vda_next' / self.Elf_word,
         )
 
     def _create_gnu_versym(self):
         # Structure of "version symbol" entries are documented in
         # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
-        self.Elf_Versym = Struct('Elf_Versym',
-            Enum(self.Elf_half('ndx'), **ENUM_VERSYM),
+        self.Elf_Versym = Struct(
+            'ndx' / Enum(self.Elf_half, **ENUM_VERSYM),
         )
 
     def _create_gnu_abi(self):
         # Structure of GNU ABI notes is documented in
         # https://code.woboq.org/userspace/glibc/csu/abi-note.S.html
-        self.Elf_abi = Struct('Elf_abi',
-            Enum(self.Elf_word('abi_os'), **ENUM_NOTE_ABI_TAG_OS),
-            self.Elf_word('abi_major'),
-            self.Elf_word('abi_minor'),
-            self.Elf_word('abi_tiny'),
+        self.Elf_abi = Struct(
+            'abi_os' / Enum(self.Elf_word, **ENUM_NOTE_ABI_TAG_OS),
+            'abi_major' / self.Elf_word,
+            'abi_minor' / self.Elf_word,
+            'abi_tiny' / self.Elf_word,
         )
 
     def _create_gnu_debugaltlink(self):
-        self.Elf_debugaltlink = Struct('Elf_debugaltlink',
-            CString("sup_filename"),
-            String("sup_checksum", length=20))
+        self.Elf_debugaltlink = Struct(
+            'sup_filename' / CStringBytes,
+            'sup_checksum' / Bytes(20),
+        )
 
     def _create_gnu_property(self):
         # Structure of GNU property notes is documented in
@@ -400,21 +405,21 @@ class ELFStructs(object):
             return roundup(ctx.pr_datasz, 3) - ctx.pr_datasz
 
         def classify_pr_data(ctx):
-            if type(ctx.pr_type) is not str:
+            if not isinstance(ctx.pr_type, str):
                 return None
             if ctx.pr_type.startswith('GNU_PROPERTY_X86_'):
                 return ('GNU_PROPERTY_X86_*', 4, 0)
             return (ctx.pr_type, ctx.pr_datasz, self.elfclass)
 
-        self.Elf_Prop = Struct('Elf_Prop',
-            Enum(self.Elf_word('pr_type'), **ENUM_NOTE_GNU_PROPERTY_TYPE),
-            self.Elf_word('pr_datasz'),
-            Switch('pr_data', classify_pr_data, {
-                    ('GNU_PROPERTY_STACK_SIZE', 4, 32): self.Elf_word('pr_data'),
-                    ('GNU_PROPERTY_STACK_SIZE', 8, 64): self.Elf_word64('pr_data'),
-                    ('GNU_PROPERTY_X86_*', 4, 0): self.Elf_word('pr_data'),
+        self.Elf_Prop = Struct(
+            'pr_type' / Enum(self.Elf_word, **ENUM_NOTE_GNU_PROPERTY_TYPE),
+            'pr_datasz' / self.Elf_word,
+            'pr_data' / Switch(classify_pr_data, {
+                    ('GNU_PROPERTY_STACK_SIZE', 4, 32): self.Elf_word,
+                    ('GNU_PROPERTY_STACK_SIZE', 8, 64): self.Elf_word64,
+                    ('GNU_PROPERTY_X86_*', 4, 0): self.Elf_word,
                 },
-                default=Field('pr_data', lambda ctx: ctx.pr_datasz)
+                default=Bytes(lambda ctx: ctx.pr_datasz)
             ),
             Padding(roundup_padding)
         )
@@ -435,98 +440,97 @@ class ELFStructs(object):
             'EM_SPARC',
         } else self.Elf_word
 
-        self.Elf_Nhdr = Struct('Elf_Nhdr',
-            self.Elf_word('n_namesz'),
-            self.Elf_word('n_descsz'),
-            Enum(self.Elf_word('n_type'),
-                 **(ENUM_NOTE_N_TYPE if e_type != "ET_CORE"
-                    else ENUM_CORE_NOTE_N_TYPE)),
+        self.Elf_Nhdr = Struct(
+            'n_namesz' / self.Elf_word,
+            'n_descsz' / self.Elf_word,
+            'n_type' / Enum(self.Elf_word, **(ENUM_NOTE_N_TYPE if e_type != "ET_CORE" else ENUM_CORE_NOTE_N_TYPE)),
         )
 
         # A process psinfo structure according to
         # http://elixir.free-electrons.com/linux/v2.6.35/source/include/linux/elfcore.h#L84
         if self.elfclass == 32:
-            self.Elf_Prpsinfo = Struct('Elf_Prpsinfo',
-                self.Elf_byte('pr_state'),
-                String('pr_sname', 1),
-                self.Elf_byte('pr_zomb'),
-                self.Elf_byte('pr_nice'),
-                self.Elf_xword('pr_flag'),
-                self.Elf_ugid('pr_uid'),
-                self.Elf_ugid('pr_gid'),
-                self.Elf_word('pr_pid'),
-                self.Elf_word('pr_ppid'),
-                self.Elf_word('pr_pgrp'),
-                self.Elf_word('pr_sid'),
-                String('pr_fname', 16),
-                String('pr_psargs', 80),
+            self.Elf_Prpsinfo = Struct(
+                'pr_state' / self.Elf_byte,
+                'pr_sname' / Bytes(1),
+                'pr_zomb' / self.Elf_byte,
+                'pr_nice' / self.Elf_byte,
+                'pr_flag' / self.Elf_xword,
+                'pr_uid' / self.Elf_ugid,
+                'pr_gid' / self.Elf_ugid,
+                'pr_pid' / self.Elf_word,
+                'pr_ppid' / self.Elf_word,
+                'pr_pgrp' / self.Elf_word,
+                'pr_sid' / self.Elf_word,
+                'pr_fname' / Bytes(16),
+                'pr_psargs' / Bytes(80),
             )
         else: # 64
-            self.Elf_Prpsinfo = Struct('Elf_Prpsinfo',
-                self.Elf_byte('pr_state'),
-                String('pr_sname', 1),
-                self.Elf_byte('pr_zomb'),
-                self.Elf_byte('pr_nice'),
+            self.Elf_Prpsinfo = Struct(
+                'pr_state' / self.Elf_byte,
+                'pr_sname' / Bytes(1),
+                'pr_zomb' / self.Elf_byte,
+                'pr_nice' / self.Elf_byte,
                 Padding(4),
-                self.Elf_xword('pr_flag'),
-                self.Elf_ugid('pr_uid'),
-                self.Elf_ugid('pr_gid'),
-                self.Elf_word('pr_pid'),
-                self.Elf_word('pr_ppid'),
-                self.Elf_word('pr_pgrp'),
-                self.Elf_word('pr_sid'),
-                String('pr_fname', 16),
-                String('pr_psargs', 80),
+                'pr_flag' / self.Elf_xword,
+                'pr_uid' / self.Elf_ugid,
+                'pr_gid' / self.Elf_ugid,
+                'pr_pid' / self.Elf_word,
+                'pr_ppid' / self.Elf_word,
+                'pr_pgrp' / self.Elf_word,
+                'pr_sid' / self.Elf_word,
+                'pr_fname' / Bytes(16),
+                'pr_psargs' / Bytes(80),
             )
 
         # A PT_NOTE of type NT_FILE matching the definition in
         # https://chromium.googlesource.com/
         # native_client/nacl-binutils/+/upstream/master/binutils/readelf.c
         # Line 15121
-        self.Elf_Nt_File = Struct('Elf_Nt_File',
-                                  self.Elf_xword("num_map_entries"),
-                                  self.Elf_xword("page_size"),
-                                  Array(lambda ctx: ctx.num_map_entries,
-                                        Struct('Elf_Nt_File_Entry',
-                                             self.Elf_addr('vm_start'),
-                                             self.Elf_addr('vm_end'),
-                                             self.Elf_offset('page_offset'))),
-                                  Array(lambda ctx: ctx.num_map_entries,
-                                        CString('filename')))
+        self.Elf_Nt_File = Struct(
+            'num_map_entries' / self.Elf_xword,
+            'page_size' / self.Elf_xword,
+            'Elf_Nt_File_Entry' / Array(lambda ctx: ctx.num_map_entries,
+                Struct(
+                    'vm_start' / self.Elf_addr,
+                    'vm_end' / self.Elf_addr,
+                    'page_offset' / self.Elf_offset
+                )
+            ),
+            'filename' / Array(lambda ctx: ctx.num_map_entries,
+                CStringBytes
+            )
+        )
 
     def _create_stabs(self):
         # Structure of one stabs entry, see binutils/bfd/stabs.c
         # Names taken from https://sourceware.org/gdb/current/onlinedocs/stabs.html#Overview
-        self.Elf_Stabs = Struct('Elf_Stabs',
-            self.Elf_word('n_strx'),
-            self.Elf_byte('n_type'),
-            self.Elf_byte('n_other'),
-            self.Elf_half('n_desc'),
-            self.Elf_word('n_value'),
+        self.Elf_Stabs = Struct(
+            'n_strx' / self.Elf_word,
+            'n_type' / self.Elf_byte,
+            'n_other' / self.Elf_byte,
+            'n_desc' / self.Elf_half,
+            'n_value' / self.Elf_word,
         )
 
     def _create_attributes_subsection(self):
         # Structure of a build attributes subsection header. A subsection is
         # either public to all tools that process the ELF file or private to
         # the vendor's tools.
-        self.Elf_Attr_Subsection_Header = Struct('Elf_Attr_Subsection',
-                                                 self.Elf_word('length'),
-                                                 self.Elf_ntbs('vendor_name',
-                                                               encoding='utf-8')
+        self.Elf_Attr_Subsection_Header = Struct(
+            'length' / self.Elf_word,
+            'vendor_name' / self.Elf_ntbs
         )
 
     def _create_arm_attributes(self):
         # Structure of an ARM build attribute tag.
-        self.Elf_Arm_Attribute_Tag = Struct('Elf_Arm_Attribute_Tag',
-                                             Enum(self.Elf_uleb128('tag'),
-                                                  **ENUM_ATTR_TAG_ARM)
+        self.Elf_Arm_Attribute_Tag = Struct(
+            'tag' / Enum(self.Elf_uleb128, **ENUM_ATTR_TAG_ARM)
         )
 
     def _create_riscv_attributes(self):
         # Structure of a RISC-V build attribute tag.
-        self.Elf_RiscV_Attribute_Tag = Struct('Elf_RiscV_Attribute_Tag',
-                                        Enum(self.Elf_uleb128('tag'),
-                                             **ENUM_ATTR_TAG_RISCV)
+        self.Elf_RiscV_Attribute_Tag = Struct(
+            'tag' / Enum(self.Elf_uleb128, **ENUM_ATTR_TAG_RISCV)
         )
 
     def _create_elf_hash(self):
@@ -536,21 +540,23 @@ class ELFStructs(object):
         # Section:
         # https://docs.oracle.com/cd/E53394_01/html/E54813/chapter6-48031.html
 
-        self.Elf_Hash = Struct('Elf_Hash',
-                               self.Elf_word('nbuckets'),
-                               self.Elf_word('nchains'),
-                               Array(lambda ctx: ctx['nbuckets'], self.Elf_word('buckets')),
-                               Array(lambda ctx: ctx['nchains'], self.Elf_word('chains')))
+        self.Elf_Hash = Struct(
+            'nbuckets' / self.Elf_word,
+            'nchains' / self.Elf_word,
+            'buckets' / Array(lambda ctx: ctx['nbuckets'], self.Elf_word),
+            'chains' / Array(lambda ctx: ctx['nchains'], self.Elf_word)
+        )
 
     def _create_gnu_hash(self):
         # Structure of the GNU-style hash table header. Documentation for this
         # table is mostly in the GLIBC source code, a good explanation of the
         # format can be found in this blog post:
         # https://flapenguin.me/2017/05/10/elf-lookup-dt-gnu-hash/
-        self.Gnu_Hash = Struct('Gnu_Hash',
-                               self.Elf_word('nbuckets'),
-                               self.Elf_word('symoffset'),
-                               self.Elf_word('bloom_size'),
-                               self.Elf_word('bloom_shift'),
-                               Array(lambda ctx: ctx['bloom_size'], self.Elf_xword('bloom')),
-                               Array(lambda ctx: ctx['nbuckets'], self.Elf_word('buckets')))
+        self.Gnu_Hash = Struct(
+            'nbuckets' / self.Elf_word,
+            'symoffset' / self.Elf_word,
+            'bloom_size' / self.Elf_word,
+            'bloom_shift' / self.Elf_word,
+            'bloom' / Array(lambda ctx: ctx['bloom_size'], self.Elf_xword),
+            'buckets' / Array(lambda ctx: ctx['nbuckets'], self.Elf_word)
+        )

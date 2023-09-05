@@ -231,7 +231,7 @@ class DIE(object):
         # Note: here and elsewhere, preserve_stream_pos is used on operations
         # that manipulate the stream by reading data from it.
         self.abbrev_code = struct_parse(
-            structs.Dwarf_uleb128(''), self.stream, self.offset)
+            structs.Dwarf_uleb128, self.stream, self.offset)
 
         # This may be a null entry
         if self.abbrev_code == 0:
@@ -277,7 +277,7 @@ class DIE(object):
         # Returns (form, raw_value, length).
         structs = self.cu.structs
         length = 1
-        real_form_code = struct_parse(structs.Dwarf_uleb128(''), self.stream) # Numeric form code
+        real_form_code = struct_parse(structs.Dwarf_uleb128, self.stream) # Numeric form code
         while True:
             try:
                 real_form = DW_FORM_raw2name[real_form_code] # Form name or exception if bogus code
@@ -326,7 +326,7 @@ class DIE(object):
             base_offset = _get_base_offset(self.cu, 'DW_AT_str_offsets_base')
             offset_size = 4 if self.cu.structs.dwarf_format == 32 else 8
             with preserve_stream_pos(stream):
-                str_offset = struct_parse(self.cu.structs.Dwarf_offset(''), stream, base_offset + raw_value*offset_size)
+                str_offset = struct_parse(self.cu.structs.Dwarf_offset, stream, base_offset + raw_value*offset_size)
             value = self.dwarfinfo.get_string_from_table(str_offset)
         elif form == 'DW_FORM_loclistx' and translate_indirect:
             value = _resolve_via_offset_table(self.dwarfinfo.debug_loclists_sec.stream, self.cu, raw_value, 'DW_AT_loclists_base')

@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..common.utils import struct_parse, bytes2hex, roundup, bytes2str
-from ..construct import CString
+from construct import CString
 
 
 def iter_notes(elffile, offset, size):
@@ -24,8 +24,7 @@ def iter_notes(elffile, offset, size):
         elffile.stream.seek(offset)
         # n_namesz is 4-byte aligned.
         disk_namesz = roundup(note['n_namesz'], 2)
-        note['n_name'] = bytes2str(
-            CString('').parse(elffile.stream.read(disk_namesz)))
+        note['n_name'] = CString('utf-8').parse(elffile.stream.read(disk_namesz))
         offset += disk_namesz
 
         desc_data = elffile.stream.read(note['n_descsz'])

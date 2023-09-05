@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import Pass
+from construct import Pass
 
 
 ENUM_DW_TAG = dict(

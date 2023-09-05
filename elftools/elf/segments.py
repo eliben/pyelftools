@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import CString
+from construct import CString
 from ..common.utils import struct_parse
 from .constants import SH_FLAGS
 from .notes import iter_notes
@@ -100,7 +100,7 @@ class InterpSegment(Segment):
         """
         path_offset = self['p_offset']
         return struct_parse(
-            CString('', encoding='utf-8'),
+            CString('utf-8'),
             self.stream,
             stream_pos=path_offset)
 

@@ -23,6 +23,8 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: pip install -e .
     - name: Test
       run: |
         python test/all_tests.py

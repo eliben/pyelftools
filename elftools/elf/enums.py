@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..common.utils import merge_dicts
-from ..construct import Pass
+from construct import Pass
 
 
 # e_ident[EI_CLASS] in the ELF header

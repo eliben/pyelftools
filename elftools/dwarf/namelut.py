@@ -10,10 +10,12 @@ import os
 import collections
 from collections import OrderedDict
 from collections.abc import Mapping
+
+from ..common.construct_utils import CStringBytes
 from ..common.utils import struct_parse
 from bisect import bisect_right
 import math
-from ..construct import CString, Struct, If
+from construct import If, CString, Struct
 
 NameLUTEntry = collections.namedtuple('NameLUTEntry', 'cu_ofs die_ofs')
 
@@ -163,9 +165,10 @@ class NameLUT(Mapping):
         # an offset field containing zero (and no following string). Because
         # of sequential parsing, every next entry may be that terminator.
         # So, field "name" is conditional.
-        entry_struct = Struct("Dwarf_offset_name_pair",
-                self._structs.Dwarf_offset('die_ofs'),
-                If(lambda ctx: ctx['die_ofs'], CString('name')))
+        entry_struct = Struct(  # Dwarf_offset_name_pair
+                'die_ofs' / self._structs.Dwarf_offset,
+                'name' / If(lambda ctx: ctx['die_ofs'], CStringBytes)
+        )
 
         # each run of this loop will fetch one CU worth of entries.
         while offset < self._size:

@@ -42,7 +42,7 @@ class AbbrevTable(object):
         self.stream.seek(self.offset)
         while True:
             decl_code = struct_parse(
-                struct=self.structs.Dwarf_uleb128(''),
+                struct=self.structs.Dwarf_uleb128,
                 stream=self.stream)
             if decl_code == 0:
                 break
