@@ -1,6 +1,16 @@
 Changelog
 =========
 
++ Version 0.30 (2023.09.06)
+
+  - Optimization: cache instantiation of DWARF structs (#435)
+  - DWARFv5 CU headers (#442)
+  - Bug fix in attribute reporting for DWA_FORM_indirect (#475)
+  - Support for RISC-V attributes (#459)
+  - Readelf used for testing upgraded to 2.41 (#489)
+  - Support for MIPS64 object files (#495)
+  - LoongArch support (#470, #483)
+
 + Version 0.29 (2022.08.09)
 
   - Lots of improvements to DWARFv5 support (#400, #411, #418, #419, #429 and

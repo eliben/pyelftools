@@ -17,9 +17,8 @@ future.
 Preparing a new release
 -----------------------
 
-* Run 'tox' tests (with '-r' to create new venvs)
 * Make sure new version was updated everywhere appropriate
-* Run ``python setup.py build sdist bdist_wheel`` (no 'upload' yet)
+* Run ``python3 setup.py build sdist bdist_wheel`` (no 'upload' yet)
 * Untar the created ``dist/pyelftools-x.y.tar.gz`` and make sure
   everything looks ok
 * Now build with upload to send it to PyPi
