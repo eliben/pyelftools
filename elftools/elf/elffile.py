@@ -533,6 +533,7 @@ class ELFFile(object):
             'EM_RISCV'         : 'RISC-V',
             'EM_BPF'           : 'Linux BPF - in-kernel virtual machine',
             'EM_CSKY'          : 'C-SKY',
+            'EM_LOONGARCH'     : 'LoongArch',
             'EM_FRV'           : 'Fujitsu FR-V'
         }
 

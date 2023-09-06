@@ -9,6 +9,7 @@
 #-------------------------------------------------------------------------------
 import argparse
 import os, sys
+import re
 import string
 import traceback
 import itertools
@@ -94,6 +95,13 @@ def _get_cu_base(cu):
         return base_ip
     else:
         raise ValueError("Can't find the base IP (low_pc) for a CU")
+
+# Matcher for all control characters, for transforming them into "^X" form when
+# formatting symbol names for display.
+_CONTROL_CHAR_RE = re.compile(r'[\x01-\x1f]')
+
+def _format_symbol_name(s):
+    return _CONTROL_CHAR_RE.sub(lambda match: '^' + chr(0x40 + ord(match[0])), s)
 
 class ReadElf(object):
     """ display_* methods are used to emit output into the output stream
@@ -260,15 +268,15 @@ class ReadElf(object):
                 description += ", quad-float ABI"
 
         elif self.elffile['e_machine'] == "EM_LOONGARCH":
-            if (flags & E_FLAGS.EF_LOONGARCH_FLOAT_ABI) == E_FLAGS.EF_LOONGARCH_FLOAT_ABI_SOFT:
+            if (flags & E_FLAGS.EF_LOONGARCH_ABI_MODIFIER_MASK) == E_FLAGS.EF_LOONGARCH_ABI_SOFT_FLOAT:
                 description += ", SOFT-FLOAT"
-            if (flags & E_FLAGS.EF_LOONGARCH_FLOAT_ABI) == E_FLAGS.EF_LOONGARCH_FLOAT_ABI_SINGLE:
+            if (flags & E_FLAGS.EF_LOONGARCH_ABI_MODIFIER_MASK) == E_FLAGS.EF_LOONGARCH_ABI_SINGLE_FLOAT:
                 description += ", SINGLE-FLOAT"
-            if (flags & E_FLAGS.EF_LOONGARCH_FLOAT_ABI) == E_FLAGS.EF_LOONGARCH_FLOAT_ABI_DOUBLE:
+            if (flags & E_FLAGS.EF_LOONGARCH_ABI_MODIFIER_MASK) == E_FLAGS.EF_LOONGARCH_ABI_DOUBLE_FLOAT:
                 description += ", DOUBLE-FLOAT"
-            if (flags & E_FLAGS.EF_LOONGARCH_ABI) == E_FLAGS.EF_LOONGARCH_ABI_V0:
+            if (flags & E_FLAGS.EF_LOONGARCH_OBJABI_MASK) == E_FLAGS.EF_LOONGARCH_OBJABI_V0:
                 description += ", OBJ-v0"
-            if (flags & E_FLAGS.EF_LOONGARCH_ABI) == E_FLAGS.EF_LOONGARCH_ABI_V1:
+            if (flags & E_FLAGS.EF_LOONGARCH_OBJABI_MASK) == E_FLAGS.EF_LOONGARCH_OBJABI_V1:
                 description += ", OBJ-v1"
 
         return description
@@ -495,7 +503,7 @@ class ReadElf(object):
                     describe_symbol_shndx(self._get_symbol_shndx(symbol,
                                                                  nsym,
                                                                  section_index)),
-                    symbol_name,
+                    _format_symbol_name(symbol_name),
                     version_info))
 
     def display_dynamic_tags(self):
@@ -632,7 +640,7 @@ class ReadElf(object):
                         self._format_hex(
                             symbol['st_value'],
                             fullhex=True, lead0x=False),
-                        symbol_name))
+                        _format_symbol_name(symbol_name)))
                     if section.is_RELA():
                         self._emit(' %s %x' % (
                             '+' if rel['r_addend'] >= 0 else '-',
@@ -1451,24 +1459,20 @@ class ReadElf(object):
 
             # Look at the registers the decoded table describes.
             # We build reg_order here to match readelf's order. In particular,
-            # registers are sorted by their number, and the register matching
-            # ra_regnum is always listed last with a special heading.
+            # registers are sorted by their number, so that the register
+            # matching ra_regnum is usually listed last with a special heading.
+            # (LoongArch is a notable exception in that its return register's
+            # DWARF register number is not greater than other GPRs.)
             decoded_table = entry.get_decoded()
-            reg_order = sorted(filter(
-                lambda r: r != ra_regnum,
-                decoded_table.reg_order))
+            reg_order = sorted(decoded_table.reg_order)
             if len(decoded_table.reg_order):
-
                 # Headings for the registers
                 for regnum in reg_order:
+                    if regnum == ra_regnum:
+                        self._emit('ra      ')
+                        continue
                     self._emit('%-6s' % describe_reg_name(regnum))
-                self._emitline('ra      ')
-
-                # Now include ra_regnum in reg_order to print its values
-                # similarly to the other registers.
-                reg_order.append(ra_regnum)
-            else:
-                self._emitline()
+            self._emitline()
 
             for line in decoded_table.table:
                 self._emit(self._format_hex(
