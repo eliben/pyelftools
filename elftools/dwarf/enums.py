@@ -301,8 +301,9 @@ ENUM_DW_AT = dict(
 
     DW_AT_LLVM_include_path  = 0x3e00,
     DW_AT_LLVM_config_macros = 0x3e01,
-    DW_AT_LLVM_isysroot      = 0x3e02,
+    DW_AT_LLVM_isysroot      = 0x3e02, # sysroot elsewhere
     DW_AT_LLVM_tag_offset    = 0x3e03,
+    DW_AT_LLVM_apinotes      = 0x3e07,
 
     DW_AT_APPLE_optimized               = 0x3fe1,
     DW_AT_APPLE_flags                   = 0x3fe2,
@@ -317,6 +318,8 @@ ENUM_DW_AT = dict(
     DW_AT_APPLE_property_attribute      = 0x3feb,
     DW_AT_APPLE_objc_complete_type      = 0x3fec,
     DW_AT_APPLE_property                = 0x3fed,
+    DW_AT_APPLE_objc_direct             = 0x3fee,
+    DW_AT_APPLE_sdk                     = 0x3fef,
 
     _default_ = Pass,
 )

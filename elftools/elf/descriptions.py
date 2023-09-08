@@ -11,7 +11,7 @@ from .enums import (
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
     ENUM_RELOC_TYPE_MIPS, ENUM_ATTR_TAG_ARM, ENUM_ATTR_TAG_RISCV,
-    ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
+    ENUM_RELOC_TYPE_LOONGARCH, ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
 from ..common.utils import bytes2hex
@@ -152,6 +152,8 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_PPC64.get(x, _unknown)
     elif arch == 'MIPS':
         return _DESCR_RELOC_TYPE_MIPS.get(x, _unknown)
+    elif arch == 'LoongArch':
+        return _DESCR_RELOC_TYPE_LOONGARCH.get(x, _unknown)
     else:
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
 
@@ -690,6 +692,7 @@ _DESCR_RELOC_TYPE_ARM = _reverse_dict(ENUM_RELOC_TYPE_ARM)
 _DESCR_RELOC_TYPE_AARCH64 = _reverse_dict(ENUM_RELOC_TYPE_AARCH64)
 _DESCR_RELOC_TYPE_PPC64 = _reverse_dict(ENUM_RELOC_TYPE_PPC64)
 _DESCR_RELOC_TYPE_MIPS = _reverse_dict(ENUM_RELOC_TYPE_MIPS)
+_DESCR_RELOC_TYPE_LOONGARCH = _reverse_dict(ENUM_RELOC_TYPE_LOONGARCH)
 
 _low_priority_D_TAG = (
     # these are 'meta-tags' marking semantics of numeric ranges of the enum
