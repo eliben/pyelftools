@@ -32,7 +32,8 @@ testlog.addHandler(logging.StreamHandler(sys.stdout))
 if platform.system() == "Darwin": # MacOS
     raise NotImplementedError("Not supported on MacOS")
 elif platform.system() == "Windows":
-    raise NotImplementedError("Not supported on Windows")
+    # Point the environment variable DWARFDUMP at a Windows build of llvm-dwarfdump
+    DWARFDUMP_PATH = os.environ.get('DWARFDUMP', "llvm-dwarfdump.exe")
 else:
     DWARFDUMP_PATH = 'test/external_tools/llvm-dwarfdump'
 
