@@ -10,6 +10,7 @@ from collections import namedtuple
 from io import BytesIO
 
 from ..common.utils import struct_parse, bytelist2string, read_blob
+from ..common.exceptions import DWARFError
 
 
 # DWARF expression opcodes. name -> opcode mapping
@@ -84,6 +85,7 @@ DW_OP_name2opcode = dict(
     DW_OP_reinterpret=0xa9,
     DW_OP_lo_user=0xe0,
     DW_OP_GNU_push_tls_address=0xe0,
+    DW_OP_WASM_location=0xed,
     DW_OP_GNU_implicit_pointer=0xf2,
     DW_OP_GNU_entry_value=0xf3,
     DW_OP_GNU_const_type=0xf4,
@@ -196,6 +198,19 @@ def _init_dispatch_table(structs):
     # ULEB128 with datatype DIE offset, then byte, then a blob of that size
     def parse_typedblob():
         return lambda stream: [struct_parse(structs.Dwarf_uleb128(''), stream), read_blob(stream, struct_parse(structs.Dwarf_uint8(''), stream))]
+    
+    # https://yurydelendik.github.io/webassembly-dwarf/
+    # Byte, then variant: 0, 1, 2 => uleb128, 3 => uint32
+    def parse_wasmloc():
+        def parse(stream):
+            op = struct_parse(structs.Dwarf_uint8(''), stream)
+            if 0 <= op <= 2:
+                return [op, struct_parse(structs.Dwarf_uleb128(''), stream)]
+            elif op == 3:
+                return [op, struct_parse(structs.Dwarf_uint32(''), stream)]
+            else:
+                raise DWARFError("Unknown operation code in DW_OP_WASM_location: %d" % (op,))
+        return parse
 
     add('DW_OP_addr', parse_op_addr())
     add('DW_OP_addrx', parse_arg_struct(structs.Dwarf_uleb128('')))
@@ -263,5 +278,6 @@ def _init_dispatch_table(structs):
                                                         structs.Dwarf_sleb128('')))
     add('DW_OP_GNU_parameter_ref', parse_arg_struct(structs.Dwarf_offset('')))
     add('DW_OP_GNU_convert', parse_arg_struct(structs.Dwarf_uleb128('')))
+    add('DW_OP_WASM_location', parse_wasmloc())
 
     return table
