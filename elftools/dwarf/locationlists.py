@@ -331,6 +331,8 @@ class LocationParser(object):
                 attr.form in ('DW_FORM_sec_offset', 'DW_FORM_loclistx')) and
                 not LocationParser._attribute_is_member_offset(attr, dwarf_version))
     
+    # Starting with DWARF3, DW_AT_data_member_location may contain an integer offset
+    # instead of a location expression. Need to prevent false positives on attribute_has_location().
     @staticmethod
     def _attribute_is_member_offset(attr, dwarf_version):
         return (dwarf_version >= 3 and
