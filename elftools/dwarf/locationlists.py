@@ -325,10 +325,17 @@ class LocationParser(object):
 
     @staticmethod
     def _attribute_has_loc_list(attr, dwarf_version):
-        return ((dwarf_version < 4 and
+        return (((dwarf_version < 4 and
                  attr.form in ('DW_FORM_data1', 'DW_FORM_data2', 'DW_FORM_data4', 'DW_FORM_data8') and
                  not attr.name == 'DW_AT_const_value') or
-                attr.form in ('DW_FORM_sec_offset', 'DW_FORM_loclistx'))
+                attr.form in ('DW_FORM_sec_offset', 'DW_FORM_loclistx')) and
+                not LocationParser._attribute_is_member_offset(attr, dwarf_version))
+    
+    @staticmethod
+    def _attribute_is_member_offset(attr, dwarf_version):
+        return (dwarf_version >= 3 and
+            attr.name == 'DW_AT_data_member_location' and
+            attr.form in ('DW_FORM_data1', 'DW_FORM_data2', 'DW_FORM_data4', 'DW_FORM_data8', 'DW_FORM_sdata', 'DW_FORM_udata'))
 
     @staticmethod
     def _attribute_is_loclistptr_class(attr):
