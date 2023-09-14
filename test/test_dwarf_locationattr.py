@@ -13,6 +13,8 @@ class TestLocationAttrubute(unittest.TestCase):
     def test_has_location(self):
         attr = AttributeValue(name='DW_AT_data_member_location', form='DW_FORM_data1', value=0, raw_value=0, offset=402, indirection_length=0)
         self.assertFalse(LocationParser.attribute_has_location(attr, 3))
+        attr = AttributeValue(name='DW_AT_call_target', form='DW_FORM_exprloc', value=[80], raw_value=[80], offset=8509, indirection_length=0)
+        self.assertTrue(LocationParser.attribute_has_location(attr, 5))
 
 
 if __name__ == '__main__':
