@@ -350,4 +350,8 @@ class LocationParser(object):
                                'DW_AT_call_value',
                                'DW_AT_GNU_call_site_value',
                                'DW_AT_GNU_call_site_target',
-                               'DW_AT_GNU_call_site_data_value'))
+                               'DW_AT_GNU_call_site_data_value',
+                               'DW_AT_call_target',
+                               'DW_AT_call_target_clobbered',
+                               'DW_AT_call_data_location',
+                               'DW_AT_call_data_value'))
