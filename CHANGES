@@ -3,6 +3,7 @@ Changelog
 
 + Version 0.30 (2023.09.06)
 
+  - Python 2 support officially dropped (#415)
   - Optimization: cache instantiation of DWARF structs (#435)
   - DWARFv5 CU headers (#442)
   - Bug fix in attribute reporting for DWA_FORM_indirect (#475)
