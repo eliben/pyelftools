@@ -403,6 +403,8 @@ _DESCR_DW_CC = {
     DW_CC_normal: '(normal)',
     DW_CC_program: '(program)',
     DW_CC_nocall: '(nocall)',
+    DW_CC_pass_by_reference: '(pass by ref)',
+    DW_CC_pass_by_valuee: '(pass by value)',
 }
 
 _DESCR_DW_ORD = {
