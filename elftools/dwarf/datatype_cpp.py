@@ -12,7 +12,9 @@ from ..common.utils import bytes2str
 cpp_symbols = dict(
     pointer   = "*",
     reference = "&",
-    const     = "const")
+    const     = "const",
+    volatile  = "volatile",
+)
 
 def describe_cpp_datatype(var_die):
     return str(parse_cpp_datatype(var_die))
