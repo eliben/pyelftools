@@ -36,8 +36,8 @@ def parse_cpp_datatype(var_die):
 
     mods = []
     # Unlike readelf, dwarfdump doesn't chase typedefs
-    while type_die.tag in ('DW_TAG_const_type', 'DW_TAG_pointer_type', 'DW_TAG_reference_type'):
-        modifier = _strip_type_tag(type_die) # const/reference/pointer
+    while type_die.tag in ('DW_TAG_const_type', 'DW_TAG_volatile_type', 'DW_TAG_pointer_type', 'DW_TAG_reference_type'):
+        modifier = _strip_type_tag(type_die) # const/volatile/reference/pointer
         mods.insert(0, modifier)
         if not 'DW_AT_type' in type_die.attributes: # void* is encoded as a pointer to nothing
             t.name = t.tag = "void"
