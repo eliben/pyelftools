@@ -354,4 +354,6 @@ class LocationParser(object):
                                'DW_AT_call_target',
                                'DW_AT_call_target_clobbered',
                                'DW_AT_call_data_location',
-                               'DW_AT_call_data_value'))
+                               'DW_AT_call_data_value',
+                               'DW_AT_upper_bound',
+                               'DW_AT_count'))

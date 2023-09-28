@@ -35,6 +35,12 @@ class TestLocationAttrubute(unittest.TestCase):
         attr = AttributeValue(name='DW_AT_call_target', form='DW_FORM_exprloc', value=[80], raw_value=[80], offset=8509, indirection_length=0)
         self.assertTrue(LocationParser.attribute_has_location(attr, 5))
 
+        # This attribute came from the binary in issue #508
+        # DW_TAG_subrange_type at 0x45DEA
+        attr = AttributeValue(name='DW_AT_upper_bound', form='DW_FORM_exprloc', value=[163, 1, 94, 49, 28], raw_value=[163, 1, 94, 49, 28], offset=286191, indirection_length=0)
+        self.assertTrue(LocationParser.attribute_has_location(attr, 5))
+
+
 
 if __name__ == '__main__':
     unittest.main()
