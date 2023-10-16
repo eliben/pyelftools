@@ -86,6 +86,7 @@ DW_OP_name2opcode = dict(
     DW_OP_lo_user=0xe0,
     DW_OP_GNU_push_tls_address=0xe0,
     DW_OP_WASM_location=0xed,
+    DW_OP_GNU_uninit=0xf0,
     DW_OP_GNU_implicit_pointer=0xf2,
     DW_OP_GNU_entry_value=0xf3,
     DW_OP_GNU_const_type=0xf4,
@@ -238,7 +239,7 @@ def _init_dispatch_table(structs):
                     'DW_OP_gt', 'DW_OP_le', 'DW_OP_lt', 'DW_OP_ne', 'DW_OP_nop',
                     'DW_OP_push_object_address', 'DW_OP_form_tls_address',
                     'DW_OP_call_frame_cfa', 'DW_OP_stack_value',
-                    'DW_OP_GNU_push_tls_address']:
+                    'DW_OP_GNU_push_tls_address', 'DW_OP_GNU_uninit']:
         add(opname, parse_noargs())
 
     for n in range(0, 32):

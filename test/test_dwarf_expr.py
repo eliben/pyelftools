@@ -107,7 +107,14 @@ class TestParseExpr(unittest.TestCase):
             DWARFExprOp(op=0x34, op_name='DW_OP_lit4', args=[], offset=10),
             DWARFExprOp(op=0x1c, op_name='DW_OP_minus', args=[], offset=11),
             DWARFExprOp(op=0x6,  op_name='DW_OP_deref', args=[], offset=12)])
-
+        
+        # This expression blob came from the test binary in issue 508,
+        # DT_TAG_variable at 0x2a48C, DW_AT_location
+        lst = p.parse_expr([0x5f, 0xf0])
+        self.assertEqual(len(lst), 2)
+        self.assertEqual(lst, [
+            DWARFExprOp(op=0x5f, op_name='DW_OP_reg15', args=[], offset=0),
+            DWARFExprOp(op=0xf0,  op_name='DW_OP_GNU_uninit', args=[], offset=1)])
 
 if __name__ == '__main__':
     unittest.main()
