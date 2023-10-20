@@ -1631,6 +1631,18 @@ class ReadElf(object):
         else:
             self._dump_debug_rangesection(di, range_lists_sec)
 
+    def _dump_debug_rnglists_CU_header(self, cu):
+        self._emitline(' Table at Offset: %s:' % self._format_hex(cu.cu_offset, alternate=True))
+        self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
+        self._emitline('  DWARF version:   %d' % cu.version)
+        self._emitline('  Address size:    %d' % cu.address_size)
+        self._emitline('  Segment size:    %d' % cu.segment_selector_size)
+        self._emitline('  Offset entries:  %d\n' % cu.offset_count)
+        if cu.offsets and len(cu.offsets):
+            self._emitline('  Offsets starting at 0x%x:' % cu.offset_table_offset)
+            for i_offset in enumerate(cu.offsets):
+                self._emitline('    [%6d] 0x%x' % i_offset)
+
     def _dump_debug_rangesection(self, di, range_lists_sec):
         # Last amended to match readelf 2.41
         ver5 = range_lists_sec.version >= 5
@@ -1639,53 +1651,48 @@ class ReadElf(object):
         addr_width = addr_size * 2 # In hex digits, 8 or 16
         line_template = "    %%08x %%0%dx %%0%dx %%s" % (addr_width, addr_width)
         base_template = "    %%08x %%0%dx (base address)" % (addr_width)
+        base_template_indexed = "    %%08x %%0%dx (base address index) %%0%dx (base address)" % (addr_width, addr_width)
 
         # In order to determine the base address of the range
         # We need to know the corresponding CU.
         cu_map = {die.attributes['DW_AT_ranges'].value : cu  # Range list offset => CU
             for cu in di.iter_CUs()
             for die in cu.iter_DIEs()
-            if 'DW_AT_ranges' in die.attributes}        
+            if 'DW_AT_ranges' in die.attributes}
+        
+        rcus = list(range_lists_sec.iter_CUs()) if ver5 else None
+        rcu_index = 0
+        next_rcu_offset = 0
 
-        if ver5: # Dump by CUs - unsure at this point what does readelf do, ranges dump is buggy in 2.41
-            self._emitline('Contents of the %s section:\n\n\n' % section_name)
-            for cu in range_lists_sec.iter_CUs():
-                self._emitline(' Table at Offset: %s:' % self._format_hex(cu.cu_offset, alternate=True))
-                self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
-                self._emitline('  DWARF version:   %d' % cu.version)
-                self._emitline('  Address size:    %d' % cu.address_size)
-                self._emitline('  Segment size:    %d' % cu.segment_selector_size)
-                self._emitline('  Offset entries:  %d\n' % cu.offset_count)
-                # Is the offset table dumped too?
-                for (i, range_list) in enumerate(range_lists_sec.iter_CU_range_lists_ex(cu)):
-                    list_offset = range_list[0].entry_offset
-                    range_list = list(range_lists_sec.translate_v5_entry(entry, cu_map[list_offset]) for entry in range_list)
-                    self._emitline('  Offset: %s, Index: %d' % (self._format_hex(list_offset, alternate=True), i))
-                    self._emitline('    Offset   Begin    End')
-                    self._dump_rangelist(range_list, cu_map, ver5, line_template, base_template)
-        else: # Dump by DIE reference offset
-            range_lists = list(range_lists_sec.iter_range_lists())
-            if len(range_lists) == 0:
-                # Present but empty ranges section - readelf outputs a message
-                self._emitline("\nSection '%s' has no debugging data." % section_name)
-                return
+        range_lists = list(range_lists_sec.iter_range_lists())
+        if len(range_lists) == 0:
+            # Present but empty ranges section - readelf outputs a message
+            self._emitline("\nSection '%s' has no debugging data." % section_name)
+            return
 
-            self._emitline('Contents of the %s section:\n\n\n' % section_name)
+        self._emitline('Contents of the %s section:\n\n\n' % section_name)
+        if not ver5:
             self._emitline('    Offset   Begin    End')
 
-            for range_list in range_lists:
-                if len(range_list) == 0: # working around a bogus behavior in readelf 2.41
-                    # No entries means no offset. Dirty hack: peek the stream position
-                    range_list_offset = range_lists_sec.stream.tell() - self._dwarfinfo.config.default_address_size*2
-                    self._emitline('    %08x <End of list>' % (range_list_offset))
-                else:
-                    self._dump_rangelist(range_list, cu_map, ver5, line_template, base_template)
+        for range_list in range_lists:
+            # Emit CU headers before the curernt rangelist
+            if ver5 and range_list[0].entry_offset > next_rcu_offset:
+                while range_list[0].entry_offset > next_rcu_offset:
+                    rcu = rcus[rcu_index]
+                    self._dump_debug_rnglists_CU_header(rcu)
+                    next_rcu_offset = rcu.offset_after_length + rcu.unit_length
+                    rcu_index += 1
+                self._emitline('    Offset   Begin    End')
+            self._dump_rangelist(range_list, cu_map, ver5, line_template, base_template, base_template_indexed, range_lists_sec)
 
-    def _dump_rangelist(self, range_list, cu_map, ver5, line_template, base_template):
+        # TODO: trailing empty CUs, if any?
+
+    def _dump_rangelist(self, range_list, cu_map, ver5, line_template, base_template, base_template_indexed, range_lists_sec):
         # Weird discrepancy in binutils: for DWARFv5 it outputs entry offset,
         # for DWARF<=4 list offset.
         first = range_list[0]
         base_ip = _get_cu_base(cu_map[first.entry_offset])
+        raw_v5_rangelist = None
         for entry in range_list:
             if isinstance(entry, RangeEntry):
                 postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
@@ -1696,9 +1703,22 @@ class ReadElf(object):
                     postfix))
             elif isinstance(entry,RangeBaseAddressEntry):
                 base_ip = entry.base_address
-                self._emitline(base_template % (
-                    entry.entry_offset if ver5 else first.entry_offset,
-                    entry.base_address))
+                # V5 base entries with index are reported differently in readelf - need to go back to the raw V5 format
+                # Maybe other subtypes too, but no such cases  in the test corpus
+                raw_v5_entry = None
+                if ver5:
+                    if not raw_v5_rangelist:
+                        raw_v5_rangelist = range_lists_sec.get_range_list_at_offset_ex(range_list[0].entry_offset)
+                    raw_v5_entry = next(re for re in raw_v5_rangelist if re.entry_offset == entry.entry_offset)
+                if raw_v5_entry and raw_v5_entry.entry_type == 'DW_RLE_base_addressx':
+                    self._emitline(base_template_indexed % (
+                        entry.entry_offset,
+                        raw_v5_entry.index,
+                        entry.base_address))
+                else:
+                    self._emitline(base_template % (
+                        entry.entry_offset if ver5 else first.entry_offset,
+                        entry.base_address))
             else:
                 raise NotImplementedError("Unknown object in a range list")
         last = range_list[-1]

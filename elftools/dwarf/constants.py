@@ -131,6 +131,8 @@ DW_ID_case_insensitive = 3
 DW_CC_normal = 0x1
 DW_CC_program = 0x2
 DW_CC_nocall = 0x3
+DW_CC_pass_by_reference = 0x4
+DW_CC_pass_by_valuee = 0x5
 
 
 # Ordering

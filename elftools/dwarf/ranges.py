@@ -77,6 +77,11 @@ class RangeListsPair(object):
         section dumper should check if one is present.
         """
         return self._rnglists.iter_CU_range_lists_ex(cu)
+    
+    def translate_v5_entry(self, entry, cu):
+        """Forwards a V5 entry translation request to the V5 section
+        """
+        return self._rnglists.translate_v5_entry(entry, cu)
 
 class RangeLists(object):
     """ A single range list is a Python list consisting of RangeEntry or
