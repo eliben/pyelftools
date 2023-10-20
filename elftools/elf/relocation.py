@@ -107,8 +107,9 @@ class RelocationSection(Section, RelocationTable):
             'Expected sh_entsize of %s section to be %s' % (
                 header['sh_type'], self.entry_size))
 
-class RelrRelocationSection(Section):
-    """ RELR compressed relocation section. This stores relative relocations
+
+class RelrRelocationTable(object):
+    """ RELR compressed relocation table. This stores relative relocations
         in a compressed format. An entry with an even value serves as an
         'anchor' that defines a base address. Following this entry are one or
         more bitmaps for consecutive addresses after the anchor which determine
@@ -116,17 +117,27 @@ class RelrRelocationSection(Section):
         skipped. Addends are stored at the respective addresses (as in REL
         relocations).
     """
-    def __init__(self, header, name, elffile):
-        Section.__init__(self, header, name, elffile)
-        self._offset = self['sh_offset']
-        self._size = self['sh_size']
-        self._relr_struct = self.elffile.structs.Elf_Relr
+
+    def __init__(self, elffile, offset, size, entrysize):
+        self._elffile = elffile
+        self._offset = offset
+        self._size = size
+        self._relr_struct = self._elffile.structs.Elf_Relr
         self._entrysize = self._relr_struct.sizeof()
         self._cached_relocations = None
+
+        elf_assert(self._entrysize == entrysize,
+            'Expected RELR entry size to be %s, got %s' % (
+                self._entrysize, entrysize))
 
     def iter_relocations(self):
         """ Yield all the relocations in the section
         """
+
+        # If DT_RELRSZ is zero, offset is meaningless and could be None.
+        if self._size == 0:
+            return []
+
         limit = self._offset + self._size
         relr = self._offset
         # The addresses of relocations in a bitmap are calculated from a base
@@ -134,7 +145,7 @@ class RelrRelocationSection(Section):
         base = None
         while relr < limit:
             entry = struct_parse(self._relr_struct,
-                                 self.elffile.stream,
+                                 self._elffile.stream,
                                  stream_pos=relr)
             entry_offset = entry['r_offset']
             if (entry_offset & 1) == 0:
@@ -143,7 +154,7 @@ class RelrRelocationSection(Section):
                 # beginning of the first bitmap.
                 base = entry_offset
                 base += self._entrysize
-                yield Relocation(entry, self.elffile)
+                yield Relocation(entry, self._elffile)
             else:
                 # We're processing a bitmap.
                 elf_assert(base is not None, 'RELR bitmap without base address')
@@ -159,12 +170,12 @@ class RelrRelocationSection(Section):
                     if (entry_offset & 1) != 0:
                         calc_offset = base + i * self._entrysize
                         yield Relocation(Container(r_offset = calc_offset),
-                                         self.elffile)
+                                         self._elffile)
                     i += 1
                 # Advance 'base' past the current bitmap (8 == CHAR_BIT). There
                 # are 63 (or 31 for 32-bit ELFs) entries in each bitmap, and
                 # every bit corresponds to an ELF_addr-sized relocation.
-                base += (8 * self._entrysize - 1) * self.elffile.structs.Elf_addr('').sizeof()
+                base += (8 * self._entrysize - 1) * self._elffile.structs.Elf_addr('').sizeof()
             # Advance to the next entry
             relr += self._entrysize
 
@@ -181,6 +192,16 @@ class RelrRelocationSection(Section):
         if self._cached_relocations is None:
             self._cached_relocations = list(self.iter_relocations())
         return self._cached_relocations[n]
+
+
+class RelrRelocationSection(Section, RelrRelocationTable):
+    """ ELF RELR relocation section. Serves as a collection of RELR relocation entries.
+    """
+    def __init__(self, header, name, elffile):
+        Section.__init__(self, header, name, elffile)
+        RelrRelocationTable.__init__(self, self.elffile,
+            self['sh_offset'], self['sh_size'], self['sh_entsize'])
+
 
 class RelocationHandler(object):
     """ Handles the logic of relocations in ELF files.

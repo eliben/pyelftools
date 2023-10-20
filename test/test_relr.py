@@ -34,8 +34,7 @@ class TestRelr(unittest.TestCase):
             self.assertEqual(relr_section.num_relocations(), 100)
 
     def test_get_relocation(self):
-        """ Verify we can get a specific relocation in a RELR relocation
-            section.
+        """ Verify we can get a specific RELR relocation.
         """
         path = os.path.join('test', 'testfiles_for_unittests',
                             'lib_relro.so.elf')
@@ -46,4 +45,14 @@ class TestRelr(unittest.TestCase):
             reloc = relr_section.get_relocation(n=0)
             self.assertEqual(reloc['r_offset'], 0x4540)
             reloc = relr_section.get_relocation(n=65)
+            self.assertEqual(reloc['r_offset'], 0x4748)
+
+            dynamic_section = elf.get_section_by_name('.dynamic')
+            self.assertIsNotNone(dynamic_section)
+            dynamic_relr = dynamic_section.get_relocation_tables()
+            self.assertIsNotNone(dynamic_relr)
+            self.assertIsNotNone(dynamic_relr['RELR'])
+            reloc = dynamic_relr['RELR'].get_relocation(n=0)
+            self.assertEqual(reloc['r_offset'], 0x4540)
+            reloc = dynamic_relr['RELR'].get_relocation(n=65)
             self.assertEqual(reloc['r_offset'], 0x4748)
