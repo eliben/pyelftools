@@ -11,7 +11,8 @@ from .enums import (
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
     ENUM_RELOC_TYPE_MIPS, ENUM_ATTR_TAG_ARM, ENUM_ATTR_TAG_RISCV,
-    ENUM_RELOC_TYPE_LOONGARCH, ENUM_DT_FLAGS, ENUM_DT_FLAGS_1)
+    ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_LOONGARCH, ENUM_DT_FLAGS,
+    ENUM_DT_FLAGS_1)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
 from ..common.utils import bytes2hex
@@ -150,6 +151,8 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_AARCH64.get(x, _unknown)
     elif arch == '64-bit PowerPC':
         return _DESCR_RELOC_TYPE_PPC64.get(x, _unknown)
+    elif arch == 'IBM S/390':
+        return _DESCR_RELOC_TYPE_S390X.get(x, _unknown)
     elif arch == 'MIPS':
         return _DESCR_RELOC_TYPE_MIPS.get(x, _unknown)
     elif arch == 'LoongArch':
@@ -396,6 +399,7 @@ _DESCR_E_MACHINE = dict(
     EM_860='Intel 80860',
     EM_MIPS='MIPS R3000',
     EM_S370='IBM System/370',
+    EM_S390='IBM S/390',
     EM_MIPS_RS4_BE='MIPS 4000 big-endian',
     EM_IA_64='Intel IA-64',
     EM_X86_64='Advanced Micro Devices X86-64',
@@ -691,6 +695,7 @@ _DESCR_RELOC_TYPE_x64 = _reverse_dict(ENUM_RELOC_TYPE_x64)
 _DESCR_RELOC_TYPE_ARM = _reverse_dict(ENUM_RELOC_TYPE_ARM)
 _DESCR_RELOC_TYPE_AARCH64 = _reverse_dict(ENUM_RELOC_TYPE_AARCH64)
 _DESCR_RELOC_TYPE_PPC64 = _reverse_dict(ENUM_RELOC_TYPE_PPC64)
+_DESCR_RELOC_TYPE_S390X = _reverse_dict(ENUM_RELOC_TYPE_S390X)
 _DESCR_RELOC_TYPE_MIPS = _reverse_dict(ENUM_RELOC_TYPE_MIPS)
 _DESCR_RELOC_TYPE_LOONGARCH = _reverse_dict(ENUM_RELOC_TYPE_LOONGARCH)
 

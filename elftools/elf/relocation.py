@@ -14,7 +14,8 @@ from .sections import Section
 from .enums import (
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
-    ENUM_RELOC_TYPE_BPF, ENUM_RELOC_TYPE_LOONGARCH, ENUM_D_TAG)
+    ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_BPF, ENUM_RELOC_TYPE_LOONGARCH,
+    ENUM_D_TAG)
 from ..construct import Container
 
 
@@ -278,6 +279,8 @@ class RelocationHandler(object):
             recipe = self._RELOCATION_RECIPES_AARCH64.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == '64-bit PowerPC':
             recipe = self._RELOCATION_RECIPES_PPC64.get(reloc_type, None)
+        elif self.elffile.get_machine_arch() == 'IBM S/390':
+            recipe = self._RELOCATION_RECIPES_S390X.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'Linux BPF - in-kernel virtual machine':
             recipe = self._RELOCATION_RECIPES_EBPF.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'LoongArch':
@@ -489,6 +492,15 @@ class RelocationHandler(object):
         ENUM_RELOC_TYPE_LOONGARCH['R_LARCH_64_PCREL']: _RELOCATION_RECIPE_TYPE(
             bytesize=8, has_addend=True,
             calc_func=_reloc_calc_sym_plus_addend_pcrel),
+    }
+
+    _RELOCATION_RECIPES_S390X = {
+        ENUM_RELOC_TYPE_S390X['R_390_32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_S390X['R_390_PC32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend_pcrel),
+        ENUM_RELOC_TYPE_S390X['R_390_64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
     }
 
 
