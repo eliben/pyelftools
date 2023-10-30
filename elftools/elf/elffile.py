@@ -365,7 +365,7 @@ class ELFFile(object):
             'EM_960'           : 'Intel 80960',
             'EM_PPC'           : 'PowerPC',
             'EM_PPC64'         : '64-bit PowerPC',
-            'EM_S390'          : 'IBM System/390',
+            'EM_S390'          : 'IBM S/390',
             'EM_SPU'           : 'IBM SPU/SPC',
             'EM_V800'          : 'NEC V800',
             'EM_FR20'          : 'Fujitsu FR20',
