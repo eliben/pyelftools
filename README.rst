@@ -14,9 +14,10 @@ for more details.
 Pre-requisites
 --------------
 
-As a user of **pyelftools**, one only needs Python 3 to run. For hacking on
-**pyelftools** the requirements are a bit more strict, please see the `hacking
-guide <https://github.com/eliben/pyelftools/wiki/Hacking-guide>`_.
+As a user of **pyelftools**, one only needs Python 3 to run. While there is no
+reason for the library to not work on earlier versions of Python 3, our CI
+tests are based on the officual
+`Status of Python versions <https://devguide.python.org/versions/>`__.
 
 Installing
 ----------
@@ -46,6 +47,11 @@ How to use it?
 **pyelftools** is a regular Python library: you import and invoke it from your
 own code. For a detailed usage guide and links to examples, please consult the
 `user's guide <https://github.com/eliben/pyelftools/wiki/User's-guide>`_.
+
+Contributing
+------------
+
+See the `Hacking Guide <https://github.com/eliben/pyelftools/wiki/Hacking-guide>`__.
 
 License
 -------
