@@ -50,7 +50,8 @@ class TestRefAddrOnDWARFv2With64BitTarget(unittest.TestCase):
             debug_loclists_sec = None,
             debug_rnglists_sec = None,
             debug_sup_sec = None,
-            gnu_debugaltlink_sec = None
+            gnu_debugaltlink_sec = None,
+            debug_types_sec = None,
         )
 
         CUs = [cu for cu in di.iter_CUs()]
