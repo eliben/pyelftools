@@ -367,7 +367,7 @@ class DWARFInfo(object):
         elif self.debug_loc_sec and self.debug_loclists_sec is None:
             return LocationLists(self.debug_loc_sec.stream, self.structs, 4, self)
         elif self.debug_loc_sec and self.debug_loclists_sec:
-            return LocationListsPair(self.debug_loclists_sec.stream, self.debug_loclists_sec.stream, self.structs, self)
+            return LocationListsPair(self.debug_loc_sec.stream, self.debug_loclists_sec.stream, self.structs, self)
         else:
             return None
 

@@ -325,7 +325,9 @@ ATTR_DESCRIPTIONS = dict(
     DW_AT_call_line=_desc_value,
     DW_AT_call_file=_desc_decl_file,
     DW_AT_abstract_origin=_desc_origin,
-    DW_AT_specification=_desc_spec
+    DW_AT_specification=_desc_spec,
+    DW_AT_call_site_value=lambda attr, die: _desc_expression(attr.value, die) if attr.form.startswith('DW_FORM_block') else _desc_locations(attr, die),
+    DW_AT_GNU_call_site_value=lambda attr, die: _desc_expression(attr.value, die) if attr.form.startswith('DW_FORM_block') else _desc_locations(attr, die),
 )
 
 class ReadElf(object):
