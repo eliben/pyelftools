@@ -784,22 +784,28 @@ class ELFFile(object):
         """ Read the contents of a DWARF section from the stream and return a
             DebugSectionDescriptor. Apply relocations if asked to.
         """
+        phantom_bytes = self.has_phantom_bytes()
         # The section data is read into a new stream, for processing
         section_stream = BytesIO()
-        section_stream.write(section.data())
+        section_data = section.data()
+        section_stream.write(section_data[::2] if phantom_bytes else section_data)
 
         if relocate_dwarf_sections:
             reloc_handler = RelocationHandler(self)
             reloc_section = reloc_handler.find_relocations_for_section(section)
             if reloc_section is not None:
-                reloc_handler.apply_section_relocations(
-                        section_stream, reloc_section)
+                if phantom_bytes:
+                    # No guidance how should the relocation work - before or after the odd byte skip
+                    raise ELFParseError("This binary has relocations in the DWARF sections, currently not supported.")
+                else:
+                    reloc_handler.apply_section_relocations(
+                            section_stream, reloc_section)
 
         return DebugSectionDescriptor(
                 stream=section_stream,
                 name=section.name,
                 global_offset=section['sh_offset'],
-                size=section.data_size,
+                size=section.data_size//2 if phantom_bytes else section.data_size,
                 address=section['sh_addr'])
 
     @staticmethod
@@ -845,3 +851,14 @@ class ELFFile(object):
 
     def __exit__(self, type, value, traceback):
         self.close()
+
+    def has_phantom_bytes(self):
+        """The XC16 compiler for the PIC microcontrollers emits DWARF where all odd bytes in all DWARF sections
+           are to be discarded ("phantom").
+
+            We don't know where does the phantom byte discarding fit into the usual chain of section content transforms.
+            There are no XC16/PIC binaries in the corpus with relocations against DWARF, and the DWARF section compression
+            seems to be unsupported by XC16.
+        """
+        # Vendor flag EF_PIC30_NO_PHANTOM_BYTE=0x80000000: clear means phantom bytes are present
+        return self['e_machine'] == 'EM_DSPIC30F' and (self['e_flags'] & 0x80000000) == 0
