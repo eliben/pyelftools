@@ -573,7 +573,7 @@ class ReadElf(object):
                       self._emitline('  %s %s\t%s' % (
                           note['n_name'].ljust(20),
                           self._format_hex(note['n_descsz'], fieldsize=8),
-                          describe_note(note)))
+                          describe_note(note, self.elffile.header.e_machine)))
 
     def display_relocations(self):
         """ Display the relocations contained in the file
