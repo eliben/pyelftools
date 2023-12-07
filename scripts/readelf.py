@@ -549,6 +549,8 @@ class ReadElf(object):
                 elif tag.entry.d_tag in ('DT_MIPS_SYMTABNO',
                                          'DT_MIPS_LOCAL_GOTNO'):
                     parsed = str(tag.entry.d_val)
+                elif tag.entry.d_tag == 'DT_AARCH64_BTI_PLT':
+                    parsed = ''
                 else:
                     parsed = '%#x' % tag['d_val']
 
