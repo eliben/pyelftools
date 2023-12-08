@@ -619,6 +619,10 @@ ENUM_D_TAG_MIPS = dict(
     DT_MIPS_RLD_MAP_REL=0x70000035,
 )
 
+ENUM_D_TAG_AARCH64 = dict(
+    DT_AARCH64_BTI_PLT=0x70000001,
+)
+
 # Here is the mapping from e_machine enum to the extra dynamic tags which it
 # validates. Solaris is missing from this list because its inclusion is not
 # controlled by e_machine but rather e_ident[EI_OSABI].
@@ -628,6 +632,7 @@ ENUM_D_TAG_MIPS = dict(
 ENUMMAP_EXTRA_D_TAG_MACHINE = dict(
     EM_MIPS=ENUM_D_TAG_MIPS,
     EM_MIPS_RS3_LE=ENUM_D_TAG_MIPS,
+    EM_AARCH64=ENUM_D_TAG_AARCH64
 )
 
 # Here is the full combined mapping from tag name to value
@@ -1065,6 +1070,7 @@ ENUM_NOTE_GNU_PROPERTY_TYPE = dict(
     GNU_PROPERTY_X86_ISA_1_NEEDED=0xc0008002,
     GNU_PROPERTY_X86_FEATURE_2_USED=0xc0010001,
     GNU_PROPERTY_X86_ISA_1_USED=0xc0010002,
+    GNU_PROPERTY_AARCH64_FEATURE_1_AND=0xc0000000,
     _default_=Pass,
 )
 

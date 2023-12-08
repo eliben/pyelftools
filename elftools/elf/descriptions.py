@@ -200,7 +200,7 @@ def describe_ver_flags(x):
         VER_FLAGS.VER_FLG_INFO) if x & flag)
 
 
-def describe_note(x):
+def describe_note(x, machine):
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
@@ -215,7 +215,7 @@ def describe_note(x):
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
-        desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'])
+        desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'], machine)
     else:
         desc = '\n      description data: {}'.format(bytes2hex(n_desc))
 
@@ -269,30 +269,14 @@ def describe_attr_tag_riscv(tag, val, extra):
     else:
         return _DESCR_ATTR_TAG_RISCV[tag] + d_entry[val]
 
-
-
-def describe_note_gnu_property_x86_feature_1(value):
+def describe_note_gnu_property_bitmap_and(values, prefix, value):
     descs = []
-    for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_1_FLAGS:
+    for mask, desc in values:
         if value & mask:
             descs.append(desc)
-    return 'x86 feature: ' + ', '.join(descs)
+    return '%s: %s' % (prefix, ', '.join(descs))
 
-def describe_note_gnu_property_x86_feature_2_used(value):
-    descs = []
-    for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_2_FLAGS:
-        if value & mask:
-            descs.append(desc)
-    return 'x86 feature used: ' + ', '.join(descs)
-
-def describe_note_gnu_property_x86_isa_1(value, verb):
-    descs = []
-    for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS:
-        if value & mask:
-            descs.append(desc)
-    return 'x86 ISA %s: %s' % (verb, ', '.join(descs))
-
-def describe_note_gnu_properties(properties):
+def describe_note_gnu_properties(properties, machine):
     descriptions = []
     for prop in properties:
         t, d, sz = prop.pr_type, prop.pr_data, prop.pr_datasz
@@ -310,22 +294,27 @@ def describe_note_gnu_properties(properties):
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_x86_feature_1(d)
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_1_FLAGS, 'x86 feature', d)
         elif t == 'GNU_PROPERTY_X86_FEATURE_2_USED':
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_x86_feature_2_used(d)                
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_2_FLAGS, 'x86 feature used', d)                
         elif t == 'GNU_PROPERTY_X86_ISA_1_NEEDED':
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_x86_isa_1(d, "needed")
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS, 'x86 ISA needed', d)
         elif t == 'GNU_PROPERTY_X86_ISA_1_USED':
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_x86_isa_1(d, "used")
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS, 'x86 ISA used', d)
+        elif t == 'GNU_PROPERTY_AARCH64_FEATURE_1_AND' and machine == 'EM_AARCH64':
+            if sz != 4:
+                prop_desc = ' <corrupt length: 0x%x>' % sz
+            else:
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_AARCH64_FEATURE_1_AND, 'aarch64 feature', d)
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
             prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
@@ -673,6 +662,11 @@ _DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS = (
     # TODO; there is a long list
 )
 
+# Same for GNU_PROPERTY_AARCH64_FEATURE_1_AND
+_DESCR_NOTE_GNU_PROPERTY_AARCH64_FEATURE_1_AND = (
+    (1, 'bti'),
+    (2, 'pac'),
+)
 
 def _reverse_dict(d, low_priority=()):
     """

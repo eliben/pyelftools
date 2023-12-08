@@ -199,7 +199,7 @@ class CallFrameInfo(object):
                 args = [primary_arg]
             # primary == 0 and real opcode is extended
             elif opcode in (DW_CFA_nop, DW_CFA_remember_state,
-                            DW_CFA_restore_state):
+                            DW_CFA_restore_state, DW_CFA_AARCH64_negate_ra_state):
                 args = []
             elif opcode == DW_CFA_set_loc:
                 args = [
@@ -236,6 +236,7 @@ class CallFrameInfo(object):
                     struct_parse(structs.Dwarf_sleb128(''), self.stream)]
             elif opcode == DW_CFA_GNU_args_size:
                 args = [struct_parse(structs.Dwarf_uleb128(''), self.stream)]
+            
             else:
                 dwarf_assert(False, 'Unknown CFI opcode: 0x%x' % opcode)
 

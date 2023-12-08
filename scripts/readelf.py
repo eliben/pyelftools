@@ -549,6 +549,8 @@ class ReadElf(object):
                 elif tag.entry.d_tag in ('DT_MIPS_SYMTABNO',
                                          'DT_MIPS_LOCAL_GOTNO'):
                     parsed = str(tag.entry.d_val)
+                elif tag.entry.d_tag == 'DT_AARCH64_BTI_PLT':
+                    parsed = ''
                 else:
                     parsed = '%#x' % tag['d_val']
 
@@ -573,7 +575,7 @@ class ReadElf(object):
                       self._emitline('  %s %s\t%s' % (
                           note['n_name'].ljust(20),
                           self._format_hex(note['n_descsz'], fieldsize=8),
-                          describe_note(note)))
+                          describe_note(note, self.elffile.header.e_machine)))
 
     def display_relocations(self):
         """ Display the relocations contained in the file

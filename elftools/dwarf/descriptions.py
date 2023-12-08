@@ -89,7 +89,7 @@ def describe_CFI_instructions(entry):
                 name, factored_offset, factored_offset + pc)
             pc += factored_offset
         elif name in (  'DW_CFA_remember_state', 'DW_CFA_restore_state',
-                        'DW_CFA_nop'):
+                        'DW_CFA_nop', 'DW_CFA_AARCH64_negate_ra_state'):
             s += '  %s\n' % name
         elif name == 'DW_CFA_def_cfa':
             s += '  %s: %s ofs %s\n' % (
