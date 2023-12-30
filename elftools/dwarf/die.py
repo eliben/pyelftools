@@ -114,11 +114,12 @@ class DIE(object):
                          'DW_FORM_ref8', 'DW_FORM_ref', 'DW_FORM_ref_udata'):
             refaddr = self.cu.cu_offset + attr.raw_value
             return self.cu.get_DIE_from_refaddr(refaddr)
+
         elif attr.form in ('DW_FORM_ref_addr'):
             return self.cu.dwarfinfo.get_DIE_from_refaddr(attr.raw_value)
         elif attr.form in ('DW_FORM_ref_sig8'):
-            # Implement search type units for matching signature
-            raise NotImplementedError('%s (type unit by signature)' % attr.form)
+            die = self.cu.dwarfinfo.get_DIE_by_sig8(attr.raw_value)
+            return die
         elif attr.form in ('DW_FORM_ref_sup4', 'DW_FORM_ref_sup8', 'DW_FORM_GNU_ref_alt'):
             if self.dwarfinfo.supplementary_dwarfinfo:
                 return self.dwarfinfo.supplementary_dwarfinfo.get_DIE_from_refaddr(attr.raw_value)

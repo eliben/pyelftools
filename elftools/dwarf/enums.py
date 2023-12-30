@@ -91,8 +91,9 @@ ENUM_DW_TAG = dict(
     DW_TAG_immutable_type              = 0x4b,
 
 
+    # Tags between 0x4080 and 0xffff are user-defined.
+    # different implementations may overlap?
 
-    DW_TAG_lo_user                     = 0x4080,
     DW_TAG_GNU_template_template_param = 0x4106,
     DW_TAG_GNU_template_parameter_pack = 0x4107,
     DW_TAG_GNU_formal_parameter_pack   = 0x4108,
@@ -100,8 +101,6 @@ ENUM_DW_TAG = dict(
     DW_TAG_GNU_call_site_parameter     = 0x410a,
 
     DW_TAG_APPLE_property              = 0x4200,
-
-    DW_TAG_hi_user                     = 0xffff,
 
     _default_                          = Pass,
 )

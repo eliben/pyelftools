@@ -200,7 +200,7 @@ class DWARFInfo(object):
         tu = self._type_units_by_sig.get(sig8)
         if tu is None:
             raise KeyError("Signature %016x not found in .debug_types" % sig8)
-        return tu.get_cached_DIE(tu.tu_offset + tu['type_offset'])
+        return tu._get_cached_DIE(tu.tu_offset + tu['type_offset'])
 
     def get_CU_containing(self, refaddr):
         """ Find the CU that includes the given reference address in the
@@ -488,14 +488,14 @@ class DWARFInfo(object):
         # Parse all the Type Units in the types section for access by sig8
         offset = 0
         while offset < self.debug_types_sec.size:
-            tu = self._parse_CU_at_offset(offset, types_section=True)
+            tu = self._parse_TU_at_offset(offset)
             # Compute the offset of the next TU in the section. The unit_length
             # field of the TU header contains its size not including the length
             # field itself.
             offset = (offset +
                       tu['unit_length'] +
                       tu.structs.initial_length_field_size())
-            self._type_units_by_sig[tu['type_signature']] = tu
+            self._type_units_by_sig[tu['signature']] = tu
 
     def _cached_CU_at_offset(self, offset):
         """ Return the CU with unit header at the given offset into the
