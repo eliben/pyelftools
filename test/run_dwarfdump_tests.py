@@ -35,8 +35,7 @@ elif platform.system() == "Windows":
     # Point the environment variable DWARFDUMP at a Windows build of llvm-dwarfdump
     DWARFDUMP_PATH = os.environ.get('DWARFDUMP', "llvm-dwarfdump.exe")
 else:
-    # DWARFDUMP_PATH = 'test/external_tools/llvm-dwarfdump'
-    DWARFDUMP_PATH = 'llvm-dwarfdump-15'
+    DWARFDUMP_PATH = 'test/external_tools/llvm-dwarfdump'
 
 def discover_testfiles(rootdir):
     """ Discover test files in the given directory. Yield them one by one.
