@@ -267,6 +267,8 @@ ENUM_DW_AT = dict(
     DW_AT_MIPS_allocatable_dopetype     = 0x200f,
     DW_AT_MIPS_assumed_shape_dopetype   = 0x2010,
     DW_AT_MIPS_assumed_size             = 0x2011,
+    
+    DW_AT_HP_opt_level                  = 0x2014,
 
     DW_AT_sf_names                      = 0x2101,
     DW_AT_src_info                      = 0x2102,

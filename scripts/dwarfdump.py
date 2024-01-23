@@ -86,6 +86,8 @@ def _desc_ref(attr, die, extra=''):
         extra = " \"%s\"" % extra
     if attr.form == 'DW_FORM_ref_addr':
         return "0x%016x%s" % (attr.value, extra)
+    if attr.form == 'DW_FORM_ref_sig8':
+        return "0x%016x" % attr.value
     return "cu + 0x%04x => {0x%08x}%s" % (
         attr.raw_value,
         die.cu.cu_offset + attr.raw_value,
@@ -225,7 +227,8 @@ def _arch(cu):
     return cu.dwarfinfo.config.machine_arch
 
 def _desc_reg(reg_no, cu):
-    return describe_reg_name(reg_no, _arch(cu), True).upper()
+    reg_name = describe_reg_name(reg_no, _arch(cu), False)
+    return reg_name.upper() if reg_name else ""
 
 def _desc_operation(op, op_name, args, cu):
     # Not sure about regx(regno) and bregx(regno, offset)
