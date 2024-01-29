@@ -49,7 +49,8 @@ def iter_notes(elffile, offset, size):
         elif note['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
             off = offset
             props = []
-            while off < end:
+            current_note_end = offset + note['n_descsz']
+            while off < current_note_end:
                 p = struct_parse(elffile.structs.Elf_Prop, elffile.stream, off)
                 off += roundup(p.pr_datasz + 8, 2 if elffile.elfclass == 32 else 3)
                 props.append(p)
