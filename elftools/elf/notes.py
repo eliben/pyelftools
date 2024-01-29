@@ -14,13 +14,16 @@ def iter_notes(elffile, offset, size):
     """ Yield all the notes in a section or segment.
     """
     end = offset + size
-    while offset < end:
+    nhdr_size = elffile.structs.Elf_Nhdr.sizeof()
+    # Note: a note's name and data are 4-byte aligned, but it's possible there's
+    # additional padding at the end to satisfy the alignment requirement of the segment.
+    while offset + nhdr_size < end:
         note = struct_parse(
             elffile.structs.Elf_Nhdr,
             elffile.stream,
             stream_pos=offset)
         note['n_offset'] = offset
-        offset += elffile.structs.Elf_Nhdr.sizeof()
+        offset += nhdr_size
         elffile.stream.seek(offset)
         # n_namesz is 4-byte aligned.
         disk_namesz = roundup(note['n_namesz'], 2)
