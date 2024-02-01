@@ -49,6 +49,8 @@ def iter_notes(elffile, offset, size):
         elif note['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
             off = offset
             props = []
+            # n_descsz contains the size of the note "descriptor" (the data payload),
+            # excluding padding. See "Note Section" in https://refspecs.linuxfoundation.org/elf/elf.pdf
             current_note_end = offset + note['n_descsz']
             while off < current_note_end:
                 p = struct_parse(elffile.structs.Elf_Prop, elffile.stream, off)
