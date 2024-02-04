@@ -12,7 +12,7 @@ from .enums import (
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
     ENUM_RELOC_TYPE_MIPS, ENUM_ATTR_TAG_ARM, ENUM_ATTR_TAG_RISCV,
     ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_LOONGARCH, ENUM_DT_FLAGS,
-    ENUM_DT_FLAGS_1)
+    ENUM_DT_FLAGS_1, ENUM_RELOC_TYPE_PPC)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
 from ..common.utils import bytes2hex
@@ -157,6 +157,8 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_MIPS.get(x, _unknown)
     elif arch == 'LoongArch':
         return _DESCR_RELOC_TYPE_LOONGARCH.get(x, _unknown)
+    elif arch == 'PowerPC':
+        return _DESCR_RELOC_TYPE_PPC.get(x, _unknown)
     else:
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
 
@@ -689,6 +691,7 @@ _DESCR_RELOC_TYPE_x64 = _reverse_dict(ENUM_RELOC_TYPE_x64)
 _DESCR_RELOC_TYPE_ARM = _reverse_dict(ENUM_RELOC_TYPE_ARM)
 _DESCR_RELOC_TYPE_AARCH64 = _reverse_dict(ENUM_RELOC_TYPE_AARCH64)
 _DESCR_RELOC_TYPE_PPC64 = _reverse_dict(ENUM_RELOC_TYPE_PPC64)
+_DESCR_RELOC_TYPE_PPC = _reverse_dict(ENUM_RELOC_TYPE_PPC)
 _DESCR_RELOC_TYPE_S390X = _reverse_dict(ENUM_RELOC_TYPE_S390X)
 _DESCR_RELOC_TYPE_MIPS = _reverse_dict(ENUM_RELOC_TYPE_MIPS)
 _DESCR_RELOC_TYPE_LOONGARCH = _reverse_dict(ENUM_RELOC_TYPE_LOONGARCH)
