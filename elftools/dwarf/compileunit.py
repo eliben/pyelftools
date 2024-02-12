@@ -226,6 +226,9 @@ class CompileUnit(object):
         # the top DIE and obtain a reference to its stream.
         top_die_stream = self.get_top_DIE().stream
 
+        if self.dwarfinfo._skip_cache:
+            return DIE(cu=self, stream=top_die_stream, offset=offset)
+
         # `offset` is the offset in the stream of the DIE we want to return.
         # The map is maintined as a parallel array to the list.  We call
         # bisect each time to ensure new DIEs are inserted in the correct
