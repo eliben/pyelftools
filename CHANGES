@@ -1,6 +1,10 @@
 Changelog
 =========
 
++ Starting with version 0.31, please use the GitHub UI
+  at https://github.com/eliben/pyelftools/tags
+  to compare tags in order to find out what changed.
+
 + Version 0.30 (2023.09.06)
 
   - Python 2 support officially dropped (#415)
