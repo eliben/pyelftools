@@ -81,7 +81,8 @@ class DWARFInfo(object):
             debug_loclists_sec,
             debug_rnglists_sec,
             debug_sup_sec,
-            gnu_debugaltlink_sec
+            gnu_debugaltlink_sec,
+            gnu_debuglink_sec
             ):
         """ config:
                 A DwarfConfig object
@@ -110,6 +111,7 @@ class DWARFInfo(object):
         self.debug_rnglists_sec = debug_rnglists_sec
         self.debug_sup_sec = debug_sup_sec
         self.gnu_debugaltlink_sec = gnu_debugaltlink_sec
+        self.gnu_debuglink_sec = gnu_debuglink_sec
 
         # Sets the supplementary_dwarfinfo to None. Client code can set this
         # to something else, typically a DWARFInfo file read from an ELFFile
@@ -562,7 +564,7 @@ class DWARFInfo(object):
 
     def parse_debugsupinfo(self):
         """
-        Extract a filename from either .debug_sup or .gnu_debualtlink sections.
+        Extract a filename from .debug_sup, .gnu_debualtlink sections, or .gnu_debuglink.
         """
         if self.debug_sup_sec is not None:
             self.debug_sup_sec.stream.seek(0)
@@ -572,6 +574,10 @@ class DWARFInfo(object):
         if self.gnu_debugaltlink_sec is not None:
             self.gnu_debugaltlink_sec.stream.seek(0)
             suplink = self.structs.Dwarf_debugaltlink.parse_stream(self.gnu_debugaltlink_sec.stream)
+            return suplink.sup_filename
+        if self.gnu_debuglink_sec is not None:
+            self.gnu_debuglink_sec.stream.seek(0)
+            suplink = self.structs.Dwarf_debuglink.parse_stream(self.gnu_debuglink_sec.stream)
             return suplink.sup_filename
         return None
 
