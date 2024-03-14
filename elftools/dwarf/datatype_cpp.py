@@ -229,6 +229,8 @@ def DIE_is_ptr_to_member_struct(type_die):
 
 def _strip_type_tag(die):
     """Given a DIE with DW_TAG_foo_type, returns foo"""
+    if isinstance(die.tag, int): # User-defined tag 
+        return ""
     return die.tag[7:-5]
 
 def _array_subtype_size(sub):
