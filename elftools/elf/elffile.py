@@ -250,7 +250,7 @@ class ELFFile(object):
                          '.debug_pubnames', '.debug_addr',
                          '.debug_str_offsets', '.debug_line_str',
                          '.debug_loclists', '.debug_rnglists',
-                         '.debug_sup', '.gnu_debugaltlink')
+                         '.debug_sup', '.gnu_debugaltlink', '.debug_types')
 
         compressed = bool(self.get_section_by_name('.zdebug_info'))
         if compressed:
@@ -264,7 +264,8 @@ class ELFFile(object):
          debug_loc_sec_name, debug_ranges_sec_name, debug_pubtypes_name,
          debug_pubnames_name, debug_addr_name, debug_str_offsets_name,
          debug_line_str_name, debug_loclists_sec_name, debug_rnglists_sec_name,
-         debug_sup_name, gnu_debugaltlink_name, eh_frame_sec_name) = section_names
+         debug_sup_name, gnu_debugaltlink_name, debug_types_sec_name,
+         eh_frame_sec_name) = section_names
 
         debug_sections = {}
         for secname in section_names:
@@ -305,7 +306,8 @@ class ELFFile(object):
                 debug_loclists_sec=debug_sections[debug_loclists_sec_name],
                 debug_rnglists_sec=debug_sections[debug_rnglists_sec_name],
                 debug_sup_sec=debug_sections[debug_sup_name],
-                gnu_debugaltlink_sec=debug_sections[gnu_debugaltlink_name]
+                gnu_debugaltlink_sec=debug_sections[gnu_debugaltlink_name],
+                debug_types_sec=debug_sections[debug_types_sec_name]
                 )
         if follow_links:
             dwarfinfo.supplementary_dwarfinfo = self.get_supplementary_dwarfinfo(dwarfinfo)
