@@ -1209,7 +1209,7 @@ class ReadElf(object):
             # Avoid dumping same lineprogram multiple times
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
 
-            if lineprogram in lineprogram_list:
+            if lineprogram is None or lineprogram in lineprogram_list:
                 continue 
 
             lineprogram_list.append(lineprogram)
