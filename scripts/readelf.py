@@ -1553,6 +1553,13 @@ class ReadElf(object):
             self._emitline("\nSection '%s' has no debugging data." % (section_name,))
             return
         
+        # The v5 loclists section consists of CUs - small header, and 
+        # an optional loclist offset table. Readelf prints out the header data dump
+        # on top of every CU, so we should too. But we don't scroll through
+        # the loclists section, we are effectively scrolling through the info
+        # section (as to not stumble upon gaps in the secion, and not miss the
+        # GNU locviews, so we have to keep track which loclists-CU we are in.
+        # Same logic in v5 rnglists section dump.
         lcus = list(loc_lists_sec.iter_CUs()) if ver5 else None
         lcu_index = 0
         next_lcu_offset = 0
@@ -1562,7 +1569,7 @@ class ReadElf(object):
             self._emitline('    Offset   Begin            End              Expression')
 
         for loc_list in loc_lists:
-            # Emit CU headers before the curernt loclist
+            # Emit CU headers before the current loclist, if we've moved to the next CU
             if ver5 and loc_list[0].entry_offset > next_lcu_offset:
                 while loc_list[0].entry_offset > next_lcu_offset:
                     lcu = lcus[lcu_index]
