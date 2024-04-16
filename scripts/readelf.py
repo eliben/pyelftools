@@ -1552,10 +1552,31 @@ class ReadElf(object):
             # Present but empty locations section - readelf outputs a message
             self._emitline("\nSection '%s' has no debugging data." % (section_name,))
             return
+        
+        # The v5 loclists section consists of CUs - small header, and 
+        # an optional loclist offset table. Readelf prints out the header data dump
+        # on top of every CU, so we should too. But we don't scroll through
+        # the loclists section, we are effectively scrolling through the info
+        # section (as to not stumble upon gaps in the secion, and not miss the
+        # GNU locviews, so we have to keep track which loclists-CU we are in.
+        # Same logic in v5 rnglists section dump.
+        lcus = list(loc_lists_sec.iter_CUs()) if ver5 else None
+        lcu_index = 0
+        next_lcu_offset = 0
 
         self._emitline('Contents of the %s section:\n' % (section_name,))
-        self._emitline('    Offset   Begin            End              Expression')
+        if not ver5:
+            self._emitline('    Offset   Begin            End              Expression')
+
         for loc_list in loc_lists:
+            # Emit CU headers before the current loclist, if we've moved to the next CU
+            if ver5 and loc_list[0].entry_offset > next_lcu_offset:
+                while loc_list[0].entry_offset > next_lcu_offset:
+                    lcu = lcus[lcu_index]
+                    self._dump_debug_loclists_CU_header(lcu)
+                    next_lcu_offset = lcu.offset_after_length + lcu.unit_length
+                    lcu_index += 1
+                self._emitline('    Offset   Begin            End              Expression')
             self._dump_loclist(loc_list, line_template, cu_map)
 
     def _dump_loclist(self, loc_list, line_template, cu_map):
@@ -1619,6 +1640,19 @@ class ReadElf(object):
         # but readelf emits its offset, so this should too.
         last = loc_list[-1]
         self._emitline("    %08x <End of list>" % (last.entry_offset + last.entry_length))
+
+    def _dump_debug_loclists_CU_header(self, cu):
+        # Header slightly different from that of v5 rangelist in-section CU header dump
+        self._emitline('Table at Offset %s' % self._format_hex(cu.cu_offset, alternate=True))
+        self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
+        self._emitline('  DWARF version:   %d' % cu.version)
+        self._emitline('  Address size:    %d' % cu.address_size)
+        self._emitline('  Segment size:    %d' % cu.segment_selector_size)
+        self._emitline('  Offset entries:  %d\n' % cu.offset_count)
+        if cu.offsets and len(cu.offsets):
+            self._emitline('  Offsets starting at 0x%x:' % cu.offset_table_offset)
+            for i_offset in enumerate(cu.offsets):
+                self._emitline('    [%6d] 0x%x' % i_offset)        
 
     def _dump_debug_ranges(self):
         # TODO: GNU readelf format doesn't need entry_length?
