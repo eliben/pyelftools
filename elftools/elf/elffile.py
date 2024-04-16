@@ -609,7 +609,7 @@ class ELFFile(object):
         """ Compute the offset of section #n in the file
         """
         shentsize = self['e_shentsize']
-        if self['e_shoff'] > 0 and shentsize < (0x40 if self.elfclass == 64 else 0x28):
+        if self['e_shoff'] > 0 and shentsize < self.structs.Elf_Shdr.sizeof():
             raise ELFError('Too small e_shentsize: %s' % shentsize)
         return self['e_shoff'] + n * shentsize
 
@@ -617,7 +617,7 @@ class ELFFile(object):
         """ Compute the offset of segment #n in the file
         """
         phentsize = self['e_phentsize']
-        if self['e_phoff'] > 0 and phentsize < (0x38 if self.elfclass == 64 else 0x20):
+        if self['e_phoff'] > 0 and phentsize < self.structs.Elf_Phdr.sizeof():
             raise ELFError('Too small e_phentsize: %s' % phentsize)
         return self['e_phoff'] + n * phentsize
 
