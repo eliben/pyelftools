@@ -588,12 +588,18 @@ class ELFFile(object):
     def _section_offset(self, n):
         """ Compute the offset of section #n in the file
         """
-        return self['e_shoff'] + n * self['e_shentsize']
+        shentsize = self['e_shentsize']
+        if self['e_shoff'] > 0 and shentsize < (0x40 if self.elfclass == 64 else 0x28):
+            raise ELFError('Too small e_shentsize: %s' % shentsize)
+        return self['e_shoff'] + n * shentsize
 
     def _segment_offset(self, n):
         """ Compute the offset of segment #n in the file
         """
-        return self['e_phoff'] + n * self['e_phentsize']
+        phentsize = self['e_phentsize']
+        if self['e_phoff'] > 0 and phentsize < (0x38 if self.elfclass == 64 else 0x20):
+            raise ELFError('Too small e_phentsize: %s' % phentsize)
+        return self['e_phoff'] + n * phentsize
 
     def _make_segment(self, segment_header):
         """ Create a Segment object of the appropriate type
@@ -683,6 +689,10 @@ class ELFFile(object):
         """ Create a SymbolTableSection
         """
         linked_strtab_index = section_header['sh_link']
+        # Lookahead to validate linked section type
+        linked_section_type = self._get_section_header(linked_strtab_index)['sh_type']
+        if linked_section_type != 'SHT_STRTAB':
+            raise ELFError("SHT_SYMTAB section points at section %d of type %s, expected SHT_STRTAB" % (linked_strtab_index, linked_section_type))
         strtab_section = self.get_section(linked_strtab_index)
         return SymbolTableSection(
             section_header, name,
@@ -701,6 +711,10 @@ class ELFFile(object):
         """ Create a SUNWSyminfoTableSection
         """
         linked_strtab_index = section_header['sh_link']
+        # Lookahead to validate linked section type
+        linked_section_type = self._get_section_header(linked_strtab_index)['sh_type']
+        if linked_section_type not in ('SHT_SYMTAB', 'SHT_DYNSYM'):
+            raise ELFError("SHT_SYNW_syminfo points at section %d of type %s, expected SHT_SYMTAB/SHT_DYNSYM" % (linked_strtab_index, linked_section_type))
         strtab_section = self.get_section(linked_strtab_index)
         return SUNWSyminfoTableSection(
             section_header, name,
@@ -711,6 +725,10 @@ class ELFFile(object):
         """ Create a GNUVerNeedSection
         """
         linked_strtab_index = section_header['sh_link']
+        # Lookahead to validate linked section type
+        linked_section_type = self._get_section_header(linked_strtab_index)['sh_type']
+        if linked_section_type != 'SHT_STRTAB':
+            raise ELFError("SHT_GNU_verneed section points at section %d of type %s, expected SHT_STRTAB" % (linked_strtab_index, linked_section_type))
         strtab_section = self.get_section(linked_strtab_index)
         return GNUVerNeedSection(
             section_header, name,
@@ -721,6 +739,10 @@ class ELFFile(object):
         """ Create a GNUVerDefSection
         """
         linked_strtab_index = section_header['sh_link']
+        # Lookahead to validate linked section type
+        linked_section_type = self._get_section_header(linked_strtab_index)['sh_type']
+        if linked_section_type != 'SHT_STRTAB':
+            raise ELFError("SHT_GNU_verdef section points at section %d of type %s, expected SHT_STRTAB" % (linked_strtab_index, linked_section_type))
         strtab_section = self.get_section(linked_strtab_index)
         return GNUVerDefSection(
             section_header, name,
@@ -739,6 +761,10 @@ class ELFFile(object):
 
     def _make_elf_hash_section(self, section_header, name):
         linked_symtab_index = section_header['sh_link']
+        # Lookahead to validate linked section type
+        linked_section_type = self._get_section_header(linked_symtab_index)['sh_type']
+        if linked_section_type not in ('SHT_SYMTAB', 'SHT_DYNSYM'):
+            raise ELFError("SHT_HASH section points at section %d of type %s, expected SHT_SYMTAB/SHT_DYNSYM" % (linked_symtab_index, linked_section_type))
         symtab_section = self.get_section(linked_symtab_index)
         return ELFHashSection(
             section_header, name, self, symtab_section
@@ -746,6 +772,9 @@ class ELFFile(object):
 
     def _make_gnu_hash_section(self, section_header, name):
         linked_symtab_index = section_header['sh_link']
+        linked_section_type = self._get_section_header(linked_symtab_index)['sh_type']
+        if linked_section_type not in ('SHT_SYMTAB', 'SHT_DYNSYM'):
+            raise ELFError("SHT_GNU_HASH section points at section %d of type %s, expected SHT_SYMTAB/SHT_DYNSYM" % (linked_symtab_index, linked_section_type))
         symtab_section = self.get_section(linked_symtab_index)
         return GNUHashSection(
             section_header, name, self, symtab_section
