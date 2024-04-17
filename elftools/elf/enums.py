@@ -7,7 +7,6 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from ..common.utils import merge_dicts
-from ..construct import Pass
 
 
 # e_ident[EI_CLASS] in the ELF header
@@ -28,7 +27,6 @@ ENUM_EI_DATA = dict(
 ENUM_E_VERSION = dict(
     EV_NONE=0,
     EV_CURRENT=1,
-    _default_=Pass,
 )
 
 # e_ident[EI_OSABI] in the ELF header
@@ -55,7 +53,6 @@ ENUM_EI_OSABI = dict(
     ELFOSABI_ARM=97,
     ELFOSABI_CELL_LV2=102,
     ELFOSABI_STANDALONE=255,
-    _default_=Pass,
 )
 
 # e_type in the ELF header
@@ -67,7 +64,6 @@ ENUM_E_TYPE = dict(
     ET_CORE=4,
     ET_LOPROC=0xff00,
     ET_HIPROC=0xffff,
-    _default_=Pass,
 )
 
 # e_machine in the ELF header
@@ -269,7 +265,6 @@ ENUM_E_MACHINE = dict(
     # reserved  182     Reserved for future Intel use
     # reserved  184     Reserved for future ARM use
     # unknown/reserve?  225 - 242
-    _default_=Pass,
 )
 
 # sh_type in the section header
@@ -315,7 +310,6 @@ ENUM_SH_TYPE_BASE = dict(
     SHT_HIUSER=0xffffffff,
     SHT_SUNW_LDYNSYM=0x6ffffff3,
     SHT_SUNW_syminfo=0x6ffffffc,
-    _default_=Pass,
 )
 
 ENUM_SH_TYPE_AMD64 = merge_dicts(
@@ -380,7 +374,6 @@ ENUM_ELFCOMPRESS_TYPE = dict(
     ELFCOMPRESS_HIOS=0x6fffffff,
     ELFCOMPRESS_LOPROC=0x70000000,
     ELFCOMPRESS_HIPROC=0x7fffffff,
-    _default_=Pass,
 )
 
 # p_type in the program header
@@ -408,7 +401,6 @@ ENUM_P_TYPE_BASE = dict(
     PT_GNU_STACK=0x6474e551,
     PT_GNU_RELRO=0x6474e552,
     PT_GNU_PROPERTY=0x6474e553,
-    _default_=Pass,
 )
 
 ENUM_P_TYPE_ARM = merge_dicts(
@@ -441,7 +433,6 @@ ENUM_ST_INFO_BIND = dict(
     STB_HIOS=12,
     STB_LOPROC=13,
     STB_HIPROC=15,
-    _default_=Pass,
 )
 
 # st_info type in the symbol header
@@ -460,7 +451,6 @@ ENUM_ST_INFO_TYPE = dict(
     STT_HIOS=12,
     STT_LOPROC=13,
     STT_HIPROC=15,
-    _default_=Pass,
 )
 
 # visibility from st_other
@@ -472,11 +462,9 @@ ENUM_ST_VISIBILITY = dict(
     STV_EXPORTED=4,
     STV_SINGLETON=5,
     STV_ELIMINATE=6,
-    _default_=Pass,
 )
 
 ENUM_ST_LOCAL = dict(
-    _default_=Pass,
 )
 
 # st_shndx
@@ -484,7 +472,6 @@ ENUM_ST_SHNDX = dict(
     SHN_UNDEF=0,
     SHN_ABS=0xfff1,
     SHN_COMMON=0xfff2,
-    _default_=Pass,
 )
 
 # d_tag
@@ -572,7 +559,6 @@ ENUM_D_TAG_COMMON = dict(
     DT_VERNEEDNUM=0x6fffffff,
     DT_AUXILIARY=0x7ffffffd,
     DT_FILTER=0x7fffffff,
-    _default_=Pass,
 )
 
 # Above are the dynamic tags which are valid always.
@@ -733,7 +719,6 @@ ENUM_RELOC_TYPE_MIPS = dict(
     R_MIPS_GLOB_DAT=51,
     R_MIPS_COPY=126,
     R_MIPS_JUMP_SLOT=127,
-    _default_=Pass,
 )
 
 ENUM_RELOC_TYPE_i386 = dict(
@@ -780,7 +765,6 @@ ENUM_RELOC_TYPE_i386 = dict(
     R_386_USED_BY_INTEL_200=200,
     R_386_GNU_VTINHERIT=250,
     R_386_GNU_VTENTRY=251,
-    _default_=Pass,
 )
 
 ENUM_RELOC_TYPE_x64 = dict(
@@ -823,7 +807,6 @@ ENUM_RELOC_TYPE_x64 = dict(
     R_X86_64_REX_GOTPCRELX=42,
     R_X86_64_GNU_VTINHERIT=250,
     R_X86_64_GNU_VTENTRY=251,
-    _default_=Pass,
 )
 
 ENUM_RELOC_TYPE_BPF = dict(
@@ -833,7 +816,6 @@ ENUM_RELOC_TYPE_BPF = dict(
     R_BPF_64_ABS32=3,
     R_BPF_64_NODYLD32=4,
     R_BPF_64_32=10,
-    _default_=Pass,
 )
 
 # https://github.com/loongson/la-abi-specs/blob/release/laelf.adoc
@@ -936,7 +918,6 @@ ENUM_RELOC_TYPE_LOONGARCH = dict(
     R_LARCH_ADD_ULEB128=107,
     R_LARCH_SUB_ULEB128=108,
     R_LARCH_64_PCREL=109,
-    _default_=Pass,
 )
 
 ENUM_RELOC_TYPE_S390X = dict(
@@ -1008,7 +989,6 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_PARENT=0xfffe,
     SYMINFO_BT_NONE=0xfffd,
     SYMINFO_BT_EXTERN=0xfffc,
-    _default_=Pass,
 )
 
 # Versym section, version dependency index
@@ -1017,7 +997,6 @@ ENUM_VERSYM = dict(
     VER_NDX_GLOBAL=1,
     VER_NDX_LORESERVE=0xff00,
     VER_NDX_ELIMINATE=0xff01,
-    _default_=Pass,
 )
 
 # Sunw Syminfo Bound To special values
@@ -1026,7 +1005,6 @@ ENUM_SUNW_SYMINFO_BOUNDTO = dict(
     SYMINFO_BT_PARENT=0xfffe,
     SYMINFO_BT_NONE=0xfffd,
     SYMINFO_BT_EXTERN=0xfffc,
-    _default_=Pass,
 )
 
 # PT_NOTE section types for all ELF types except ET_CORE
@@ -1036,7 +1014,6 @@ ENUM_NOTE_N_TYPE = dict(
     NT_GNU_BUILD_ID=3,
     NT_GNU_GOLD_VERSION=4,
     NT_GNU_PROPERTY_TYPE_0=5,
-    _default_=Pass,
 )
 
 # PT_NOTE section types for ET_CORE
@@ -1048,7 +1025,6 @@ ENUM_CORE_NOTE_N_TYPE = dict(
     NT_AUXV=6,
     NT_SIGINFO=0x53494749,
     NT_FILE=0x46494c45,
-    _default_=Pass,
 )
 
 # Values in GNU .note.ABI-tag notes (n_type=='NT_GNU_ABI_TAG')
@@ -1059,7 +1035,6 @@ ENUM_NOTE_ABI_TAG_OS = dict(
     ELF_NOTE_OS_FREEBSD=3,
     ELF_NOTE_OS_NETBSD=4,
     ELF_NOTE_OS_SYLLABLE=5,
-    _default_=Pass,
 )
 
 # Values in GNU .note.gnu.property notes (n_type=='NT_GNU_PROPERTY_TYPE_0')
@@ -1071,7 +1046,6 @@ ENUM_NOTE_GNU_PROPERTY_TYPE = dict(
     GNU_PROPERTY_X86_FEATURE_2_USED=0xc0010001,
     GNU_PROPERTY_X86_ISA_1_USED=0xc0010002,
     GNU_PROPERTY_AARCH64_FEATURE_1_AND=0xc0000000,
-    _default_=Pass,
 )
 
 ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS = dict(
@@ -1079,7 +1053,6 @@ ENUM_GNU_PROPERTY_X86_FEATURE_1_FLAGS = dict(
     GNU_PROPERTY_X86_FEATURE_1_SHSTK=2,
     GNU_PROPERTY_X86_FEATURE_1_LAM_U48=4,
     GNU_PROPERTY_X86_FEATURE_1_LAM_U57=8,
-    _default_=Pass
 )
 
 ENUM_RELOC_TYPE_ARM = dict(

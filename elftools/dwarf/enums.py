@@ -6,8 +6,6 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..construct import Pass
-
 
 ENUM_DW_TAG = dict(
     DW_TAG_null                        = 0x00,
@@ -102,8 +100,6 @@ ENUM_DW_TAG = dict(
     DW_TAG_APPLE_property              = 0x4200,
 
     DW_TAG_hi_user                     = 0xffff,
-
-    _default_                          = Pass,
 )
 
 
@@ -320,8 +316,6 @@ ENUM_DW_AT = dict(
     DW_AT_APPLE_property                = 0x3fed,
     DW_AT_APPLE_objc_direct             = 0x3fee,
     DW_AT_APPLE_sdk                     = 0x3fef,
-
-    _default_ = Pass,
 )
 
 
@@ -376,7 +370,6 @@ ENUM_DW_FORM = dict(
     DW_FORM_GNU_str_index       = 0x1f02,
     DW_FORM_GNU_ref_alt         = 0x1f20,
     DW_FORM_GNU_strp_alt        = 0x1f21,
-    _default_                   = Pass,
 )
 
 # Inverse mapping for ENUM_DW_FORM

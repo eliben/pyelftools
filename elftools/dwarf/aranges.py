@@ -88,8 +88,8 @@ class ARanges(object):
                 got_entries = False
 
                 # entries in this set/CU
-                addr = struct_parse(addr_size('addr'), self.stream)
-                length = struct_parse(addr_size('length'), self.stream)
+                addr = struct_parse(addr_size, self.stream)
+                length = struct_parse(addr_size, self.stream)
                 while addr != 0 or length != 0 or (not got_entries and need_empty):
                     # 'begin_addr length info_offset version address_size segment_size'
                     entries.append(
@@ -102,8 +102,8 @@ class ARanges(object):
                             segment_size=aranges_header["segment_size"]))
                     got_entries = True
                     if addr != 0 or length != 0:
-                        addr = struct_parse(addr_size('addr'), self.stream)
-                        length = struct_parse(addr_size('length'), self.stream)
+                        addr = struct_parse(addr_size, self.stream)
+                        length = struct_parse(addr_size, self.stream)
                     
             # Segmentation exists in executable
             elif aranges_header["segment_size"] != 0:

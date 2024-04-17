@@ -14,8 +14,10 @@ for more details.
 Pre-requisites
 --------------
 
-As a user of **pyelftools**, one only needs Python 3 to run. While there is no
-reason for the library to not work on earlier versions of Python, our CI
+ * Python 3
+ * construct >= 2.10.70
+
+While there is no reason for the library to not work on earlier versions of Python, our CI
 tests are based on the official
 `Status of Python versions <https://devguide.python.org/versions/>`__.
 
@@ -37,9 +39,6 @@ Since **pyelftools** is a work in progress, it's recommended to have the most
 recent version of the code. This can be done by downloading the `master zip
 file <https://github.com/eliben/pyelftools/archive/master.zip>`_ or just
 cloning the Git repository.
-
-Since **pyelftools** has no external dependencies, it's also easy to use it
-without installing, by locally adjusting ``PYTHONPATH``.
 
 How to use it?
 --------------

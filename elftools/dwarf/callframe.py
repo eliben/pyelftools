@@ -10,7 +10,7 @@ import copy
 from collections import namedtuple
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos, iterbytes)
-from ..construct import Struct, Switch
+from construct import Struct, Switch
 from .enums import DW_EH_encoding_flags
 from .structs import DWARFStructs
 from .constants import *
@@ -90,7 +90,7 @@ class CallFrameInfo(object):
             return self._entry_cache[offset]
 
         entry_length = struct_parse(
-            self.base_structs.Dwarf_uint32(''), self.stream, offset)
+            self.base_structs.Dwarf_uint32, self.stream, offset)
 
         if self.for_eh_frame and entry_length == 0:
             return ZERO(offset)
@@ -104,7 +104,7 @@ class CallFrameInfo(object):
 
         # Read the next field to see whether this is a CIE or FDE
         CIE_id = struct_parse(
-            entry_structs.Dwarf_offset(''), self.stream)
+            entry_structs.Dwarf_offset, self.stream)
 
         if self.for_eh_frame:
             is_CIE = CIE_id == 0
@@ -184,7 +184,7 @@ class CallFrameInfo(object):
         """
         instructions = []
         while offset < end_offset:
-            opcode = struct_parse(structs.Dwarf_uint8(''), self.stream, offset)
+            opcode = struct_parse(structs.Dwarf_uint8, self.stream, offset)
             args = []
 
             primary = opcode & _PRIMARY_MASK
@@ -194,7 +194,7 @@ class CallFrameInfo(object):
             elif primary == DW_CFA_offset:
                 args = [
                     primary_arg,
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream)]
+                    struct_parse(structs.Dwarf_uleb128, self.stream)]
             elif primary == DW_CFA_restore:
                 args = [primary_arg]
             # primary == 0 and real opcode is extended
@@ -203,40 +203,39 @@ class CallFrameInfo(object):
                 args = []
             elif opcode == DW_CFA_set_loc:
                 args = [
-                    struct_parse(structs.Dwarf_target_addr(''), self.stream)]
+                    struct_parse(structs.Dwarf_target_addr, self.stream)]
             elif opcode == DW_CFA_advance_loc1:
-                args = [struct_parse(structs.Dwarf_uint8(''), self.stream)]
+                args = [struct_parse(structs.Dwarf_uint8, self.stream)]
             elif opcode == DW_CFA_advance_loc2:
-                args = [struct_parse(structs.Dwarf_uint16(''), self.stream)]
+                args = [struct_parse(structs.Dwarf_uint16, self.stream)]
             elif opcode == DW_CFA_advance_loc4:
-                args = [struct_parse(structs.Dwarf_uint32(''), self.stream)]
+                args = [struct_parse(structs.Dwarf_uint32, self.stream)]
             elif opcode in (DW_CFA_offset_extended, DW_CFA_register,
                             DW_CFA_def_cfa, DW_CFA_val_offset):
                 args = [
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream),
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream)]
+                    struct_parse(structs.Dwarf_uleb128, self.stream),
+                    struct_parse(structs.Dwarf_uleb128, self.stream)]
             elif opcode in (DW_CFA_restore_extended, DW_CFA_undefined,
                             DW_CFA_same_value, DW_CFA_def_cfa_register,
                             DW_CFA_def_cfa_offset):
-                args = [struct_parse(structs.Dwarf_uleb128(''), self.stream)]
+                args = [struct_parse(structs.Dwarf_uleb128, self.stream)]
             elif opcode == DW_CFA_def_cfa_offset_sf:
-                args = [struct_parse(structs.Dwarf_sleb128(''), self.stream)]
+                args = [struct_parse(structs.Dwarf_sleb128, self.stream)]
             elif opcode == DW_CFA_def_cfa_expression:
                 args = [struct_parse(
                     structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
             elif opcode in (DW_CFA_expression, DW_CFA_val_expression):
                 args = [
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream),
+                    struct_parse(structs.Dwarf_uleb128, self.stream),
                     struct_parse(
                         structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
             elif opcode in (DW_CFA_offset_extended_sf,
                             DW_CFA_def_cfa_sf, DW_CFA_val_offset_sf):
                 args = [
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream),
-                    struct_parse(structs.Dwarf_sleb128(''), self.stream)]
+                    struct_parse(structs.Dwarf_uleb128, self.stream),
+                    struct_parse(structs.Dwarf_sleb128, self.stream)]
             elif opcode == DW_CFA_GNU_args_size:
-                args = [struct_parse(structs.Dwarf_uleb128(''), self.stream)]
-            
+                args = [struct_parse(structs.Dwarf_uleb128, self.stream)]
             else:
                 dwarf_assert(False, 'Unknown CFI opcode: 0x%x' % opcode)
 
@@ -277,18 +276,22 @@ class CallFrameInfo(object):
         assert augmentation.startswith(b'z'), (
             'Unhandled augmentation string: {}'.format(repr(augmentation)))
 
+        personality_struct = Struct(
+            'encoding' / entry_structs.Dwarf_uint8,
+            'function' / Switch(lambda ctx: ctx.encoding & 0x0f,
+                                {
+                                    enc: fld_cons
+                                    for enc, fld_cons
+                                    in self._eh_encoding_to_field(entry_structs).items()
+                                })
+        )
+
         available_fields = {
-            b'z': entry_structs.Dwarf_uleb128('length'),
-            b'L': entry_structs.Dwarf_uint8('LSDA_encoding'),
-            b'R': entry_structs.Dwarf_uint8('FDE_encoding'),
+            b'z': 'length' / entry_structs.Dwarf_uleb128,
+            b'L': 'LSDA_encoding' / entry_structs.Dwarf_uint8,
+            b'R': 'FDE_encoding' / entry_structs.Dwarf_uint8,
             b'S': True,
-            b'P': Struct(
-                'personality',
-                entry_structs.Dwarf_uint8('encoding'),
-                Switch('function', lambda ctx: ctx.encoding & 0x0f, {
-                    enc: fld_cons('function')
-                    for enc, fld_cons
-                    in self._eh_encoding_to_field(entry_structs).items()})),
+            b'P': 'personality' / personality_struct,
         }
 
         # Build the Struct we will be using to parse the augmentation data.
@@ -313,7 +316,7 @@ class CallFrameInfo(object):
         # (missing trailing fields) due to an unknown char: see the KeyError
         # above.
         offset = self.stream.tell()
-        struct = Struct('Augmentation_Data', *fields)
+        struct = Struct(*fields)  # Augmentation_Data
         aug_dict.update(struct_parse(struct, self.stream, offset))
         self.stream.seek(offset)
         aug_bytes = self._read_augmentation_data(entry_structs)
@@ -329,8 +332,7 @@ class CallFrameInfo(object):
             return b''
 
         augmentation_data_length = struct_parse(
-            Struct('Dummy_Augmentation_Data',
-                   entry_structs.Dwarf_uleb128('length')),
+            Struct('length' / entry_structs.Dwarf_uleb128),  # Dummy_Augmentation_Data
             self.stream)['length']
         return self.stream.read(augmentation_data_length)
 
@@ -350,8 +352,7 @@ class CallFrameInfo(object):
         formats = self._eh_encoding_to_field(structs)
 
         ptr = struct_parse(
-            Struct('Augmentation_Data',
-                   formats[basic_encoding]('LSDA_pointer')),
+            Struct('LSDA_pointer' / formats[basic_encoding]),  # Augmentation_Data
             self.stream, stream_pos=stream_offset)['LSDA_pointer']
 
         if modifier == DW_EH_encoding_flags['DW_EH_PE_absptr']:
@@ -372,13 +373,12 @@ class CallFrameInfo(object):
             return struct_parse(entry_structs.Dwarf_FDE_header, self.stream,
                                 offset)
 
-        fields = [entry_structs.Dwarf_initial_length('length'),
-                  entry_structs.Dwarf_offset('CIE_pointer')]
+        fields = ['length' / entry_structs.Dwarf_initial_length,
+                  'CIE_pointer' / entry_structs.Dwarf_offset]
 
         # Parse the couple of header fields that are always here so we can
         # fetch the corresponding CIE.
-        minimal_header = struct_parse(Struct('eh_frame_minimal_header',
-                                             *fields), self.stream, offset)
+        minimal_header = struct_parse(Struct(*fields), self.stream, offset)  # eh_frame_minimal_header
         cie = self._parse_cie_for_fde(offset, minimal_header, entry_structs)
         initial_location_offset = self.stream.tell()
 
@@ -392,10 +392,10 @@ class CallFrameInfo(object):
 
         # Depending on the specified encoding, complete the header Struct
         formats = self._eh_encoding_to_field(entry_structs)
-        fields.append(formats[basic_encoding]('initial_location'))
-        fields.append(formats[basic_encoding]('address_range'))
+        fields.append('initial_location' / formats[basic_encoding])
+        fields.append('address_range' / formats[basic_encoding])
 
-        result = struct_parse(Struct('Dwarf_FDE_header', *fields),
+        result = struct_parse(Struct(*fields),  # Dwarf_FDE_header
                               self.stream, offset)
 
         if encoding_modifier == 0:
