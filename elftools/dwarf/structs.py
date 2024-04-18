@@ -16,7 +16,7 @@ from ..construct import (
     String, Switch, Value
     )
 from ..common.construct_utils import (RepeatUntilExcluding, ULEB128, SLEB128,
-    StreamOffset)
+    StreamOffset, ULInt24, UBInt24)
 from .enums import *
 
 
@@ -121,6 +121,7 @@ class DWARFStructs(object):
         if self.little_endian:
             self.Dwarf_uint8 = ULInt8
             self.Dwarf_uint16 = ULInt16
+            self.Dwarf_uint24 = ULInt24
             self.Dwarf_uint32 = ULInt32
             self.Dwarf_uint64 = ULInt64
             self.Dwarf_offset = ULInt32 if self.dwarf_format == 32 else ULInt64
@@ -134,6 +135,7 @@ class DWARFStructs(object):
         else:
             self.Dwarf_uint8 = UBInt8
             self.Dwarf_uint16 = UBInt16
+            self.Dwarf_uint24 = UBInt24
             self.Dwarf_uint32 = UBInt32
             self.Dwarf_uint64 = UBInt64
             self.Dwarf_offset = UBInt32 if self.dwarf_format == 32 else UBInt64
@@ -253,7 +255,7 @@ class DWARFStructs(object):
             DW_FORM_addrx=self.Dwarf_uleb128(''),
             DW_FORM_addrx1=self.Dwarf_uint8(''),
             DW_FORM_addrx2=self.Dwarf_uint16(''),
-            # DW_FORM_addrx3=self.Dwarf_uint24(''),  # TODO
+            DW_FORM_addrx3=self.Dwarf_uint24(''),
             DW_FORM_addrx4=self.Dwarf_uint32(''),
 
             DW_FORM_block1=self._make_block_struct(self.Dwarf_uint8),
@@ -276,7 +278,7 @@ class DWARFStructs(object):
             DW_FORM_line_strp=self.Dwarf_offset(''),
             DW_FORM_strx1=self.Dwarf_uint8(''),
             DW_FORM_strx2=self.Dwarf_uint16(''),
-            # DW_FORM_strx3=self.Dwarf_uint24(''),  # TODO
+            DW_FORM_strx3=self.Dwarf_uint24(''),
             DW_FORM_strx4=self.Dwarf_uint64(''),
             DW_FORM_flag=self.Dwarf_uint8(''),
 
