@@ -568,6 +568,10 @@ class CFIEntry(object):
                 cur_line['cfa'] = CFARule(
                     reg=cur_line['cfa'].reg,
                     offset=instr.args[0])
+            elif name == 'DW_CFA_def_cfa_offset_sf':
+                cur_line['cfa'] = CFARule(
+                    reg=cur_line['cfa'].reg,
+                    offset=instr.args[0] * cie['data_alignment_factor'])
             elif name == 'DW_CFA_def_cfa_expression':
                 cur_line['cfa'] = CFARule(expr=instr.args[0])
             elif name == 'DW_CFA_undefined':
