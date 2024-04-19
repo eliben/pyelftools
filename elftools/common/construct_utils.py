@@ -121,12 +121,10 @@ class UBInt24(StaticField):
         StaticField.__init__(self, name, 3)
 
     def _parse(self, stream, context):
-        global _UBInt24_packer
         (h, l) = _UBInt24_packer.unpack(StaticField._parse(self, stream, context))
         return l | (h << 16)
     
     def _build(self, obj, stream, context):
-        global _UBInt24_packer
         StaticField._build(self, _UBInt24_packer.pack(obj >> 16, obj & 0xFFFF), stream, context)
 
 class ULInt24(StaticField):
@@ -135,10 +133,8 @@ class ULInt24(StaticField):
         StaticField.__init__(self, name, 3)
 
     def _parse(self, stream, context):
-        global _ULInt24_packer
         (l, h) = _ULInt24_packer.unpack(StaticField._parse(self, stream, context))
         return l | (h << 16)
     
     def _build(self, obj, stream, context):
-        global _ULInt24_packer
         StaticField._build(self, _ULInt24_packer.pack(obj & 0xFFFF, obj >> 16), stream, context)
