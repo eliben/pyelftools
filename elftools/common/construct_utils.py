@@ -6,9 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from struct import Struct
 from ..construct import (
     Subconstruct, ConstructError, ArrayError, Adapter, Field, RepeatUntil,
-    Rename, SizeofError, Construct
+    Rename, SizeofError, Construct, StaticField
     )
 
 
@@ -110,3 +111,30 @@ class StreamOffset(Construct):
         context[self.name] = stream.tell()
     def _sizeof(self, context):
         return 0
+
+_UBInt24_packer = Struct(">BH")
+_ULInt24_packer = Struct("<HB")
+
+class UBInt24(StaticField):
+    """unsigned, big endian 24-bit integer"""
+    def __init__(self, name):
+        StaticField.__init__(self, name, 3)
+
+    def _parse(self, stream, context):
+        (h, l) = _UBInt24_packer.unpack(StaticField._parse(self, stream, context))
+        return l | (h << 16)
+    
+    def _build(self, obj, stream, context):
+        StaticField._build(self, _UBInt24_packer.pack(obj >> 16, obj & 0xFFFF), stream, context)
+
+class ULInt24(StaticField):
+    """unsigned, little endian 24-bit integer"""
+    def __init__(self, name):
+        StaticField.__init__(self, name, 3)
+
+    def _parse(self, stream, context):
+        (l, h) = _ULInt24_packer.unpack(StaticField._parse(self, stream, context))
+        return l | (h << 16)
+    
+    def _build(self, obj, stream, context):
+        StaticField._build(self, _ULInt24_packer.pack(obj & 0xFFFF, obj >> 16), stream, context)
