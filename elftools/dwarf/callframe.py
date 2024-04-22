@@ -90,7 +90,7 @@ class CallFrameInfo(object):
             return self._entry_cache[offset]
 
         entry_length = struct_parse(
-            self.base_structs.Dwarf_uint32(''), self.stream, offset)
+            self.base_structs.the_Dwarf_uint32, self.stream, offset)
 
         if self.for_eh_frame and entry_length == 0:
             return ZERO(offset)
@@ -104,7 +104,7 @@ class CallFrameInfo(object):
 
         # Read the next field to see whether this is a CIE or FDE
         CIE_id = struct_parse(
-            entry_structs.Dwarf_offset(''), self.stream)
+            entry_structs.the_Dwarf_offset, self.stream)
 
         if self.for_eh_frame:
             is_CIE = CIE_id == 0
@@ -184,7 +184,7 @@ class CallFrameInfo(object):
         """
         instructions = []
         while offset < end_offset:
-            opcode = struct_parse(structs.Dwarf_uint8(''), self.stream, offset)
+            opcode = struct_parse(structs.the_Dwarf_uint8, self.stream, offset)
             args = []
 
             primary = opcode & _PRIMARY_MASK
@@ -194,7 +194,7 @@ class CallFrameInfo(object):
             elif primary == DW_CFA_offset:
                 args = [
                     primary_arg,
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream)]
+                    struct_parse(structs.the_Dwarf_uleb128, self.stream)]
             elif primary == DW_CFA_restore:
                 args = [primary_arg]
             # primary == 0 and real opcode is extended
@@ -203,39 +203,39 @@ class CallFrameInfo(object):
                 args = []
             elif opcode == DW_CFA_set_loc:
                 args = [
-                    struct_parse(structs.Dwarf_target_addr(''), self.stream)]
+                    struct_parse(structs.the_Dwarf_target_addr, self.stream)]
             elif opcode == DW_CFA_advance_loc1:
-                args = [struct_parse(structs.Dwarf_uint8(''), self.stream)]
+                args = [struct_parse(structs.the_Dwarf_uint8, self.stream)]
             elif opcode == DW_CFA_advance_loc2:
-                args = [struct_parse(structs.Dwarf_uint16(''), self.stream)]
+                args = [struct_parse(structs.the_Dwarf_uint16, self.stream)]
             elif opcode == DW_CFA_advance_loc4:
-                args = [struct_parse(structs.Dwarf_uint32(''), self.stream)]
+                args = [struct_parse(structs.the_Dwarf_uint32, self.stream)]
             elif opcode in (DW_CFA_offset_extended, DW_CFA_register,
                             DW_CFA_def_cfa, DW_CFA_val_offset):
                 args = [
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream),
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream)]
+                    struct_parse(structs.the_Dwarf_uleb128, self.stream),
+                    struct_parse(structs.the_Dwarf_uleb128, self.stream)]
             elif opcode in (DW_CFA_restore_extended, DW_CFA_undefined,
                             DW_CFA_same_value, DW_CFA_def_cfa_register,
                             DW_CFA_def_cfa_offset):
-                args = [struct_parse(structs.Dwarf_uleb128(''), self.stream)]
+                args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
             elif opcode == DW_CFA_def_cfa_offset_sf:
-                args = [struct_parse(structs.Dwarf_sleb128(''), self.stream)]
+                args = [struct_parse(structs.the_Dwarf_sleb128, self.stream)]
             elif opcode == DW_CFA_def_cfa_expression:
                 args = [struct_parse(
                     structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
             elif opcode in (DW_CFA_expression, DW_CFA_val_expression):
                 args = [
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream),
+                    struct_parse(structs.the_Dwarf_uleb128, self.stream),
                     struct_parse(
                         structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
             elif opcode in (DW_CFA_offset_extended_sf,
                             DW_CFA_def_cfa_sf, DW_CFA_val_offset_sf):
                 args = [
-                    struct_parse(structs.Dwarf_uleb128(''), self.stream),
-                    struct_parse(structs.Dwarf_sleb128(''), self.stream)]
+                    struct_parse(structs.the_Dwarf_uleb128, self.stream),
+                    struct_parse(structs.the_Dwarf_sleb128, self.stream)]
             elif opcode == DW_CFA_GNU_args_size:
-                args = [struct_parse(structs.Dwarf_uleb128(''), self.stream)]
+                args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
             
             else:
                 dwarf_assert(False, 'Unknown CFI opcode: 0x%x' % opcode)
