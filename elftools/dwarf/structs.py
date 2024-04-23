@@ -147,6 +147,16 @@ class DWARFStructs(object):
             self.Dwarf_int32 = SBInt32
             self.Dwarf_int64 = SBInt64
 
+        # Only instantiate those parsers that are used standalone,
+        # as opposed to dispatch tables (e. g. forms, opcodes).
+        # In dispatch tables, they are instantiated already.
+        # LEB128 parsers are instantiated too, elsewhere.
+        self.the_Dwarf_offset = self.Dwarf_offset('')
+        self.the_Dwarf_target_addr = self.Dwarf_target_addr('')
+        self.the_Dwarf_uint32 = self.Dwarf_uint32('')
+        self.the_Dwarf_uint16 = self.Dwarf_uint16('')
+        self.the_Dwarf_uint8 = self.Dwarf_uint8('')
+
         self._create_initial_length()
         self._create_leb128()
         self._create_cu_header()
@@ -180,6 +190,8 @@ class DWARFStructs(object):
     def _create_leb128(self):
         self.Dwarf_uleb128 = ULEB128
         self.Dwarf_sleb128 = SLEB128
+        self.the_Dwarf_uleb128 = self.Dwarf_uleb128('')
+        self.the_Dwarf_sleb128 = self.Dwarf_sleb128('')
 
     def _create_cu_header(self):
         dwarfv4_CU_header = Struct('',
@@ -251,12 +263,12 @@ class DWARFStructs(object):
 
     def _create_dw_form(self):
         self.Dwarf_dw_form = dict(
-            DW_FORM_addr=self.Dwarf_target_addr(''),
-            DW_FORM_addrx=self.Dwarf_uleb128(''),
-            DW_FORM_addrx1=self.Dwarf_uint8(''),
-            DW_FORM_addrx2=self.Dwarf_uint16(''),
+            DW_FORM_addr=self.the_Dwarf_target_addr,
+            DW_FORM_addrx=self.the_Dwarf_uleb128,
+            DW_FORM_addrx1=self.the_Dwarf_uint8,
+            DW_FORM_addrx2=self.the_Dwarf_uint16,
             DW_FORM_addrx3=self.Dwarf_uint24(''),
-            DW_FORM_addrx4=self.Dwarf_uint32(''),
+            DW_FORM_addrx4=self.the_Dwarf_uint32,
 
             DW_FORM_block1=self._make_block_struct(self.Dwarf_uint8),
             DW_FORM_block2=self._make_block_struct(self.Dwarf_uint16),
@@ -264,49 +276,52 @@ class DWARFStructs(object):
             DW_FORM_block=self._make_block_struct(self.Dwarf_uleb128),
 
             # All DW_FORM_data<n> forms are assumed to be unsigned
-            DW_FORM_data1=self.Dwarf_uint8(''),
-            DW_FORM_data2=self.Dwarf_uint16(''),
-            DW_FORM_data4=self.Dwarf_uint32(''),
+            DW_FORM_data1=self.the_Dwarf_uint8,
+            DW_FORM_data2=self.the_Dwarf_uint16,
+            DW_FORM_data4=self.the_Dwarf_uint32,
             DW_FORM_data8=self.Dwarf_uint64(''),
-            DW_FORM_data16=Array(16, self.Dwarf_uint8('')), # Used for hashes and such, not for integers
-            DW_FORM_sdata=self.Dwarf_sleb128(''),
-            DW_FORM_udata=self.Dwarf_uleb128(''),
+            DW_FORM_data16=Array(16, self.the_Dwarf_uint8), # Used for hashes and such, not for integers
+            DW_FORM_sdata=self.the_Dwarf_sleb128,
+            DW_FORM_udata=self.the_Dwarf_uleb128,
 
             DW_FORM_string=CString(''),
-            DW_FORM_strp=self.Dwarf_offset(''),
-            DW_FORM_strp_sup=self.Dwarf_offset(''),
-            DW_FORM_line_strp=self.Dwarf_offset(''),
-            DW_FORM_strx1=self.Dwarf_uint8(''),
-            DW_FORM_strx2=self.Dwarf_uint16(''),
+            DW_FORM_strp=self.the_Dwarf_offset,
+            DW_FORM_strp_sup=self.the_Dwarf_offset,
+            DW_FORM_line_strp=self.the_Dwarf_offset,
+            DW_FORM_strx1=self.the_Dwarf_uint8,
+            DW_FORM_strx2=self.the_Dwarf_uint16,
             DW_FORM_strx3=self.Dwarf_uint24(''),
             DW_FORM_strx4=self.Dwarf_uint64(''),
-            DW_FORM_flag=self.Dwarf_uint8(''),
+            DW_FORM_flag=self.the_Dwarf_uint8,
 
-            DW_FORM_ref=self.Dwarf_uint32(''),
-            DW_FORM_ref1=self.Dwarf_uint8(''),
-            DW_FORM_ref2=self.Dwarf_uint16(''),
-            DW_FORM_ref4=self.Dwarf_uint32(''),
-            DW_FORM_ref_sup4=self.Dwarf_uint32(''),
+            DW_FORM_ref=self.the_Dwarf_uint32,
+            DW_FORM_ref1=self.the_Dwarf_uint8,
+            DW_FORM_ref2=self.the_Dwarf_uint16,
+            DW_FORM_ref4=self.the_Dwarf_uint32,
+            DW_FORM_ref_sup4=self.the_Dwarf_uint32,
             DW_FORM_ref8=self.Dwarf_uint64(''),
             DW_FORM_ref_sup8=self.Dwarf_uint64(''),
-            DW_FORM_ref_udata=self.Dwarf_uleb128(''),
-            DW_FORM_ref_addr=self.Dwarf_target_addr('') if self.dwarf_version == 2 else self.Dwarf_offset(''),
+            DW_FORM_ref_udata=self.the_Dwarf_uleb128,
+            DW_FORM_ref_addr=self.the_Dwarf_target_addr if self.dwarf_version == 2 else self.the_Dwarf_offset,
 
-            DW_FORM_indirect=self.Dwarf_uleb128(''),
+            DW_FORM_indirect=self.the_Dwarf_uleb128,
+            
+            # Treated separatedly while parsing, but here so that all forms resovle
+            DW_FORM_implicit_const=None,
 
             # New forms in DWARFv4
             DW_FORM_flag_present = StaticField('', 0),
-            DW_FORM_sec_offset = self.Dwarf_offset(''),
+            DW_FORM_sec_offset = self.the_Dwarf_offset,
             DW_FORM_exprloc = self._make_block_struct(self.Dwarf_uleb128),
             DW_FORM_ref_sig8 = self.Dwarf_uint64(''),
 
-            DW_FORM_GNU_strp_alt=self.Dwarf_offset(''),
-            DW_FORM_GNU_ref_alt=self.Dwarf_offset(''),
-            DW_AT_GNU_all_call_sites=self.Dwarf_uleb128(''),
+            DW_FORM_GNU_strp_alt=self.the_Dwarf_offset,
+            DW_FORM_GNU_ref_alt=self.the_Dwarf_offset,
+            DW_AT_GNU_all_call_sites=self.the_Dwarf_uleb128,
 
             # New forms in DWARFv5
-            DW_FORM_loclistx=self.Dwarf_uleb128(''),
-            DW_FORM_rnglistx=self.Dwarf_uleb128('')
+            DW_FORM_loclistx=self.the_Dwarf_uleb128,
+            DW_FORM_rnglistx=self.the_Dwarf_uleb128
         )
 
     def _create_aranges_header(self):
@@ -479,7 +494,7 @@ class DWARFStructs(object):
             self.Dwarf_uint32('offset_count'),
             StreamOffset('offset_table_offset'))
 
-        cld = self.Dwarf_loclists_counted_location_description = PrefixedArray(self.Dwarf_uint8('loc_expr'), self.Dwarf_uleb128(''))
+        cld = self.Dwarf_loclists_counted_location_description = PrefixedArray(self.Dwarf_uint8('loc_expr'), self.the_Dwarf_uleb128)
 
         self.Dwarf_loclists_entries = RepeatUntilExcluding(
             lambda obj, ctx: obj.entry_type == 'DW_LLE_end_of_list',
