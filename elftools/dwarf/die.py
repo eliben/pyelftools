@@ -233,8 +233,8 @@ class DIE(object):
             # obtain the abbrev declaration for this DIE.
             # Note: here and elsewhere, preserve_stream_pos is used on operations
             # that manipulate the stream by reading data from it.
-            self.abbrev_code = struct_parse(
-                structs.the_Dwarf_uleb128, stream, self.offset)
+            stream.seek(self.offset)
+            self.abbrev_code = structs.the_Dwarf_uleb128.parse_stream(stream)
 
             # This may be a null entry
             if self.abbrev_code == 0:

@@ -59,7 +59,7 @@ class ULEB128(Construct):
         while True:
             data = stream.read(1)
             if len(data) != 1:
-                raise FieldError("expected 1, found 0")
+                raise FieldError("unexpected end of stream while parsing a ULEB128 encoded value")
             b = data[0]
             value |= (b & 0x7F) << shift
             shift += 7
@@ -78,7 +78,7 @@ class SLEB128(Construct):
         while True:
             data = stream.read(1)
             if len(data) != 1:
-                raise FieldError("expected 1, found 0")
+                raise FieldError("unexpected end of stream while parsing a SLEB128 encoded value")
             b = data[0]
             value |= (b & 0x7F) << shift
             shift += 7
