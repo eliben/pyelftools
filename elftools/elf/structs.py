@@ -189,6 +189,8 @@ class ELFStructs(object):
         sh_type_dict = ENUM_SH_TYPE_BASE
         if self.e_machine == 'EM_ARM':
             sh_type_dict = ENUM_SH_TYPE_ARM
+        elif self.e_machine == 'EM_AARCH64':
+            sh_type_dict = ENUM_SH_TYPE_AARCH64           
         elif self.e_machine == 'EM_X86_64':
             sh_type_dict = ENUM_SH_TYPE_AMD64
         elif self.e_machine == 'EM_MIPS':
