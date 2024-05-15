@@ -1389,6 +1389,11 @@ ENUM_ATTR_TAG_RISCV = dict(
     TAG_STACK_ALIGN=4,
     TAG_ARCH=5,
     TAG_UNALIGNED_ACCESS=6,
+    TAG_PRIV_SPEC=8,
+    TAG_PRIV_SPEC_MINOR=10,
+    TAG_PRIV_SPEC_REVISION=12,
+    TAG_ATOMIC_ABI=14,
+    TAG_X3_REG_USAGE=16,
 )
 
 # https://openpowerfoundation.org/wp-content/uploads/2016/03/ABI64BitOpenPOWERv1.1_16July2015_pub4.pdf

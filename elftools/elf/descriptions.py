@@ -1013,6 +1013,11 @@ _DESCR_ATTR_TAG_RISCV = dict(
     TAG_STACK_ALIGN='Tag_RISCV_stack_align: ',
     TAG_ARCH='Tag_RISCV_arch: ',
     TAG_UNALIGNED='Tag_RISCV_unaligned_access: ',
+    TAG_PRIV_SPEC='Tag_RISCV_priv_spec: ',
+    TAG_PRIV_SPEC_MINOR='Tag_RISCV_priv_spec_minor: ',
+    TAG_PRIV_SPEC_REVISION='Tag_RISCV_priv_spec_revision: ',
+    TAG_ATOMIC_ABI='Tag_RISCV_atomic_abi: ',
+    TAG_X3_REG_USAGE='Tag_RISCV_x3_reg_usage: ',
 )
 
 _DESCR_ATTR_VAL_RISCV = [
@@ -1027,5 +1032,20 @@ _DESCR_ATTR_VAL_RISCV = [
     { #6 TAG_RISCV_unaligned_access
         0: 'Not Allowed',
         1: 'Allowed',
+    },
+    None, #8 TAG_RISCV_priv_spec
+    None, #10 TAG_RISCV_priv_spec_minor
+    None, #12 TAG_RISCV_priv_spec_revision
+    { #14 TAG_RISCV_atomic_abi
+        0: 'UNKNOWN: This object uses unknown atomic ABI.',
+        1: 'A6C: This object uses the A6 classical atomic ABI.',
+        2: 'A6S: This object uses the strengthened A6 ABI.',
+        3: 'A7: This object uses the A7 atomic ABI.'
+    },
+    { #16 TAG_RISCV_x3_reg_usage
+        0: 'This object uses x3 as a fixed register with unknown purpose.',
+        1: 'This object uses x3 as the global pointer, for relaxation purposes.',
+        2: 'This object uses x3 as the shadow stack pointer.',
+        3: 'This object uses X3 as a temporary register.',
     },
 ]
