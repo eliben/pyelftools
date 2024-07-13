@@ -84,6 +84,8 @@ def _safe_DIE_linkage_name(die, default=None):
 def _desc_ref(attr, die, extra=''):
     if extra:
         extra = " \"%s\"" % extra
+    # TODO: leading zeros on the addend to CU - sometimes present, sometimes not.
+    # Check by the LLVM sources.
     return "cu + 0x%04x => {0x%08x}%s" % (
         attr.raw_value,
         die.cu.cu_offset + attr.raw_value,
@@ -99,7 +101,7 @@ def _desc_strx(attr, die):
     return "indexed (%08x) string = \"%s\"" % (attr.raw_value, bytes2str(attr.value).replace("\\", "\\\\"))
 
 FORM_DESCRIPTIONS = dict(
-    DW_FORM_string=lambda attr, die: "\"%s\"" % (bytes2str(attr.value),),
+    DW_FORM_string=lambda attr, die: "\"%s\"" % (bytes2str(attr.value).replace("\\", "\\\\"),),
     DW_FORM_strp=lambda attr, die: " .debug_str[0x%08x] = \"%s\"" % (attr.raw_value, bytes2str(attr.value).replace("\\", "\\\\")),
     DW_FORM_strx1=_desc_strx,
     DW_FORM_strx2=_desc_strx,
@@ -391,7 +393,10 @@ class ReadElf(object):
                         '(0x%08x)' % die.get_parent().offset if die.get_parent() is not None else ''))
                     for attr_name in die.attributes:
                         attr = die.attributes[attr_name]
-                        self._emitline("              %s [%s]	(%s)" % (attr_name, attr.form, self.describe_attr_value(die, attr)))
+                        self._emitline("              %s [%s]	(%s)" % (
+                            attr_name if isinstance(attr_name, str) else "DW_AT_unknown_%x" % (attr_name,),
+                            attr.form,
+                            self.describe_attr_value(die, attr)))
                 else:
                     self._emitline("0x%08x: NULL" % (die.offset,))
                     parent = die.get_parent()

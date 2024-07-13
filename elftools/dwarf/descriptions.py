@@ -100,6 +100,8 @@ def describe_CFI_instructions(entry):
                 instr.args[1] * cie['data_alignment_factor'])
         elif name in ('DW_CFA_def_cfa_offset', 'DW_CFA_GNU_args_size'):
             s += '  %s: %s\n' % (name, instr.args[0])
+        elif name == 'DW_CFA_def_cfa_offset_sf':
+            s += '  %s: %s\n' % (name, instr.args[0]*entry.cie['data_alignment_factor'])
         elif name == 'DW_CFA_def_cfa_expression':
             expr_dumper = ExprDumper(entry.structs)
             # readelf output is missing a colon for DW_CFA_def_cfa_expression
@@ -618,7 +620,7 @@ class ExprDumper(object):
         for n in range(0, 32):
             self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)
 
-        self._ops_with_two_decimal_args = set(['DW_OP_bregx', 'DW_OP_bit_piece'])
+        self._ops_with_two_decimal_args = set(['DW_OP_bregx'])
 
         self._ops_with_hex_arg = set(
             ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
@@ -674,5 +676,7 @@ class ExprDumper(object):
             return "%s: <0x%x>  %d byte block: %s " % (opcode_name, args[0] + cu_offset, len(args[1]), ' '.join("%x" % b for b in args[1]))
         elif opcode_name in ('DW_OP_GNU_regval_type', 'DW_OP_regval_type'):
             return "%s: %d (%s) <0x%x>" % (opcode_name, args[0], describe_reg_name(args[0], _MACHINE_ARCH), args[1] + cu_offset)
+        elif opcode_name == 'DW_OP_bit_piece':
+            return '%s: size: %s offset: %s' % (opcode_name, args[0], args[1])
         else:
             return '<unknown %s>' % opcode_name

@@ -1282,6 +1282,9 @@ class ReadElf(object):
                     self._format_hex(entry['CIE_id'], fieldsize=8, lead0x=False)))
                 self._emitline('  Version:               %d' % entry['version'])
                 self._emitline('  Augmentation:          "%s"' % bytes2str(entry['augmentation']))
+                if(entry['version'] >= 4):
+                    self._emitline('  Pointer Size:          %d' % entry['address_size'])
+                    self._emitline('  Segment Size:          %d' % entry['segment_size'])
                 self._emitline('  Code alignment factor: %u' % entry['code_alignment_factor'])
                 self._emitline('  Data alignment factor: %d' % entry['data_alignment_factor'])
                 self._emitline('  Return address column: %d' % entry['return_address_register'])
@@ -1293,9 +1296,11 @@ class ReadElf(object):
                 self._emitline()
 
             elif isinstance(entry, FDE):
+                # Readelf bug #31973
+                length = entry['length'] if entry.cie.offset < entry.offset else entry.cie['length']
                 self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
-                    self._format_hex(entry['length'], fullhex=True, lead0x=False),
+                    self._format_hex(length, fullhex=True, lead0x=False),
                     self._format_hex(entry['CIE_pointer'], fieldsize=8, lead0x=False),
                     entry.cie.offset,
                     self._format_hex(entry['initial_location'], fullhex=True, lead0x=False),
@@ -1428,9 +1433,11 @@ class ReadElf(object):
                 ra_regnum = entry['return_address_register']
 
             elif isinstance(entry, FDE):
+                # Readelf bug #31973 - FDE length misreported if FDE precedes its CIE
+                length = entry['length'] if entry.cie.offset < entry.offset else entry.cie['length']
                 self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
-                    self._format_hex(entry['length'], fullhex=True, lead0x=False),
+                    self._format_hex(length, fullhex=True, lead0x=False),
                     self._format_hex(entry['CIE_pointer'], fieldsize=8, lead0x=False),
                     entry.cie.offset,
                     self._format_hex(entry['initial_location'], fullhex=True, lead0x=False),

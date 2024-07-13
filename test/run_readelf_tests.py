@@ -84,6 +84,16 @@ def run_test_on_file(filename, verbose=False, opt=None):
                 testlog.info('.......................SKIPPED')
             continue
 
+        # TODO(seva): excluding the binary with CIE ahead of FDE until binutils' bug #31975 is fixed
+        if "dwarf_v4cie" in filename and option == "--debug-dump=frames-interp":
+            continue
+
+        # TODO(seva): excluding the binary with unaligned aranges entries - it's according to the standard,
+        # but the standard is written poorly and readelf disagrees.
+        # See https://lists.dwarfstd.org/pipermail/dwarf-discuss/2024-July/002477.html
+        if "dwarf_v4cie" in filename and option == "--debug-dump=aranges":
+            continue        
+
         # sevaa says: there is another shorted out test; in dwarf_lineprogramv5.elf, the two bytes at 0x2072 were
         # patched from 0x07 0x10 to 00 00.
         # Those represented the second instruction in the first FDE in .eh_frame. This changed the instruction
