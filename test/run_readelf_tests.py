@@ -84,13 +84,12 @@ def run_test_on_file(filename, verbose=False, opt=None):
                 testlog.info('.......................SKIPPED')
             continue
 
-        # TODO(seva): excluding the binary with CIE ahead of FDE until binutils' bug #31975 is fixed
+        # TODO(sevaa): excluding the binary with CIE ahead of FDE until binutils' bug #31975 is fixed
         if "dwarf_v4cie" in filename and option == "--debug-dump=frames-interp":
             continue
 
-        # TODO(seva): excluding the binary with unaligned aranges entries - it's according to the standard,
-        # but the standard is written poorly and readelf disagrees.
-        # See https://lists.dwarfstd.org/pipermail/dwarf-discuss/2024-July/002477.html
+        # TODO(sevaa): excluding the binary with unaligned aranges entries. Readelf tried to recover
+        # but produces nonsensical output, but ultimately it's a toolchain bug (in IAR I presume).
         if "dwarf_v4cie" in filename and option == "--debug-dump=aranges":
             continue        
 
