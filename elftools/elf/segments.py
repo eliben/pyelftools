@@ -69,9 +69,14 @@ class Segment(object):
             # The third condition is the 'strict' one - an empty section will
             # not match at the very end of the segment (unless the segment is
             # also zero size, which is handled by the second condition).
+
+            # Seva 2024-07-12: a zero length section at a zero offset
+            # in a zero length segment should match - in GNU readelf, p_memsz
+            # is unsigned, on a zero length segment p_memsz-1 wraps around
+            # and the third condition matches.
             if not (secaddr >= vaddr and
                     secaddr - vaddr + section['sh_size'] <= self['p_memsz'] and
-                    secaddr - vaddr <= self['p_memsz'] - 1):
+                    (self['p_memsz'] == 0 or secaddr - vaddr <= self['p_memsz'] - 1)):
                 return False
 
         # If we've come this far and it's a NOBITS section, it's in the segment
@@ -83,9 +88,10 @@ class Segment(object):
 
         # Same logic as with secaddr vs. vaddr checks above, just on offsets in
         # the file
+        # Seva 2024-07-12: similar discrepancy with readelf from unsignedness of p_filesz
         return (secoffset >= poffset and
                 secoffset - poffset + section['sh_size'] <= self['p_filesz'] and
-                secoffset - poffset <= self['p_filesz'] - 1)
+                (self['p_filesz'] == 0 or secoffset - poffset <= self['p_filesz'] - 1))
 
 
 class InterpSegment(Segment):

@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import copy
+import copy, os
 from collections import namedtuple
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos, iterbytes)
@@ -84,10 +84,13 @@ class CallFrameInfo(object):
     def _parse_entry_at(self, offset):
         """ Parse an entry from self.stream starting with the given offset.
             Return the entry object. self.stream will point right after the
-            entry.
+            entry (even if pulled from the cache).
         """
         if offset in self._entry_cache:
-            return self._entry_cache[offset]
+            entry = self._entry_cache[offset]
+            self.stream.seek(entry.header.length +
+                entry.structs.initial_length_field_size(), os.SEEK_CUR)
+            return entry
 
         entry_length = struct_parse(
             self.base_structs.the_Dwarf_uint32, self.stream, offset)
@@ -97,6 +100,9 @@ class CallFrameInfo(object):
 
         dwarf_format = 64 if entry_length == 0xFFFFFFFF else 32
 
+        # Theoretically possible to have a DWARF bitness transition here.
+        # DWARF version doesn't matter (CIEs are versioned separately), endianness can't change.
+        # The structs are cached though, so no extraneous creation.
         entry_structs = DWARFStructs(
             little_endian=self.base_structs.little_endian,
             dwarf_format=dwarf_format,
@@ -123,15 +129,6 @@ class CallFrameInfo(object):
                 header_struct, self.stream, offset)
         else:
             header = self._parse_fde_header(entry_structs, offset)
-
-
-        # If this is DWARF version 4 or later, we can have a more precise
-        # address size, read from the CIE header.
-        if not self.for_eh_frame and entry_structs.dwarf_version >= 4:
-            entry_structs = DWARFStructs(
-                little_endian=entry_structs.little_endian,
-                dwarf_format=entry_structs.dwarf_format,
-                address_size=header.address_size)
 
         # If the augmentation string is not empty, hope to find a length field
         # in order to skip the data specified augmentation.
@@ -161,7 +158,7 @@ class CallFrameInfo(object):
             entry_structs, self.stream.tell(), end_offset)
 
         if is_CIE:
-            self._entry_cache[offset] = CIE(
+            entry = CIE(
                 header=header, instructions=instructions, offset=offset,
                 augmentation_dict=aug_dict,
                 augmentation_bytes=aug_bytes,
@@ -169,13 +166,14 @@ class CallFrameInfo(object):
 
         else: # FDE
             cie = self._parse_cie_for_fde(offset, header, entry_structs)
-            self._entry_cache[offset] = FDE(
+            entry = FDE(
                 header=header, instructions=instructions, offset=offset,
                 structs=entry_structs, cie=cie,
                 augmentation_bytes=aug_bytes,
                 lsda_pointer=lsda_pointer,
             )
-        return self._entry_cache[offset]
+        self._entry_cache[offset] = entry
+        return entry
 
     def _parse_instructions(self, structs, offset, end_offset):
         """ Parse a list of CFI instructions from self.stream, starting with

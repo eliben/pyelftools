@@ -38,7 +38,8 @@ class TestExprDumper(unittest.TestCase):
             'DW_OP_regx: 16 (rip)')
 
         self.assertEqual(self.visitor.dump_expr([0x9d, 0x8f, 0x0A, 0x90, 0x01]),
-            'DW_OP_bit_piece: 1295 144')
+            # Explaining the arguments is what the latest readelf does
+            'DW_OP_bit_piece: size: 1295 offset: 144')
 
         self.assertEqual(self.visitor.dump_expr([0x0e, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00, 0xff, 0x00]),
             'DW_OP_const8u: 71777214294589695')

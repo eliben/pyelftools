@@ -449,23 +449,19 @@ class DWARFStructs(object):
             self.Dwarf_offset('CIE_id'),
             self.Dwarf_uint8('version'),
             CString('augmentation'),
+            If(lambda ctx: ctx.version >= 4, self.Dwarf_uint8('address_size')),
+            If(lambda ctx: ctx.version >= 4, self.Dwarf_uint8('segment_size')),
             self.Dwarf_uleb128('code_alignment_factor'),
             self.Dwarf_sleb128('data_alignment_factor'),
-            self.Dwarf_uleb128('return_address_register'))
+            IfThenElse('return_address_register', lambda ctx: ctx.version > 1,
+                self.Dwarf_uleb128(''),
+                self.Dwarf_uint8('')))
         self.EH_CIE_header = self.Dwarf_CIE_header
 
-        # The CIE header was modified in DWARFv4.
-        if self.dwarf_version == 4:
-            self.Dwarf_CIE_header = Struct('Dwarf_CIE_header',
-                self.Dwarf_initial_length('length'),
-                self.Dwarf_offset('CIE_id'),
-                self.Dwarf_uint8('version'),
-                CString('augmentation'),
-                self.Dwarf_uint8('address_size'),
-                self.Dwarf_uint8('segment_size'),
-                self.Dwarf_uleb128('code_alignment_factor'),
-                self.Dwarf_sleb128('data_alignment_factor'),
-                self.Dwarf_uleb128('return_address_register'))
+        # The CIE header was modified in DWARFv4, but the
+        # CIE header version is driven by the version # in the header
+        # itself, independent of the DWARF version
+        # in the CUs.
 
         self.Dwarf_FDE_header = Struct('Dwarf_FDE_header',
             self.Dwarf_initial_length('length'),
