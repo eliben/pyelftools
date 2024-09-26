@@ -35,7 +35,7 @@ class TestDebuglink(unittest.TestCase):
         debug file.
         Args:
             elf (ELFFile): The ELF file.
-        
+
         Returns:
             dict: A dictionary containing the subprograms of the specified ELF file.
         """
@@ -58,8 +58,8 @@ class TestDebuglink(unittest.TestCase):
                         if highpc_attr.form == 'DW_FORM_addr':
                             # highpc is an absolute address
                             size = highpc_attr.value - lowpc
-                        elif highpc_attr.form in {'DW_FORM_data2','DW_FORM_data4', 
-                                                    'DW_FORM_data8', 'DW_FORM_data1', 
+                        elif highpc_attr.form in {'DW_FORM_data2','DW_FORM_data4',
+                                                    'DW_FORM_data8', 'DW_FORM_data1',
                                                     'DW_FORM_udata'}:
                             # highpc is an offset from lowpc
                             size = highpc_attr.value
@@ -75,3 +75,4 @@ class TestDebuglink(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
