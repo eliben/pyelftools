@@ -136,6 +136,8 @@ class DWARFInfo(object):
         self._cu_cache = []
         self._cu_offsets_map = []
 
+        self._skip_cache = False
+
     @property
     def has_debug_info(self):
         """ Return whether this contains debug information.
@@ -432,6 +434,10 @@ class DWARFInfo(object):
 
             See get_CU_at().
         """
+        if self._skip_cache:
+            cu = self._parse_CU_at_offset(offset)
+            return cu
+
         # Find the insert point for the requested offset.  With bisect_right,
         # if this entry is present in the cache it will be the prior entry.
         i = bisect_right(self._cu_offsets_map, offset)
@@ -581,3 +587,10 @@ class DWARFInfo(object):
             return suplink.sup_filename
         return None
 
+    def skip_cache(self):
+        self._skip_cache = True
+        pass
+
+    def enable_cache(self):
+        self._skip_cache = False
+        pass
