@@ -138,7 +138,7 @@ class ELFFile(object):
             subclass)
         """
         section_header = self._get_section_header(n)
-        if type and section_header.sh_type != type:
+        if type and section_header.sh_type not in type:
             raise ELFError("Unexpected section type %s, expected %s" % (section_header['sh_type'], type))
         return self._make_section(section_header)
     
