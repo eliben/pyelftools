@@ -133,11 +133,13 @@ class ELFFile(object):
             return self._get_section_header(0)['sh_size']
         return self['e_shnum']
 
-    def get_section(self, n):
+    def get_section(self, n, type=None):
         """ Get the section at index #n from the file (Section object or a
             subclass)
         """
         section_header = self._get_section_header(n)
+        if type and section_header.sh_type not in type:
+            raise ELFError("Unexpected section type %s, expected %s" % (section_header['sh_type'], type))
         return self._make_section(section_header)
     
     def _get_linked_symtab_section(self, n):
