@@ -487,6 +487,7 @@ class ReadElf(object):
                 symbol_name = symbol.name
                 # Print section names for STT_SECTION symbols as readelf does
                 if (symbol['st_info']['type'] == 'STT_SECTION'
+                    and symbol['st_shndx'] != 'SHN_UNDEF'
                     and symbol['st_shndx'] < self.elffile.num_sections()
                     and symbol['st_name'] == 0):
                     symbol_name = self.elffile.get_section(symbol['st_shndx']).name
