@@ -12,10 +12,16 @@ import os
 import struct
 import zlib
 
+PAGESIZE = None
 try:
     import resource
     PAGESIZE = resource.getpagesize()
 except ImportError:
+    pass
+except AttributeError:  # may raise AttributeError when running as packaged app (packed by pyinstaller)
+    pass
+
+if PAGESIZE is None:
     try:
         # Windows system
         import mmap
