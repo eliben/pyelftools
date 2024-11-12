@@ -12,18 +12,6 @@ import os
 import struct
 import zlib
 
-try:
-    import resource
-    PAGESIZE = resource.getpagesize()
-except ImportError:
-    try:
-        # Windows system
-        import mmap
-        PAGESIZE = mmap.PAGESIZE
-    except ImportError:
-        # Jython
-        PAGESIZE = 4096
-
 from ..common.exceptions import ELFError, ELFParseError
 from ..common.utils import struct_parse, elf_assert
 from .structs import ELFStructs
@@ -857,7 +845,7 @@ class ELFFile(object):
         decompressor = zlib.decompressobj()
         uncompressed_stream = BytesIO()
         while True:
-            chunk = section.stream.read(PAGESIZE)
+            chunk = section.stream.read(4096)
             if not chunk:
                 break
             uncompressed_stream.write(decompressor.decompress(chunk))
