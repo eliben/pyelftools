@@ -675,6 +675,11 @@ _DESCR_NOTE_GNU_PROPERTY_AARCH64_FEATURE_1_AND = (
     (2, 'pac'),
 )
 
+_DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND = (
+    (1, 'ZICFILP'),
+    (2, 'ZICFISS'),
+)
+
 def _reverse_dict(d, low_priority=()):
     """
     This is a tiny helper function to "reverse" the keys/values of a dictionary
