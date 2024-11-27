@@ -38,7 +38,7 @@ def _resolve_via_offset_table(stream, cu, index, base_attribute_name):
 
     offset_size = 4 if cu.structs.dwarf_format == 32 else 8
     with preserve_stream_pos(stream):
-        return base_offset + struct_parse(cu.structs.Dwarf_offset(''), stream, base_offset + index*offset_size)
+        return base_offset + struct_parse(cu.structs.the_Dwarf_offset, stream, base_offset + index*offset_size)
 
 def _iter_CUs_in_section(stream, structs, parser):
     """Iterates through the list of CU sections in loclists or rangelists. Almost identical structures there.

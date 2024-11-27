@@ -14,13 +14,16 @@ def iter_notes(elffile, offset, size):
     """ Yield all the notes in a section or segment.
     """
     end = offset + size
-    while offset < end:
+    nhdr_size = elffile.structs.Elf_Nhdr.sizeof()
+    # Note: a note's name and data are 4-byte aligned, but it's possible there's
+    # additional padding at the end to satisfy the alignment requirement of the segment.
+    while offset + nhdr_size < end:
         note = struct_parse(
             elffile.structs.Elf_Nhdr,
             elffile.stream,
             stream_pos=offset)
         note['n_offset'] = offset
-        offset += elffile.structs.Elf_Nhdr.sizeof()
+        offset += nhdr_size
         elffile.stream.seek(offset)
         # n_namesz is 4-byte aligned.
         disk_namesz = roundup(note['n_namesz'], 2)
@@ -49,7 +52,10 @@ def iter_notes(elffile, offset, size):
         elif note['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
             off = offset
             props = []
-            while off < end:
+            # n_descsz contains the size of the note "descriptor" (the data payload),
+            # excluding padding. See "Note Section" in https://refspecs.linuxfoundation.org/elf/elf.pdf
+            current_note_end = offset + note['n_descsz']
+            while off < current_note_end:
                 p = struct_parse(elffile.structs.Elf_Prop, elffile.stream, off)
                 off += roundup(p.pr_datasz + 8, 2 if elffile.elfclass == 32 else 3)
                 props.append(p)

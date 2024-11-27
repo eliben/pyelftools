@@ -12,18 +12,6 @@ import os
 import struct
 import zlib
 
-try:
-    import resource
-    PAGESIZE = resource.getpagesize()
-except ImportError:
-    try:
-        # Windows system
-        import mmap
-        PAGESIZE = mmap.PAGESIZE
-    except ImportError:
-        # Jython
-        PAGESIZE = 4096
-
 from ..common.exceptions import ELFError, ELFParseError
 from ..common.utils import struct_parse, elf_assert
 from .structs import ELFStructs
@@ -133,11 +121,33 @@ class ELFFile(object):
             return self._get_section_header(0)['sh_size']
         return self['e_shnum']
 
-    def get_section(self, n):
+    def get_section(self, n, type=None):
         """ Get the section at index #n from the file (Section object or a
             subclass)
         """
         section_header = self._get_section_header(n)
+        if type and section_header.sh_type not in type:
+            raise ELFError("Unexpected section type %s, expected %s" % (section_header['sh_type'], type))
+        return self._make_section(section_header)
+
+    def _get_linked_symtab_section(self, n):
+        """ Get the section at index #n from the file, throws
+            if it's not a SYMTAB/DYNTAB.
+            Used for resolving section links with target type validation.
+        """
+        section_header = self._get_section_header(n)
+        if section_header['sh_type'] not in ('SHT_SYMTAB', 'SHT_DYNSYM'):
+            raise ELFError("Section points at section %d of type %s, expected SHT_SYMTAB/SHT_DYNSYM" % (n, section_header['sh_type']))
+        return self._make_section(section_header)
+
+    def _get_linked_strtab_section(self, n):
+        """ Get the section at index #n from the file, throws
+            if it's not a STRTAB.
+            Used for resolving section links with target type validation.
+        """
+        section_header = self._get_section_header(n)
+        if section_header['sh_type'] != 'SHT_STRTAB':
+            raise ELFError("SHT_SYMTAB section points at section %d of type %s, expected SHT_STRTAB" % (n, section_header['sh_type']))
         return self._make_section(section_header)
 
     def get_section_by_name(self, name):
@@ -250,7 +260,8 @@ class ELFFile(object):
                          '.debug_pubnames', '.debug_addr',
                          '.debug_str_offsets', '.debug_line_str',
                          '.debug_loclists', '.debug_rnglists',
-                         '.debug_sup', '.gnu_debugaltlink', '.debug_types')
+                         '.debug_sup', '.gnu_debugaltlink', '.gnu_debuglink',
+                         '.debug_types')
 
         compressed = bool(self.get_section_by_name('.zdebug_info'))
         if compressed:
@@ -264,7 +275,7 @@ class ELFFile(object):
          debug_loc_sec_name, debug_ranges_sec_name, debug_pubtypes_name,
          debug_pubnames_name, debug_addr_name, debug_str_offsets_name,
          debug_line_str_name, debug_loclists_sec_name, debug_rnglists_sec_name,
-         debug_sup_name, gnu_debugaltlink_name, debug_types_sec_name,
+         debug_sup_name, gnu_debugaltlink_name, gnu_debuglink, debug_types_sec_name,
          eh_frame_sec_name) = section_names
 
         debug_sections = {}
@@ -307,6 +318,7 @@ class ELFFile(object):
                 debug_rnglists_sec=debug_sections[debug_rnglists_sec_name],
                 debug_sup_sec=debug_sections[debug_sup_name],
                 gnu_debugaltlink_sec=debug_sections[gnu_debugaltlink_name],
+                gnu_debuglink_sec=debug_sections[gnu_debuglink],
                 debug_types_sec=debug_sections[debug_types_sec_name]
                 )
         if follow_links:
@@ -317,7 +329,7 @@ class ELFFile(object):
     def get_supplementary_dwarfinfo(self, dwarfinfo):
         """
         Read supplementary dwarfinfo, from either the standared .debug_sup
-        section or the GNU proprietary .gnu_debugaltlink.
+        section, the GNU proprietary .gnu_debugaltlink, or .gnu_debuglink.
         """
         supfilepath = dwarfinfo.parse_debugsupinfo()
         if supfilepath is not None and self.stream_loader is not None:
@@ -590,12 +602,18 @@ class ELFFile(object):
     def _section_offset(self, n):
         """ Compute the offset of section #n in the file
         """
-        return self['e_shoff'] + n * self['e_shentsize']
+        shentsize = self['e_shentsize']
+        if self['e_shoff'] > 0 and shentsize < self.structs.Elf_Shdr.sizeof():
+            raise ELFError('Too small e_shentsize: %s' % shentsize)
+        return self['e_shoff'] + n * shentsize
 
     def _segment_offset(self, n):
         """ Compute the offset of segment #n in the file
         """
-        return self['e_phoff'] + n * self['e_phentsize']
+        phentsize = self['e_phentsize']
+        if self['e_phoff'] > 0 and phentsize < self.structs.Elf_Phdr.sizeof():
+            raise ELFError('Too small e_phentsize: %s' % phentsize)
+        return self['e_phoff'] + n * phentsize
 
     def _make_segment(self, segment_header):
         """ Create a Segment object of the appropriate type
@@ -685,7 +703,7 @@ class ELFFile(object):
         """ Create a SymbolTableSection
         """
         linked_strtab_index = section_header['sh_link']
-        strtab_section = self.get_section(linked_strtab_index)
+        strtab_section = self._get_linked_strtab_section(linked_strtab_index)
         return SymbolTableSection(
             section_header, name,
             elffile=self,
@@ -703,7 +721,7 @@ class ELFFile(object):
         """ Create a SUNWSyminfoTableSection
         """
         linked_strtab_index = section_header['sh_link']
-        strtab_section = self.get_section(linked_strtab_index)
+        strtab_section = self._get_linked_symtab_section(linked_strtab_index)
         return SUNWSyminfoTableSection(
             section_header, name,
             elffile=self,
@@ -713,7 +731,7 @@ class ELFFile(object):
         """ Create a GNUVerNeedSection
         """
         linked_strtab_index = section_header['sh_link']
-        strtab_section = self.get_section(linked_strtab_index)
+        strtab_section = self._get_linked_strtab_section(linked_strtab_index)
         return GNUVerNeedSection(
             section_header, name,
             elffile=self,
@@ -723,7 +741,7 @@ class ELFFile(object):
         """ Create a GNUVerDefSection
         """
         linked_strtab_index = section_header['sh_link']
-        strtab_section = self.get_section(linked_strtab_index)
+        strtab_section = self._get_linked_strtab_section(linked_strtab_index)
         return GNUVerDefSection(
             section_header, name,
             elffile=self,
@@ -741,14 +759,14 @@ class ELFFile(object):
 
     def _make_elf_hash_section(self, section_header, name):
         linked_symtab_index = section_header['sh_link']
-        symtab_section = self.get_section(linked_symtab_index)
+        symtab_section = self._get_linked_symtab_section(linked_symtab_index)
         return ELFHashSection(
             section_header, name, self, symtab_section
         )
 
     def _make_gnu_hash_section(self, section_header, name):
         linked_symtab_index = section_header['sh_link']
-        symtab_section = self.get_section(linked_symtab_index)
+        symtab_section = self._get_linked_symtab_section(linked_symtab_index)
         return GNUHashSection(
             section_header, name, self, symtab_section
         )
@@ -786,22 +804,28 @@ class ELFFile(object):
         """ Read the contents of a DWARF section from the stream and return a
             DebugSectionDescriptor. Apply relocations if asked to.
         """
+        phantom_bytes = self.has_phantom_bytes()
         # The section data is read into a new stream, for processing
         section_stream = BytesIO()
-        section_stream.write(section.data())
+        section_data = section.data()
+        section_stream.write(section_data[::2] if phantom_bytes else section_data)
 
         if relocate_dwarf_sections:
             reloc_handler = RelocationHandler(self)
             reloc_section = reloc_handler.find_relocations_for_section(section)
             if reloc_section is not None:
-                reloc_handler.apply_section_relocations(
-                        section_stream, reloc_section)
+                if phantom_bytes:
+                    # No guidance how should the relocation work - before or after the odd byte skip
+                    raise ELFParseError("This binary has relocations in the DWARF sections, currently not supported.")
+                else:
+                    reloc_handler.apply_section_relocations(
+                            section_stream, reloc_section)
 
         return DebugSectionDescriptor(
                 stream=section_stream,
                 name=section.name,
                 global_offset=section['sh_offset'],
-                size=section.data_size,
+                size=section.data_size//2 if phantom_bytes else section.data_size,
                 address=section['sh_addr'])
 
     @staticmethod
@@ -824,7 +848,7 @@ class ELFFile(object):
         decompressor = zlib.decompressobj()
         uncompressed_stream = BytesIO()
         while True:
-            chunk = section.stream.read(PAGESIZE)
+            chunk = section.stream.read(4096)
             if not chunk:
                 break
             uncompressed_stream.write(decompressor.decompress(chunk))
@@ -847,3 +871,14 @@ class ELFFile(object):
 
     def __exit__(self, type, value, traceback):
         self.close()
+
+    def has_phantom_bytes(self):
+        """The XC16 compiler for the PIC microcontrollers emits DWARF where all odd bytes in all DWARF sections
+           are to be discarded ("phantom").
+
+            We don't know where does the phantom byte discarding fit into the usual chain of section content transforms.
+            There are no XC16/PIC binaries in the corpus with relocations against DWARF, and the DWARF section compression
+            seems to be unsupported by XC16.
+        """
+        # Vendor flag EF_PIC30_NO_PHANTOM_BYTE=0x80000000: clear means phantom bytes are present
+        return self['e_machine'] == 'EM_DSPIC30F' and (self['e_flags'] & 0x80000000) == 0

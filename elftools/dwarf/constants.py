@@ -170,6 +170,8 @@ DW_LNCT_timestamp = 0x03
 DW_LNCT_size = 0x04
 DW_LNCT_MD5 = 0x05
 DW_LNCT_lo_user = 0x2000
+DW_LNCT_LLVM_source = 0x2001
+DW_LNCT_LLVM_is_MD5 = 0x2002
 DW_LNCT_hi_user = 0x3fff
 
 # Call frame instructions
@@ -208,6 +210,8 @@ DW_CFA_def_cfa_offset_sf = 0x13
 DW_CFA_val_offset = 0x14
 DW_CFA_val_offset_sf = 0x15
 DW_CFA_val_expression = 0x16
+DW_CFA_GNU_window_save = 0x2d # Used on SPARC, not in the corpus
+DW_CFA_AARCH64_negate_ra_state = 0x2d
 DW_CFA_GNU_args_size = 0x2e
 
 

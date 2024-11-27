@@ -15,8 +15,8 @@ Pre-requisites
 --------------
 
 As a user of **pyelftools**, one only needs Python 3 to run. While there is no
-reason for the library to not work on earlier versions of Python 3, our CI
-tests are based on the officual
+reason for the library to not work on earlier versions of Python, our CI
+tests are based on the official
 `Status of Python versions <https://devguide.python.org/versions/>`__.
 
 Installing

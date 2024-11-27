@@ -6,9 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from struct import Struct
 from ..construct import (
     Subconstruct, ConstructError, ArrayError, Adapter, Field, RepeatUntil,
-    Rename, SizeofError, Construct
+    Rename, SizeofError, Construct, StaticField, FieldError
     )
 
 
@@ -46,49 +47,43 @@ class RepeatUntilExcluding(Subconstruct):
     def _sizeof(self, context):
         raise SizeofError("can't calculate size")
 
+class ULEB128(Construct):
+    """A construct based parser for ULEB128 encoding.
 
-def _LEB128_reader():
-    """ Read LEB128 variable-length data from the stream. The data is terminated
-        by a byte with 0 in its highest bit.
+       Incompatible with Python 2 - assumes that the return of read()
+       is an indexed collection of numbers.
     """
-    return RepeatUntil(
-                lambda obj, ctx: ord(obj) < 0x80,
-                Field(None, 1))
-
-
-class _ULEB128Adapter(Adapter):
-    """ An adapter for ULEB128, given a sequence of bytes in a sub-construct.
-    """
-    def _decode(self, obj, context):
+    def _parse(self, stream, context):
         value = 0
-        for b in reversed(obj):
-            value = (value << 7) + (ord(b) & 0x7F)
-        return value
+        shift = 0
+        while True:
+            data = stream.read(1)
+            if len(data) != 1:
+                raise FieldError("unexpected end of stream while parsing a ULEB128 encoded value")
+            b = data[0]
+            value |= (b & 0x7F) << shift
+            shift += 7
+            if b & 0x80 == 0:
+                return value
 
+class SLEB128(Construct):
+    """A construct based parser for SLEB128 encoding.
 
-class _SLEB128Adapter(Adapter):
-    """ An adapter for SLEB128, given a sequence of bytes in a sub-construct.
+       Incompatible with Python 2 - assumes that the return of read()
+       is an indexed collection of numbers.
     """
-    def _decode(self, obj, context):
+    def _parse(self, stream, context):
         value = 0
-        for b in reversed(obj):
-            value = (value << 7) + (ord(b) & 0x7F)
-        if ord(obj[-1]) & 0x40:
-            # negative -> sign extend
-            value |= - (1 << (7 * len(obj)))
-        return value
-
-
-def ULEB128(name):
-    """ A construct creator for ULEB128 encoding.
-    """
-    return Rename(name, _ULEB128Adapter(_LEB128_reader()))
-
-
-def SLEB128(name):
-    """ A construct creator for SLEB128 encoding.
-    """
-    return Rename(name, _SLEB128Adapter(_LEB128_reader()))
+        shift = 0
+        while True:
+            data = stream.read(1)
+            if len(data) != 1:
+                raise FieldError("unexpected end of stream while parsing a SLEB128 encoded value")
+            b = data[0]
+            value |= (b & 0x7F) << shift
+            shift += 7
+            if b & 0x80 == 0:
+                return value | (~0 << shift) if b & 0x40 else value
 
 class StreamOffset(Construct):
     """
@@ -110,3 +105,30 @@ class StreamOffset(Construct):
         context[self.name] = stream.tell()
     def _sizeof(self, context):
         return 0
+
+_UBInt24_packer = Struct(">BH")
+_ULInt24_packer = Struct("<HB")
+
+class UBInt24(StaticField):
+    """unsigned, big endian 24-bit integer"""
+    def __init__(self, name):
+        StaticField.__init__(self, name, 3)
+
+    def _parse(self, stream, context):
+        (h, l) = _UBInt24_packer.unpack(StaticField._parse(self, stream, context))
+        return l | (h << 16)
+    
+    def _build(self, obj, stream, context):
+        StaticField._build(self, _UBInt24_packer.pack(obj >> 16, obj & 0xFFFF), stream, context)
+
+class ULInt24(StaticField):
+    """unsigned, little endian 24-bit integer"""
+    def __init__(self, name):
+        StaticField.__init__(self, name, 3)
+
+    def _parse(self, stream, context):
+        (l, h) = _ULInt24_packer.unpack(StaticField._parse(self, stream, context))
+        return l | (h << 16)
+    
+    def _build(self, obj, stream, context):
+        StaticField._build(self, _ULInt24_packer.pack(obj & 0xFFFF, obj >> 16), stream, context)

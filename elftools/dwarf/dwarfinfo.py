@@ -83,6 +83,7 @@ class DWARFInfo(object):
             debug_rnglists_sec,
             debug_sup_sec,
             gnu_debugaltlink_sec,
+            gnu_debuglink_sec,
             debug_types_sec
             ):
         """ config:
@@ -112,6 +113,7 @@ class DWARFInfo(object):
         self.debug_rnglists_sec = debug_rnglists_sec
         self.debug_sup_sec = debug_sup_sec
         self.gnu_debugaltlink_sec = gnu_debugaltlink_sec
+        self.gnu_debuglink_sec = gnu_debuglink_sec
         self.debug_types_sec = debug_types_sec
 
         # Sets the supplementary_dwarfinfo to None. Client code can set this
@@ -407,7 +409,7 @@ class DWARFInfo(object):
         elif self.debug_loc_sec and self.debug_loclists_sec is None:
             return LocationLists(self.debug_loc_sec.stream, self.structs, 4, self)
         elif self.debug_loc_sec and self.debug_loclists_sec:
-            return LocationListsPair(self.debug_loclists_sec.stream, self.debug_loclists_sec.stream, self.structs, self)
+            return LocationListsPair(self.debug_loc_sec.stream, self.debug_loclists_sec.stream, self.structs, self)
         else:
             return None
 
@@ -433,7 +435,7 @@ class DWARFInfo(object):
             raise DWARFError('The file does not contain a debug_addr section for indirect address access')
         # Selectors are not supported, but no assert on that. TODO?
         cu_addr_base = _get_base_offset(cu, 'DW_AT_addr_base')
-        return struct_parse(cu.structs.Dwarf_target_addr(''), self.debug_addr_sec.stream, cu_addr_base + addr_index*cu.header.address_size)            
+        return struct_parse(cu.structs.the_Dwarf_target_addr, self.debug_addr_sec.stream, cu_addr_base + addr_index*cu.header.address_size)
 
     #------ PRIVATE ------#
 
@@ -535,7 +537,7 @@ class DWARFInfo(object):
         # instance suitable for this CU and use it to parse the rest.
         #
         initial_length = struct_parse(
-            self.structs.Dwarf_uint32(''), self.debug_info_sec.stream, offset)
+            self.structs.the_Dwarf_uint32, self.debug_info_sec.stream, offset)
         dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
 
 
@@ -685,7 +687,7 @@ class DWARFInfo(object):
 
     def parse_debugsupinfo(self):
         """
-        Extract a filename from either .debug_sup or .gnu_debualtlink sections.
+        Extract a filename from .debug_sup, .gnu_debualtlink sections, or .gnu_debuglink.
         """
         if self.debug_sup_sec is not None:
             self.debug_sup_sec.stream.seek(0)
@@ -695,6 +697,10 @@ class DWARFInfo(object):
         if self.gnu_debugaltlink_sec is not None:
             self.gnu_debugaltlink_sec.stream.seek(0)
             suplink = self.structs.Dwarf_debugaltlink.parse_stream(self.gnu_debugaltlink_sec.stream)
+            return suplink.sup_filename
+        if self.gnu_debuglink_sec is not None:
+            self.gnu_debuglink_sec.stream.seek(0)
+            suplink = self.structs.Dwarf_debuglink.parse_stream(self.gnu_debuglink_sec.stream)
             return suplink.sup_filename
         return None
 

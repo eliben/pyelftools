@@ -143,6 +143,7 @@ ENUM_DW_AT = dict(
     DW_AT_const_value               = 0x1c,
     DW_AT_containing_type           = 0x1d,
     DW_AT_default_value             = 0x1e,
+    DW_AT_friends                   = 0x1f,
     DW_AT_inline                    = 0x20,
     DW_AT_is_optional               = 0x21,
     DW_AT_lower_bound               = 0x22,
@@ -152,7 +153,9 @@ ENUM_DW_AT = dict(
     DW_AT_protected                 = 0x26,
     DW_AT_prototyped                = 0x27,
     DW_AT_public                    = 0x28,
+    DW_AT_pure_virtual              = 0x29,
     DW_AT_return_addr               = 0x2a,
+    # In DWARFv1, DW_AT_specification was at 0x2b, moved to 0x47 in v2
     DW_AT_start_scope               = 0x2c,
     DW_AT_bit_stride                = 0x2e,
     DW_AT_stride_size               = 0x2e,
@@ -413,6 +416,8 @@ ENUM_DW_LNCT = dict(
     DW_LNCT_size             = 0x4,
     DW_LNCT_MD5              = 0x5,
     DW_LNCT_lo_user          = 0x2000,
+    DW_LNCT_LLVM_source      = 0x2001,
+    DW_LNCT_LLVM_is_MD5      = 0x2002,
     DW_LNCT_hi_user          = 0x3fff
 )
 

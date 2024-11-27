@@ -12,6 +12,7 @@ from ..common.utils import struct_parse, dwarf_assert
 class AbbrevTable(object):
     """ Represents a DWARF abbreviation table.
     """
+    __slots__ = ('structs', 'stream', 'offset', '_abbrev_map')
     def __init__(self, structs, stream, offset):
         """ Create new abbreviation table. Parses the actual table from the
             stream and stores it internally.
@@ -42,7 +43,7 @@ class AbbrevTable(object):
         self.stream.seek(self.offset)
         while True:
             decl_code = struct_parse(
-                struct=self.structs.Dwarf_uleb128(''),
+                struct=self.structs.the_Dwarf_uleb128,
                 stream=self.stream)
             if decl_code == 0:
                 break
@@ -59,14 +60,14 @@ class AbbrevDecl(object):
 
         The abbreviation declaration represents an "entry" that points to it.
     """
+    __slots__ = ('code', 'decl', '_has_children')
     def __init__(self, code, decl):
         self.code = code
         self.decl = decl
+        self._has_children = decl['children_flag'] == 'DW_CHILDREN_yes'
 
     def has_children(self):
-        """ Does the entry have children?
-        """
-        return self['children_flag'] == 'DW_CHILDREN_yes'
+        return self._has_children
 
     def iter_attr_specs(self):
         """ Iterate over the attribute specifications for the entry. Yield

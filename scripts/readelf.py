@@ -487,6 +487,7 @@ class ReadElf(object):
                 symbol_name = symbol.name
                 # Print section names for STT_SECTION symbols as readelf does
                 if (symbol['st_info']['type'] == 'STT_SECTION'
+                    and symbol['st_shndx'] != 'SHN_UNDEF'
                     and symbol['st_shndx'] < self.elffile.num_sections()
                     and symbol['st_name'] == 0):
                     symbol_name = self.elffile.get_section(symbol['st_shndx']).name
@@ -549,6 +550,8 @@ class ReadElf(object):
                 elif tag.entry.d_tag in ('DT_MIPS_SYMTABNO',
                                          'DT_MIPS_LOCAL_GOTNO'):
                     parsed = str(tag.entry.d_val)
+                elif tag.entry.d_tag == 'DT_AARCH64_BTI_PLT':
+                    parsed = ''
                 else:
                     parsed = '%#x' % tag['d_val']
 
@@ -573,7 +576,7 @@ class ReadElf(object):
                       self._emitline('  %s %s\t%s' % (
                           note['n_name'].ljust(20),
                           self._format_hex(note['n_descsz'], fieldsize=8),
-                          describe_note(note)))
+                          describe_note(note, self.elffile.header.e_machine)))
 
     def display_relocations(self):
         """ Display the relocations contained in the file
@@ -1260,7 +1263,7 @@ class ReadElf(object):
             # Avoid dumping same lineprogram multiple times
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
 
-            if lineprogram in lineprogram_list:
+            if lineprogram is None or lineprogram in lineprogram_list:
                 continue 
 
             lineprogram_list.append(lineprogram)
@@ -1333,6 +1336,9 @@ class ReadElf(object):
                     self._format_hex(entry['CIE_id'], fieldsize=8, lead0x=False)))
                 self._emitline('  Version:               %d' % entry['version'])
                 self._emitline('  Augmentation:          "%s"' % bytes2str(entry['augmentation']))
+                if(entry['version'] >= 4):
+                    self._emitline('  Pointer Size:          %d' % entry['address_size'])
+                    self._emitline('  Segment Size:          %d' % entry['segment_size'])
                 self._emitline('  Code alignment factor: %u' % entry['code_alignment_factor'])
                 self._emitline('  Data alignment factor: %d' % entry['data_alignment_factor'])
                 self._emitline('  Return address column: %d' % entry['return_address_register'])
@@ -1344,9 +1350,11 @@ class ReadElf(object):
                 self._emitline()
 
             elif isinstance(entry, FDE):
+                # Readelf bug #31973
+                length = entry['length'] if entry.cie.offset < entry.offset else entry.cie['length']
                 self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
-                    self._format_hex(entry['length'], fullhex=True, lead0x=False),
+                    self._format_hex(length, fullhex=True, lead0x=False),
                     self._format_hex(entry['CIE_pointer'], fieldsize=8, lead0x=False),
                     entry.cie.offset,
                     self._format_hex(entry['initial_location'], fullhex=True, lead0x=False),
@@ -1479,9 +1487,11 @@ class ReadElf(object):
                 ra_regnum = entry['return_address_register']
 
             elif isinstance(entry, FDE):
+                # Readelf bug #31973 - FDE length misreported if FDE precedes its CIE
+                length = entry['length'] if entry.cie.offset < entry.offset else entry.cie['length']
                 self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
                     entry.offset,
-                    self._format_hex(entry['length'], fullhex=True, lead0x=False),
+                    self._format_hex(length, fullhex=True, lead0x=False),
                     self._format_hex(entry['CIE_pointer'], fieldsize=8, lead0x=False),
                     entry.cie.offset,
                     self._format_hex(entry['initial_location'], fullhex=True, lead0x=False),
@@ -1603,10 +1613,31 @@ class ReadElf(object):
             # Present but empty locations section - readelf outputs a message
             self._emitline("\nSection '%s' has no debugging data." % (section_name,))
             return
+        
+        # The v5 loclists section consists of CUs - small header, and 
+        # an optional loclist offset table. Readelf prints out the header data dump
+        # on top of every CU, so we should too. But we don't scroll through
+        # the loclists section, we are effectively scrolling through the info
+        # section (as to not stumble upon gaps in the secion, and not miss the
+        # GNU locviews, so we have to keep track which loclists-CU we are in.
+        # Same logic in v5 rnglists section dump.
+        lcus = list(loc_lists_sec.iter_CUs()) if ver5 else None
+        lcu_index = 0
+        next_lcu_offset = 0
 
         self._emitline('Contents of the %s section:\n' % (section_name,))
-        self._emitline('    Offset   Begin            End              Expression')
+        if not ver5:
+            self._emitline('    Offset   Begin            End              Expression')
+
         for loc_list in loc_lists:
+            # Emit CU headers before the current loclist, if we've moved to the next CU
+            if ver5 and loc_list[0].entry_offset > next_lcu_offset:
+                while loc_list[0].entry_offset > next_lcu_offset:
+                    lcu = lcus[lcu_index]
+                    self._dump_debug_loclists_CU_header(lcu)
+                    next_lcu_offset = lcu.offset_after_length + lcu.unit_length
+                    lcu_index += 1
+                self._emitline('    Offset   Begin            End              Expression')
             self._dump_loclist(loc_list, line_template, cu_map)
 
     def _dump_loclist(self, loc_list, line_template, cu_map):
@@ -1670,6 +1701,19 @@ class ReadElf(object):
         # but readelf emits its offset, so this should too.
         last = loc_list[-1]
         self._emitline("    %08x <End of list>" % (last.entry_offset + last.entry_length))
+
+    def _dump_debug_loclists_CU_header(self, cu):
+        # Header slightly different from that of v5 rangelist in-section CU header dump
+        self._emitline('Table at Offset %s' % self._format_hex(cu.cu_offset, alternate=True))
+        self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
+        self._emitline('  DWARF version:   %d' % cu.version)
+        self._emitline('  Address size:    %d' % cu.address_size)
+        self._emitline('  Segment size:    %d' % cu.segment_selector_size)
+        self._emitline('  Offset entries:  %d\n' % cu.offset_count)
+        if cu.offsets and len(cu.offsets):
+            self._emitline('  Offsets starting at 0x%x:' % cu.offset_table_offset)
+            for i_offset in enumerate(cu.offsets):
+                self._emitline('    [%6d] 0x%x' % i_offset)        
 
     def _dump_debug_ranges(self):
         # TODO: GNU readelf format doesn't need entry_length?

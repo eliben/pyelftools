@@ -12,7 +12,7 @@ from .enums import (
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
     ENUM_RELOC_TYPE_MIPS, ENUM_ATTR_TAG_ARM, ENUM_ATTR_TAG_RISCV,
     ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_LOONGARCH, ENUM_DT_FLAGS,
-    ENUM_DT_FLAGS_1)
+    ENUM_DT_FLAGS_1, ENUM_RELOC_TYPE_PPC)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
 from ..common.utils import bytes2hex
@@ -151,6 +151,8 @@ def describe_reloc_type(x, elffile):
         return _DESCR_RELOC_TYPE_AARCH64.get(x, _unknown)
     elif arch == '64-bit PowerPC':
         return _DESCR_RELOC_TYPE_PPC64.get(x, _unknown)
+    elif arch == 'PowerPC':
+        return _DESCR_RELOC_TYPE_PPC.get(x, _unknown)
     elif arch == 'IBM S/390':
         return _DESCR_RELOC_TYPE_S390X.get(x, _unknown)
     elif arch == 'MIPS':
@@ -200,7 +202,7 @@ def describe_ver_flags(x):
         VER_FLAGS.VER_FLG_INFO) if x & flag)
 
 
-def describe_note(x):
+def describe_note(x, machine):
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
@@ -215,7 +217,7 @@ def describe_note(x):
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
-        desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'])
+        desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'], machine)
     else:
         desc = '\n      description data: {}'.format(bytes2hex(n_desc))
 
@@ -269,30 +271,14 @@ def describe_attr_tag_riscv(tag, val, extra):
     else:
         return _DESCR_ATTR_TAG_RISCV[tag] + d_entry[val]
 
-
-
-def describe_note_gnu_property_x86_feature_1(value):
+def describe_note_gnu_property_bitmap_and(values, prefix, value):
     descs = []
-    for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_1_FLAGS:
+    for mask, desc in values:
         if value & mask:
             descs.append(desc)
-    return 'x86 feature: ' + ', '.join(descs)
+    return '%s: %s' % (prefix, ', '.join(descs))
 
-def describe_note_gnu_property_x86_feature_2_used(value):
-    descs = []
-    for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_2_FLAGS:
-        if value & mask:
-            descs.append(desc)
-    return 'x86 feature used: ' + ', '.join(descs)
-
-def describe_note_gnu_property_x86_isa_1(value, verb):
-    descs = []
-    for mask, desc in _DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS:
-        if value & mask:
-            descs.append(desc)
-    return 'x86 ISA %s: %s' % (verb, ', '.join(descs))
-
-def describe_note_gnu_properties(properties):
+def describe_note_gnu_properties(properties, machine):
     descriptions = []
     for prop in properties:
         t, d, sz = prop.pr_type, prop.pr_data, prop.pr_datasz
@@ -310,22 +296,27 @@ def describe_note_gnu_properties(properties):
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_x86_feature_1(d)
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_1_FLAGS, 'x86 feature', d)
         elif t == 'GNU_PROPERTY_X86_FEATURE_2_USED':
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_x86_feature_2_used(d)                
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_2_FLAGS, 'x86 feature used', d)                
         elif t == 'GNU_PROPERTY_X86_ISA_1_NEEDED':
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_x86_isa_1(d, "needed")
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS, 'x86 ISA needed', d)
         elif t == 'GNU_PROPERTY_X86_ISA_1_USED':
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_x86_isa_1(d, "used")
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS, 'x86 ISA used', d)
+        elif t == 'GNU_PROPERTY_AARCH64_FEATURE_1_AND' and machine == 'EM_AARCH64':
+            if sz != 4:
+                prop_desc = ' <corrupt length: 0x%x>' % sz
+            else:
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_AARCH64_FEATURE_1_AND, 'aarch64 feature', d)
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
             prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
@@ -469,10 +460,12 @@ _DESCR_SH_TYPE = dict(
     SHT_GNU_verneed='VERNEED',
     SHT_GNU_versym='VERSYM',
     SHT_GNU_LIBLIST='GNU_LIBLIST',
+    SHT_AMD64_UNWIND='X86_64_UNWIND',
     SHT_ARM_EXIDX='ARM_EXIDX',
     SHT_ARM_PREEMPTMAP='ARM_PREEMPTMAP',
     SHT_ARM_ATTRIBUTES='ARM_ATTRIBUTES',
     SHT_ARM_DEBUGOVERLAY='ARM_DEBUGOVERLAY',
+    SHT_AARCH64_ATTRIBUTES='AARCH64_ATTRIBUTES',
     SHT_RISCV_ATTRIBUTES='RISCV_ATTRIBUTES',
     SHT_MIPS_LIBLIST='MIPS_LIBLIST',
     SHT_MIPS_DEBUG='MIPS_DEBUG',
@@ -673,6 +666,11 @@ _DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS = (
     # TODO; there is a long list
 )
 
+# Same for GNU_PROPERTY_AARCH64_FEATURE_1_AND
+_DESCR_NOTE_GNU_PROPERTY_AARCH64_FEATURE_1_AND = (
+    (1, 'bti'),
+    (2, 'pac'),
+)
 
 def _reverse_dict(d, low_priority=()):
     """
@@ -695,6 +693,7 @@ _DESCR_RELOC_TYPE_x64 = _reverse_dict(ENUM_RELOC_TYPE_x64)
 _DESCR_RELOC_TYPE_ARM = _reverse_dict(ENUM_RELOC_TYPE_ARM)
 _DESCR_RELOC_TYPE_AARCH64 = _reverse_dict(ENUM_RELOC_TYPE_AARCH64)
 _DESCR_RELOC_TYPE_PPC64 = _reverse_dict(ENUM_RELOC_TYPE_PPC64)
+_DESCR_RELOC_TYPE_PPC = _reverse_dict(ENUM_RELOC_TYPE_PPC)
 _DESCR_RELOC_TYPE_S390X = _reverse_dict(ENUM_RELOC_TYPE_S390X)
 _DESCR_RELOC_TYPE_MIPS = _reverse_dict(ENUM_RELOC_TYPE_MIPS)
 _DESCR_RELOC_TYPE_LOONGARCH = _reverse_dict(ENUM_RELOC_TYPE_LOONGARCH)
@@ -1017,6 +1016,11 @@ _DESCR_ATTR_TAG_RISCV = dict(
     TAG_STACK_ALIGN='Tag_RISCV_stack_align: ',
     TAG_ARCH='Tag_RISCV_arch: ',
     TAG_UNALIGNED='Tag_RISCV_unaligned_access: ',
+    TAG_PRIV_SPEC='Tag_RISCV_priv_spec: ',
+    TAG_PRIV_SPEC_MINOR='Tag_RISCV_priv_spec_minor: ',
+    TAG_PRIV_SPEC_REVISION='Tag_RISCV_priv_spec_revision: ',
+    TAG_ATOMIC_ABI='Tag_RISCV_atomic_abi: ',
+    TAG_X3_REG_USAGE='Tag_RISCV_x3_reg_usage: ',
 )
 
 _DESCR_ATTR_VAL_RISCV = [
@@ -1031,5 +1035,20 @@ _DESCR_ATTR_VAL_RISCV = [
     { #6 TAG_RISCV_unaligned_access
         0: 'Not Allowed',
         1: 'Allowed',
+    },
+    None, #8 TAG_RISCV_priv_spec
+    None, #10 TAG_RISCV_priv_spec_minor
+    None, #12 TAG_RISCV_priv_spec_revision
+    { #14 TAG_RISCV_atomic_abi
+        0: 'UNKNOWN: This object uses unknown atomic ABI.',
+        1: 'A6C: This object uses the A6 classical atomic ABI.',
+        2: 'A6S: This object uses the strengthened A6 ABI.',
+        3: 'A7: This object uses the A7 atomic ABI.'
+    },
+    { #16 TAG_RISCV_x3_reg_usage
+        0: 'This object uses x3 as a fixed register with unknown purpose.',
+        1: 'This object uses x3 as the global pointer, for relaxation purposes.',
+        2: 'This object uses x3 as the shadow stack pointer.',
+        3: 'This object uses X3 as a temporary register.',
     },
 ]
