@@ -54,12 +54,14 @@ def line_entry_mapping(line_program):
     # a reverse mapping of filename -> #entries.
     lp_entries = line_program.get_entries()
     for lpe in lp_entries:
+        if not lpe.state:
+            continue
+        filename = lpe_filename(line_program, lpe.state.file)
         # We skip LPEs that don't have an associated file.
         # This can happen if instructions in the compiled binary
         # don't correspond directly to any original source file.
-        if not lpe.state or lpe.state.file == 0:
+        if filename is None:
             continue
-        filename = lpe_filename(line_program, lpe.state.file)
         filename_map[filename] += 1
 
     for filename, lpe_count in filename_map.items():
@@ -77,16 +79,24 @@ def lpe_filename(line_program, file_index):
     lp_header = line_program.header
     file_entries = lp_header["file_entry"]
 
-    # File and directory indices are 1-indexed.
-    file_entry = file_entries[file_index - 1]
+    # File and directory indices are 1-indexed in DWARF version < 5,
+    # 0-indexed in DWARF5.
+    if lp_header.version < 5:
+        file_index -= 1
+    if file_index == -1:
+        return None
+
+    file_entry = file_entries[file_index]
     dir_index = file_entry["dir_index"]
 
     # A dir_index of 0 indicates that no absolute directory was recorded during
-    # compilation; return just the basename.
-    if dir_index == 0:
+    # compilation in DWARF version < 5; return just the basename.
+    if dir_index == 0 and lp_header.version < 5:
         return file_entry.name.decode()
 
-    directory = lp_header["include_directory"][dir_index - 1]
+    if lp_header.version < 5:
+        dir_index -= 1
+    directory = lp_header["include_directory"][dir_index]
     return posixpath.join(directory, file_entry.name).decode()
 
 
