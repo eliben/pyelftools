@@ -129,7 +129,7 @@ class ELFFile(object):
         if type and section_header.sh_type not in type:
             raise ELFError("Unexpected section type %s, expected %s" % (section_header['sh_type'], type))
         return self._make_section(section_header)
-
+    
     def _get_linked_symtab_section(self, n):
         """ Get the section at index #n from the file, throws
             if it's not a SYMTAB/DYNTAB.
@@ -139,7 +139,7 @@ class ELFFile(object):
         if section_header['sh_type'] not in ('SHT_SYMTAB', 'SHT_DYNSYM'):
             raise ELFError("Section points at section %d of type %s, expected SHT_SYMTAB/SHT_DYNSYM" % (n, section_header['sh_type']))
         return self._make_section(section_header)
-
+    
     def _get_linked_strtab_section(self, n):
         """ Get the section at index #n from the file, throws
             if it's not a STRTAB.
@@ -148,7 +148,7 @@ class ELFFile(object):
         section_header = self._get_section_header(n)
         if section_header['sh_type'] != 'SHT_STRTAB':
             raise ELFError("SHT_SYMTAB section points at section %d of type %s, expected SHT_STRTAB" % (n, section_header['sh_type']))
-        return self._make_section(section_header)
+        return self._make_section(section_header)    
 
     def get_section_by_name(self, name):
         """ Get a section from the file, by name. Return None if no such

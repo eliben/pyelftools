@@ -435,7 +435,7 @@ class DWARFInfo(object):
             raise DWARFError('The file does not contain a debug_addr section for indirect address access')
         # Selectors are not supported, but no assert on that. TODO?
         cu_addr_base = _get_base_offset(cu, 'DW_AT_addr_base')
-        return struct_parse(cu.structs.the_Dwarf_target_addr, self.debug_addr_sec.stream, cu_addr_base + addr_index*cu.header.address_size)
+        return struct_parse(cu.structs.the_Dwarf_target_addr, self.debug_addr_sec.stream, cu_addr_base + addr_index*cu.header.address_size)            
 
     #------ PRIVATE ------#
 
