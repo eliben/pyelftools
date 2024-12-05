@@ -27,3 +27,12 @@ class TestNotes(unittest.TestCase):
             notes = list(note_sections[0].iter_notes())
             # There's one note in this section:
             self.assertEqual(len(notes), 1)
+
+    def test_note_tc3xx_blinky(self):
+        with ELFFile.load_from_path(os.path.join('test', 'testfiles_for_unittests', 'note_tc3xxx_blinky.elf')) as elf:
+            note_sections = [section for section in elf.iter_sections() if isinstance(section, NoteSection)]
+            # There's only one note section in this file:
+            self.assertEqual(len(note_sections), 1)
+            notes = list(note_sections[0].iter_notes())
+            # There's one note in this section:
+            self.assertEqual(len(notes), 522)

@@ -33,13 +33,13 @@ def iter_notes(elffile, offset, size):
 
         desc_data = elffile.stream.read(note['n_descsz'])
         note['n_descdata'] = desc_data
-        if note['n_type'] == 'NT_GNU_ABI_TAG':
+        if note['n_type'] == 'NT_GNU_ABI_TAG' and note['n_name'] == 'GNU':
             note['n_desc'] = struct_parse(elffile.structs.Elf_abi,
                                           elffile.stream,
                                           offset)
-        elif note['n_type'] == 'NT_GNU_BUILD_ID':
+        elif note['n_type'] == 'NT_GNU_BUILD_ID' and note['n_name'] == 'GNU':
             note['n_desc'] = bytes2hex(desc_data)
-        elif note['n_type'] == 'NT_GNU_GOLD_VERSION':
+        elif note['n_type'] == 'NT_GNU_GOLD_VERSION' and note['n_name'] == 'GNU':
             note['n_desc'] = bytes2str(desc_data)
         elif note['n_type'] == 'NT_PRPSINFO':
             note['n_desc'] = struct_parse(elffile.structs.Elf_Prpsinfo,
@@ -49,7 +49,7 @@ def iter_notes(elffile, offset, size):
             note['n_desc'] = struct_parse(elffile.structs.Elf_Nt_File,
                                           elffile.stream,
                                           offset)
-        elif note['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
+        elif note['n_type'] == 'NT_GNU_PROPERTY_TYPE_0' and note['n_name'] == 'GNU':
             off = offset
             props = []
             # n_descsz contains the size of the note "descriptor" (the data payload),

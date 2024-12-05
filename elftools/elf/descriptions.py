@@ -206,18 +206,21 @@ def describe_note(x, machine):
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
-        if x['n_name'] == 'Android':
-            desc = '\n   description data: %s ' % bytes2hex(x['n_descdata'])
-        else:
+        if x['n_name'] == 'GNU':
             desc = '\n    OS: %s, ABI: %d.%d.%d' % (
                 _DESCR_NOTE_ABI_TAG_OS.get(n_desc['abi_os'], _unknown),
                 n_desc['abi_major'], n_desc['abi_minor'], n_desc['abi_tiny'])
+        else:
+            desc = '\n   description data: %s ' % bytes2hex(x['n_descdata'])
     elif x['n_type'] == 'NT_GNU_BUILD_ID':
         desc = '\n    Build ID: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
-        desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'], machine)
+        if x['n_name'] == 'GNU':
+            desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'], machine)
+        else:
+            desc = '\n   description data: %s ' % bytes2hex(x['n_descdata'])
     else:
         desc = '\n      description data: {}'.format(bytes2hex(n_desc))
 
