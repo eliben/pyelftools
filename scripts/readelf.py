@@ -915,6 +915,7 @@ class ReadElf(object):
 
         if dump_what == 'info':
             self._dump_debug_info()
+            self._dump_debug_types()
         elif dump_what == 'decodedline':
             self._dump_debug_line_programs()
         elif dump_what == 'frames':
@@ -1190,6 +1191,58 @@ class ReadElf(object):
                         name,
                         attr_desc,
                         postfix))
+
+                if die.has_children:
+                    die_depth += 1
+
+        self._emitline()
+
+    def _dump_debug_types(self):
+        """Dump the debug types section
+        """
+        if not self._dwarfinfo.has_debug_info:
+            return
+        if self._dwarfinfo.debug_types_sec is None:
+            return
+        self._emitline('Contents of the %s section:\n' % self._dwarfinfo.debug_types_sec.name)
+
+        # Offset of the .debug_types section in the stream
+        section_offset = self._dwarfinfo.debug_types_sec.global_offset
+
+        for tu in self._dwarfinfo.iter_TUs():
+            self._emitline('  Compilation Unit @ offset %s:' %
+                           self._format_hex(tu.tu_offset, alternate=True))
+            self._emitline('   Length:        %s (%s)' % (self._format_hex(tu['unit_length']),
+                                                          '%s-bit' % tu.dwarf_format()))
+            self._emitline('   Version:       %s' % tu['version'])
+            self._emitline('   Abbrev Offset: %s' % (self._format_hex(tu['debug_abbrev_offset'], alternate=True)))
+            self._emitline('   Pointer Size:  %s' % tu['address_size'])
+            self._emitline('   Signature:     0x%x' % tu['signature'])
+            self._emitline('   Type Offset:   0x%x' % tu['type_offset'])
+
+            die_depth = 0
+            for die in tu.iter_DIEs():
+                self._emitline(' <%s><%x>: Abbrev Number: %s%s' % (
+                    die_depth,
+                    die.offset,
+                    die.abbrev_code,
+                    (' (%s)' % die.tag) if not die.is_null() else ''))
+                if die.is_null():
+                    die_depth -= 1
+                    continue
+
+                for attr in die.attributes.values():
+                    name = attr.name
+                    # Unknown attribute values are passed-through as integers
+                    if isinstance(name, int):
+                        name = 'Unknown AT value: %x' % name
+
+                    attr_desc = describe_attr_value(attr, die, section_offset)
+
+                    self._emitline('    <%x>   %-18s: %s' % (
+                        attr.offset,
+                        name,
+                        attr_desc))
 
                 if die.has_children:
                     die_depth += 1
