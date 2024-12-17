@@ -407,7 +407,9 @@ class ELFStructs(object):
             if ctx.pr_type.startswith('GNU_PROPERTY_X86_'):
                 return ('GNU_PROPERTY_X86_*', 4, 0)
             elif ctx.pr_type.startswith('GNU_PROPERTY_AARCH64_'):
-                return ('GNU_PROPERTY_AARCH64_*', 4, 0)            
+                return ('GNU_PROPERTY_AARCH64_*', 4, 0)
+            elif ctx.pr_type.startswith('GNU_PROPERTY_RISCV_'):
+                return ('GNU_PROPERTY_RISCV_*', 4, 0)
             return (ctx.pr_type, ctx.pr_datasz, self.elfclass)
 
         self.Elf_Prop = Struct('Elf_Prop',
@@ -418,6 +420,7 @@ class ELFStructs(object):
                     ('GNU_PROPERTY_STACK_SIZE', 8, 64): self.Elf_word64('pr_data'),
                     ('GNU_PROPERTY_X86_*', 4, 0): self.Elf_word('pr_data'),
                     ('GNU_PROPERTY_AARCH64_*', 4, 0): self.Elf_word('pr_data'),
+                    ('GNU_PROPERTY_RISCV_*', 4, 0): self.Elf_word('pr_data'),
                 },
                 default=Field('pr_data', lambda ctx: ctx.pr_datasz)
             ),
