@@ -21,7 +21,7 @@ class TypeUnit(object):
 
             Type units are stored in the .debug_types section. This section was
             introduced by the DWARFv4 standard (and removed in the DWARFv5 standard;
-            underlying type units were relocated to the .debug_types section)
+            underlying type units were relocated to the .debug_info section)
 
         Serves as a container and context to DIEs that describe type definitions
         referenced from compilation units and other type units.
@@ -96,8 +96,7 @@ class TypeUnit(object):
         return self._abbrev_table
 
     def get_top_DIE(self):
-        """ Get the top DIE (which is either a DW_TAG_compile_unit or
-            DW_TAG_partial_unit) of this TU
+        """ Get the top DIE (which is DW_TAG_type_unit entry) of this TU
         """
 
         # Note that a top DIE always has minimal offset and is therefore

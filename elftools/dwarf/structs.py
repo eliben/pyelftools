@@ -53,8 +53,8 @@ class DWARFStructs(object):
             Dwarf_CU_header (+):
                 Compilation unit header
 
-            Dwarf_CU_types_header (+):
-                Compilation unit (.debug_types section) header
+            Dwarf_TU_header (+):
+                Type unit header
 
             Dwarf_abbrev_declaration (+):
                 Abbreviation table declaration - doesn't include the initial
