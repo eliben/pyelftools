@@ -320,6 +320,12 @@ def describe_note_gnu_properties(properties, machine):
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_AARCH64_FEATURE_1_AND, 'aarch64 feature', d)
+        elif t == 'GNU_PROPERTY_AARCH64_FEATURE_1_AND' and machine == 'EM_RISCV':
+            # RISC-V shares the same bit-mask with AArch64
+            if sz != 4:
+                prop_desc = ' <corrupt length: 0x%x>' % sz
+            else:
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND, 'RISC-V AND feature', d)
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
             prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
@@ -673,6 +679,11 @@ _DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS = (
 _DESCR_NOTE_GNU_PROPERTY_AARCH64_FEATURE_1_AND = (
     (1, 'bti'),
     (2, 'pac'),
+)
+
+_DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND = (
+    (1, 'ZICFILP'),
+    (2, 'ZICFISS'),
 )
 
 def _reverse_dict(d, low_priority=()):
