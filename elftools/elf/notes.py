@@ -25,11 +25,14 @@ def iter_notes(elffile, offset, size):
         note['n_offset'] = offset
         offset += nhdr_size
         elffile.stream.seek(offset)
-        # n_namesz is 4-byte aligned.
-        disk_namesz = roundup(note['n_namesz'], 2)
-        note['n_name'] = bytes2str(
-            CString('').parse(elffile.stream.read(disk_namesz)))
-        offset += disk_namesz
+        if note['n_namesz']:
+            # n_namesz is 4-byte aligned.
+            disk_namesz = roundup(note['n_namesz'], 2)
+            note['n_name'] = bytes2str(
+                CString('').parse(elffile.stream.read(disk_namesz)))
+            offset += disk_namesz
+        else:
+            note['n_name'] = None
 
         desc_data = elffile.stream.read(note['n_descsz'])
         note['n_descdata'] = desc_data
