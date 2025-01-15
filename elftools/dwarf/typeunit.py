@@ -21,7 +21,8 @@ class TypeUnit(object):
 
             Type units are stored in the .debug_types section. This section was
             introduced by the DWARFv4 standard (and removed in the DWARFv5 standard;
-            underlying type units were relocated to the .debug_info section)
+            the underlying type units were relocated to the .debug_info
+            section - DWARFv5 section 1.4)
 
         Serves as a container and context to DIEs that describe type definitions
         referenced from compilation units and other type units.

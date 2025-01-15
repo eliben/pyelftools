@@ -256,7 +256,7 @@ class DWARFInfo(object):
         return self._parse_CUs_iter()
 
     def iter_TUs(self):
-        """Yield all the compile units (CompileUnit objects) in the debug_types
+        """Yield all the type units (TypeUnit objects) in the debug_types
         """
         return self._parse_TUs_iter()
 
@@ -481,6 +481,7 @@ class DWARFInfo(object):
         parse all TUs and store them in an OrderedDict using their unique
         64-bit signature as the key.
 
+            See .get_TU_by_sig8().
         """
         if self._type_units_by_sig is not None:
             return
@@ -569,7 +570,7 @@ class DWARFInfo(object):
     def _parse_TU_at_offset(self, offset):
         """ Parse and return a Type Unit (TU) at the given offset in the debug_types stream.
         """
-        # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v3
+        # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v4
         # states that the first 32-bit word of the TU header determines
         # whether the TU is represented with 32-bit or 64-bit DWARF format.
         #
