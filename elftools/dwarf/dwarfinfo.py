@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from bisect import bisect_right
 
 from ..construct.lib.container import Container
@@ -16,6 +16,7 @@ from ..common.utils import (struct_parse, dwarf_assert,
                             parse_cstring_from_stream)
 from .structs import DWARFStructs
 from .compileunit import CompileUnit
+from .typeunit import TypeUnit
 from .abbrevtable import AbbrevTable
 from .lineprogram import LineProgram
 from .callframe import CallFrameInfo
@@ -82,7 +83,8 @@ class DWARFInfo(object):
             debug_rnglists_sec,
             debug_sup_sec,
             gnu_debugaltlink_sec,
-            gnu_debuglink_sec
+            gnu_debuglink_sec,
+            debug_types_sec
             ):
         """ config:
                 A DwarfConfig object
@@ -112,6 +114,7 @@ class DWARFInfo(object):
         self.debug_sup_sec = debug_sup_sec
         self.gnu_debugaltlink_sec = gnu_debugaltlink_sec
         self.gnu_debuglink_sec = gnu_debuglink_sec
+        self.debug_types_sec = debug_types_sec
 
         # Sets the supplementary_dwarfinfo to None. Client code can set this
         # to something else, typically a DWARFInfo file read from an ELFFile
@@ -136,6 +139,9 @@ class DWARFInfo(object):
         self._cu_cache = []
         self._cu_offsets_map = []
 
+        # DWARF v4 type units by sig8 - OrderedDict created on Reference
+        self._type_units_by_sig = None
+
     @property
     def has_debug_info(self):
         """ Return whether this contains debug information.
@@ -144,6 +150,11 @@ class DWARFInfo(object):
         encoded DWARF but not actually for debugging.
         """
         return bool(self.debug_info_sec)
+
+    def has_debug_types(self):
+        """ Return whether this contains debug types information.
+        """
+        return bool(self.debug_types_sec)
 
     def get_DIE_from_lut_entry(self, lut_entry):
         """ Get the DIE from the pubnames or putbtypes lookup table entry.
@@ -223,10 +234,31 @@ class DWARFInfo(object):
 
         return self._cached_CU_at_offset(offset)
 
+    def get_TU_by_sig8(self, sig8):
+        """ Find and return a Type Unit referenced by its signature
+
+            sig8:
+                The 8 byte unique signature (as a 64-bit unsigned integer)
+
+            Returns the TU with the given type signature by parsing the
+            .debug_types section.
+
+        """
+        self._parse_debug_types()
+        tu = self._type_units_by_sig.get(sig8)
+        if tu is None:
+            raise KeyError("Signature %016x not found in .debug_types" % sig8)
+        return tu
+
     def iter_CUs(self):
         """ Yield all the compile units (CompileUnit objects) in the debug info
         """
         return self._parse_CUs_iter()
+
+    def iter_TUs(self):
+        """Yield all the type units (TypeUnit objects) in the debug_types
+        """
+        return self._parse_TUs_iter()
 
     def get_abbrev_table(self, offset):
         """ Get an AbbrevTable from the given offset in the debug_abbrev
@@ -416,10 +448,52 @@ class DWARFInfo(object):
             # Compute the offset of the next CU in the section. The unit_length
             # field of the CU header contains its size not including the length
             # field itself.
-            offset = (  offset +
-                        cu['unit_length'] +
-                        cu.structs.initial_length_field_size())
+            offset = (offset +
+                      cu['unit_length'] +
+                      cu.structs.initial_length_field_size())
             yield cu
+
+    def _parse_TUs_iter(self, offset=0):
+        """ Iterate Type Unit objects in order of appearance in the debug_types section.
+
+            offset:
+                The offset of the first TU to yield.  Additional iterations
+                will return the sequential unit objects.
+
+                See .iter_TUs().
+        """
+        if self.debug_types_sec is None:
+            return
+
+        while offset < self.debug_types_sec.size:
+            tu = self._parse_TU_at_offset(offset)
+            # Compute the offset of the next TU in the section. The unit_length
+            # field of the TU header contains its size not including the length
+            # field itself.
+            offset = (offset +
+                      tu['unit_length'] +
+                      tu.structs.initial_length_field_size())
+
+            yield tu
+
+    def _parse_debug_types(self):
+        """ Check if the .debug_types section is previously parsed. If not,
+        parse all TUs and store them in an OrderedDict using their unique
+        64-bit signature as the key.
+
+            See .get_TU_by_sig8().
+        """
+        if self._type_units_by_sig is not None:
+            return
+        self._type_units_by_sig = OrderedDict()
+
+        if self.debug_types_sec is None:
+            return
+
+        # Collect all Type Units in the .debug_types section for access using
+        # their 8-byte unique signature
+        for tu in self._parse_TUs_iter():
+            self._type_units_by_sig[tu['signature']] = tu
 
     def _cached_CU_at_offset(self, offset):
         """ Return the CU with unit header at the given offset into the
@@ -492,6 +566,50 @@ class DWARFInfo(object):
                 structs=cu_structs,
                 cu_offset=offset,
                 cu_die_offset=cu_die_offset)
+
+    def _parse_TU_at_offset(self, offset):
+        """ Parse and return a Type Unit (TU) at the given offset in the debug_types stream.
+        """
+        # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v4
+        # states that the first 32-bit word of the TU header determines
+        # whether the TU is represented with 32-bit or 64-bit DWARF format.
+        #
+        # So we peek at the first word in the TU header to determine its
+        # dwarf format. Based on it, we then create a new DWARFStructs
+        # instance suitable for this TU and use it to parse the rest.
+        #
+        initial_length = struct_parse(
+            self.structs.the_Dwarf_uint32, self.debug_types_sec.stream, offset)
+        dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
+
+        # Temporary structs for parsing the header
+        # The structs for the rest of the TUs depend on the header data.
+        tu_structs = DWARFStructs(
+            little_endian=self.config.little_endian,
+            dwarf_format=dwarf_format,
+            address_size=4,
+            dwarf_version=2)
+
+        tu_header = struct_parse(
+            tu_structs.Dwarf_TU_header, self.debug_types_sec.stream, offset)
+
+        # structs for the rest of the TU, taking into account bit-width and DWARF version
+        tu_structs = DWARFStructs(
+            little_endian=self.config.little_endian,
+            dwarf_format=dwarf_format,
+            address_size=tu_header['address_size'],
+            dwarf_version=tu_header['version'])
+
+        tu_die_offset = self.debug_types_sec.stream.tell()
+        dwarf_assert(
+            self._is_supported_version(tu_header['version']),
+            "Expected supported DWARF version. Got '%s'" % tu_header['version'])
+        return TypeUnit(
+            header=tu_header,
+            dwarfinfo=self,
+            structs=tu_structs,
+            tu_offset=offset,
+            tu_die_offset=tu_die_offset)
 
     def _is_supported_version(self, version):
         """ DWARF version supported by this parser

@@ -72,6 +72,13 @@ def run_test_on_file(filename, verbose=False, opt=None):
     else:
         options = [opt]
 
+    if filename.endswith('dwarf_debug_types.elf'):
+        # TODO: excluding the binary with .debug_types section until the length
+        #  the calculation for FDEs in binutils bug #31973 is fixed
+        #  https://sourceware.org/bugzilla/show_bug.cgi?id=31973
+        options.remove('--debug-dump=frames')
+        options.remove('--debug-dump=frames-interp')
+
     for option in options:
         if verbose: testlog.info("..option='%s'" % option)
 
