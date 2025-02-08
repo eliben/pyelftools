@@ -139,7 +139,7 @@ class DWARFInfo(object):
         self._cu_cache = []
         self._cu_offsets_map = []
 
-        # DWARF v4 type units by sig8 - OrderedDict created on Reference
+        # DWARF v4 type units by sig8 - OrderedDict created when needed
         self._type_units_by_sig = None
 
     @property

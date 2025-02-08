@@ -195,10 +195,6 @@ class TypeUnit(object):
             .cu_addr before calling this function.
         """
         # All DIEs are after the cu header and within the unit
-
-        if refaddr == 10199037921532328682:
-            import ipdb; ipdb.set_trace()
-
         dwarf_assert(
             self.cu_die_offset <= refaddr < self.cu_offset + self.size,
             'refaddr %s not in DIE range of CU %s' % (refaddr, self.cu_offset))
