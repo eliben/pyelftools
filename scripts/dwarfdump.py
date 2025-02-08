@@ -88,6 +88,8 @@ def _desc_ref(attr, die, extra=''):
         return "0x%016x%s" % (attr.value, extra)
     if attr.form == 'DW_FORM_ref_sig8':
         return "0x%016x" % attr.value
+    # TODO: leading zeros on the addend to CU - sometimes present, sometimes not.
+    # Check by the LLVM sources.    
     return "cu + 0x%04x => {0x%08x}%s" % (
         attr.raw_value,
         die.cu.cu_offset + attr.raw_value,

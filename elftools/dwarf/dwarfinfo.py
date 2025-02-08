@@ -503,8 +503,11 @@ class DWARFInfo(object):
             yield tu
 
     def _parse_debug_types(self):
-        """ Parse all the TU entries in the .debug_types section.
-            Place units into an OrderedDict keyed by type signature.
+        """ Check if the .debug_types section is previously parsed. If not,
+            parse all TUs and store them in an OrderedDict using their unique
+            64-bit signature as the key.
+            
+            See .get_TU_by_sig8().
         """
         if self._type_units_by_sig is not None:
             return
@@ -554,7 +557,7 @@ class DWARFInfo(object):
     def _parse_CU_at_offset(self, offset):
         """ Parse and return a CU at the given offset in the debug_info stream.
         """
-        # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v3
+        # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v4
         # states that the first 32-bit word of the CU header determines
         # whether the CU is represented with 32-bit or 64-bit DWARF format.
         #
@@ -609,7 +612,7 @@ class DWARFInfo(object):
         # instance suitable for this TU and use it to parse the rest.
         #
         initial_length = struct_parse(
-            self.structs.Dwarf_uint32(''), self.debug_types_sec.stream, offset)
+            self.structs.the_Dwarf_uint32, self.debug_types_sec.stream, offset)
         dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
 
         # Temporary structs for parsing the header
