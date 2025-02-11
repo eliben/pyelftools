@@ -185,6 +185,22 @@ class TypeUnit(object):
 
                 cur_offset = child._terminator.offset + child._terminator.size
 
+    def get_DIE_from_refaddr(self, refaddr):
+        """ Obtain a DIE contained in this CU from a reference.
+            refaddr:
+                The offset into the .debug_info section, which must be
+                contained in this CU or a DWARFError will be raised.
+            When using a reference class attribute with a form that is
+            relative to the compile unit, add unit add the compile unit's
+            .cu_addr before calling this function.
+        """
+        # All DIEs are after the cu header and within the unit
+        dwarf_assert(
+            self.cu_die_offset <= refaddr < self.cu_offset + self.size,
+            'refaddr %s not in DIE range of CU %s' % (refaddr, self.cu_offset))
+
+        return self._get_cached_DIE(refaddr)
+
     #------ PRIVATE ------#
 
     def __getitem__(self, name):

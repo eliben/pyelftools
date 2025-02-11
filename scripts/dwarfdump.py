@@ -84,8 +84,12 @@ def _safe_DIE_linkage_name(die, default=None):
 def _desc_ref(attr, die, extra=''):
     if extra:
         extra = " \"%s\"" % extra
+    if attr.form == 'DW_FORM_ref_addr':
+        return "0x%016x%s" % (attr.value, extra)
+    if attr.form == 'DW_FORM_ref_sig8':
+        return "0x%016x" % attr.value
     # TODO: leading zeros on the addend to CU - sometimes present, sometimes not.
-    # Check by the LLVM sources.
+    # Check by the LLVM sources.    
     return "cu + 0x%04x => {0x%08x}%s" % (
         attr.raw_value,
         die.cu.cu_offset + attr.raw_value,
@@ -225,7 +229,8 @@ def _arch(cu):
     return cu.dwarfinfo.config.machine_arch
 
 def _desc_reg(reg_no, cu):
-    return describe_reg_name(reg_no, _arch(cu), True).upper()
+    reg_name = describe_reg_name(reg_no, _arch(cu), False)
+    return reg_name.upper() if reg_name else ""
 
 def _desc_operation(op, op_name, args, cu):
     # Not sure about regx(regno) and bregx(regno, offset)
@@ -346,7 +351,7 @@ class ReadElf(object):
         self.elffile = ELFFile(file)
         self.output = output
         self._dwarfinfo = self.elffile.get_dwarf_info()
-        arches = {"EM_386": "i386", "EM_X86_64": "x86-64", "EM_ARM": "littlearm", "EM_AARCH64": "littleaarch64", "EM_LOONGARCH": "loongarch", "EM_RISCV": "littleriscv", "EM_MIPS": "mips"}
+        arches = {"EM_386": "i386", "EM_X86_64": "x86-64", "EM_ARM": "littlearm", "EM_AARCH64": "littleaarch64", "EM_LOONGARCH": "loongarch", "EM_RISCV": "littleriscv", "EM_MIPS": "mips", "EM_TI_C2000": "unknown"}
         arch = arches[self.elffile['e_machine']]
         bits = self.elffile.elfclass
         self._emitline("%s:	file format elf%d-%s" % (filename, bits, arch))
@@ -387,7 +392,7 @@ class ReadElf(object):
                 if not die.is_null(): 
                     self._emitline("0x%08x: %s [%d] %s %s" % (
                         die.offset,
-                        die.tag,
+                        die.tag if isinstance(die.tag, str) else "DW_TAG_unknown_%x" % die.tag,
                         die.abbrev_code,
                         '*' if die.has_children else '',
                         '(0x%08x)' % die.get_parent().offset if die.get_parent() is not None else ''))
@@ -540,6 +545,7 @@ def main(stream=None):
     del ENUM_DW_TAG["DW_TAG_template_value_param"]
     ENUM_DW_TAG['DW_TAG_template_type_parameter'] = 0x2f
     ENUM_DW_TAG['DW_TAG_template_value_parameter'] = 0x30
+    del ENUM_DW_TAG['DW_TAG_lo_user'] # dwarfdump dumps it as unknown
 
     with open(args.file, 'rb') as file:
         try:
