@@ -51,7 +51,6 @@ class TestRefAddrOnDWARFv2With64BitTarget(unittest.TestCase):
             debug_rnglists_sec = None,
             debug_sup_sec = None,
             gnu_debugaltlink_sec = None,
-            gnu_debuglink_sec = None,
             debug_types_sec=None
         )
 

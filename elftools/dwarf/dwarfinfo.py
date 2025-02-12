@@ -83,7 +83,6 @@ class DWARFInfo(object):
             debug_rnglists_sec,
             debug_sup_sec,
             gnu_debugaltlink_sec,
-            gnu_debuglink_sec,
             debug_types_sec
             ):
         """ config:
@@ -113,7 +112,6 @@ class DWARFInfo(object):
         self.debug_rnglists_sec = debug_rnglists_sec
         self.debug_sup_sec = debug_sup_sec
         self.gnu_debugaltlink_sec = gnu_debugaltlink_sec
-        self.gnu_debuglink_sec = gnu_debuglink_sec
         self.debug_types_sec = debug_types_sec
 
         # Sets the supplementary_dwarfinfo to None. Client code can set this
@@ -716,7 +714,7 @@ class DWARFInfo(object):
 
     def parse_debugsupinfo(self):
         """
-        Extract a filename from .debug_sup, .gnu_debualtlink sections, or .gnu_debuglink.
+        Extract a filename from .debug_sup, .gnu_debualtlink sections.
         """
         if self.debug_sup_sec is not None:
             self.debug_sup_sec.stream.seek(0)
@@ -727,9 +725,9 @@ class DWARFInfo(object):
             self.gnu_debugaltlink_sec.stream.seek(0)
             suplink = self.structs.Dwarf_debugaltlink.parse_stream(self.gnu_debugaltlink_sec.stream)
             return suplink.sup_filename
-        if self.gnu_debuglink_sec is not None:
-            self.gnu_debuglink_sec.stream.seek(0)
-            suplink = self.structs.Dwarf_debuglink.parse_stream(self.gnu_debuglink_sec.stream)
-            return suplink.sup_filename
+        # The section .gnu_debuglink with similarly looking contents
+        # has a different meaning - it doesn't point at supplementary DWARF,
+        # which is meant to be referenced from primary DWARF,
+        # it points at DWARF proper.
         return None
 

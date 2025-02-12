@@ -44,8 +44,8 @@ class TestDebuglink(unittest.TestCase):
         # Retrieve the subprograms from the DWARF info
         dwarf_info = elf.get_dwarf_info(follow_links=True, relocate_dwarf_sections=True)
 
-        if dwarf_info.supplementary_dwarfinfo:
-            for CU in dwarf_info.supplementary_dwarfinfo.iter_CUs():
+        if dwarf_info:
+            for CU in dwarf_info.iter_CUs():
                 for DIE in CU.iter_DIEs():
                     if DIE.tag == 'DW_TAG_subprogram':
                         attributes = DIE.attributes
@@ -70,8 +70,23 @@ class TestDebuglink(unittest.TestCase):
     def test_debuglink(self):
         with open('test/testfiles_for_unittests/debuglink', "rb") as elf_file:
             elf = ELFFile(elf_file, stream_loader=self.stream_loader)
+            # Contains eh_frame and gnu_debuglink, but no DWARF
+            self.assertTrue(elf.has_dwarf_info(False))
+            self.assertFalse(elf.has_dwarf_info(True))
+            self.assertTrue(elf.has_dwarf_link())
+
+            link = elf.get_dwarf_link()
+            self.assertIsNotNone(link)
+            self.assertEqual(link.filename, b'debuglink.debug')
+            self.assertEqual(link.checksum, 0x29b7c5f1)
+
             subprograms = self.subprograms_from_debuglink(elf)
             self.assertEqual(subprograms, {b'main': (0x1161, 0x52), b'addNumbers': (0x1149, 0x18)})
+
+        # Test the filesystem aware ELFFile loading
+        elf = ELFFile.load_from_path('test/testfiles_for_unittests/debuglink')
+        subprograms = self.subprograms_from_debuglink(elf)
+        self.assertEqual(subprograms, {b'main': (0x1161, 0x52), b'addNumbers': (0x1149, 0x18)})
 
 if __name__ == '__main__':
     unittest.main()

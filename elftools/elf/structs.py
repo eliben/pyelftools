@@ -112,6 +112,7 @@ class ELFStructs(object):
         self._create_riscv_attributes()
         self._create_elf_hash()
         self._create_gnu_hash()
+        self._create_gnu_debuglink()
 
     #-------------------------------- PRIVATE --------------------------------#
 
@@ -562,3 +563,9 @@ class ELFStructs(object):
                                self.Elf_word('bloom_shift'),
                                Array(lambda ctx: ctx['bloom_size'], self.Elf_xword('bloom')),
                                Array(lambda ctx: ctx['nbuckets'], self.Elf_word('buckets')))
+        
+    def _create_gnu_debuglink(self):
+        self.Gnu_debuglink = Struct('Gnu_debuglink',
+            CString("filename"),
+            Padding(lambda ctx: 3 - len(ctx.filename) % 4, strict=True),
+            self.Elf_word("checksum"))
