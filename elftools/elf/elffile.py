@@ -109,7 +109,6 @@ class ELFFile(object):
             base_path = base_path.encode('UTF-8') # resolver takes a bytes path
         base_directory = os.path.dirname(base_path)
         def loader(rel_path):
-            # FIXME: use actual path instead of str/bytes
             if not os.path.isabs(rel_path):
                 rel_path = os.path.join(base_directory, rel_path)
             return open(rel_path, 'rb')
@@ -255,7 +254,7 @@ class ELFFile(object):
             has all the other required sections as well.
 
             Unless you pass strict=True, the presence of .eh_frame section,
-            which is DWARF adjacent but hardly DWARG proper, will count as debug info.
+            which is DWARF adjacent but hardly DWARF proper, will count as debug info.
             Stripped files contain .eh_frame but none of the .[z]debug_xxx sections.
         """
         return (self.has_section('.debug_info') or
