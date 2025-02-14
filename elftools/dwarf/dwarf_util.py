@@ -61,6 +61,13 @@ def _iter_CUs_in_section(stream, structs, parser):
         offset = header.offset_after_length + header.unit_length   
 
 def _file_crc32(file):
+    """ Provided a readable binary file stream, reads the whole file
+        and computes the CRC32 checksum of its contents,
+        with the initial value of 0.
+
+        Assumes the file pointer is at the top, and rewinds to the top
+        afterwards.
+    """
     d = file.read(4096)
     checksum = 0
     while len(d):
