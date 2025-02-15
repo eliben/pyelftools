@@ -286,6 +286,7 @@ class ELFFile(object):
                 # Validate checksum...
                 if _file_crc32(ext_file) != debuglink.checksum:
                     raise ELFError('The linked DWARF file does not match the checksum in the link.')
+                ext_file.seek(0, os.SEEK_SET)
                 ext_elffile = ELFFile(ext_file, self.stream_loader)
                 # Inheriting the stream loader like that might be wrong if the supplementary DWARF link in the other file
                 # is relative to the other file's directory as opposed to this file's directory.
