@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 
-import os
+import os, binascii
 from ..construct.macros import UBInt32, UBInt64, ULInt32, ULInt64, Array
 from ..common.exceptions import DWARFError
 from ..common.utils import preserve_stream_pos, struct_parse
@@ -60,3 +60,14 @@ def _iter_CUs_in_section(stream, structs, parser):
         yield header
         offset = header.offset_after_length + header.unit_length   
 
+def _file_crc32(file):
+    """ Provided a readable binary stream, reads the stream to the end
+        and computes the CRC32 checksum of its contents,
+        with the initial value of 0.
+    """
+    d = file.read(4096)
+    checksum = 0
+    while len(d):
+        checksum = binascii.crc32(d, checksum)
+        d = file.read(4096)
+    return checksum

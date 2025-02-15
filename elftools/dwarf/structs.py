@@ -177,7 +177,6 @@ class DWARFStructs(object):
 
         self._create_debugsup()
         self._create_gnu_debugaltlink()
-        self._create_gnu_debuglink()
 
     def _create_initial_length(self):
         def _InitialLength(name):
@@ -274,18 +273,6 @@ class DWARFStructs(object):
         self.Dwarf_debugaltlink = Struct('Elf_debugaltlink',
             CString("sup_filename"),
             String("sup_checksum", length=20))
-
-    def _create_gnu_debuglink(self):
-        self.Dwarf_debuglink = Struct('Elf_debuglink',
-            CString("sup_filename"),
-            Switch('', lambda ctx: (len(ctx.sup_filename) % 4),
-                {
-                    0: String("sup_padding", length=3),
-                    1: String("sup_padding", length=2),
-                    2: String("sup_padding", length=1),
-                    3: String("sup_padding", length=0),
-                }),
-            String("sup_checksum", length=4))
 
     def _create_dw_form(self):
         self.Dwarf_dw_form = dict(

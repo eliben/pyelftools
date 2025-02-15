@@ -30,6 +30,7 @@ from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 from ..ehabi.ehabiinfo import EHABIInfo
 from .hash import ELFHashSection, GNUHashSection
 from .constants import SHN_INDICES
+from ..dwarf.dwarf_util import _file_crc32
 
 class ELFFile(object):
     """ Creation: the constructor accepts a stream (file-like object) with the
@@ -94,15 +95,24 @@ class ELFFile(object):
         ELFFile from it, setting up a correct stream_loader relative to the
         original file.
         """
-        base_directory = os.path.dirname(path)
-        def loader(elf_path):
-            # FIXME: use actual path instead of str/bytes
-            if not os.path.isabs(elf_path):
-                elf_path = os.path.join(base_directory,
-                                        elf_path)
-            return open(elf_path, 'rb')
         stream = open(path, 'rb')
-        return ELFFile(stream, loader)
+        return ELFFile(stream, ELFFile.make_relative_loader(path))
+    
+    @staticmethod
+    def make_relative_loader(base_path):
+        """ Return a function that takes a potentially relative path,
+            resolves it against base_path (bytes or str), and opens a file at that.
+
+            ELFFile uses functions like that for resolving DWARF links.
+        """
+        if isinstance(base_path, str):
+            base_path = base_path.encode('UTF-8') # resolver takes a bytes path
+        base_directory = os.path.dirname(base_path)
+        def loader(rel_path):
+            if not os.path.isabs(rel_path):
+                rel_path = os.path.join(base_directory, rel_path)
+            return open(rel_path, 'rb')
+        return loader
 
     def num_sections(self):
         """ Number of sections in the file
@@ -172,6 +182,13 @@ class ELFFile(object):
         if self._section_name_map is None:
             self._make_section_name_map()
         return self._section_name_map.get(section_name, None)
+    
+    def has_section(self, section_name):
+        """ Section existence check by name, without the overhead of parsing if found.
+        """
+        if self._section_name_map is None:
+            self._make_section_name_map()
+        return section_name in self._section_name_map
 
     def iter_sections(self, type=None):
         """ Yield all the sections in the file. If the optional |type|
@@ -231,14 +248,18 @@ class ELFFile(object):
                 end <= seg['p_vaddr'] + seg['p_filesz']):
                 yield start - seg['p_vaddr'] + seg['p_offset']
 
-    def has_dwarf_info(self):
+    def has_dwarf_info(self, strict=False):
         """ Check whether this file appears to have debugging information.
             We assume that if it has the .debug_info or .zdebug_info section, it
             has all the other required sections as well.
+
+            Unless you pass strict=True, the presence of .eh_frame section,
+            which is DWARF adjacent but hardly DWARF proper, will count as debug info.
+            Stripped files contain .eh_frame but none of the .[z]debug_xxx sections.
         """
-        return bool(self.get_section_by_name('.debug_info') or
-            self.get_section_by_name('.zdebug_info') or
-            self.get_section_by_name('.eh_frame'))
+        return (self.has_section('.debug_info') or
+            self.has_section('.zdebug_info') or
+            (not strict and self.has_section('.eh_frame')))
 
     def get_dwarf_info(self, relocate_dwarf_sections=True, follow_links=True):
         """ Return a DWARFInfo object representing the debugging information in
@@ -247,23 +268,39 @@ class ELFFile(object):
             If relocate_dwarf_sections is True, relocations for DWARF sections
             are looked up and applied.
 
-            If follow_links is True, we will try to load the supplementary
+            If follow_links is True, we will try to load the external and/or supplementary
             object file (if any), and use it to resolve references and imports.
         """
-        # Expect that has_dwarf_info was called, so at least .debug_info is
+        # Expect that has_dwarf_info() was called, so at least .debug_info is
         # present.
         # Sections that aren't found will be passed as None to DWARFInfo.
 
+        # TODO: support linking by build ID
+        # https://sourceware.org/gdb/current/onlinedocs/gdb.html/Separate-Debug-Files.html
+
+        # A file may contain a debug link but not be stripped, so check for debug_info just in case
+        debuglink_section = self.get_section_by_name('.gnu_debuglink')
+        if debuglink_section and not self.has_dwarf_info(True) and follow_links and self.stream_loader:
+            debuglink = struct_parse(self.structs.Gnu_debuglink, debuglink_section.stream, debuglink_section.header.sh_offset)
+            with self.stream_loader(debuglink.filename) as ext_file:
+                # Validate checksum...
+                if _file_crc32(ext_file) != debuglink.checksum:
+                    raise ELFError('The linked DWARF file does not match the checksum in the link.')
+                ext_file.seek(0, os.SEEK_SET)
+                ext_elffile = ELFFile(ext_file, self.stream_loader)
+                # Inheriting the stream loader like that might be wrong if the supplementary DWARF link in the other file
+                # is relative to the other file's directory as opposed to this file's directory.
+                return ext_elffile.get_dwarf_info(relocate_dwarf_sections=relocate_dwarf_sections, follow_links=True)
+       
         section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev',
                          '.debug_str', '.debug_line', '.debug_frame',
                          '.debug_loc', '.debug_ranges', '.debug_pubtypes',
                          '.debug_pubnames', '.debug_addr',
                          '.debug_str_offsets', '.debug_line_str',
                          '.debug_loclists', '.debug_rnglists',
-                         '.debug_sup', '.gnu_debugaltlink', '.gnu_debuglink',
-                         '.debug_types')
+                         '.debug_sup', '.gnu_debugaltlink', '.debug_types')
 
-        compressed = bool(self.get_section_by_name('.zdebug_info'))
+        compressed = self.has_section('.zdebug_info')
         if compressed:
             section_names = tuple(map(lambda x: '.z' + x[1:], section_names))
 
@@ -275,7 +312,7 @@ class ELFFile(object):
          debug_loc_sec_name, debug_ranges_sec_name, debug_pubtypes_name,
          debug_pubnames_name, debug_addr_name, debug_str_offsets_name,
          debug_line_str_name, debug_loclists_sec_name, debug_rnglists_sec_name,
-         debug_sup_name, gnu_debugaltlink_name, gnu_debuglink, debug_types_sec_name,
+         debug_sup_name, gnu_debugaltlink_name, debug_types_sec_name,
          eh_frame_sec_name) = section_names
 
         debug_sections = {}
@@ -318,13 +355,23 @@ class ELFFile(object):
                 debug_rnglists_sec=debug_sections[debug_rnglists_sec_name],
                 debug_sup_sec=debug_sections[debug_sup_name],
                 gnu_debugaltlink_sec=debug_sections[gnu_debugaltlink_name],
-                gnu_debuglink_sec=debug_sections[gnu_debuglink],
                 debug_types_sec=debug_sections[debug_types_sec_name]
                 )
         if follow_links:
             dwarfinfo.supplementary_dwarfinfo = self.get_supplementary_dwarfinfo(dwarfinfo)
         return dwarfinfo
-
+    
+    def has_dwarf_link(self):
+        """ Whether the binary's debug info is in an
+            external file. Use get_dwarf_link to retrieve the path to it.
+        """
+        return self.has_section('.gnu_debuglink')
+    
+    def get_dwarf_link(self):
+        """ Read the .gnu_debuglink section, return an object with filename (as bytes) and checksum (as number) in it.
+        """
+        section = self.get_section_by_name('.gnu_debuglink')
+        return struct_parse(self.structs.Gnu_debuglink, section.stream, section.header.sh_offset) if section else None
 
     def get_supplementary_dwarfinfo(self, dwarfinfo):
         """
