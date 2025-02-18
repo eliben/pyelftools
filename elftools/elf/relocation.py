@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
-from typing import Callable, NamedTuple
+from typing import NamedTuple, Protocol
 
 from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
@@ -205,6 +205,10 @@ class RelrRelocationSection(Section, RelrRelocationTable):
             self['sh_offset'], self['sh_size'], self['sh_entsize'])
 
 
+class _RelocationFunction(Protocol):
+    def __call__(self, value: int, sym_value: int, offset: int, addend: int = 0) -> int: ...
+
+
 def _reloc_calc_identity(value, sym_value, offset, addend=0):
     return value
 
@@ -373,7 +377,7 @@ class RelocationHandler:
     class _RELOCATION_RECIPE_TYPE(NamedTuple):
         bytesize: int
         has_addend: bool
-        calc_func: Callable[..., int]
+        calc_func: _RelocationFunction
 
     _RELOCATION_RECIPES_ARM = {
         ENUM_RELOC_TYPE_ARM['R_ARM_ABS32']: _RELOCATION_RECIPE_TYPE(
