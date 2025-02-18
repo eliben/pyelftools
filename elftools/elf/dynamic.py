@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import itertools
+from typing import Protocol, runtime_checkable
 
 from collections import defaultdict
 from .hash import ELFHashTable, GNUHashTable
@@ -16,6 +17,11 @@ from .segments import Segment
 from .relocation import RelocationTable, RelrRelocationTable
 from ..common.exceptions import ELFError
 from ..common.utils import elf_assert, struct_parse, parse_cstring_from_stream
+
+
+@runtime_checkable
+class _StringTable(Protocol):
+    def get_string(self, offset: int, /) -> str: ...
 
 
 class _DynamicStringTable:

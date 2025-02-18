@@ -6,11 +6,25 @@
 # Andreas Ziegler (andreas.ziegler@fau.de)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
 
 import struct
+from typing import TYPE_CHECKING, Protocol
 
 from ..common.utils import struct_parse
 from .sections import Section
+
+if TYPE_CHECKING:
+    from .sections import Symbol
+
+
+class _SymbolTable(Protocol):
+    def get_symbol(self, index: int, /) -> Symbol | None: ...
+
+
+class _HashTable(Protocol):  # noqa: PYI046
+    def get_number_of_symbols(self) -> int: ...
+    def get_symbol(self, name: str, /) -> Symbol | None: ...
 
 
 class ELFHashTable:
