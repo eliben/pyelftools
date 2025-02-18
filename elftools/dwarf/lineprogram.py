@@ -6,9 +6,11 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 import os
 import copy
-from collections import namedtuple
+from typing import NamedTuple
 
 from ..common.utils import struct_parse, dwarf_assert
 from .constants import *
@@ -36,8 +38,11 @@ from .constants import *
 #   For commands that add a new state, it's the relevant LineState object.
 #   For commands that don't add a new state, it's None.
 #
-LineProgramEntry = namedtuple(
-    'LineProgramEntry', 'command is_extended args state')
+class LineProgramEntry(NamedTuple):
+    command: int
+    is_extended: bool
+    args: list[int]
+    state: LineState | None
 
 
 class LineState:

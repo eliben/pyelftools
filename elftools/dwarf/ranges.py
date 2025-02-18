@@ -7,15 +7,25 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os
-from collections import namedtuple
+from typing import NamedTuple
 
 from ..common.utils import struct_parse
 from ..common.exceptions import DWARFError
 from .dwarf_util import _iter_CUs_in_section
 
 
-RangeEntry = namedtuple('RangeEntry', 'entry_offset entry_length begin_offset end_offset is_absolute')
-BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset base_address')
+class RangeEntry(NamedTuple):
+    entry_offset: int
+    entry_length: int
+    begin_offset: int
+    end_offset: int
+    is_absolute: bool
+
+
+class BaseAddressEntry(NamedTuple):
+    entry_offset: int
+    base_address: int
+
 # If we ever see a list with a base entry at the end, there will be an error that entry_length is not a field.
 
 def _translate_startx_length(e, cu):
