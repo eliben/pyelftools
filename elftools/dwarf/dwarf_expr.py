@@ -6,8 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple
 from io import BytesIO
+from typing import Any, NamedTuple
 
 from ..common.utils import struct_parse, read_blob
 from ..common.exceptions import DWARFError
@@ -120,7 +120,11 @@ DW_OP_opcode2name = {v: k for k, v in DW_OP_name2opcode.items()}
 
 # Each parsed DWARF expression is returned as this type with its numeric opcode,
 # op name (as a string) and a list of arguments.
-DWARFExprOp = namedtuple('DWARFExprOp', 'op op_name args offset')
+class DWARFExprOp(NamedTuple):
+    op: int
+    op_name: str
+    args: list[Any]
+    offset: int
 
 
 class DWARFExprParser:
