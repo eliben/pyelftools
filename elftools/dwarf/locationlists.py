@@ -7,15 +7,34 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os
-from collections import namedtuple
+from typing import NamedTuple
+
 from ..common.exceptions import DWARFError
 from ..common.utils import struct_parse
 from .dwarf_util import _iter_CUs_in_section
 
-LocationExpr = namedtuple('LocationExpr', 'loc_expr')
-LocationEntry = namedtuple('LocationEntry', 'entry_offset entry_length begin_offset end_offset loc_expr is_absolute')
-BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset entry_length base_address')
-LocationViewPair = namedtuple('LocationViewPair', 'entry_offset begin end')
+
+class LocationExpr(NamedTuple):
+    loc_expr: list[int]
+
+class LocationEntry(NamedTuple):
+    entry_offset: int
+    entry_length: int
+    begin_offset: int
+    end_offset: int
+    loc_expr: list[int]
+    is_absolute: bool
+
+class BaseAddressEntry(NamedTuple):
+    entry_offset: int
+    entry_length: int
+    base_address: int
+
+class LocationViewPair(NamedTuple):
+    entry_offset: int
+    begin: int
+    end: int
+
 
 def _translate_startx_length(e, cu):
     start_offset = cu.dwarfinfo.get_addr(cu, e.start_index)

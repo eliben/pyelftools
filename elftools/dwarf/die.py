@@ -6,8 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple
 import os
+from typing import Any, NamedTuple
 
 from ..common.exceptions import DWARFError, ELFParseError
 from ..common.utils import bytes2str, struct_parse
@@ -40,8 +40,13 @@ from ..construct import ConstructError
 #   If the form of the attribute is DW_FORM_indirect, the form will contain
 #   the resolved form, and this will contain the length of the indirection chain.
 #   0 means no indirection.
-AttributeValue = namedtuple(
-    'AttributeValue', 'name form value raw_value offset indirection_length')
+class AttributeValue(NamedTuple):
+    name: str
+    form: str
+    value: Any
+    raw_value: int
+    offset: int
+    indirection_length: int
 
 
 class DIE:

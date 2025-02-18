@@ -6,8 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple
 from bisect import bisect_right
+from typing import IO, NamedTuple
 
 from ..construct.lib.container import Container
 from ..common.exceptions import DWARFError
@@ -38,8 +38,12 @@ from .dwarf_util import _get_base_offset
 # aren't strictly required for the DWARF parsing to work. 'address' is required
 # to properly decode the special '.eh_frame' format.
 #
-DebugSectionDescriptor = namedtuple('DebugSectionDescriptor',
-    'stream name global_offset size address')
+class DebugSectionDescriptor(NamedTuple):
+    stream: IO[bytes]
+    name: str
+    global_offset: int | None
+    size: int
+    address: int
 
 
 # Some configuration parameters for the DWARF reader. This exists to allow
@@ -54,8 +58,10 @@ DebugSectionDescriptor = namedtuple('DebugSectionDescriptor',
 # default_address_size:
 #   The default address size for the container file (sizeof pointer, in bytes)
 #
-DwarfConfig = namedtuple('DwarfConfig',
-    'little_endian machine_arch default_address_size')
+class DwarfConfig(NamedTuple):
+    little_endian: bool
+    machine_arch: str
+    default_address_size: int
 
 
 class DWARFInfo:

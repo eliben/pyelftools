@@ -6,7 +6,9 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple
+from __future__ import annotations
+
+from typing import Callable, NamedTuple
 
 from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
@@ -368,8 +370,10 @@ class RelocationHandler:
     #  calc_func: A function that performs the relocation on an extracted
     #             value, and returns the updated value.
     #
-    _RELOCATION_RECIPE_TYPE = namedtuple('_RELOCATION_RECIPE_TYPE',
-        'bytesize has_addend calc_func')
+    class _RELOCATION_RECIPE_TYPE(NamedTuple):
+        bytesize: int
+        has_addend: bool
+        calc_func: Callable[..., int]
 
     _RELOCATION_RECIPES_ARM = {
         ENUM_RELOC_TYPE_ARM['R_ARM_ABS32']: _RELOCATION_RECIPE_TYPE(

@@ -8,7 +8,8 @@
 #-------------------------------------------------------------------------------
 import copy
 import os
-from collections import namedtuple
+from typing import Any, NamedTuple
+
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos, iterbytes)
 from ..construct import Struct, Switch
@@ -714,8 +715,9 @@ class CFARule:
 # A list of register numbers that are described in the table by the order of
 # their appearance.
 #
-DecodedCallFrameTable = namedtuple(
-    'DecodedCallFrameTable', 'table reg_order')
+class DecodedCallFrameTable(NamedTuple):
+    table: list[dict[str, Any]]
+    reg_order: list[int]
 
 
 #---------------- PRIVATE ----------------#

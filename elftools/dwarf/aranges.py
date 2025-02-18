@@ -6,7 +6,8 @@
 # Dorothy Chen (dorothchen@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple
+from typing import NamedTuple
+
 from ..common.utils import struct_parse
 from bisect import bisect_right
 import math
@@ -16,8 +17,15 @@ import math
 # length: The length of the address range in this entry
 # info_offset: The CU's offset into .debug_info
 # see 6.1.2 in DWARF4 docs for explanation of the remaining fields
-ARangeEntry = namedtuple('ARangeEntry',
-    'begin_addr length info_offset unit_length version address_size segment_size')
+class ARangeEntry(NamedTuple):
+    begin_addr: int
+    length: int
+    info_offset: int
+    unit_length: int
+    version: int
+    address_size: int
+    segment_size: int
+
 
 class ARanges:
     """ ARanges table in DWARF

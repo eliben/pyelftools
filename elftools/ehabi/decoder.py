@@ -6,7 +6,9 @@
 # LeadroyaL (leadroyal@qq.com)
 # This code is in the public domain
 # -------------------------------------------------------------------------------
-from collections import namedtuple
+from __future__ import annotations
+
+from typing import Callable, NamedTuple
 
 
 class EHABIBytecodeDecoder:
@@ -244,7 +246,10 @@ class EHABIBytecodeDecoder:
         self._index += 1
         return 'spare'
 
-    _DECODE_RECIPE_TYPE = namedtuple('_DECODE_RECIPE_TYPE', 'mask value handler')
+    class _DECODE_RECIPE_TYPE(NamedTuple):
+        mask: int
+        value: int
+        handler: Callable[[EHABIBytecodeDecoder], str]
 
     ring = (
         _DECODE_RECIPE_TYPE(mask=0xc0, value=0x00, handler=_decode_00xxxxxx),
