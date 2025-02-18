@@ -88,6 +88,12 @@ class DWARFStructs:
         See also the documentation of public methods.
     """
 
+    if TYPE_CHECKING:
+        little_endian: bool
+        dwarf_format: int
+        address_size: int
+        dwarf_version: int
+
     # Cache for structs instances based on creation parameters. Structs
     # initialization is expensive and we don't won't to repeat it
     # unnecessarily.

@@ -51,6 +51,23 @@ class ELFStructs:
             Elf_Rel, Elf_Rela:
                 Entries in relocation sections
     """
+    if TYPE_CHECKING:
+        Elf_byte: Callable[[str], FormatField[int]]
+        Elf_half: Callable[[str], FormatField[int]]
+        Elf_word: Callable[[str], FormatField[int]]
+        Elf_word64: Callable[[str], FormatField[int]]
+        Elf_addr: Callable[[str], FormatField[int]]
+        Elf_offset: Callable[[str], FormatField[int]]
+        Elf_sword: Callable[[str], FormatField[int]]
+        Elf_sxword: Callable[[str], FormatField[int]]
+        Elf_xsword: Callable[[str], FormatField[int]]
+        Elf_Ehdr: Struct
+        Elf_Phdr: Struct
+        Elf_Shdr: Struct
+        Elf_Sym: Struct
+        Elf_Rel: Struct
+        Elf_Rela: Struct
+
     def __init__(self, little_endian: bool = True, elfclass: int = 32) -> None:
         assert elfclass == 32 or elfclass == 64
         self.little_endian = little_endian

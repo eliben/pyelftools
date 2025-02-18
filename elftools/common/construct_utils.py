@@ -58,6 +58,8 @@ class RepeatUntilExcluding(Subconstruct):
 class ULEB128(Construct):
     """A construct based parser for ULEB128 encoding.
     """
+    if TYPE_CHECKING:
+        name: str  # instead of `str|None` from Construct to save us from `is None` checks everywhere
     def _parse(self, stream: IO[bytes], context: Container) -> int:
         value = 0
         shift = 0
@@ -74,6 +76,8 @@ class ULEB128(Construct):
 class SLEB128(Construct):
     """A construct based parser for SLEB128 encoding.
     """
+    if TYPE_CHECKING:
+        name: str  # instead of `str|None` from Construct to save us from `is None` checks everywhere
     def _parse(self, stream: IO[bytes], context: Container) -> int:
         value = 0
         shift = 0
@@ -98,6 +102,8 @@ class StreamOffset(Construct):
     StreamOffset("item_offset")
     """
     __slots__: list[str] = []
+    if TYPE_CHECKING:
+        name: str  # instead of `str|None` from Construct to save us from `is None` checks everywhere
     def __init__(self, name: str) -> None:
         Construct.__init__(self, name)
         self._set_flag(self.FLAG_DYNAMIC)
