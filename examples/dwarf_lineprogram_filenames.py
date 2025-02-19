@@ -8,7 +8,6 @@
 # William Woodruff (william@yossarian.net)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from __future__ import print_function
 from collections import defaultdict
 import os
 import sys

@@ -9,7 +9,6 @@
 # Vijay Ramasami (rvijayc@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from __future__ import print_function
 import sys
 
 # If pyelftools is not installed, the example can also run from the root or

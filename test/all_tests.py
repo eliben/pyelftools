@@ -7,7 +7,6 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from __future__ import print_function
 import subprocess, sys
 from utils import is_in_rootdir
 

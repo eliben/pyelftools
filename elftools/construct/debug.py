@@ -1,7 +1,6 @@
 """
 Debugging utilities for constructs
 """
-from __future__ import print_function
 import sys
 import traceback
 import pdb
