@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 import os
 
 from ..common.exceptions import DWARFError, ELFParseError
@@ -86,7 +86,7 @@ class DIE(object):
         self.stream = stream
         self.offset = offset
 
-        self.attributes = OrderedDict()
+        self.attributes = {}
         self.tag = None
         self.has_children = None
         self.abbrev_code = None

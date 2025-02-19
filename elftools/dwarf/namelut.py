@@ -8,7 +8,6 @@
 #-------------------------------------------------------------------------------
 import os
 import collections
-from collections import OrderedDict
 from collections.abc import Mapping
 from ..common.utils import struct_parse
 from bisect import bisect_right
@@ -156,7 +155,7 @@ class NameLUT(Mapping):
         """
 
         self._stream.seek(0)
-        entries = OrderedDict()
+        entries = {}
         cu_headers = []
         offset = 0
         # According to 6.1.1. of DWARFv4, each set of names is terminated by
