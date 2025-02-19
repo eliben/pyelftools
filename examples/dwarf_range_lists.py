@@ -14,9 +14,6 @@ import sys
 sys.path[0:0] = ['.', '..']
 
 from elftools.elf.elffile import ELFFile
-from elftools.dwarf.descriptions import (
-    describe_DWARF_expr, set_global_machine_arch)
-from elftools.dwarf.ranges import RangeEntry
 
 
 def process_file(filename):

@@ -6,12 +6,12 @@
 #------------------------------------------------------------------------------
 
 import unittest
-import os, sys, io
+import os
+import sys
 
 sys.path.insert(1, os.getcwd())
 
 from elftools.elf.elffile import ELFFile
-from elftools.dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 from elftools.dwarf.locationlists import LocationParser
 
 class TestConstWithData4IsntLocation(unittest.TestCase):

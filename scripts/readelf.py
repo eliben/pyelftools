@@ -8,9 +8,8 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import argparse
-import os, sys
+import sys
 import re
-import string
 import traceback
 import itertools
 
@@ -23,7 +22,7 @@ from elftools import __version__
 from elftools.common.exceptions import ELFError
 from elftools.common.utils import bytes2str, iterbytes
 from elftools.elf.elffile import ELFFile
-from elftools.elf.dynamic import DynamicSection, DynamicSegment
+from elftools.elf.dynamic import DynamicSection
 from elftools.elf.enums import ENUM_D_TAG
 from elftools.elf.segments import InterpSegment
 from elftools.elf.sections import (
@@ -39,8 +38,7 @@ from elftools.elf.descriptions import (
     describe_ei_osabi, describe_e_type, describe_e_machine,
     describe_e_version_numeric, describe_p_type, describe_p_flags,
     describe_rh_flags, describe_sh_type, describe_sh_flags,
-    describe_symbol_type, describe_symbol_bind, describe_symbol_visibility,
-    describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
+    describe_symbol_type, describe_symbol_bind, describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
     describe_dt_flags, describe_dt_flags_1, describe_ver_flags, describe_note,
     describe_attr_tag_arm, describe_attr_tag_riscv, describe_symbol_other
     )
@@ -48,7 +46,6 @@ from elftools.elf.constants import E_FLAGS
 from elftools.elf.constants import E_FLAGS_MASKS
 from elftools.elf.constants import SH_FLAGS
 from elftools.elf.constants import SHN_INDICES
-from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.descriptions import (
     describe_reg_name, describe_attr_value, set_global_machine_arch,
     describe_CFI_instructions, describe_CFI_register_rule,

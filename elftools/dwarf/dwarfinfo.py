@@ -6,7 +6,6 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import os
 from collections import namedtuple
 from bisect import bisect_right
 

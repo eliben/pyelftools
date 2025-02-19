@@ -7,8 +7,9 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 
-import os, binascii
-from ..construct.macros import UBInt32, UBInt64, ULInt32, ULInt64, Array
+import os
+import binascii
+from ..construct.macros import Array
 from ..common.exceptions import DWARFError
 from ..common.utils import preserve_stream_pos, struct_parse
 

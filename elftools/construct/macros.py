@@ -1,3 +1,5 @@
+from sys import maxsize
+
 from .lib import (BitStreamReader, BitStreamWriter, encode_bin,
     decode_bin)
 from .core import (Struct, MetaField, StaticField, FormatField,
@@ -262,7 +264,6 @@ def PrefixedArray(subcon, length_field = UBInt8("length")):
     )
 
 def OpenRange(mincount, subcon):
-    from sys import maxsize
     return Range(mincount, maxsize, subcon)
 
 def GreedyRange(subcon):

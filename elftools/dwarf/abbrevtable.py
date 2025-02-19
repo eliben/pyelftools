@@ -6,7 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.utils import struct_parse, dwarf_assert
+from ..common.utils import struct_parse
 
 
 class AbbrevTable(object):

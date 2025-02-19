@@ -6,7 +6,6 @@
 # Dorothy Chen (dorothchen@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import os
 from collections import namedtuple
 from ..common.utils import struct_parse
 from bisect import bisect_right

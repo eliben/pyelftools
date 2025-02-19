@@ -16,7 +16,8 @@
 #------------------------------------------------------------------------------
 
 import unittest
-import os, sys, io
+import os
+import io
 
 from elftools.dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 

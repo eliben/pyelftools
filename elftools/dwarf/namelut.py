@@ -6,12 +6,9 @@
 # Vijay Ramasami (rvijayc@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import os
 import collections
 from collections.abc import Mapping
 from ..common.utils import struct_parse
-from bisect import bisect_right
-import math
 from ..construct import CString, Struct, If
 
 NameLUTEntry = collections.namedtuple('NameLUTEntry', 'cu_ofs die_ofs')

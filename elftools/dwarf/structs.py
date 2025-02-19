@@ -7,13 +7,11 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from logging.config import valid_ident
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
     Adapter, Struct, ConstructError, If, Enum, Array, PrefixedArray,
-    CString, Embed, StaticField, IfThenElse, Construct, Rename, Sequence,
-    String, Switch, Value
+    CString, Embed, StaticField, IfThenElse, Construct, Rename, String, Switch, Value
     )
 from ..common.construct_utils import (RepeatUntilExcluding, ULEB128, SLEB128,
     StreamOffset, ULInt24, UBInt24)

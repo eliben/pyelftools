@@ -6,7 +6,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import copy, os
+import copy
+import os
 from collections import namedtuple
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos, iterbytes)
