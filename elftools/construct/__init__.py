@@ -22,7 +22,7 @@ Hands-on example:
     ... )
     >>> s.parse("\\x01\\x02\\x03")
     Container(a = 1, b = 515)
-    >>> print s.parse("\\x01\\x02\\x03")
+    >>> print(s.parse("\\x01\\x02\\x03"))
     Container:
         a = 1
         b = 515

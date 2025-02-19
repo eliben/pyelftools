@@ -2,8 +2,9 @@
 Various containers.
 """
 
+from collections.abc import MutableMapping
 from pprint import pformat
-from .py3compat import MutableMapping
+
 
 def recursion_lock(retval, lock_name = "__recursion_lock__"):
     def decorator(func):

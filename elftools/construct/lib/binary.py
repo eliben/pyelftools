@@ -1,6 +1,3 @@
-from .py3compat import int2byte
-
-
 def int_to_bin(number, width=32):
     r"""
     Convert an integer into its binary representation in a bytes object.
@@ -32,13 +29,6 @@ _bit_values = {
     1: 1,
     48: 0, # '0'
     49: 1, # '1'
-
-    # The following are for Python 2, in which iteration over a bytes object
-    # yields single-character bytes and not integers.
-    '\x00': 0,
-    '\x01': 1,
-    '0': 0,
-    '1': 1,
     }
 
 def bin_to_int(bits, signed=False):
@@ -81,7 +71,7 @@ def swap_bytes(bits, bytesize=8):
 _char_to_bin = {}
 _bin_to_char = {}
 for i in range(256):
-    ch = int2byte(i)
+    ch = bytes((i,))
     bin = int_to_bin(i, 8)
     # Populate with for both keys i and ch, to support Python 2 & 3
     _char_to_bin[ch] = bin
