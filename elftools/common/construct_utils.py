@@ -49,9 +49,6 @@ class RepeatUntilExcluding(Subconstruct):
 
 class ULEB128(Construct):
     """A construct based parser for ULEB128 encoding.
-
-       Incompatible with Python 2 - assumes that the return of read()
-       is an indexed collection of numbers.
     """
     def _parse(self, stream, context):
         value = 0
@@ -68,9 +65,6 @@ class ULEB128(Construct):
 
 class SLEB128(Construct):
     """A construct based parser for SLEB128 encoding.
-
-       Incompatible with Python 2 - assumes that the return of read()
-       is an indexed collection of numbers.
     """
     def _parse(self, stream, context):
         value = 0

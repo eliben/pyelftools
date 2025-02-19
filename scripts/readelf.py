@@ -13,12 +13,6 @@ import re
 import string
 import traceback
 import itertools
-# Note: zip has different behaviour between Python 2.x and 3.x.
-# - Using izip ensures compatibility.
-try:
-    from itertools import izip
-except:
-    izip = zip
 
 # For running from development directory. It should take precedence over the
 # installed pyelftools.
@@ -1410,7 +1404,7 @@ class ReadElf(object):
         cu_headers = namelut.get_cu_headers()
 
         # go over CU-by-CU first and item-by-item next.
-        for (cu_hdr, (cu_ofs, items)) in izip(cu_headers, itertools.groupby(
+        for (cu_hdr, (cu_ofs, items)) in zip(cu_headers, itertools.groupby(
             namelut.items(), key = lambda x: x[1].cu_ofs)):
 
             self._emitline('  Length:                              %d'   % cu_hdr.unit_length)

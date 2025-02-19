@@ -73,8 +73,6 @@ _bin_to_char = {}
 for i in range(256):
     ch = bytes((i,))
     bin = int_to_bin(i, 8)
-    # Populate with for both keys i and ch, to support Python 2 & 3
-    _char_to_bin[ch] = bin
     _char_to_bin[i] = bin
     _bin_to_char[bin] = ch
 
@@ -84,7 +82,7 @@ def encode_bin(data):
     Create a binary representation of the given b'' object. Assume 8-bit
     ASCII. Example:
 
-        >>> encode_bin('ab')
+        >>> encode_bin(b'ab')
         b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
     """
     return b"".join(_char_to_bin[ch] for ch in data)
@@ -92,7 +90,7 @@ def encode_bin(data):
 
 def decode_bin(data):
     """
-    Locical opposite of decode_bin.
+    Logical opposite of decode_bin.
     """
     if len(data) & 7:
         raise ValueError("Data length must be a multiple of 8")
