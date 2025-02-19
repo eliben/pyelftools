@@ -881,7 +881,7 @@ class Select(Construct):
             except ConstructError:
                 stream.seek(pos)
             else:
-                context.__update__(context2)
+                context.update(context2)
                 if self.include_name:
                     return sc.name, obj
                 else:
@@ -903,7 +903,7 @@ class Select(Construct):
                 except Exception:
                     pass
                 else:
-                    context.__update__(context2)
+                    context.update(context2)
                     stream.write(stream2.getvalue())
                     return
         raise SelectError("no subconstruct matched", obj)
