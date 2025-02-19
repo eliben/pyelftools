@@ -3,7 +3,6 @@ New version
 
 * Update elftools/__init__.py
 * Update setup.py
-* Update CHANGES
 * Tag in git (v0.xx)
 
 construct
