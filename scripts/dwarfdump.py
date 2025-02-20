@@ -220,7 +220,7 @@ def _desc_operationarg(s, cu):
     elif isinstance(s, int):
         return hex(s)
     elif isinstance(s, list): # Could be a blob (list of ints), could be a subexpression
-        if len(s) > 0 and isinstance(s[0], DWARFExprOp): # Subexpression
+        if s and isinstance(s[0], DWARFExprOp): # Subexpression
             return '(' + '; '.join(_desc_operation(op.op, op.op_name, op.args, cu) for op in s) + ')'
         else:
             return " ".join((hex(len(s)), *("0x%02x" % b for b in s)))

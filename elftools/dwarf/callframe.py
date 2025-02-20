@@ -520,7 +520,7 @@ class CFIEntry(object):
             # line that serves as the base (first) line in the FDE's table.
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
-            if len(cie_decoded_table.table) > 0:
+            if cie_decoded_table.table:
                 last_line_in_CIE = copy.copy(cie_decoded_table.table[-1])
                 cur_line = copy.copy(last_line_in_CIE)
             else:

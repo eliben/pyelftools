@@ -143,7 +143,7 @@ class DWARFExprParser(object):
             # stream, we're done.
             offset = stream.tell()
             byte = stream.read(1)
-            if len(byte) == 0:
+            if not byte:
                 break
 
             # Decode the opcode and its name.

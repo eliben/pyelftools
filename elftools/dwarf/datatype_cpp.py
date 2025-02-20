@@ -71,7 +71,7 @@ def parse_cpp_datatype(var_die):
             else:
                 retval_type = "void "
 
-            if len(mods) and mods[-1] == 'pointer':
+            if mods and mods[-1] == 'pointer':
                 mods.pop()
                 t.modifiers = tuple(mods)
                 t.name = "%s(%s*)(%s)" % (retval_type, ptr_prefix, params)
@@ -147,7 +147,7 @@ class TypeDesc(object):
 
         parts = []
         # Initial const/volatile applies to the var ifself, other consts apply to the pointee
-        if len(mods) and mods[0] in ('const', 'volatile'):
+        if mods and mods[0] in ('const', 'volatile'):
             parts.append(mods[0])
             mods = mods[1:]
 
@@ -160,7 +160,7 @@ class TypeDesc(object):
             name = '::'.join(self.scopes)+'::' + name
         parts.append(name)
 
-        if len(mods):
+        if mods:
             parts.append("".join(cpp_symbols[mod] for mod in mods))
 
         if self.dimensions:

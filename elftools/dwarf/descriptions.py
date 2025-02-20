@@ -632,7 +632,7 @@ class ExprDumper(object):
         if cu_offset is None:
             cu_offset = 0
 
-        if len(args) == 0:
+        if not args:
             if opcode_name.startswith('DW_OP_reg'):
                 regnum = int(opcode_name[9:])
                 return '%s (%s)' % (

@@ -405,7 +405,7 @@ class ELFFile(object):
             EHABIInfo(section, self.little_endian)
             for section in self.iter_sections(type='SHT_ARM_EXIDX')
         ]
-        return _ret if len(_ret) > 0 else None
+        return _ret if _ret else None
 
     def get_machine_arch(self):
         """ Return the machine architecture, as detected from the ELF header.

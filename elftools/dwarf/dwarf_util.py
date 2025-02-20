@@ -67,7 +67,7 @@ def _file_crc32(file):
     """
     d = file.read(4096)
     checksum = 0
-    while len(d):
+    while d:
         checksum = binascii.crc32(d, checksum)
         d = file.read(4096)
     return checksum
