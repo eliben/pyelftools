@@ -625,10 +625,8 @@ class Struct(Construct):
     )
     """
     __slots__ = ["subcons", "nested"]
-    def __init__(self, name, *subcons, **kw):
-        self.nested = kw.pop("nested", True)
-        if kw:
-            raise TypeError("the only keyword argument accepted is 'nested'", kw)
+    def __init__(self, name, *subcons, nested=True):
+        self.nested = nested
         Construct.__init__(self, name)
         self.subcons = subcons
         self._inherit_flags(*subcons)
@@ -753,7 +751,7 @@ class Union(Construct):
     )
     """
     __slots__ = ["parser", "builder"]
-    def __init__(self, name, master, *subcons, **kw):
+    def __init__(self, name, master, *subcons):
         Construct.__init__(self, name)
         args = [Peek(sc) for sc in subcons]
         args.append(MetaField(None, lambda ctx: master._sizeof(ctx)))
@@ -864,11 +862,7 @@ class Select(Construct):
     )
     """
     __slots__ = ["subcons", "include_name"]
-    def __init__(self, name, *subcons, **kw):
-        include_name = kw.pop("include_name", False)
-        if kw:
-            raise TypeError("the only keyword argument accepted "
-                "is 'include_name'", kw)
+    def __init__(self, name, *subcons, include_name=False):
         Construct.__init__(self, name)
         self.subcons = subcons
         self.include_name = include_name
