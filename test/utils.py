@@ -20,7 +20,8 @@ def run_exe(exe_path, args=[], echo=False):
         popen_cmd.insert(0, sys.executable)
     if echo:
       print('[cmd]', ' '.join(popen_cmd))
-    proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    env = dict(os.environ, LC_ALL="C")
+    proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     proc_stdout = proc.communicate()[0]
     return proc.returncode, proc_stdout.decode('latin-1')
 

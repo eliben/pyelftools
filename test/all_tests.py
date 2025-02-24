@@ -18,8 +18,7 @@ def run_test_script(path, *args):
 
 def main():
     if not is_in_rootdir():
-        testlog.error('Error: Please run me from the root dir of pyelftools!')
-        return 1
+        sys.exit('Error: Please run me from the root dir of pyelftools!')
     run_test_script('test/run_all_unittests.py')
     run_test_script('test/run_examples_test.py')
     run_test_script('test/run_readelf_tests.py', '--parallel')
