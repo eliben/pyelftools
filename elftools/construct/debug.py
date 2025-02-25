@@ -1,7 +1,6 @@
 """
 Debugging utilities for constructs
 """
-from __future__ import print_function
 import sys
 import traceback
 import pdb
@@ -81,7 +80,7 @@ class Probe(Construct):
             frames.reverse()
             for f in frames:
                 a = Container()
-                a.__update__(f.f_locals)
+                a.update(f.f_locals)
                 obj.stack.append(a)
 
         print("=" * 80)

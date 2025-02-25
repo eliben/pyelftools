@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 from bisect import bisect_right
 
 from ..construct.lib.container import Container
@@ -137,7 +137,7 @@ class DWARFInfo(object):
         self._cu_cache = []
         self._cu_offsets_map = []
 
-        # DWARF v4 type units by sig8 - OrderedDict created when needed
+        # DWARF v4 type units by sig8 - ordered dict created when needed
         self._type_units_by_sig = None
 
     @property
@@ -502,14 +502,14 @@ class DWARFInfo(object):
 
     def _parse_debug_types(self):
         """ Check if the .debug_types section is previously parsed. If not,
-            parse all TUs and store them in an OrderedDict using their unique
+            parse all TUs and store them in an ordered dict using their unique
             64-bit signature as the key.
 
             See .get_TU_by_sig8().
         """
         if self._type_units_by_sig is not None:
             return
-        self._type_units_by_sig = OrderedDict()
+        self._type_units_by_sig = {}
 
         if self.debug_types_sec is None:
             return

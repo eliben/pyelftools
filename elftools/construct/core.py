@@ -1,6 +1,6 @@
+from io import BytesIO
 from struct import Struct as Packer
 
-from .lib.py3compat import BytesIO, advance_iterator, bchr
 from .lib import Container, ListContainer, LazyContainer
 
 
@@ -520,13 +520,13 @@ class Range(Subconstruct):
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
                 for subobj in obj:
                     if isinstance(obj, bytes):
-                        subobj = bchr(subobj)
+                        subobj = bytes((subobj,))
                     self.subcon._build(subobj, stream, context.__copy__())
                     cnt += 1
             else:
                 for subobj in obj:
                     if isinstance(obj, bytes):
-                        subobj = bchr(subobj)
+                        subobj = bytes((subobj,))
                     self.subcon._build(subobj, stream, context)
                     cnt += 1
         except ConstructError as ex:
@@ -587,7 +587,7 @@ class RepeatUntil(Subconstruct):
                     break
         else:
             for subobj in obj:
-                subobj = bchr(subobj)
+                subobj = bytes((subobj,))
                 self.subcon._build(subobj, stream, context.__copy__())
                 if self.predicate(subobj, context):
                     terminated = True
@@ -722,7 +722,7 @@ class Sequence(Struct):
             elif sc.name is None:
                 subobj = None
             else:
-                subobj = advance_iterator(objiter)
+                subobj = next(objiter)
                 context[sc.name] = subobj
             sc._build(subobj, stream, context)
 
@@ -881,7 +881,7 @@ class Select(Construct):
             except ConstructError:
                 stream.seek(pos)
             else:
-                context.__update__(context2)
+                context.update(context2)
                 if self.include_name:
                     return sc.name, obj
                 else:
@@ -903,7 +903,7 @@ class Select(Construct):
                 except Exception:
                     pass
                 else:
-                    context.__update__(context2)
+                    context.update(context2)
                     stream.write(stream2.getvalue())
                     return
         raise SelectError("no subconstruct matched", obj)

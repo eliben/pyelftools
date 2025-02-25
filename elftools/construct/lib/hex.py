@@ -1,9 +1,6 @@
-from .py3compat import byte2int, int2byte, bytes2str
-
-
 # Map an integer in the inclusive range 0-255 to its string byte representation
 _printable = dict((i, ".") for i in range(256))
-_printable.update((i, bytes2str(int2byte(i))) for i in range(32, 128))
+_printable.update((i, chr(i)) for i in range(32, 128))
 
 
 def hexdump(data, linesize):
@@ -18,8 +15,8 @@ def hexdump(data, linesize):
     fmt = fmt % (3 * linesize - 1,)
     for i in range(0, len(data), linesize):
         line = data[i : i + linesize]
-        hextext = " ".join('%02x' % byte2int(b) for b in line)
-        rawtext = "".join(_printable[byte2int(b)] for b in line)
+        hextext = " ".join('%02x' % b for b in line)
+        rawtext = "".join(_printable[b] for b in line)
         prettylines.append(fmt % (i, str(hextext), str(rawtext)))
     return prettylines
 

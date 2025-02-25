@@ -9,7 +9,7 @@
 from collections import namedtuple
 from io import BytesIO
 
-from ..common.utils import struct_parse, bytelist2string, read_blob
+from ..common.utils import struct_parse, read_blob
 from ..common.exceptions import DWARFError
 
 
@@ -135,7 +135,7 @@ class DWARFExprParser(object):
 
         The list can potentially be nested.
         """
-        stream = BytesIO(bytelist2string(expr))
+        stream = BytesIO(bytes(expr))
         parsed = []
 
         while True:

@@ -490,7 +490,6 @@ def _import_extra(attr, die, section_offset):
             # stream.
             with preserve_stream_pos(die.stream):
                 ref_die = DIE(cu, die.stream, ref_die_offset)
-            #print '&&& ref_die', ref_die
             return '[Abbrev Number: %s (%s)]' % (
                 ref_die.abbrev_code, ref_die.tag)
 

@@ -23,13 +23,6 @@ def bytes2str(b):
     """Decode a bytes object into a string."""
     return b.decode('latin-1')
 
-def bytelist2string(bytelist):
-    """ Convert a list of byte values (e.g. [0x10 0x20 0x00]) to a bytes object
-        (e.g. b'\x10\x20\x00').
-    """
-    return b''.join(bytes((b,)) for b in bytelist)
-
-
 def struct_parse(struct, stream, stream_pos=None):
     """ Convenience function for using the given struct to parse a stream.
         If stream_pos is provided, the stream is seeked to this position before
