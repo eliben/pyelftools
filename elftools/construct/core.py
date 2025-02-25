@@ -495,18 +495,16 @@ class Range(Subconstruct):
         self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         obj = ListContainer()
-        c = 0
+        c = pos = -1
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                while c < self.maxcout:
+                for c in range(self.maxcount):
                     pos = stream.tell()
                     obj.append(self.subcon._parse(stream, context.__copy__()))
-                    c += 1
             else:
-                while c < self.maxcout:
+                for c in range(self.maxcount):
                     pos = stream.tell()
                     obj.append(self.subcon._parse(stream, context))
-                    c += 1
         except ConstructError as ex:
             if c < self.mincount:
                 raise RangeError("expected %d to %d, found %d" %
