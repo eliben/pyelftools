@@ -204,6 +204,38 @@ class RelrRelocationSection(Section, RelrRelocationTable):
             self['sh_offset'], self['sh_size'], self['sh_entsize'])
 
 
+def _reloc_calc_identity(value, sym_value, offset, addend=0):
+    return value
+
+
+def _reloc_calc_sym_plus_value(value, sym_value, offset, addend=0):
+    return sym_value + value + addend
+
+
+def _reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
+    return sym_value + value - offset
+
+
+def _reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
+    return sym_value + addend
+
+
+def _reloc_calc_sym_plus_addend_pcrel(value, sym_value, offset, addend=0):
+    return sym_value + addend - offset
+
+
+def _reloc_calc_value_minus_sym_addend(value, sym_value, offset, addend=0):
+    return value - sym_value - addend
+
+
+def _arm_reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
+    return sym_value // 4 + value - offset // 4
+
+
+def _bpf_64_32_reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
+    return (sym_value + addend) // 8 - 1
+
+
 class RelocationHandler(object):
     """ Handles the logic of relocations in ELF files.
     """
@@ -339,30 +371,6 @@ class RelocationHandler(object):
     #
     _RELOCATION_RECIPE_TYPE = namedtuple('_RELOCATION_RECIPE_TYPE',
         'bytesize has_addend calc_func')
-
-    def _reloc_calc_identity(value, sym_value, offset, addend=0):
-        return value
-
-    def _reloc_calc_sym_plus_value(value, sym_value, offset, addend=0):
-        return sym_value + value + addend
-
-    def _reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
-        return sym_value + value - offset
-
-    def _reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
-        return sym_value + addend
-
-    def _reloc_calc_sym_plus_addend_pcrel(value, sym_value, offset, addend=0):
-        return sym_value + addend - offset
-
-    def _reloc_calc_value_minus_sym_addend(value, sym_value, offset, addend=0):
-        return value - sym_value - addend
-
-    def _arm_reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
-        return sym_value // 4 + value - offset // 4
-
-    def _bpf_64_32_reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
-        return (sym_value + addend) // 8 - 1
 
     _RELOCATION_RECIPES_ARM = {
         ENUM_RELOC_TYPE_ARM['R_ARM_ABS32']: _RELOCATION_RECIPE_TYPE(
