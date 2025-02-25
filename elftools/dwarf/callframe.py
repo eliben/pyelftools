@@ -725,7 +725,8 @@ _PRIMARY_ARG_MASK = 0b00111111
 # This dictionary is filled by automatically scanning the constants module
 # for DW_CFA_* instructions, and mapping their values to names. Since all
 # names were imported from constants with `import *`, we look in globals()
-_OPCODE_NAME_MAP = {}
-for name in list(globals().keys()):
-    if name.startswith('DW_CFA'):
-        _OPCODE_NAME_MAP[globals()[name]] = name
+_OPCODE_NAME_MAP = {
+    value: name
+    for name, value in globals().items()
+    if name.startswith('DW_CFA')
+}
