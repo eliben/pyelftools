@@ -495,7 +495,7 @@ class Range(Subconstruct):
         self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         obj = ListContainer()
-        c = 0
+        c = pos = 0
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
                 while c < self.maxcout:
