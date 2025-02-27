@@ -247,7 +247,8 @@ def describe_attr_tag_arm(tag, val, extra):
 
         elif tag == 'TAG_ALSO_COMPATIBLE_WITH':
             if val.tag == 'TAG_CPU_ARCH':
-                return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
+                d_entry = _DESCR_ATTR_VAL_ARM[5]  # TAG_CPU_ARCH
+                return _DESCR_ATTR_TAG_ARM[tag] + d_entry.get(val.value, '??? (%d)' % val.value)
 
             else:
                 return _DESCR_ATTR_TAG_ARM[tag] + '??? (%d)' % val.tag
