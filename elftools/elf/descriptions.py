@@ -733,14 +733,14 @@ _DESCR_ATTR_TAG_ARM = dict(
     TAG_CPU_ARCH='Tag_CPU_arch: ',
     TAG_CPU_ARCH_PROFILE='Tag_CPU_arch_profile: ',
     TAG_ARM_ISA_USE='Tag_ARM_ISA_use: ',
-    TAG_THUMB_ISA_USE='Tag_Thumb_ISA_use: ',
+    TAG_THUMB_ISA_USE='Tag_THUMB_ISA_use: ',
     TAG_FP_ARCH='Tag_FP_arch: ',
     TAG_WMMX_ARCH='Tag_WMMX_arch: ',
     TAG_ADVANCED_SIMD_ARCH='Tag_Advanced_SIMD_arch: ',
     TAG_PCS_CONFIG='Tag_PCS_config: ',
     TAG_ABI_PCS_R9_USE='Tag_ABI_PCS_R9_use: ',
-    TAG_ABI_PCS_RW_DATA='Tag_ABI_PCS_RW_use: ',
-    TAG_ABI_PCS_RO_DATA='Tag_ABI_PCS_RO_use: ',
+    TAG_ABI_PCS_RW_DATA='Tag_ABI_PCS_RW_data: ',
+    TAG_ABI_PCS_RO_DATA='Tag_ABI_PCS_RO_data: ',
     TAG_ABI_PCS_GOT_USE='Tag_ABI_PCS_GOT_use: ',
     TAG_ABI_PCS_WCHAR_T='Tag_ABI_PCS_wchar_t: ',
     TAG_ABI_FP_ROUNDING='Tag_ABI_FP_rounding: ',
@@ -951,10 +951,7 @@ _DESCR_ATTR_VAL_ARM = [
         5: 'Prefer Accuracy',
         6: 'Aggressive Accuracy',
     },
-    { #32 TAG_COMPATIBILITY
-        0: 'No',
-        1: 'Yes',
-    },
+    None, #32 TAG_COMPATIBILITY
     None, #33
     { #34 TAG_CPU_UNALIGNED_ACCESS
         0: 'None',
