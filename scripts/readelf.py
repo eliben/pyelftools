@@ -1832,13 +1832,15 @@ class ReadElf(object):
         """ Display the ARM architecture-specific info contained in the file.
         """
         attr_sec = self.elffile.get_section_by_name('.ARM.attributes')
-        self._display_attributes(attr_sec, describe_attr_tag_arm)
+        if attr_sec:
+            self._display_attributes(attr_sec, describe_attr_tag_arm)
 
     def _display_arch_specific_riscv(self):
         """ Display the RISC-V architecture-specific info contained in the file.
         """
         attr_sec = self.elffile.get_section_by_name('.riscv.attributes')
-        self._display_attributes(attr_sec, describe_attr_tag_riscv)
+        if attr_sec:
+            self._display_attributes(attr_sec, describe_attr_tag_riscv)
 
     def _emit(self, s=''):
         """ Emit an object to output
