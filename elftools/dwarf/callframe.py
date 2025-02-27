@@ -270,6 +270,10 @@ class CallFrameInfo(object):
         if not augmentation:
             return ('', {})
 
+        # Ignore armcc augmentations.
+        if augmentation.startswith(b'armcc'):
+            return (b'', {})
+
         # Augmentation parsing works in minimal mode here: we need the length
         # field to be able to skip unhandled augmentation fields.
         assert augmentation.startswith(b'z'), (
