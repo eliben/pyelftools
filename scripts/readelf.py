@@ -815,15 +815,14 @@ class ReadElf(object):
             sys.stderr.write('readelf: Warning: Section \'%s\' was not dumped because it does not exist!\n' % (
                 section_spec))
             return
-        if section['sh_type'] == 'SHT_NOBITS':
-            self._emitline("\nSection '%s' has no data to dump." % (
+        if section['sh_type'] == 'SHT_NOBITS' or not (data := section.data()):
+            self._emitline("Section '%s' has no data to dump." % (
                 section_spec))
             return
 
         self._emitline("\nHex dump of section '%s':" % section.name)
         self._note_relocs_for_section(section)
         addr = section['sh_addr']
-        data = section.data()
         dataptr = 0
 
         while dataptr < len(data):
