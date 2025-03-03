@@ -67,7 +67,7 @@ def run_test_on_file(filename, verbose=False, opt=None):
             '--debug-dump=frames', '--debug-dump=frames-interp',
             '--debug-dump=aranges', '--debug-dump=pubtypes',
             '--debug-dump=pubnames', '--debug-dump=loc',
-            '--debug-dump=Ranges'
+            '--debug-dump=Ranges', '--arch-specific',
             ]
     else:
         options = [opt]
@@ -103,6 +103,10 @@ def run_test_on_file(filename, verbose=False, opt=None):
         # but produces nonsensical output, but ultimately it's a toolchain bug (in IAR I presume).
         if "dwarf_v4cie" in filename and option == "--debug-dump=aranges":
             continue        
+
+        # TODO(pmhahn): for now only ARM works
+        if option in {"-A", "--arch-specific"} and "-eabi-" not in filename:
+            continue
 
         # sevaa says: there is another shorted out test; in dwarf_lineprogramv5.elf, the two bytes at 0x2072 were
         # patched from 0x07 0x10 to 00 00.

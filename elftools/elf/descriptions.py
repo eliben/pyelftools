@@ -237,30 +237,30 @@ def describe_note(x, machine):
 
 
 def describe_attr_tag_arm(tag, val, extra):
+    s = _DESCR_ATTR_TAG_ARM.get(tag, '"%s"' % tag)
     idx = ENUM_ATTR_TAG_ARM[tag] - 1
     d_entry = _DESCR_ATTR_VAL_ARM[idx]
 
     if d_entry is None:
         if tag == 'TAG_COMPATIBILITY':
-            return (_DESCR_ATTR_TAG_ARM[tag]
-                    + 'flag = %d, vendor = %s' % (val, extra))
+            return s + 'flag = %d, vendor = %s' % (val, extra)
 
         elif tag == 'TAG_ALSO_COMPATIBLE_WITH':
             if val.tag == 'TAG_CPU_ARCH':
-                return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
+                d_entry = _DESCR_ATTR_VAL_ARM[5]  # TAG_CPU_ARCH
+                return s + d_entry.get(val.value, '??? (%d)' % val.value)
 
             else:
-                return _DESCR_ATTR_TAG_ARM[tag] + '??? (%d)' % val.tag
+                return s + '??? (%d)' % val.tag
 
         elif tag == 'TAG_NODEFAULTS':
-            return _DESCR_ATTR_TAG_ARM[tag] + 'True'
+            return s + 'True'
 
-        s = _DESCR_ATTR_TAG_ARM[tag]
         s += '"%s"' % val if val else ''
         return s
 
     else:
-        return _DESCR_ATTR_TAG_ARM[tag] + d_entry[val]
+        return s + d_entry[val]
 
 def describe_attr_tag_riscv(tag, val, extra):
     idx = ENUM_ATTR_TAG_RISCV[tag] - 1
@@ -733,14 +733,14 @@ _DESCR_ATTR_TAG_ARM = dict(
     TAG_CPU_ARCH='Tag_CPU_arch: ',
     TAG_CPU_ARCH_PROFILE='Tag_CPU_arch_profile: ',
     TAG_ARM_ISA_USE='Tag_ARM_ISA_use: ',
-    TAG_THUMB_ISA_USE='Tag_Thumb_ISA_use: ',
+    TAG_THUMB_ISA_USE='Tag_THUMB_ISA_use: ',
     TAG_FP_ARCH='Tag_FP_arch: ',
     TAG_WMMX_ARCH='Tag_WMMX_arch: ',
     TAG_ADVANCED_SIMD_ARCH='Tag_Advanced_SIMD_arch: ',
     TAG_PCS_CONFIG='Tag_PCS_config: ',
     TAG_ABI_PCS_R9_USE='Tag_ABI_PCS_R9_use: ',
-    TAG_ABI_PCS_RW_DATA='Tag_ABI_PCS_RW_use: ',
-    TAG_ABI_PCS_RO_DATA='Tag_ABI_PCS_RO_use: ',
+    TAG_ABI_PCS_RW_DATA='Tag_ABI_PCS_RW_data: ',
+    TAG_ABI_PCS_RO_DATA='Tag_ABI_PCS_RO_data: ',
     TAG_ABI_PCS_GOT_USE='Tag_ABI_PCS_GOT_use: ',
     TAG_ABI_PCS_WCHAR_T='Tag_ABI_PCS_wchar_t: ',
     TAG_ABI_FP_ROUNDING='Tag_ABI_FP_rounding: ',
@@ -951,10 +951,7 @@ _DESCR_ATTR_VAL_ARM = [
         5: 'Prefer Accuracy',
         6: 'Aggressive Accuracy',
     },
-    { #32 TAG_COMPATIBILITY
-        0: 'No',
-        1: 'Yes',
-    },
+    None, #32 TAG_COMPATIBILITY
     None, #33
     { #34 TAG_CPU_UNALIGNED_ACCESS
         0: 'None',

@@ -677,7 +677,7 @@ class DWARFInfo(object):
                         replace_value(data, field.content_type, self.get_string_from_table)
                     elif field.form in ('DW_FORM_strp_sup', 'DW_FORM_GNU_strp_alt'):
                         if self.supplementary_dwarfinfo:
-                            replace_value(data, field.content_type, self.supplementary_dwarfinfo.get_string_fromtable)
+                            replace_value(data, field.content_type, self.supplementary_dwarfinfo.get_string_from_table)
                         else:
                             replace_value(data, field.content_type, lambda x: str(x))
                     elif field.form in ('DW_FORM_strp_sup', 'DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4'):

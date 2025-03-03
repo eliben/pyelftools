@@ -137,7 +137,7 @@ class RelrRelocationTable(object):
 
         # If DT_RELRSZ is zero, offset is meaningless and could be None.
         if self._size == 0:
-            return []
+            return
 
         limit = self._offset + self._size
         relr = self._offset
