@@ -2,27 +2,26 @@ New version
 -----------
 
 * Update elftools/__init__.py
-* Update setup.py
 * Tag in git (v0.xx)
 
 Preparing a new release
 -----------------------
 
 * Make sure new version was updated everywhere appropriate
-* Run ``python3 setup.py build sdist bdist_wheel``
+* Run ``uv build`` or ``python3 -m build --sdist --wheel``
 * Untar the created ``dist/pyelftools-x.y.tar.gz`` and make sure
   everything looks ok
 * Distribute (see below)
 * Tag new version in git
-* Test with pip install from some new virtualenv
+* Test with ``pip install`` from some new virtualenv
 
 Distribution
 ------------
 
 1. First install Twine (https://packaging.python.org/tutorials/packaging-projects/)
    into a venv, unless already done in ~/bin/venv/...
-2. python3 -m twine upload dist/*, but make sure ``setup.py`` was already run
-   and the updated whl and tarball are in dist/.
+2. Run ``uv publish`` or ``python3 -m twine upload dist/*``, but make sure
+   package was already built and the updated whl and tarball are in dist/.
 
 Credentials for PyPI are stored in ~/.pypirc
 
