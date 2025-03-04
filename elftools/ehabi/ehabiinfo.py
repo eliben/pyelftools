@@ -166,7 +166,7 @@ class CorruptEHABIEntry(EHABIEntry):
     """
 
     def __init__(self, reason):
-        super(CorruptEHABIEntry, self).__init__(function_offset=None, personality=None, bytecode_array=None,
+        super().__init__(function_offset=None, personality=None, bytecode_array=None,
                                                 corrupt=True)
         self.reason = reason
 
@@ -179,7 +179,7 @@ class CannotUnwindEHABIEntry(EHABIEntry):
     """
 
     def __init__(self, function_offset):
-        super(CannotUnwindEHABIEntry, self).__init__(function_offset, personality=None, bytecode_array=None,
+        super().__init__(function_offset, personality=None, bytecode_array=None,
                                                      unwindable=False)
 
     def __repr__(self):
@@ -191,7 +191,7 @@ class GenericEHABIEntry(EHABIEntry):
     """
 
     def __init__(self, function_offset, personality):
-        super(GenericEHABIEntry, self).__init__(function_offset, personality, bytecode_array=None)
+        super().__init__(function_offset, personality, bytecode_array=None)
 
     def __repr__(self):
         return "<GenericEHABIEntry function_offset=0x%x, personality=0x%x>" % (self.function_offset, self.personality)

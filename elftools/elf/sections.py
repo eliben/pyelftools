@@ -152,7 +152,7 @@ class SymbolTableIndexSection(Section):
         https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.sheader.html
     """
     def __init__(self, header, name, elffile, symboltable):
-        super(SymbolTableIndexSection, self).__init__(header, name, elffile)
+        super().__init__(header, name, elffile)
         self.symboltable = symboltable
 
     def get_section_index(self, n):
@@ -169,7 +169,7 @@ class SymbolTableSection(Section):
         passed in the constructor.
     """
     def __init__(self, header, name, elffile, stringtable):
-        super(SymbolTableSection, self).__init__(header, name, elffile)
+        super().__init__(header, name, elffile)
         self.stringtable = stringtable
         elf_assert(self['sh_entsize'] > 0,
                 'Expected entry size of section %r to be > 0' % name)
@@ -238,7 +238,7 @@ class SUNWSyminfoTableSection(Section):
         Has an associated SymbolTableSection that's passed in the constructor.
     """
     def __init__(self, header, name, elffile, symboltable):
-        super(SUNWSyminfoTableSection, self).__init__(header, name, elffile)
+        super().__init__(header, name, elffile)
         self.symboltable = symboltable
 
     def num_symbols(self):
@@ -426,7 +426,7 @@ class AttributesSection(Section):
     """ ELF attributes section.
     """
     def __init__(self, header, name, elffile, subsection):
-        super(AttributesSection, self).__init__(header, name, elffile)
+        super().__init__(header, name, elffile)
         self.subsection = subsection
 
         fv = struct_parse(self.structs.Elf_byte('format_version'),
@@ -476,7 +476,7 @@ class ARMAttribute(Attribute):
     """ ARM attribute object - representing a build attribute of ARM ELF files.
     """
     def __init__(self, structs, stream):
-        super(ARMAttribute, self).__init__(
+        super().__init__(
             struct_parse(structs.Elf_Arm_Attribute_Tag, stream))
 
         if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
@@ -518,7 +518,7 @@ class ARMAttributesSubsubsection(AttributesSubsubsection):
     """ Subsubsection of an ELF .ARM.attributes section's subsection.
     """
     def __init__(self, stream, structs, offset):
-        super(ARMAttributesSubsubsection, self).__init__(
+        super().__init__(
             stream, structs, offset, ARMAttribute)
 
 
@@ -526,7 +526,7 @@ class ARMAttributesSubsection(AttributesSubsection):
     """ Subsection of an ELF .ARM.attributes section.
     """
     def __init__(self, stream, structs, offset):
-        super(ARMAttributesSubsection, self).__init__(
+        super().__init__(
             stream, structs, offset,
             structs.Elf_Attr_Subsection_Header,
             ARMAttributesSubsubsection)
@@ -536,7 +536,7 @@ class ARMAttributesSection(AttributesSection):
     """ ELF .ARM.attributes section.
     """
     def __init__(self, header, name, elffile):
-        super(ARMAttributesSection, self).__init__(
+        super().__init__(
             header, name, elffile, ARMAttributesSubsection)
 
 
@@ -544,7 +544,7 @@ class RISCVAttribute(Attribute):
     """ Attribute of an ELF .riscv.attributes section.
     """
     def __init__(self, structs, stream):
-        super(RISCVAttribute, self).__init__(
+        super().__init__(
             struct_parse(structs.Elf_RiscV_Attribute_Tag, stream))
 
         if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
@@ -572,7 +572,7 @@ class RISCVAttributesSubsubsection(AttributesSubsubsection):
     """ Subsubsection of an ELF .riscv.attributes subsection.
     """
     def __init__(self, stream, structs, offset):
-        super(RISCVAttributesSubsubsection, self).__init__(
+        super().__init__(
             stream, structs, offset, RISCVAttribute)
 
 
@@ -580,7 +580,7 @@ class RISCVAttributesSubsection(AttributesSubsection):
     """ Subsection of an ELF .riscv.attributes section.
     """
     def __init__(self, stream, structs, offset):
-        super(RISCVAttributesSubsection, self).__init__(
+        super().__init__(
             stream, structs, offset,
             structs.Elf_Attr_Subsection_Header,
             RISCVAttributesSubsubsection)
@@ -590,5 +590,5 @@ class RISCVAttributesSection(AttributesSection):
     """ ELF .riscv.attributes section.
     """
     def __init__(self, header, name, elffile):
-        super(RISCVAttributesSection, self).__init__(
+        super().__init__(
             header, name, elffile, RISCVAttributesSubsection)
