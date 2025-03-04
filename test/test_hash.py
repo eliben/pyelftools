@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
 # elftools tests
 #
@@ -23,7 +22,7 @@ class TestELFHash(unittest.TestCase):
         self.assertEqual(ELFHashTable.elf_hash('main'), 0x000737fe)
         self.assertEqual(ELFHashTable.elf_hash('printf'), 0x077905a6)
         self.assertEqual(ELFHashTable.elf_hash('exit'), 0x0006cf04)
-        self.assertEqual(ELFHashTable.elf_hash(u'ïó®123'), 0x0efddae3)
+        self.assertEqual(ELFHashTable.elf_hash('ïó®123'), 0x0efddae3)
         self.assertEqual(ELFHashTable.elf_hash(b'\xe4\xbd\xa0\xe5\xa5\xbd'),
                          0x0f07f00d)
 
@@ -72,7 +71,7 @@ class TestGNUHash(unittest.TestCase):
         self.assertEqual(GNUHashTable.gnu_hash('main'), 0x7c9a7f6a)
         self.assertEqual(GNUHashTable.gnu_hash('printf'), 0x156b2bb8)
         self.assertEqual(GNUHashTable.gnu_hash('exit'), 0x7c967e3f)
-        self.assertEqual(GNUHashTable.gnu_hash(u'ïó®123'), 0x8025a693)
+        self.assertEqual(GNUHashTable.gnu_hash('ïó®123'), 0x8025a693)
         self.assertEqual(GNUHashTable.gnu_hash(b'\xe4\xbd\xa0\xe5\xa5\xbd'),
                          0x296eec2d)
 
