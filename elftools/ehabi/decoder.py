@@ -139,7 +139,7 @@ class EHABIBytecodeDecoder:
         if (op1 & 0xf0) != 0 or op1 == 0x00:
             return 'spare'
         else:
-            return 'pop %s' % self._printGPR((op1 & 0x0f))
+            return 'pop %s' % self._printGPR(op1 & 0x0f)
 
     def _decode_10110010_uleb128(self):
         #  SmallVector<uint8_t, 4> ULEB;
