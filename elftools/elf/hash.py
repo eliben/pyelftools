@@ -13,7 +13,7 @@ from ..common.utils import struct_parse
 from .sections import Section
 
 
-class ELFHashTable(object):
+class ELFHashTable:
     """ Representation of an ELF hash table to find symbols in the
         symbol table - useful for super-stripped binaries without section
         headers where only the start of the symbol table is known from the
@@ -80,7 +80,7 @@ class ELFHashSection(Section, ELFHashTable):
         ELFHashTable.__init__(self, elffile, self['sh_offset'], symboltable)
 
 
-class GNUHashTable(object):
+class GNUHashTable:
     """ Representation of a GNU hash table to find symbols in the
         symbol table - useful for super-stripped binaries without section
         headers where only the start of the symbol table is known from the

@@ -44,7 +44,7 @@ AttributeValue = namedtuple(
     'AttributeValue', 'name form value raw_value offset indirection_length')
 
 
-class DIE(object):
+class DIE:
     """ A DWARF debugging information entry. On creation, parses itself from
         the stream. Each DIE is held by a CU.
 

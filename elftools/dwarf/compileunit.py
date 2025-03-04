@@ -11,7 +11,7 @@ from .die import DIE
 from ..common.utils import dwarf_assert
 
 
-class CompileUnit(object):
+class CompileUnit:
     """ A DWARF compilation unit (CU).
 
             A normal compilation unit typically represents the text and data

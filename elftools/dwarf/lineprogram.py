@@ -40,7 +40,7 @@ LineProgramEntry = namedtuple(
     'LineProgramEntry', 'command is_extended args state')
 
 
-class LineState(object):
+class LineState:
     """ Represents a line program state (or a "row" in the matrix
         describing debug location information for addresses).
         The instance variables of this class are the "state machine registers"
@@ -70,7 +70,7 @@ class LineState(object):
         return '\n'.join(a) + '>\n'
 
 
-class LineProgram(object):
+class LineProgram:
     """ Builds a "line table", which is essentially the matrix described
         in section 6.2 of DWARFv3. It's a list of LineState objects,
         sorted by increasing address, so it can be used to obtain the

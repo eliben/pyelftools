@@ -12,7 +12,7 @@ from .constants import SH_FLAGS
 from .notes import iter_notes
 
 
-class Segment(object):
+class Segment:
     def __init__(self, header, stream):
         self.header = header
         self.stream = stream

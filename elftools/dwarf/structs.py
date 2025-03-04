@@ -18,7 +18,7 @@ from ..common.construct_utils import (RepeatUntilExcluding, ULEB128, SLEB128,
 from .enums import *
 
 
-class DWARFStructs(object):
+class DWARFStructs:
     """ Exposes Construct structs suitable for parsing information from DWARF
         sections. Each compile unit in DWARF info can have its own structs
         object. Keep in mind that these structs have to be given a name (by

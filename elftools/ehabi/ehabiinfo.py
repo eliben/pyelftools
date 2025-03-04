@@ -14,7 +14,7 @@ from .constants import EHABI_INDEX_ENTRY_SIZE
 from .structs import EHABIStructs
 
 
-class EHABIInfo(object):
+class EHABIInfo:
     """ ARM exception handler abi information class.
 
         Parameters:
@@ -101,7 +101,7 @@ class EHABIInfo(object):
             return EHABIEntry(function_offset, 0, opcode)
 
 
-class EHABIEntry(object):
+class EHABIEntry:
     """ Exception handler abi entry.
 
         Accessible attributes:

@@ -338,7 +338,7 @@ ATTR_DESCRIPTIONS = dict(
     DW_AT_GNU_call_site_value=lambda attr, die: _desc_expression(attr.value, die) if attr.form.startswith('DW_FORM_block') else _desc_locations(attr, die),
 )
 
-class ReadElf(object):
+class ReadElf:
     """ dump_xxx is used to dump the respective section.
     Mimics the output of dwarfdump with --verbose
     """

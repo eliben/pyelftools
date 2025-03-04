@@ -33,7 +33,7 @@ entry_translate = {
     'DW_RLE_startx_length': _translate_startx_length
 }
 
-class RangeListsPair(object):
+class RangeListsPair:
     """For those binaries that contain both a debug_ranges and a debug_rnglists section,
     it holds a RangeLists object for both and forwards API calls to the right one based
     on the CU version.
@@ -83,7 +83,7 @@ class RangeListsPair(object):
         """
         return self._rnglists.translate_v5_entry(entry, cu)
 
-class RangeLists(object):
+class RangeLists:
     """ A single range list is a Python list consisting of RangeEntry or
         BaseAddressEntry objects.
 

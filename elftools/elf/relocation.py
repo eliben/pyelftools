@@ -18,7 +18,7 @@ from .enums import (
 from ..construct import Container
 
 
-class Relocation(object):
+class Relocation:
     """ Relocation object - representing a single relocation entry. Allows
         dictionary-like access to the entry's fields.
 
@@ -47,7 +47,7 @@ class Relocation(object):
         return self.__repr__()
 
 
-class RelocationTable(object):
+class RelocationTable:
     """ Shared functionality between relocation sections and relocation tables
     """
 
@@ -108,7 +108,7 @@ class RelocationSection(Section, RelocationTable):
                 header['sh_type'], self.entry_size))
 
 
-class RelrRelocationTable(object):
+class RelrRelocationTable:
     """ RELR compressed relocation table. This stores relative relocations
         in a compressed format. An entry with an even value serves as an
         'anchor' that defines a base address. Following this entry are one or
@@ -235,7 +235,7 @@ def _bpf_64_32_reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
     return (sym_value + addend) // 8 - 1
 
 
-class RelocationHandler(object):
+class RelocationHandler:
     """ Handles the logic of relocations in ELF files.
     """
     def __init__(self, elffile):

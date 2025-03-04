@@ -120,7 +120,7 @@ DW_OP_opcode2name = dict((v, k) for k, v in DW_OP_name2opcode.items())
 DWARFExprOp = namedtuple('DWARFExprOp', 'op op_name args offset')
 
 
-class DWARFExprParser(object):
+class DWARFExprParser:
     """DWARF expression parser.
 
     When initialized, requires structs to cache a dispatch table. After that,

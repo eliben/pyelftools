@@ -10,7 +10,7 @@ from ..common.utils import struct_parse, elf_assert
 from .sections import Section, Symbol
 
 
-class Version(object):
+class Version:
     """ Version object - representing a version definition or dependency
         entry from a "Version Needed" or a "Version Dependency" table section.
 
@@ -33,7 +33,7 @@ class Version(object):
         return self.entry[name]
 
 
-class VersionAuxiliary(object):
+class VersionAuxiliary:
     """ Version Auxiliary object - representing an auxiliary entry of a version
         definition or dependency entry
 

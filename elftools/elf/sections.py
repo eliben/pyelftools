@@ -15,7 +15,7 @@ from .notes import iter_notes
 import zlib
 
 
-class Section(object):
+class Section:
     """ Base class for ELF sections. Also used for all sections types that have
         no special functionality.
 
@@ -216,7 +216,7 @@ class SymbolTableSection(Section):
             yield self.get_symbol(i)
 
 
-class Symbol(object):
+class Symbol:
     """ Symbol object - representing a single symbol entry from a symbol table
         section.
 
@@ -298,7 +298,7 @@ class StabSection(Section):
             self.stream.seek(offset)
             yield stabs
 
-class Attribute(object):
+class Attribute:
     """ Attribute object - representing a build attribute of ELF files.
     """
     def __init__(self, tag):

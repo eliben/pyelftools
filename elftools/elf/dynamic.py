@@ -18,7 +18,7 @@ from ..common.exceptions import ELFError
 from ..common.utils import elf_assert, struct_parse, parse_cstring_from_stream
 
 
-class _DynamicStringTable(object):
+class _DynamicStringTable:
     """ Bare string table based on values found via ELF dynamic tags and
         loadable segments only.  Good enough for get_string() only.
     """
@@ -33,7 +33,7 @@ class _DynamicStringTable(object):
         return s.decode('utf-8') if s else ''
 
 
-class DynamicTag(object):
+class DynamicTag:
     """ Dynamic Tag object - representing a single dynamic tag entry from a
         dynamic section.
 
@@ -70,7 +70,7 @@ class DynamicTag(object):
         return '<DynamicTag (%s) %s>' % (self.entry.d_tag, s)
 
 
-class Dynamic(object):
+class Dynamic:
     """ Shared functionality between dynamic sections and segments.
     """
     def __init__(self, stream, elffile, stringtable, position, empty):

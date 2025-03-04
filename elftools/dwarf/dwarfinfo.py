@@ -58,7 +58,7 @@ DwarfConfig = namedtuple('DwarfConfig',
     'little_endian machine_arch default_address_size')
 
 
-class DWARFInfo(object):
+class DWARFInfo:
     """ Acts also as a "context" to other major objects, bridging between
         various parts of the debug information.
     """

@@ -19,7 +19,7 @@ import math
 ARangeEntry = namedtuple('ARangeEntry',
     'begin_addr length info_offset unit_length version address_size segment_size')
 
-class ARanges(object):
+class ARanges:
     """ ARanges table in DWARF
 
         stream, size:

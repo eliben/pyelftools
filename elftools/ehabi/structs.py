@@ -11,7 +11,7 @@
 from ..construct import UBInt32, ULInt32, Struct
 
 
-class EHABIStructs(object):
+class EHABIStructs:
     """ Accessible attributes:
 
             EH_index_struct:

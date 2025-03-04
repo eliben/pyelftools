@@ -29,7 +29,7 @@ class TerminatorError(ConstructError):
 #===============================================================================
 # abstract constructs
 #===============================================================================
-class Construct(object):
+class Construct:
     """
     The mother of all constructs.
 

@@ -17,7 +17,7 @@ from .structs import DWARFStructs
 from .constants import *
 
 
-class CallFrameInfo(object):
+class CallFrameInfo:
     """ DWARF CFI (Call Frame Info)
 
     Note that this also supports unwinding information as found in .eh_frame
@@ -454,7 +454,7 @@ def instruction_name(opcode):
         return _OPCODE_NAME_MAP[primary]
 
 
-class CallFrameInstruction(object):
+class CallFrameInstruction:
     """ An instruction in the CFI section. opcode is the instruction
         opcode, numeric - as it appears in the section. args is a list of
         arguments (including arguments embedded in the low bits of some
@@ -469,7 +469,7 @@ class CallFrameInstruction(object):
             instruction_name(self.opcode), self.opcode, self.args)
 
 
-class CFIEntry(object):
+class CFIEntry:
     """ A common base class for CFI entries.
         Contains a header and a list of instructions (CallFrameInstruction).
         offset: the offset of this entry from the beginning of the section
@@ -648,7 +648,7 @@ class FDE(CFIEntry):
         self.lsda_pointer = lsda_pointer
 
 
-class ZERO(object):
+class ZERO:
     """ End marker for the sequence of CIE/FDE.
 
     This is specific to `.eh_frame` sections: this kind of entry does not exist
@@ -659,7 +659,7 @@ class ZERO(object):
         self.offset = offset
 
 
-class RegisterRule(object):
+class RegisterRule:
     """ Register rules are used to find registers in call frames. Each rule
         consists of a type (enumeration following DWARFv3 section 6.4.1)
         and an optional argument to augment the type.
@@ -681,7 +681,7 @@ class RegisterRule(object):
         return 'RegisterRule(%s, %s)' % (self.type, self.arg)
 
 
-class CFARule(object):
+class CFARule:
     """ A CFA rule is used to compute the CFA for each location. It either
         consists of a register+offset, or a DWARF expression.
     """

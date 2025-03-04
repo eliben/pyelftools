@@ -94,7 +94,7 @@ _CONTROL_CHAR_RE = re.compile(r'[\x01-\x1f]')
 def _format_symbol_name(s):
     return _CONTROL_CHAR_RE.sub(lambda match: '^' + chr(0x40 + ord(match[0])), s)
 
-class ReadElf(object):
+class ReadElf:
     """ display_* methods are used to emit output into the output stream
     """
     def __init__(self, file, output):

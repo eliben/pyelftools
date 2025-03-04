@@ -9,7 +9,7 @@
 from collections import namedtuple
 
 
-class EHABIBytecodeDecoder(object):
+class EHABIBytecodeDecoder:
     """ Decoder of a sequence of ARM exception handler abi bytecode.
 
         Reference:
@@ -272,7 +272,7 @@ class EHABIBytecodeDecoder(object):
     )
 
 
-class MnemonicItem(object):
+class MnemonicItem:
     """ Single mnemonic item.
     """
 

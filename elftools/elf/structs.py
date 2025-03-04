@@ -19,7 +19,7 @@ from ..common.utils import roundup
 from .enums import *
 
 
-class ELFStructs(object):
+class ELFStructs:
     """ Accessible attributes:
 
             Elf_{byte|half|word|word64|addr|offset|sword|xword|xsword}:
