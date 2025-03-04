@@ -56,7 +56,7 @@ class TestELFHash(unittest.TestCase):
             self.assertIsNotNone(hash_section)
             symbol_main = hash_section.get_symbol('main')
             self.assertIsNotNone(symbol_main)
-            self.assertEqual(symbol_main['st_value'], int(0x400790))
+            self.assertEqual(symbol_main['st_value'], 0x400790)
 
 
 class TestGNUHash(unittest.TestCase):
@@ -97,7 +97,7 @@ class TestGNUHash(unittest.TestCase):
             self.assertIsNotNone(hash_section)
             symbol_f1 = hash_section.get_symbol('function1_ver1_1')
             self.assertIsNotNone(symbol_f1)
-            self.assertEqual(symbol_f1['st_value'], int(0x9a2))
+            self.assertEqual(symbol_f1['st_value'], 0x9a2)
 
     def test_get_symbol_big_endian(self):
         """ Verify we can get a specific symbol from a GNU hash section in a
@@ -111,4 +111,4 @@ class TestGNUHash(unittest.TestCase):
             self.assertIsNotNone(hash_section)
             symbol_f1 = hash_section.get_symbol('caller')
             self.assertIsNotNone(symbol_f1)
-            self.assertEqual(symbol_f1['st_value'], int(0x5a4))
+            self.assertEqual(symbol_f1['st_value'], 0x5a4)
