@@ -49,7 +49,7 @@ def run_example_and_compare(example_path):
     try:
         with open(reference_path) as ref_f:
             ref_str = ref_f.read()
-    except (IOError, OSError) as e:
+    except OSError as e:
         testlog.info('.......ERROR - reference output cannot be read! - %s' % e)
         return False
 
