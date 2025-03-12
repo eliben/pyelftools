@@ -223,7 +223,7 @@ def _desc_operationarg(s, cu):
         if len(s) > 0 and isinstance(s[0], DWARFExprOp): # Subexpression
             return '(' + '; '.join(_desc_operation(op.op, op.op_name, op.args, cu) for op in s) + ')'
         else:
-            return " ".join((hex(len(s)),) + tuple("0x%02x" % b for b in s))
+            return " ".join((hex(len(s)), *("0x%02x" % b for b in s)))
 
 def _arch(cu):
     return cu.dwarfinfo.config.machine_arch

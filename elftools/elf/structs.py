@@ -273,7 +273,7 @@ class ELFStructs(object):
                               self.Elf_addr('r_offset'),
                               *fields)
 
-        fields_and_addend = fields + [self.Elf_sxword('r_addend')]
+        fields_and_addend = [*fields, self.Elf_sxword('r_addend')]
         self.Elf_Rela = Struct('Elf_Rela',
                                self.Elf_addr('r_offset'),
                                *fields_and_addend
