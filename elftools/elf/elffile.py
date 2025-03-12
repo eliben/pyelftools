@@ -797,12 +797,12 @@ class ELFFile(object):
     def _make_gnu_versym_section(self, section_header, name):
         """ Create a GNUVerSymSection
         """
-        linked_strtab_index = section_header['sh_link']
-        strtab_section = self.get_section(linked_strtab_index)
+        linked_symtab_index = section_header['sh_link']
+        symtab_section = self._get_linked_symtab_section(linked_symtab_index)
         return GNUVerSymSection(
             section_header, name,
             elffile=self,
-            symboltable=strtab_section)
+            symboltable=symtab_section)
 
     def _make_elf_hash_section(self, section_header, name):
         linked_symtab_index = section_header['sh_link']
