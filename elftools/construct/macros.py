@@ -10,6 +10,27 @@ from .adapters import (BitIntegerAdapter, PaddingAdapter,
     PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter)
 
 
+__all__ = [
+    "Field", "BitField", "Padding", "Flag",
+    "Bit", "Nibble", "Octet",
+    "UBInt8", "UBInt16", "UBInt32", "UBInt64",
+    "SBInt8", "SBInt16", "SBInt32", "SBInt64",
+    "ULInt8", "ULInt16", "ULInt32", "ULInt64",
+    "SLInt8", "SLInt16", "SLInt32", "SLInt64",
+    "UNInt8", "UNInt16", "UNInt32", "UNInt64",
+    "SNInt8", "SNInt16", "SNInt32", "SNInt64",
+    "BFloat32", "LFloat32", "NFloat32",
+    "BFloat64", "LFloat64", "NFloat64",
+    "Array", "PrefixedArray", "OpenRange", "GreedyRange", "OptionalGreedyRange",
+    "Optional", "Bitwise", "Aligned", "SeqOfOne", "Embedded", "Rename", "Alias",
+    "SymmetricMapping", "Enum", "FlagsEnum",
+    "AlignedStruct", "BitStruct", "EmbeddedBitStruct",
+    "String", "PascalString", "CString",
+    "IfThenElse", "If",
+    "OnDemandPointer", "Magic",
+]
+
+
 #===============================================================================
 # fields
 #===============================================================================

@@ -6,6 +6,12 @@ from collections.abc import MutableMapping
 from pprint import pformat
 
 
+__all__ = [
+    "recursion_lock",
+    "Container", "FlagsContainer", "ListContainer", "LazyContainer",
+]
+
+
 def recursion_lock(retval, lock_name = "__recursion_lock__"):
     def decorator(func):
         def wrapper(self, *args, **kw):
