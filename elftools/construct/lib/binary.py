@@ -39,7 +39,6 @@ def bin_to_int(bits, signed=False):
     """
     number = 0
     bias = 0
-    ptr = 0
     if signed and _bit_values[bits[0]] == 1:
         bits = bits[1:]
         bias = 1 << len(bits)

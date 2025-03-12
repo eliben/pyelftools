@@ -1257,8 +1257,6 @@ class ReadElf:
                 continue 
 
             lineprogram_list.append(lineprogram)
-            ver5 = lineprogram.header.version >= 5
-
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
             if len(lineprogram['include_directory']) > 0:
                 # GNU readelf 2.38 only outputs directory in wide mode

@@ -130,7 +130,6 @@ class TestSymbolVersioning(unittest.TestCase):
         with open(os.path.join('test', 'testfiles_for_unittests',
                                'lib_versioned64.so.1.elf'), 'rb') as f:
             elf = ELFFile(f)
-            verneed_section = None
             for section in elf.iter_sections():
                 if isinstance(section, GNUVerDefSection):
                     verdef_section = section

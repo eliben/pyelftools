@@ -35,7 +35,6 @@ class TestCacheLUTandDIEref(unittest.TestCase):
                     continue
                 if not 'DW_AT_name' in ndie.attributes:
                     continue
-                name = bytes2str(ndie.attributes['DW_AT_name'].value)
                 tlist = []
                 tdie = ndie
                 while True:

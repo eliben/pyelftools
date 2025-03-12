@@ -20,7 +20,6 @@ class TestGNUCallAttributesHaveLocation(unittest.TestCase):
             elffile = ELFFile(f)
             dwarfinfo = elffile.get_dwarf_info()
             for CU in dwarfinfo.iter_CUs():
-                ver = CU['version']
                 for DIE in CU.iter_DIEs():
                     for key in DIE.attributes:
                         attr = DIE.attributes[key]

@@ -285,7 +285,7 @@ class DIE:
         while True:
             try:
                 real_form = DW_FORM_raw2name[real_form_code] # Form name or exception if bogus code
-            except KeyError as err:
+            except KeyError:
                 raise DWARFError('Found DW_FORM_indirect with unknown real form 0x%x' % real_form_code)
             
             raw_value = struct_parse(structs.Dwarf_dw_form[real_form], self.stream)

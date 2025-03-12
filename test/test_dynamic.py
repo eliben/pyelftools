@@ -19,7 +19,7 @@ class TestDynamicTag(unittest.TestCase):
 
     def test_requires_stringtable(self):
         with self.assertRaises(ELFError):
-            dt = DynamicTag('', None)
+            DynamicTag('', None)
 
     def test_tag_priority(self):
         for tag in _low_priority_D_TAG:
