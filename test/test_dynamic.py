@@ -39,17 +39,16 @@ class TestDynamic(unittest.TestCase):
     def test_missing_sections(self):
         """Verify we can get dynamic strings w/out section headers"""
 
-        libs = []
         with open(os.path.join('test', 'testfiles_for_unittests',
                                'aarch64_super_stripped.elf'), 'rb') as f:
             elf = ELFFile(f)
-            for segment in elf.iter_segments():
-                if segment.header.p_type != 'PT_DYNAMIC':
-                    continue
-
-                for t in segment.iter_tags():
-                    if t.entry.d_tag == 'DT_NEEDED':
-                        libs.append(t.needed)
+            libs = [
+                t.needed
+                for segment in elf.iter_segments()
+                if segment.header.p_type == 'PT_DYNAMIC'
+                for t in segment.iter_tags()
+                if t.entry.d_tag == 'DT_NEEDED'
+            ]
 
         exp = ['libc.so.6']
         self.assertEqual(libs, exp)

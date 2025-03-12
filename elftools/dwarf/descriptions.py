@@ -603,10 +603,10 @@ class ExprDumper(object):
             Returns a string representing the expression.
         """
         parsed = self.expr_parser.parse_expr(expr)
-        s = []
-        for deo in parsed:
-            s.append(self._dump_to_string(deo.op, deo.op_name, deo.args, cu_offset))
-        return '; '.join(s)
+        return '; '.join(
+            self._dump_to_string(deo.op, deo.op_name, deo.args, cu_offset)
+            for deo in parsed
+        )
 
     def _init_lookups(self):
         self._ops_with_decimal_arg = set([

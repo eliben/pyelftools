@@ -398,12 +398,13 @@ class ELFFile(object):
             Object file contains many .ARM.exidx sections.
             So we must traverse every section and filter sections whose type is SHT_ARM_EXIDX.
         """
-        _ret = []
         if self['e_type'] == 'ET_REL':
             # TODO: support relocatable file
             assert False, "Current version of pyelftools doesn't support relocatable file."
-        for section in self.iter_sections(type='SHT_ARM_EXIDX'):
-            _ret.append(EHABIInfo(section, self.little_endian))
+        _ret = [
+            EHABIInfo(section, self.little_endian)
+            for section in self.iter_sections(type='SHT_ARM_EXIDX')
+        ]
         return _ret if len(_ret) > 0 else None
 
     def get_machine_arch(self):
