@@ -100,8 +100,8 @@ class FlagsContainer(Container):
 
     @recursion_lock("<...>")
     def __str__(self) -> str:
-        d = dict((k, self[k]) for k in self
-                 if self[k] and not k.startswith("_"))
+        d = {k: self[k] for k in self
+                 if self[k] and not k.startswith("_")}
         return "%s(%s)" % (self.__class__.__name__, pformat(d))
 
 class ListContainer(list[Any]):
