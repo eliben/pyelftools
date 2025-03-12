@@ -28,6 +28,7 @@ Hands-on example:
     b'\\x01\\x02\\x03'
 """
 
+from .lib.container import *
 from .core import *
 from .adapters import *
 from .macros import *
