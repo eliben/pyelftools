@@ -112,7 +112,7 @@ class NameLUT(Mapping):
         """
         if self._entries is None:
             self._entries, self._cu_headers = self._get_entries()
-        return self._entries.get(name)
+        return self._entries[name]
 
     def __iter__(self):
         """
