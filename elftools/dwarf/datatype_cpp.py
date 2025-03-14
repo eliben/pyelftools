@@ -211,12 +211,6 @@ def get_class_spec_if_member(func_spec, the_func):
 
 def format_function_param(param_spec, param):
     if param_spec.tag == 'DW_TAG_formal_parameter':
-        if 'DW_AT_name' in param.attributes:
-            name = DIE_name(param)
-        elif 'DW_AT_name' in param_spec.attributes:
-            name = DIE_name(param_spec)
-        else:
-            name = None
         type = parse_cpp_datatype(param_spec)
         return  str(type)
     else: # unspecified_parameters AKA variadic
