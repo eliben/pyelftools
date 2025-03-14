@@ -28,7 +28,7 @@ def Field(name, length):
         return StaticField(name, length)
 
 def BitField(name, length, swapped = False, signed = False, bytesize = 8):
-    """
+    r"""
     BitFields, as the name suggests, are fields that operate on raw, unaligned
     bits, and therefore must be enclosed in a BitStruct. Using them is very
     similar to all normal fields: they take a name and a length (in bits).
@@ -47,8 +47,8 @@ def BitField(name, length, swapped = False, signed = False, bytesize = 8):
     ...     Nibble("c"),
     ...     BitField("d", 5),
     ... )
-    >>> foo.parse("\\xe1\\x1f")
-    Container(a = 7, b = False, c = 8, d = 31)
+    >>> foo.parse(b"\xe1\x1f")
+    Container({'a': 7, 'b': False, 'c': 8, 'd': 31})
     >>> foo = BitStruct("foo",
     ...     BitField("a", 3),
     ...     Flag("b"),
@@ -59,8 +59,8 @@ def BitField(name, length, swapped = False, signed = False, bytesize = 8):
     ...             Bit("e"),
     ...     )
     ... )
-    >>> foo.parse("\\xe1\\x1f")
-    Container(a = 7, b = False, bar = Container(d = 15, e = 1), c = 8)
+    >>> foo.parse(b"\xe1\x1f")
+    Container({'a': 7, 'b': False, 'c': 8, 'bar': Container({'d': 15, 'e': 1})})
     """
 
     return BitIntegerAdapter(Field(name, length),
@@ -224,23 +224,23 @@ def NFloat64(name):
 # arrays
 #===============================================================================
 def Array(count, subcon):
-    """
+    r"""
     Repeats the given unit a fixed number of times.
 
     :param int count: number of times to repeat
     :param ``Construct`` subcon: construct to repeat
 
     >>> c = Array(4, UBInt8("foo"))
-    >>> c.parse("\\x01\\x02\\x03\\x04")
+    >>> c.parse(b"\x01\x02\x03\x04")
     [1, 2, 3, 4]
-    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
+    >>> c.parse(b"\x01\x02\x03\x04\x05\x06")
     [1, 2, 3, 4]
     >>> c.build([5,6,7,8])
-    '\\x05\\x06\\x07\\x08'
-    >>> c.build([5,6,7,8,9])
+    b'\x05\x06\x07\x08'
+    >>> c.build([5,6,7,8,9])  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
       ...
-    construct.core.RangeError: expected 4..4, found 5
+    ArrayError: expected 4, found 5
     """
 
     if callable(count):
@@ -267,50 +267,50 @@ def OpenRange(mincount, subcon):
     return Range(mincount, maxsize, subcon)
 
 def GreedyRange(subcon):
-    """
+    r"""
     Repeats the given unit one or more times.
 
     :param ``Construct`` subcon: construct to repeat
 
-    >>> from construct import GreedyRange, UBInt8
+    >>> from ..construct import GreedyRange, UBInt8
     >>> c = GreedyRange(UBInt8("foo"))
-    >>> c.parse("\\x01")
+    >>> c.parse(b"\x01")
     [1]
-    >>> c.parse("\\x01\\x02\\x03")
+    >>> c.parse(b"\x01\x02\x03")
     [1, 2, 3]
-    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
+    >>> c.parse(b"\x01\x02\x03\x04\x05\x06")
     [1, 2, 3, 4, 5, 6]
-    >>> c.parse("")
+    >>> c.parse(b"")  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
       ...
-    construct.core.RangeError: expected 1..2147483647, found 0
+    RangeError: expected 1..2147483647, found 0
     >>> c.build([1,2])
-    '\\x01\\x02'
-    >>> c.build([])
+    b'\x01\x02'
+    >>> c.build([])  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
       ...
-    construct.core.RangeError: expected 1..2147483647, found 0
+    RangeError: expected 1..2147483647, found 0
     """
 
     return OpenRange(1, subcon)
 
 def OptionalGreedyRange(subcon):
-    """
+    r"""
     Repeats the given unit zero or more times. This repeater can't
     fail, as it accepts lists of any length.
 
     :param ``Construct`` subcon: construct to repeat
 
-    >>> from construct import OptionalGreedyRange, UBInt8
+    >>> from ..construct import OptionalGreedyRange, UBInt8
     >>> c = OptionalGreedyRange(UBInt8("foo"))
-    >>> c.parse("")
+    >>> c.parse(b"")
     []
-    >>> c.parse("\\x01\\x02")
+    >>> c.parse(b"\x01\x02")
     [1, 2]
     >>> c.build([])
-    ''
+    b''
     >>> c.build([1,2])
-    '\\x01\\x02'
+    b'\x01\x02'
     """
 
     return OpenRange(0, subcon)
@@ -467,7 +467,7 @@ def EmbeddedBitStruct(*subcons):
 #===============================================================================
 def String(name, length, encoding=None, padchar=None, paddir="right",
     trimdir="right"):
-    """
+    r"""
     A configurable, fixed-length string field.
 
     The padding character must be specified for padding and trimming to work.
@@ -475,23 +475,23 @@ def String(name, length, encoding=None, padchar=None, paddir="right",
     :param str name: name
     :param int length: length, in bytes
     :param str encoding: encoding (e.g. "utf8") or None for no encoding
-    :param str padchar: optional character to pad out strings
+    :param bytes padchar: optional character to pad out strings
     :param str paddir: direction to pad out strings; one of "right", "left",
                        or "both"
     :param str trim: direction to trim strings; one of "right", "left"
 
-    >>> from construct import String
-    >>> String("foo", 5).parse("hello")
-    'hello'
+    >>> from ..construct import String
+    >>> String("foo", 5).parse(b"hello")
+    b'hello'
     >>>
-    >>> String("foo", 12, encoding = "utf8").parse("hello joh\\xd4\\x83n")
-    u'hello joh\\u0503n'
+    >>> String("foo", 12, encoding="utf8").parse(b"hello joh\xd4\x83n")
+    'hello joh\u0503n'
     >>>
-    >>> foo = String("foo", 10, padchar = "X", paddir = "right")
-    >>> foo.parse("helloXXXXX")
-    'hello'
-    >>> foo.build("hello")
-    'helloXXXXX'
+    >>> foo = String("foo", 10, padchar=b"X", paddir="right")
+    >>> foo.parse(b"helloXXXXX")
+    b'hello'
+    >>> foo.build(b"hello")
+    b'helloXXXXX'
     """
 
     con = StringAdapter(Field(name, length), encoding=encoding)
@@ -501,7 +501,7 @@ def String(name, length, encoding=None, padchar=None, paddir="right",
     return con
 
 def PascalString(name, length_field=UBInt8("length"), encoding=None):
-    """
+    r"""
     A length-prefixed string.
 
     ``PascalString`` is named after the string types of Pascal, which are
@@ -516,16 +516,16 @@ def PascalString(name, length_field=UBInt8("length"), encoding=None):
     :param str encoding: encoding (e.g. "utf8") or None for no encoding
 
     >>> foo = PascalString("foo")
-    >>> foo.parse("\\x05hello")
-    'hello'
-    >>> foo.build("hello world")
-    '\\x0bhello world'
+    >>> foo.parse(b"\x05hello")
+    b'hello'
+    >>> foo.build(b"hello world")
+    b'\x0bhello world'
     >>>
     >>> foo = PascalString("foo", length_field = UBInt16("length"))
-    >>> foo.parse("\\x00\\x05hello")
-    'hello'
-    >>> foo.build("hello")
-    '\\x00\\x05hello'
+    >>> foo.parse(b"\x00\x05hello")
+    b'hello'
+    >>> foo.build(b"hello")
+    b'\x00\x05hello'
     """
 
     return StringAdapter(
@@ -540,7 +540,7 @@ def PascalString(name, length_field=UBInt8("length"), encoding=None):
 
 def CString(name, terminators=b"\x00", encoding=None,
             char_field=Field(None, 1)):
-    """
+    r"""
     A string ending in a terminator.
 
     ``CString`` is similar to the strings of C, C++, and other related
@@ -555,10 +555,10 @@ def CString(name, terminators=b"\x00", encoding=None,
     :param ``Construct`` char_field: construct representing a single character
 
     >>> foo = CString("foo")
-    >>> foo.parse(b"hello\\x00")
+    >>> foo.parse(b"hello\x00")
     b'hello'
     >>> foo.build(b"hello")
-    b'hello\\x00'
+    b'hello\x00'
     >>> foo = CString("foo", terminators = b"XYZ")
     >>> foo.parse(b"helloX")
     b'hello'
