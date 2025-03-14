@@ -428,19 +428,20 @@ class OneOf(Validator):
     :param ``Construct`` subcon: object to validate
     :param iterable valids: a set of valid values
 
-    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x05")
+    >>> from ..construct import UBInt8
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse(b"\\x05")
     5
-    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).parse(b"\\x08")  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
         ...
-    construct.core.ValidationError: ('invalid object', 8)
+    ValidationError: ('invalid object', 8)
     >>>
     >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(5)
-    '\\x05'
-    >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(9)
+    b'\\x05'
+    >>> OneOf(UBInt8("foo"), [4,5,6,7]).build(9)  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
         ...
-    construct.core.ValidationError: ('invalid object', 9)
+    ValidationError: ('invalid object', 9)
     """
     __slots__ = ["valids"]
     def __init__(self, subcon, valids):
@@ -456,12 +457,13 @@ class NoneOf(Validator):
     :param ``Construct`` subcon: object to validate
     :param iterable invalids: a set of invalid values
 
-    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x08")
+    >>> from ..construct import UBInt8
+    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse(b"\\x08")
     8
-    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse("\\x06")
+    >>> NoneOf(UBInt8("foo"), [4,5,6,7]).parse(b"\\x06")  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
         ...
-    construct.core.ValidationError: ('invalid object', 6)
+    ValidationError: ('invalid object', 6)
     """
     __slots__ = ["invalids"]
     def __init__(self, subcon, invalids):
