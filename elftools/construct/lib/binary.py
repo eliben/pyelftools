@@ -77,12 +77,12 @@ for i in range(256):
 
 
 def encode_bin(data):
-    """
+    r"""
     Create a binary representation of the given b'' object. Assume 8-bit
     ASCII. Example:
 
         >>> encode_bin(b'ab')
-        b"\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00"
+        b'\x00\x01\x01\x00\x00\x00\x00\x01\x00\x01\x01\x00\x00\x00\x01\x00'
     """
     return b"".join(_char_to_bin[ch] for ch in data)
 

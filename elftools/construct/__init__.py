@@ -12,22 +12,20 @@ Homepage:
     http://construct.wikispaces.com (including online tutorial)
 
 Typical usage:
-    >>> from construct import *
+    >>> from ..construct import *
 
 Hands-on example:
-    >>> from construct import *
+    >>> from ..construct import *
     >>> s = Struct("foo",
     ...     UBInt8("a"),
     ...     UBInt16("b"),
     ... )
-    >>> s.parse("\\x01\\x02\\x03")
-    Container(a = 1, b = 515)
-    >>> print(s.parse("\\x01\\x02\\x03"))
-    Container:
-        a = 1
-        b = 515
-    >>> s.build(Container(a = 1, b = 0x0203))
-    "\\x01\\x02\\x03"
+    >>> s.parse(b"\\x01\\x02\\x03")
+    Container({'a': 1, 'b': 515})
+    >>> print(s.parse(b"\\x01\\x02\\x03"))
+    Container({'a': 1, 'b': 515})
+    >>> s.build(Container(a=1, b=0x0203))
+    b'\\x01\\x02\\x03'
 """
 
 from .core import *
