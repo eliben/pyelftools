@@ -15,13 +15,7 @@ def int_to_bin(number, width=32):
     """
     if number < 0:
         number += 1 << width
-    i = width - 1
-    bits = bytearray(width)
-    while number and i >= 0:
-        bits[i] = number & 1
-        number >>= 1
-        i -= 1
-    return bytes(bits)
+    return bytes(bool(number & (1 << (width - 1 - bit))) for bit in range(width))
 
 
 _bit_values = {
@@ -57,15 +51,7 @@ def swap_bytes(bits, bytesize=8):
         >>> swap_bytes(b'00011011', 2)
         b'11100100'
     """
-    i = 0
-    l = len(bits)
-    output = [b""] * ((l // bytesize) + 1)
-    j = len(output) - 1
-    while i < l:
-        output[j] = bits[i : i + bytesize]
-        i += bytesize
-        j -= 1
-    return b"".join(output)
+    return b"".join(bits[i:i+bytesize] for i in reversed(range(0, len(bits), bytesize)))
 
 
 _char_to_bin = {i: int_to_bin(i, 8) for i in range(256)}
@@ -89,12 +75,4 @@ def decode_bin(data):
     """
     if len(data) & 7:
         raise ValueError("Data length must be a multiple of 8")
-    i = 0
-    j = 0
-    l = len(data) // 8
-    chars = [b""] * l
-    while j < l:
-        chars[j] = _bin_to_char[data[i:i+8]]
-        i += 8
-        j += 1
-    return b"".join(chars)
+    return b"".join(_bin_to_char[data[i:i+8]] for i in range(0, len(data), 8))
