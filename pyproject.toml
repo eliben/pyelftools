@@ -1,3 +1,66 @@
+#-------------------------------------------------------------------------------
+# pyelftools: pyproject.toml
+#
+# Setup/installation script.
+#
+# Eli Bendersky (eliben@gmail.com)
+# This code is in the public domain
+#-------------------------------------------------------------------------------
 [build-system]
 requires = ["setuptools >= 46.4.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+dynamic = ["version"]
+name = "pyelftools"
+requires-python = ">= 3.9"
+authors = [
+    {name = "Eli Bendersky", email = "eliben@gmail.com"},
+]
+maintainers = [
+    {name = "Eli Bendersky", email = "eliben@gmail.com"},
+]
+description = "Library for analyzing ELF files and DWARF debugging information"
+readme = "README.rst"
+license = {text = "Public domain"}
+#license = {file = "LICENSE"}
+#license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: Public Domain",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: File Formats",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Software Development :: Debuggers",
+    "Topic :: Software Development :: Disassemblers",
+]
+
+[project.urls]
+Homepage = "https://github.com/eliben/pyelftools"
+Repository = "https://github.com/eliben/pyelftools.git"
+Issues = "https://github.com/eliben/pyelftools/issues"
+
+[tool.setuptools]
+packages = [
+    "elftools",
+    "elftools.elf",
+    "elftools.common",
+    "elftools.dwarf",
+    "elftools.ehabi",
+    "elftools.construct",
+    "elftools.construct.lib",
+]
+script-files = [
+    "scripts/readelf.py",
+]
+platforms = [
+    'Cross Platform',
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "elftools.__version__"}
+
+[tool.setuptools.package-data]
+elftools = ["py.types"]
