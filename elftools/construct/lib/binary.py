@@ -67,13 +67,8 @@ def swap_bytes(bits, bytesize=8):
     return b"".join(output)
 
 
-_char_to_bin = {}
-_bin_to_char = {}
-for i in range(256):
-    ch = bytes((i,))
-    bin = int_to_bin(i, 8)
-    _char_to_bin[i] = bin
-    _bin_to_char[bin] = ch
+_char_to_bin = {i: int_to_bin(i, 8) for i in range(256)}
+_bin_to_char = {int_to_bin(i, 8): bytes((i,)) for i in range(256)}
 
 
 def encode_bin(data):
