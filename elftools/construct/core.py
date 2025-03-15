@@ -366,14 +366,15 @@ class MetaField(Construct):
     :param callable lengthfunc: callable that takes a context and returns
                                 length as an int
 
+    >>> from ..construct import Byte
     >>> foo = Struct("foo",
     ...     Byte("length"),
     ...     MetaField("data", lambda ctx: ctx["length"])
     ... )
-    >>> foo.parse("\\x03ABC")
-    Container(data = 'ABC', length = 3)
-    >>> foo.parse("\\x04ABCD")
-    Container(data = 'ABCD', length = 4)
+    >>> foo.parse(b"\\x03ABC")
+    Container({'length': 3, 'data': b'ABC'})
+    >>> foo.parse(b"\\x04ABCD")
+    Container({'length': 4, 'data': b'ABCD'})
     """
 
     __slots__ = ["lengthfunc"]
@@ -459,29 +460,30 @@ class Range(Subconstruct):
     :param int maxcount: the maximal count
     :param Construct subcon: the subcon to repeat
 
+    >>> from ..construct import UBInt8
     >>> c = Range(3, 7, UBInt8("foo"))
-    >>> c.parse("\\x01\\x02")
+    >>> c.parse(b"\\x01\\x02")  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
       ...
-    construct.core.RangeError: expected 3..7, found 2
-    >>> c.parse("\\x01\\x02\\x03")
+    RangeError: expected 3..7, found 2
+    >>> c.parse(b"\\x01\\x02\\x03")
     [1, 2, 3]
-    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06")
+    >>> c.parse(b"\\x01\\x02\\x03\\x04\\x05\\x06")
     [1, 2, 3, 4, 5, 6]
-    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06\\x07")
+    >>> c.parse(b"\\x01\\x02\\x03\\x04\\x05\\x06\\x07")
     [1, 2, 3, 4, 5, 6, 7]
-    >>> c.parse("\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09")
+    >>> c.parse(b"\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x09")
     [1, 2, 3, 4, 5, 6, 7]
-    >>> c.build([1,2])
+    >>> c.build([1,2])  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
       ...
-    construct.core.RangeError: expected 3..7, found 2
+    RangeError: expected 3..7, found 2
     >>> c.build([1,2,3,4])
-    '\\x01\\x02\\x03\\x04'
-    >>> c.build([1,2,3,4,5,6,7,8])
+    b'\\x01\\x02\\x03\\x04'
+    >>> c.build([1,2,3,4,5,6,7,8])  # doctest: +IGNORE_EXCEPTION_DETAIL
     Traceback (most recent call last):
       ...
-    construct.core.RangeError: expected 3..7, found 8
+    RangeError: expected 3..7, found 8
     """
 
     __slots__ = ["mincount", "maxcout"]
@@ -493,18 +495,16 @@ class Range(Subconstruct):
         self._set_flag(self.FLAG_DYNAMIC)
     def _parse(self, stream, context):
         obj = ListContainer()
-        c = 0
+        c = pos = -1
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
-                while c < self.maxcout:
+                for c in range(self.maxcount):
                     pos = stream.tell()
                     obj.append(self.subcon._parse(stream, context.__copy__()))
-                    c += 1
             else:
-                while c < self.maxcout:
+                for c in range(self.maxcount):
                     pos = stream.tell()
                     obj.append(self.subcon._parse(stream, context))
-                    c += 1
         except ConstructError as ex:
             if c < self.mincount:
                 raise RangeError("expected %d to %d, found %d" %
@@ -623,10 +623,8 @@ class Struct(Construct):
     )
     """
     __slots__ = ["subcons", "nested"]
-    def __init__(self, name, *subcons, **kw):
-        self.nested = kw.pop("nested", True)
-        if kw:
-            raise TypeError("the only keyword argument accepted is 'nested'", kw)
+    def __init__(self, name, *subcons, nested=True):
+        self.nested = nested
         Construct.__init__(self, name)
         self.subcons = subcons
         self._inherit_flags(*subcons)
@@ -751,7 +749,7 @@ class Union(Construct):
     )
     """
     __slots__ = ["parser", "builder"]
-    def __init__(self, name, master, *subcons, **kw):
+    def __init__(self, name, master, *subcons) -> None:
         Construct.__init__(self, name)
         args = [Peek(sc) for sc in subcons]
         args.append(MetaField(None, lambda ctx: master._sizeof(ctx)))
@@ -862,11 +860,7 @@ class Select(Construct):
     )
     """
     __slots__ = ["subcons", "include_name"]
-    def __init__(self, name, *subcons, **kw):
-        include_name = kw.pop("include_name", False)
-        if kw:
-            raise TypeError("the only keyword argument accepted "
-                "is 'include_name'", kw)
+    def __init__(self, name, *subcons, include_name=False):
         Construct.__init__(self, name)
         self.subcons = subcons
         self.include_name = include_name

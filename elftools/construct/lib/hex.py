@@ -1,6 +1,5 @@
 # Map an integer in the inclusive range 0-255 to its string byte representation
-_printable = dict((i, ".") for i in range(256))
-_printable.update((i, chr(i)) for i in range(32, 128))
+_printable = {i: chr(i) if 32 <= i < 128 else "." for i in range(256)}
 
 
 def hexdump(data, linesize):
