@@ -521,7 +521,7 @@ class CFIEntry:
             # line that serves as the base (first) line in the FDE's table.
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
-            if len(cie_decoded_table.table) > 0:
+            if cie_decoded_table.table:
                 last_line_in_CIE = copy.copy(cie_decoded_table.table[-1])
                 cur_line = copy.copy(last_line_in_CIE)
             else:
@@ -726,7 +726,8 @@ _PRIMARY_ARG_MASK = 0b00111111
 # This dictionary is filled by automatically scanning the constants module
 # for DW_CFA_* instructions, and mapping their values to names. Since all
 # names were imported from constants with `import *`, we look in globals()
-_OPCODE_NAME_MAP = {}
-for name in list(globals().keys()):
-    if name.startswith('DW_CFA'):
-        _OPCODE_NAME_MAP[globals()[name]] = name
+_OPCODE_NAME_MAP = {
+    value: name
+    for name, value in globals().items()
+    if name.startswith('DW_CFA')
+}

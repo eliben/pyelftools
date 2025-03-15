@@ -102,7 +102,7 @@ class TypeUnit:
 
         # Note that a top DIE always has minimal offset and is therefore
         # at the beginning of our lists, so no bisect is required.
-        if len(self._diemap) > 0:
+        if self._diemap:
             return self._dielist[0]
 
         top = DIE(
@@ -121,7 +121,7 @@ class TypeUnit:
         """ Returns whether the top DIE in this TU has already been parsed and cached.
             No parsing on demand!
         """
-        return len(self._diemap) > 0        
+        return bool(self._diemap)
 
     @property
     def size(self):
@@ -219,8 +219,7 @@ class TypeUnit:
         yield die
         if die.has_children:
             for c in die.iter_children():
-                for d in die.cu._iter_DIE_subtree(c):
-                    yield d
+                yield from die.cu._iter_DIE_subtree(c)
             yield die._terminator
 
     def _get_cached_DIE(self, offset):

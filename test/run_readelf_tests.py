@@ -162,7 +162,7 @@ def compare_output(s1, s2):
         to replicate. Read the documentation for more details.
     """
     def prepare_lines(s):
-        return [line for line in s.lower().splitlines() if line.strip() != '']
+        return [line for line in s.lower().splitlines() if line.strip()]
 
     lines1 = prepare_lines(s1)
     lines2 = prepare_lines(s2)
@@ -298,7 +298,7 @@ def main():
 
     # If file names are given as command-line arguments, only these files
     # are taken as inputs. Otherwise, autodiscovery is performed.
-    if len(args.files) > 0:
+    if args.files:
         filenames = args.files
     else:
         filenames = sorted(discover_testfiles('test/testfiles_for_readelf'))

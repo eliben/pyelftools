@@ -71,7 +71,7 @@ def parse_cpp_datatype(var_die):
             else:
                 retval_type = "void "
 
-            if len(mods) and mods[-1] == 'pointer':
+            if mods and mods[-1] == 'pointer':
                 mods.pop()
                 t.modifiers = tuple(mods)
                 t.name = "%s(%s*)(%s)" % (retval_type, ptr_prefix, params)
@@ -147,7 +147,7 @@ class TypeDesc:
 
         parts = []
         # Initial const/volatile applies to the var ifself, other consts apply to the pointee
-        if len(mods) and mods[0] in ('const', 'volatile'):
+        if mods and mods[0] in ('const', 'volatile'):
             parts.append(mods[0])
             mods = mods[1:]
 
@@ -160,7 +160,7 @@ class TypeDesc:
             name = '::'.join(self.scopes)+'::' + name
         parts.append(name)
 
-        if len(mods):
+        if mods:
             parts.append("".join(cpp_symbols[mod] for mod in mods))
 
         if self.dimensions:
@@ -190,7 +190,7 @@ def get_class_spec_if_member(func_spec, the_func):
         this_param = the_func.get_DIE_from_attribute('DW_AT_object_pointer')
         this_type = parse_cpp_datatype(this_param)
         class_spec = ClassDesc()
-        class_spec.scopes = this_type.scopes + (this_type.name,)
+        class_spec.scopes = (*this_type.scopes, this_type.name)
         class_spec.const_member = any(("const", "pointer") == this_type.modifiers[i:i+2]
             for i in range(len(this_type.modifiers))) # const -> pointer -> const for this arg of const
         return class_spec

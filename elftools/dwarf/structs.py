@@ -373,7 +373,7 @@ class DWARFStructs:
         # past it. Therefore an If is used.
         self.Dwarf_lineprog_file_entry = Struct('file_entry',
             CString('name'),
-            If(lambda ctx: len(ctx.name) != 0,
+            If(lambda ctx: bool(ctx.name),
                 Embed(Struct('',
                     self.Dwarf_uleb128('dir_index'),
                     self.Dwarf_uleb128('mtime'),
@@ -450,7 +450,7 @@ class DWARFStructs:
                     CString('include_directory'))),
             If(lambda ctx: ctx.version < 5,
                 RepeatUntilExcluding(
-                    lambda obj, ctx: len(obj.name) == 0,
+                    lambda obj, ctx: not obj.name,
                     self.Dwarf_lineprog_file_entry)) # array name is file_entry
         )
 

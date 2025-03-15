@@ -1258,7 +1258,7 @@ class ReadElf:
 
             lineprogram_list.append(lineprogram)
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
-            if len(lineprogram['include_directory']) > 0:
+            if lineprogram['include_directory']:
                 # GNU readelf 2.38 only outputs directory in wide mode
                 self._emitline('%s:' % cu_filename)
             else:
@@ -1389,7 +1389,7 @@ class ReadElf:
             section = self._dwarfinfo.debug_pubtypes_sec
 
         # readelf prints nothing if the section is not present.
-        if namelut is None or len(namelut) == 0:
+        if not namelut:
             return
 
         self._emitline('Contents of the %s section:' % section.name)
@@ -1423,7 +1423,7 @@ class ReadElf:
         # dumps them, so we should too.
         unordered_entries = aranges_table._get_entries(need_empty=True)
 
-        if len(unordered_entries) == 0:
+        if not unordered_entries:
             self._emitline()
             self._emitline("Section '.debug_aranges' has no debugging data.")
             return
@@ -1500,7 +1500,7 @@ class ReadElf:
 
             # Decode the table.
             decoded_table = entry.get_decoded()
-            if len(decoded_table.table) == 0:
+            if not decoded_table.table:
                 continue
 
             # Print the heading row for the decoded table
@@ -1516,7 +1516,7 @@ class ReadElf:
             # DWARF register number is not greater than other GPRs.)
             decoded_table = entry.get_decoded()
             reg_order = sorted(decoded_table.reg_order)
-            if len(decoded_table.reg_order):
+            if decoded_table.reg_order:
                 # Headings for the registers
                 for regnum in reg_order:
                     if regnum == ra_regnum:
@@ -1597,7 +1597,7 @@ class ReadElf:
         line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)
 
         loc_lists = list(loc_lists_sec.iter_location_lists())
-        if len(loc_lists) == 0:
+        if not loc_lists:
             # Present but empty locations section - readelf outputs a message
             self._emitline("\nSection '%s' has no debugging data." % (section_name,))
             return
@@ -1698,7 +1698,7 @@ class ReadElf:
         self._emitline('  Address size:    %d' % cu.address_size)
         self._emitline('  Segment size:    %d' % cu.segment_selector_size)
         self._emitline('  Offset entries:  %d\n' % cu.offset_count)
-        if cu.offsets and len(cu.offsets):
+        if cu.offsets:
             self._emitline('  Offsets starting at 0x%x:' % cu.offset_table_offset)
             for i_offset in enumerate(cu.offsets):
                 self._emitline('    [%6d] 0x%x' % i_offset)        
@@ -1723,7 +1723,7 @@ class ReadElf:
         self._emitline('  Address size:    %d' % cu.address_size)
         self._emitline('  Segment size:    %d' % cu.segment_selector_size)
         self._emitline('  Offset entries:  %d\n' % cu.offset_count)
-        if cu.offsets and len(cu.offsets):
+        if cu.offsets:
             self._emitline('  Offsets starting at 0x%x:' % cu.offset_table_offset)
             for i_offset in enumerate(cu.offsets):
                 self._emitline('    [%6d] 0x%x' % i_offset)
@@ -1750,7 +1750,7 @@ class ReadElf:
         next_rcu_offset = 0
 
         range_lists = list(range_lists_sec.iter_range_lists())
-        if len(range_lists) == 0:
+        if not range_lists:
             # Present but empty ranges section - readelf outputs a message
             self._emitline("\nSection '%s' has no debugging data." % section_name)
             return

@@ -12,7 +12,7 @@ import sys
 from utils import is_in_rootdir
 
 def run_test_script(path, *args):
-    cmd = [sys.executable, path] + list(args)
+    cmd = [sys.executable, path, *args]
     print("Running '%s'" % ' '.join(cmd))
     subprocess.check_call(cmd)
 

@@ -346,7 +346,7 @@ class AttributesSubsubsection(Section):
     def attributes(self):
         """ List of all attributes in the subsubsection.
         """
-        return [self.header] + list(self.iter_attributes())
+        return [self.header, *(self.iter_attributes())]
 
     def _make_attributes(self):
         """ Create all attributes for this subsubsection except the first one
