@@ -11,7 +11,7 @@ from .die import DIE
 from ..common.utils import dwarf_assert
 
 
-class TypeUnit(object):
+class TypeUnit:
     """ A DWARF type unit (TU).
 
             A type unit contains type definition entries that can be used to

@@ -32,7 +32,7 @@ from .hash import ELFHashSection, GNUHashSection
 from .constants import SHN_INDICES
 from ..dwarf.dwarf_util import _file_crc32
 
-class ELFFile(object):
+class ELFFile:
     """ Creation: the constructor accepts a stream (file-like object) with the
         contents of an ELF file.
 

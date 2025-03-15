@@ -13,7 +13,6 @@ import logging
 from multiprocessing import Pool
 import os
 import platform
-import re
 import sys
 import time
 

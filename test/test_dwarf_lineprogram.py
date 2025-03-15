@@ -7,7 +7,7 @@
 import unittest
 from io import BytesIO
 
-from elftools.dwarf.lineprogram import LineProgram, LineState, LineProgramEntry
+from elftools.dwarf.lineprogram import LineProgram
 from elftools.dwarf.structs import DWARFStructs
 from elftools.dwarf.constants import *
 

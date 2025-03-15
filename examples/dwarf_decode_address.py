@@ -110,7 +110,6 @@ if __name__ == '__main__':
         sys.exit(0)
 
     if len(sys.argv) < 3:
-        print('Expected usage: {0} <address> <executable>'.format(sys.argv[0]))
-        sys.exit(1)
+        sys.exit(f'Expected usage: {sys.argv[0]} <address> <executable>')
     addr = int(sys.argv[1], 0)
     process_file(sys.argv[2], addr)

@@ -6,10 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from ..common.utils import struct_parse, dwarf_assert
+from ..common.utils import struct_parse
 
 
-class AbbrevTable(object):
+class AbbrevTable:
     """ Represents a DWARF abbreviation table.
     """
     __slots__ = ('structs', 'stream', 'offset', '_abbrev_map')
@@ -54,7 +54,7 @@ class AbbrevTable(object):
         return map
 
 
-class AbbrevDecl(object):
+class AbbrevDecl:
     """ Wraps a parsed abbreviation declaration, exposing its fields with
         dict-like access, and adding some convenience methods.
 

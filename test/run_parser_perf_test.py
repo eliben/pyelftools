@@ -11,14 +11,16 @@
 # The idea was to isolate the performance of the struct parsing logic alone.
 #-------------------------------------------------------------------------------
 from io import BytesIO
-import os, sys, time, argparse
+import os
+import sys
+import time
+import argparse
 
 from utils import is_in_rootdir
 
 sys.path.insert(0, '.')
 
 from elftools.elf.elffile import ELFFile
-from elftools.dwarf.dwarfinfo import DWARFInfo
 from elftools.dwarf.locationlists import LocationParser
 
 def parse_dwarf(ef, args):

@@ -14,12 +14,11 @@ from .sections import Section
 from .enums import (
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
-    ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_BPF, ENUM_RELOC_TYPE_LOONGARCH,
-    ENUM_D_TAG)
+    ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_BPF, ENUM_RELOC_TYPE_LOONGARCH)
 from ..construct import Container
 
 
-class Relocation(object):
+class Relocation:
     """ Relocation object - representing a single relocation entry. Allows
         dictionary-like access to the entry's fields.
 
@@ -48,7 +47,7 @@ class Relocation(object):
         return self.__repr__()
 
 
-class RelocationTable(object):
+class RelocationTable:
     """ Shared functionality between relocation sections and relocation tables
     """
 
@@ -109,7 +108,7 @@ class RelocationSection(Section, RelocationTable):
                 header['sh_type'], self.entry_size))
 
 
-class RelrRelocationTable(object):
+class RelrRelocationTable:
     """ RELR compressed relocation table. This stores relative relocations
         in a compressed format. An entry with an even value serves as an
         'anchor' that defines a base address. Following this entry are one or
@@ -236,7 +235,7 @@ def _bpf_64_32_reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
     return (sym_value + addend) // 8 - 1
 
 
-class RelocationHandler(object):
+class RelocationHandler:
     """ Handles the logic of relocations in ELF files.
     """
     def __init__(self, elffile):

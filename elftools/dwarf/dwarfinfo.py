@@ -6,7 +6,6 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import os
 from collections import namedtuple
 from bisect import bisect_right
 
@@ -59,7 +58,7 @@ DwarfConfig = namedtuple('DwarfConfig',
     'little_endian machine_arch default_address_size')
 
 
-class DWARFInfo(object):
+class DWARFInfo:
     """ Acts also as a "context" to other major objects, bridging between
         various parts of the debug information.
     """

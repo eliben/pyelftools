@@ -6,7 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import os, sys, subprocess, tempfile
+import os
+import sys
+import subprocess
+import tempfile
 
 
 def run_exe(exe_path, args=[], echo=False):

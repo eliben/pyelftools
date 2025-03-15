@@ -7,7 +7,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import os, sys
+import os
+import sys
 import logging
 from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
 
@@ -48,7 +49,7 @@ def run_example_and_compare(example_path):
     try:
         with open(reference_path) as ref_f:
             ref_str = ref_f.read()
-    except (IOError, OSError) as e:
+    except OSError as e:
         testlog.info('.......ERROR - reference output cannot be read! - %s' % e)
         return False
 

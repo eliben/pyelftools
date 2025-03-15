@@ -6,7 +6,6 @@
 # Dorothy Chen (dorothchen@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import os
 from collections import namedtuple
 from ..common.utils import struct_parse
 from bisect import bisect_right
@@ -20,7 +19,7 @@ import math
 ARangeEntry = namedtuple('ARangeEntry',
     'begin_addr length info_offset unit_length version address_size segment_size')
 
-class ARanges(object):
+class ARanges:
     """ ARanges table in DWARF
 
         stream, size:

@@ -33,7 +33,7 @@ entry_translate = {
     'DW_LLE_startx_length'   : _translate_startx_length
 }
 
-class LocationListsPair(object):
+class LocationListsPair:
     """For those binaries that contain both a debug_loc and a debug_loclists section,
     it holds a LocationLists object for both and forwards API calls to the right one.
     """
@@ -62,7 +62,7 @@ class LocationListsPair(object):
         """
         raise DWARFError("Iterating through two sections is not supported")
 
-class LocationLists(object):
+class LocationLists:
     """ A single location list is a Python list consisting of LocationEntry or
         BaseAddressEntry objects.
 
@@ -280,7 +280,7 @@ class LocationLists(object):
             assert(stream.tell() == list_offset)
         return pairs
 
-class LocationParser(object):
+class LocationParser:
     """ A parser for location information in DIEs.
         Handles both location information contained within the attribute
         itself (represented as a LocationExpr object) and references to

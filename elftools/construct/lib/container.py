@@ -84,7 +84,7 @@ class ListContainer(list):
     def __str__(self):
         return pformat(self)
 
-class LazyContainer(object):
+class LazyContainer:
 
     __slots__ = ["subcon", "stream", "pos", "context", "_value"]
 

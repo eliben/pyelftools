@@ -9,7 +9,6 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from collections import defaultdict
-import os
 import sys
 import posixpath
 

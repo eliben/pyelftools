@@ -12,7 +12,7 @@ from .constants import SH_FLAGS
 from .notes import iter_notes
 
 
-class Segment(object):
+class Segment:
     def __init__(self, header, stream):
         self.header = header
         self.stream = stream
@@ -99,7 +99,7 @@ class InterpSegment(Segment):
         for this ELF file.
     """
     def __init__(self, header, stream):
-        super(InterpSegment, self).__init__(header, stream)
+        super().__init__(header, stream)
 
     def get_interp_name(self):
         """ Obtain the interpreter path used for this ELF file.
@@ -115,7 +115,7 @@ class NoteSegment(Segment):
     """ NOTE segment. Knows how to parse notes.
     """
     def __init__(self, header, stream, elffile):
-        super(NoteSegment, self).__init__(header, stream)
+        super().__init__(header, stream)
         self.elffile = elffile
 
     def iter_notes(self):

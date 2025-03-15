@@ -6,12 +6,11 @@
 #------------------------------------------------------------------------------
 
 import unittest
-import os, sys, io
+import os
 
 # sys.path.insert(1, os.getcwd())
 
 from elftools.elf.elffile import ELFFile
-from elftools.dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
 from elftools.dwarf.locationlists import LocationParser
 
 class TestGNUCallAttributesHaveLocation(unittest.TestCase):
@@ -21,7 +20,6 @@ class TestGNUCallAttributesHaveLocation(unittest.TestCase):
             elffile = ELFFile(f)
             dwarfinfo = elffile.get_dwarf_info()
             for CU in dwarfinfo.iter_CUs():
-                ver = CU['version']
                 for DIE in CU.iter_DIEs():
                     for key in DIE.attributes:
                         attr = DIE.attributes[key]

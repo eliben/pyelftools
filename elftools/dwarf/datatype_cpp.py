@@ -109,7 +109,7 @@ def parse_cpp_datatype(var_die):
 
 #--------------------------------------------------
 
-class TypeDesc(object):
+class TypeDesc:
     """ Encapsulates a description of a datatype, as parsed from DWARF DIEs.
         Not enough to display the variable in the debugger, but enough
         to produce a type description string similar to those of llvm-dwarfdump.
@@ -180,7 +180,7 @@ def safe_DIE_name(die, default = ''):
 def DIE_type(die):
     return die.get_DIE_from_attribute("DW_AT_type")
 
-class ClassDesc(object):
+class ClassDesc:
     def __init__(self):
         self.scopes = ()
         self.const_member = False
@@ -211,12 +211,6 @@ def get_class_spec_if_member(func_spec, the_func):
 
 def format_function_param(param_spec, param):
     if param_spec.tag == 'DW_TAG_formal_parameter':
-        if 'DW_AT_name' in param.attributes:
-            name = DIE_name(param)
-        elif 'DW_AT_name' in param_spec.attributes:
-            name = DIE_name(param_spec)
-        else:
-            name = None
         type = parse_cpp_datatype(param_spec)
         return  str(type)
     else: # unspecified_parameters AKA variadic

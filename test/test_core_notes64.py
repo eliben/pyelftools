@@ -26,7 +26,6 @@ class TestCoreNotes(unittest.TestCase):
         for segment in elf.iter_segments():
             if not isinstance(segment, NoteSegment):
                 continue
-            notes = list(segment.iter_notes())
             for note in segment.iter_notes():
                 if note['n_type'] != 'NT_PRPSINFO':
                     continue

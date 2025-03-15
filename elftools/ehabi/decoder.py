@@ -9,7 +9,7 @@
 from collections import namedtuple
 
 
-class EHABIBytecodeDecoder(object):
+class EHABIBytecodeDecoder:
     """ Decoder of a sequence of ARM exception handler abi bytecode.
 
         Reference:
@@ -139,7 +139,7 @@ class EHABIBytecodeDecoder(object):
         if (op1 & 0xf0) != 0 or op1 == 0x00:
             return 'spare'
         else:
-            return 'pop %s' % self._printGPR((op1 & 0x0f))
+            return 'pop %s' % self._printGPR(op1 & 0x0f)
 
     def _decode_10110010_uleb128(self):
         #  SmallVector<uint8_t, 4> ULEB;
@@ -272,7 +272,7 @@ class EHABIBytecodeDecoder(object):
     )
 
 
-class MnemonicItem(object):
+class MnemonicItem:
     """ Single mnemonic item.
     """
 

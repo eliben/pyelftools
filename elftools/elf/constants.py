@@ -7,7 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 
-class E_FLAGS(object):
+class E_FLAGS:
     """ Flag values for the e_flags field of the ELF header
     """
     EF_ARM_EABIMASK=0xFF000000
@@ -77,7 +77,7 @@ class E_FLAGS(object):
     EF_LARCH_ABI_SINGLE_FLOAT = EF_LOONGARCH_ABI_SINGLE_FLOAT
     EF_LARCH_ABI_DOUBLE_FLOAT = EF_LOONGARCH_ABI_DOUBLE_FLOAT
 
-class E_FLAGS_MASKS(object):
+class E_FLAGS_MASKS:
     """Masks to be used for convenience when working with E_FLAGS
 
     This is a simplified approach that is also used by GNU binutils
@@ -90,7 +90,7 @@ class E_FLAGS_MASKS(object):
     EFM_MIPS_ABI_EABI64 = 0x00004000
 
 
-class SHN_INDICES(object):
+class SHN_INDICES:
     """ Special section indices
     """
     SHN_UNDEF=0
@@ -103,7 +103,7 @@ class SHN_INDICES(object):
     SHN_XINDEX=0xffff
 
 
-class SH_FLAGS(object):
+class SH_FLAGS:
     """ Flag values for the sh_flags field of section headers
     """
     SHF_WRITE=0x1
@@ -122,7 +122,7 @@ class SH_FLAGS(object):
     SHF_MASKPROC=0xf0000000
 
 
-class RH_FLAGS(object):
+class RH_FLAGS:
     """ Flag values for the DT_MIPS_FLAGS dynamic table entries
     """
     RHF_NONE=0x00000000
@@ -143,7 +143,7 @@ class RH_FLAGS(object):
     RHF_RLD_ORDER_SAFE=0x00004000
 
 
-class P_FLAGS(object):
+class P_FLAGS:
     """ Flag values for the p_flags field of program headers
     """
     PF_X=0x1
@@ -155,7 +155,7 @@ class P_FLAGS(object):
 
 # symbol info flags for entries
 # in the .SUNW_syminfo section
-class SUNW_SYMINFO_FLAGS(object):
+class SUNW_SYMINFO_FLAGS:
     """ Flags for the si_flags field of entries
         in the .SUNW_syminfo section
     """
@@ -170,7 +170,7 @@ class SUNW_SYMINFO_FLAGS(object):
     SYMINFO_FLG_CAP=0x100
     SYMINFO_FLG_DEFERRED=0x200
 
-class VER_FLAGS(object):
+class VER_FLAGS:
     VER_FLG_BASE=0x1
     VER_FLG_WEAK=0x2
     VER_FLG_INFO=0x4

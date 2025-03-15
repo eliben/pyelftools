@@ -10,7 +10,6 @@
 #-------------------------------------------------------------------------------
 import os
 from io import BytesIO
-import sys
 import unittest
 
 from elftools.elf.elffile import ELFFile

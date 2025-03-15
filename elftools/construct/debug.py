@@ -69,7 +69,6 @@ class Probe(Construct):
             else:
                 stream.seek(-len(follows), 1)
                 obj.following_stream_data = HexString(follows)
-            print
 
         if self.show_context:
             obj.context = context

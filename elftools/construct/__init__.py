@@ -57,7 +57,8 @@ Embed = Embedded
 # Deprecated names
 # Next scheduled name cleanout: 2.1
 #===============================================================================
-import functools, warnings
+import functools
+import warnings
 
 def deprecated(f):
     @functools.wraps(f)

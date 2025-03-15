@@ -6,12 +6,11 @@
 # Yann Rouillard (yann@pleiades.fr.eu.org)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-from ..construct import CString
 from ..common.utils import struct_parse, elf_assert
 from .sections import Section, Symbol
 
 
-class Version(object):
+class Version:
     """ Version object - representing a version definition or dependency
         entry from a "Version Needed" or a "Version Dependency" table section.
 
@@ -34,7 +33,7 @@ class Version(object):
         return self.entry[name]
 
 
-class VersionAuxiliary(object):
+class VersionAuxiliary:
     """ Version Auxiliary object - representing an auxiliary entry of a version
         definition or dependency entry
 
@@ -58,7 +57,7 @@ class GNUVersionSection(Section):
 
     def __init__(self, header, name, elffile, stringtable,
                  field_prefix, version_struct, version_auxiliaries_struct):
-        super(GNUVersionSection, self).__init__(header, name, elffile)
+        super().__init__(header, name, elffile)
         self.stringtable = stringtable
         self.field_prefix = field_prefix
         self.version_struct = version_struct
@@ -130,7 +129,7 @@ class GNUVerNeedSection(GNUVersionSection):
         Has an associated StringTableSection that's passed in the constructor.
     """
     def __init__(self, header, name, elffile, stringtable):
-        super(GNUVerNeedSection, self).__init__(
+        super().__init__(
                 header, name, elffile, stringtable, 'vn',
                 elffile.structs.Elf_Verneed, elffile.structs.Elf_Vernaux)
         self._has_indexes = None
@@ -151,7 +150,7 @@ class GNUVerNeedSection(GNUVersionSection):
         return self._has_indexes
 
     def iter_versions(self):
-        for verneed, vernaux in super(GNUVerNeedSection, self).iter_versions():
+        for verneed, vernaux in super().iter_versions():
             verneed.name = self.stringtable.get_string(verneed['vn_file'])
             yield verneed, vernaux
 
@@ -173,7 +172,7 @@ class GNUVerDefSection(GNUVersionSection):
         Has an associated StringTableSection that's passed in the constructor.
     """
     def __init__(self, header, name, elffile, stringtable):
-        super(GNUVerDefSection, self).__init__(
+        super().__init__(
                 header, name, elffile, stringtable, 'vd',
                 elffile.structs.Elf_Verdef, elffile.structs.Elf_Verdaux)
 
@@ -195,7 +194,7 @@ class GNUVerSymSection(Section):
         Has an associated SymbolTableSection that's passed in the constructor.
     """
     def __init__(self, header, name, elffile, symboltable):
-        super(GNUVerSymSection, self).__init__(header, name, elffile)
+        super().__init__(header, name, elffile)
         self.symboltable = symboltable
 
     def num_symbols(self):

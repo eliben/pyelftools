@@ -10,7 +10,7 @@ from collections import namedtuple
 import os
 
 from ..common.exceptions import DWARFError, ELFParseError
-from ..common.utils import bytes2str, struct_parse, preserve_stream_pos
+from ..common.utils import bytes2str, struct_parse
 from .enums import DW_FORM_raw2name
 from .dwarf_util import _resolve_via_offset_table, _get_base_offset
 from ..construct import ConstructError
@@ -44,7 +44,7 @@ AttributeValue = namedtuple(
     'AttributeValue', 'name form value raw_value offset indirection_length')
 
 
-class DIE(object):
+class DIE:
     """ A DWARF debugging information entry. On creation, parses itself from
         the stream. Each DIE is held by a CU.
 
@@ -285,7 +285,7 @@ class DIE(object):
         while True:
             try:
                 real_form = DW_FORM_raw2name[real_form_code] # Form name or exception if bogus code
-            except KeyError as err:
+            except KeyError:
                 raise DWARFError('Found DW_FORM_indirect with unknown real form 0x%x' % real_form_code)
             
             raw_value = struct_parse(structs.Dwarf_dw_form[real_form], self.stream)

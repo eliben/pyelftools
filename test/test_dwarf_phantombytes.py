@@ -6,7 +6,7 @@
 #------------------------------------------------------------------------------
 
 import unittest
-import os, sys, io
+import os
 
 from elftools.elf.elffile import ELFFile
 

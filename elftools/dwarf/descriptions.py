@@ -581,7 +581,7 @@ _REG_NAMES_AArch64 = [
 ]
 
 
-class ExprDumper(object):
+class ExprDumper:
     """ A dumper for DWARF expressions that dumps a textual
         representation of the complete expression.
 
