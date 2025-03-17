@@ -166,7 +166,9 @@ class StringAdapter(Adapter):
         self.encoding = encoding
     def _encode(self, obj: bytes | str, context: Container) -> bytes:
         if self.encoding:
+            assert isinstance(obj, str)
             obj = obj.encode(self.encoding)
+        assert isinstance(obj, bytes)
         return obj
     def _decode(self, obj: bytes, context: Container) -> bytes | str:
         if self.encoding:

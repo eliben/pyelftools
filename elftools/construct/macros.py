@@ -98,6 +98,7 @@ def BitField(name: str, length: Length, swapped: bool = False, signed: bool = Fa
     Container({'a': 7, 'b': False, 'c': 8, 'bar': Container({'d': 15, 'e': 1})})
     """
 
+    assert isinstance(length, int)  # FIXME: Field(len=f()) is supported, but not BitIntegerAdapter(width=f())
     return BitIntegerAdapter(Field(name, length),
         length,
         swapped=swapped,
