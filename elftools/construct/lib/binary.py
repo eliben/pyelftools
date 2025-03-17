@@ -1,4 +1,7 @@
-def int_to_bin(number, width=32):
+from __future__ import annotations
+
+
+def int_to_bin(number: int, width: int = 32) -> bytes:
     r"""
     Convert an integer into its binary representation in a bytes object.
     Width is the amount of bits to generate. If width is larger than the actual
@@ -18,14 +21,14 @@ def int_to_bin(number, width=32):
     return bytes(bool(number & (1 << (width - 1 - bit))) for bit in range(width))
 
 
-_bit_values = {
+_bit_values: dict[int, int] = {
     0: 0,
     1: 1,
     48: 0, # '0'
     49: 1, # '1'
     }
 
-def bin_to_int(bits, signed=False):
+def bin_to_int(bits: bytes, signed: bool = False) -> int:
     r"""
     Logical opposite of int_to_bin. Both '0' and '\x00' are considered zero,
     and both '1' and '\x01' are considered one. Set sign to True to interpret
@@ -42,7 +45,7 @@ def bin_to_int(bits, signed=False):
     return number - bias
 
 
-def swap_bytes(bits, bytesize=8):
+def swap_bytes(bits: bytes, bytesize: int = 8) -> bytes:
     r"""
     Bits is a b'' object containing a binary representation. Assuming each
     bytesize bits constitute a bytes, perform a endianness byte swap. Example:
@@ -57,7 +60,7 @@ _char_to_bin = {i: int_to_bin(i, 8) for i in range(256)}
 _bin_to_char = {int_to_bin(i, 8): bytes((i,)) for i in range(256)}
 
 
-def encode_bin(data):
+def encode_bin(data: bytes) -> bytes:
     r"""
     Create a binary representation of the given b'' object. Assume 8-bit
     ASCII. Example:
@@ -68,7 +71,7 @@ def encode_bin(data):
     return b"".join(_char_to_bin[ch] for ch in data)
 
 
-def decode_bin(data):
+def decode_bin(data: bytes) -> bytes:
     """
     Logical opposite of decode_bin.
     """

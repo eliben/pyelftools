@@ -1,9 +1,24 @@
 """
 Various containers.
 """
+from __future__ import annotations
 
 from collections.abc import MutableMapping
 from pprint import pformat
+from typing import IO, TYPE_CHECKING, Any, Literal, TypeVar, overload
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+    from typing import Self  # 3.11+
+
+    from typing_extensions import Concatenate, ParamSpec  # 3.10+
+
+    from ..core import Construct
+    from .hex import HexString
+
+    _P = ParamSpec('_P')
+    _R = TypeVar('_R')
+    _T = TypeVar('_T')
 
 
 __all__ = [
@@ -12,9 +27,15 @@ __all__ = [
 ]
 
 
-def recursion_lock(retval, lock_name = "__recursion_lock__"):
-    def decorator(func):
-        def wrapper(self, *args, **kw):
+def recursion_lock(
+    retval: _R,
+    lock_name: str = "__recursion_lock__",
+) -> Callable[[Callable[Concatenate[Any, _P], _T]], Callable[Concatenate[Any, _P], _T | _R]]:
+
+    def decorator(
+        func: Callable[Concatenate[Any, _P], _T],
+    ) -> Callable[Concatenate[Any, _P], _T | _R]:
+        def wrapper(self: Any, *args: _P.args, **kw: _P.kwargs) -> _T | _R:
             if getattr(self, lock_name, False):
                 return retval
             setattr(self, lock_name, True)
@@ -26,44 +47,44 @@ def recursion_lock(retval, lock_name = "__recursion_lock__"):
         return wrapper
     return decorator
 
-class Container(MutableMapping):
+class Container(MutableMapping[str, Any]):
     """
     A generic container of attributes.
 
     Containers are the common way to express parsed data.
     """
 
-    def __init__(self, **kw):
+    def __init__(self, **kw: Any) -> None:
         self.__dict__ = kw
 
     # The core dictionary interface.
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         return self.__dict__[name]
 
-    def __delitem__(self, name):
+    def __delitem__(self, name: str) -> None:
         del self.__dict__[name]
 
-    def __setitem__(self, name, value):
+    def __setitem__(self, name: str, value: Any) -> None:
         self.__dict__[name] = value
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return iter(self.__dict__)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__dict__.keys())
 
     # Copy interface.
 
-    def copy(self):
+    def copy(self) -> Self:
         return self.__class__(**self.__dict__)
 
     __copy__ = copy
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "%s(%s)" % (self.__class__.__name__, repr(self.__dict__))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s(%s)" % (self.__class__.__name__, str(self.__dict__))
 
 class FlagsContainer(Container):
@@ -74,12 +95,12 @@ class FlagsContainer(Container):
     """
 
     @recursion_lock("<...>")
-    def __str__(self):
+    def __str__(self) -> str:
         d = dict((k, self[k]) for k in self
                  if self[k] and not k.startswith("_"))
         return "%s(%s)" % (self.__class__.__name__, pformat(d))
 
-class ListContainer(list):
+class ListContainer(list[Any]):
     """
     A container for lists.
     """
@@ -87,33 +108,33 @@ class ListContainer(list):
     __slots__ = ["__recursion_lock__"]
 
     @recursion_lock("[...]")
-    def __str__(self):
+    def __str__(self) -> str:
         return pformat(self)
 
 class LazyContainer:
 
     __slots__ = ["subcon", "stream", "pos", "context", "_value"]
 
-    def __init__(self, subcon, stream, pos, context):
+    def __init__(self, subcon: Construct, stream: IO[bytes], pos: int, context: Container) -> None:
         self.subcon = subcon
         self.stream = stream
         self.pos = pos
         self.context = context
         self._value = NotImplemented
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         try:
             return self._value == other._value
         except AttributeError:
             return False
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         return not (self == other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__pretty_str__()
 
-    def __pretty_str__(self, nesting = 1, indentation = "    "):
+    def __pretty_str__(self, nesting: int = 1, indentation: str = "    ") -> str:
         if self._value is NotImplemented:
             text = "<unread>"
         elif hasattr(self._value, "__pretty_str__"):
@@ -122,17 +143,17 @@ class LazyContainer:
             text = str(self._value)
         return "%s: %s" % (self.__class__.__name__, text)
 
-    def read(self):
+    def read(self) -> Any:
         self.stream.seek(self.pos)
         return self.subcon._parse(self.stream, self.context)
 
-    def dispose(self):
+    def dispose(self) -> None:
         self.subcon = None
         self.stream = None
         self.context = None
         self.pos = None
 
-    def _get_value(self):
+    def _get_value(self) -> Any:
         if self._value is NotImplemented:
             self._value = self.read()
         return self._value
