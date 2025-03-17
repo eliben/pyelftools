@@ -56,6 +56,7 @@ def describe_e_type(x: str, elffile: ELFFile | None = None) -> str:
     if elffile is not None and x == 'ET_DYN':
         # Detect whether this is a normal SO or a PIE executable
         dynamic = elffile.get_section_by_name('.dynamic')
+        assert isinstance(dynamic, DynamicSection)
         for t in dynamic.iter_tags('DT_FLAGS_1'):
             if t.entry.d_val & ENUM_DT_FLAGS_1['DF_1_PIE']:
                 return 'DYN (Position-Independent Executable file)'
@@ -71,9 +72,9 @@ def describe_e_version_numeric(x: str) -> str:
 
 
 def describe_p_type(x: int | str) -> str:
-    if x in _DESCR_P_TYPE:
+    if isinstance(x, str) and x in _DESCR_P_TYPE:
         return _DESCR_P_TYPE.get(x)
-    elif x >= ENUM_P_TYPE_BASE['PT_LOOS'] and x <= ENUM_P_TYPE_BASE['PT_HIOS']:
+    elif isinstance(x, int) and ENUM_P_TYPE_BASE['PT_LOOS'] <= x <= ENUM_P_TYPE_BASE['PT_HIOS']:
         return 'LOOS+%lx' % (x - ENUM_P_TYPE_BASE['PT_LOOS'])
     else:
         return _unknown
@@ -103,10 +104,9 @@ def describe_rh_flags(x: int) -> str:
 
 
 def describe_sh_type(x: int | str) -> str:
-    if x in _DESCR_SH_TYPE:
+    if isinstance(x, str) and x in _DESCR_SH_TYPE:
         return _DESCR_SH_TYPE.get(x)
-    elif (x >= ENUM_SH_TYPE_BASE['SHT_LOOS'] and
-          x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']):
+    elif isinstance(x, int) and ENUM_SH_TYPE_BASE['SHT_LOOS'] <= x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']:
         return 'loos+0x%lx' % (x - ENUM_SH_TYPE_BASE['SHT_LOOS'])
     else:
         return _unknown
@@ -301,7 +301,7 @@ def describe_note_gnu_properties(properties: list[Container], machine: str) -> s
     for prop in properties:
         t, d, sz = prop.pr_type, prop.pr_data, prop.pr_datasz
         if t == 'GNU_PROPERTY_STACK_SIZE':
-            if type(d) is int:
+            if isinstance(d, int):
                 prop_desc = 'stack size: 0x%x' % d
             else:
                 prop_desc = 'stack size: <corrupt length: 0x%x>' % sz
@@ -341,9 +341,9 @@ def describe_note_gnu_properties(properties: list[Container], machine: str) -> s
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND, 'RISC-V AND feature', d)
-        elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
+        elif isinstance(t, int) and _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
             prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
-        elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
+        elif isinstance(t, int) and _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
             prop_desc = '<application-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         else:
             prop_desc = '<unknown type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
