@@ -215,21 +215,21 @@ class Dynamic:
         result: dict[str, RelocationTable | RelrRelocationTable] = {}
 
         if list(self.iter_tags('DT_REL')):
-            result['REL'] = RelocationTable(self.elffile,
+            result['REL'] = rel = RelocationTable(self.elffile,
                 self.get_table_offset('DT_REL')[1],  # type: ignore[arg-type]
                 next(self.iter_tags('DT_RELSZ'))['d_val'], False)
 
             relentsz = next(self.iter_tags('DT_RELENT'))['d_val']
-            elf_assert(result['REL'].entry_size == relentsz,
+            elf_assert(rel.entry_size == relentsz,
                 'Expected DT_RELENT to be %s' % relentsz)
 
         if list(self.iter_tags('DT_RELA')):
-            result['RELA'] = RelocationTable(self.elffile,
+            result['RELA'] = rela = RelocationTable(self.elffile,
                 self.get_table_offset('DT_RELA')[1],  # type: ignore[arg-type]
                 next(self.iter_tags('DT_RELASZ'))['d_val'], True)
 
             relentsz = next(self.iter_tags('DT_RELAENT'))['d_val']
-            elf_assert(result['RELA'].entry_size == relentsz,
+            elf_assert(rela.entry_size == relentsz,
                 'Expected DT_RELAENT to be %s' % relentsz)
 
         if list(self.iter_tags('DT_RELR')):
