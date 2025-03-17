@@ -271,7 +271,7 @@ class DynamicSegment(Segment, Dynamic):
         for section in elffile.iter_sections():
             if (isinstance(section, DynamicSection) and
                     section['sh_offset'] == header['p_offset']):
-                stringtable = elffile.get_section(section['sh_link'])
+                stringtable = cast(_StringTable, elffile.get_section(section['sh_link']))
                 break
         Segment.__init__(self, header, stream)
         Dynamic.__init__(self, stream, elffile, stringtable, self['p_offset'],
