@@ -115,6 +115,7 @@ class TypeUnit:
         if self._diemap:
             return self._dielist[0]
 
+        assert self.dwarfinfo.debug_types_sec is not None
         top = DIE(
                 cu=self,
                 stream=self.dwarfinfo.debug_types_sec.stream,
@@ -192,6 +193,7 @@ class TypeUnit:
                 if child._terminator is None:
                     for _ in self.iter_DIE_children(child):
                         pass
+                    assert child._terminator is not None
 
                 cur_offset = child._terminator.offset + child._terminator.size
 
@@ -230,6 +232,7 @@ class TypeUnit:
         if die.has_children:
             for c in die.iter_children():
                 yield from die.cu._iter_DIE_subtree(c)
+            assert die._terminator is not None
             yield die._terminator
 
     def _get_cached_DIE(self, offset: int) -> DIE:
