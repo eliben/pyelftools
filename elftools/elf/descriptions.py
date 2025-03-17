@@ -73,7 +73,7 @@ def describe_e_version_numeric(x: str) -> str:
 
 def describe_p_type(x: int | str) -> str:
     if isinstance(x, str) and x in _DESCR_P_TYPE:
-        return _DESCR_P_TYPE.get(x)
+        return _DESCR_P_TYPE[x]
     elif isinstance(x, int) and ENUM_P_TYPE_BASE['PT_LOOS'] <= x <= ENUM_P_TYPE_BASE['PT_HIOS']:
         return 'LOOS+%lx' % (x - ENUM_P_TYPE_BASE['PT_LOOS'])
     else:
@@ -105,7 +105,7 @@ def describe_rh_flags(x: int) -> str:
 
 def describe_sh_type(x: int | str) -> str:
     if isinstance(x, str) and x in _DESCR_SH_TYPE:
-        return _DESCR_SH_TYPE.get(x)
+        return _DESCR_SH_TYPE[x]
     elif isinstance(x, int) and ENUM_SH_TYPE_BASE['SHT_LOOS'] <= x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']:
         return 'loos+0x%lx' % (x - ENUM_SH_TYPE_BASE['SHT_LOOS'])
     else:
