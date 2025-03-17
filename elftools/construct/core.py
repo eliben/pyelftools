@@ -831,7 +831,7 @@ class Switch(Construct, Generic[_T]):
             raise SwitchError("no default case defined")
         def _sizeof(self, context: Container) -> int:
             raise SwitchError("no default case defined")
-    NoDefault = NoDefault("No default value specified")
+    NoDefault: Final = _NoDefault("No default value specified")
 
     __slots__: list[str] = ["subcons", "keyfunc", "cases", "default", "include_key"]
 
@@ -1304,7 +1304,7 @@ class LazyBound(Construct):
             self.bound = self.bindfunc()
         return self.bound._sizeof(context)
 
-class Pass(Construct):
+class _Pass(Construct):
     """
     A do-nothing construct, useful as the default case for Switch, or
     to indicate Enums.
@@ -1326,9 +1326,9 @@ class Pass(Construct):
         return 0
     def __reduce__(self) -> str:
         return self.__class__.__name__
-Pass = Pass(None)
+Pass: Final[Any] = _Pass(None)
 
-class Terminator(Construct):
+class _Terminator(Construct):
     """
     Asserts the end of the stream has been reached at the point it's placed.
     You can use this to ensure no more unparsed data follows.
@@ -1350,4 +1350,4 @@ class Terminator(Construct):
         assert obj is None
     def _sizeof(self, context: Container) -> int:
         return 0
-Terminator = Terminator(None)
+Terminator: Final[Any] = _Terminator(None)
