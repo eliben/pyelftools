@@ -299,7 +299,9 @@ def describe_note_gnu_property_bitmap_and(values: Iterable[tuple[int, str]], pre
 def describe_note_gnu_properties(properties: list[Container], machine: str) -> str:
     descriptions = []
     for prop in properties:
-        t, d, sz = prop.pr_type, prop.pr_data, prop.pr_datasz
+        t: str | int = prop.pr_type
+        d = prop.pr_data
+        sz: int = prop.pr_datasz
         if t == 'GNU_PROPERTY_STACK_SIZE':
             if isinstance(d, int):
                 prop_desc = 'stack size: 0x%x' % d
