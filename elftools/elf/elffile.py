@@ -316,20 +316,21 @@ class ELFFile:
                 # is relative to the other file's directory as opposed to this file's directory.
                 return ext_elffile.get_dwarf_info(relocate_dwarf_sections=relocate_dwarf_sections, follow_links=True)
 
-        section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev',
+        section_names: list[str] = ['.debug_info', '.debug_aranges', '.debug_abbrev',
                          '.debug_str', '.debug_line', '.debug_frame',
                          '.debug_loc', '.debug_ranges', '.debug_pubtypes',
                          '.debug_pubnames', '.debug_addr',
                          '.debug_str_offsets', '.debug_line_str',
                          '.debug_loclists', '.debug_rnglists',
-                         '.debug_sup', '.gnu_debugaltlink', '.debug_types')
+                         '.debug_sup', '.gnu_debugaltlink', '.debug_types',
+                         ]
 
         compressed = self.has_section('.zdebug_info')
         if compressed:
-            section_names = tuple(map(lambda x: '.z' + x[1:], section_names))
+            section_names = [f'.z{s[1:]}' for s in section_names]
 
         # As it is loaded in the process image, .eh_frame cannot be compressed
-        section_names += ('.eh_frame', )
+        section_names.append('.eh_frame')
 
         (debug_info_sec_name, debug_aranges_sec_name, debug_abbrev_sec_name,
          debug_str_sec_name, debug_line_sec_name, debug_frame_sec_name,
