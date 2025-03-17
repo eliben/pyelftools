@@ -155,7 +155,7 @@ class RangeLists:
         ver5 = self.version >= 5
         # This maps list offset to CU
         cu_map = {die.attributes['DW_AT_ranges'].value : cu
-            for cu in self._dwarfinfo.iter_CUs()
+            for cu in self._dwarfinfo.iter_CUs()  # type: ignore[union-attr]
             for die in cu.iter_DIEs()
             if 'DW_AT_ranges' in die.attributes and (cu['version'] >= 5) == ver5}
         all_offsets = list(cu_map.keys())
