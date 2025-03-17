@@ -79,7 +79,7 @@ class ELFHashTable:
         symndx = self.params['buckets'][hval]
         while symndx != 0:
             sym = self._symboltable.get_symbol(symndx)
-            if sym.name == name:
+            if sym and sym.name == name:
                 return sym
             symndx = self.params['chains'][symndx]
         return None
@@ -187,7 +187,7 @@ class GNUHashTable:
             cur_hash = struct.unpack(hash_format, self.elffile.stream.read(self._wordsize))[0]
             if cur_hash | 1 == namehash | 1:
                 symbol = self._symboltable.get_symbol(symidx)
-                if name == symbol.name:
+                if symbol and name == symbol.name:
                     return symbol
 
             if cur_hash & 1:
