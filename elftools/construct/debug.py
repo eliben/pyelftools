@@ -48,7 +48,7 @@ class Probe(Construct):
         Construct.__init__(self, None)
         if name is None:
             Probe.counter += 1
-            name = "<unnamed %d>" % (Probe.counter,)
+            name = f"<unnamed {Probe.counter}>"
         self.printname = name
         self.show_stream = show_stream
         self.show_context = show_context

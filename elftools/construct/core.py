@@ -313,14 +313,14 @@ def _read_stream(stream: IO[bytes], length: int) -> bytes:
         raise ValueError("length must be >= 0", length)
     data = stream.read(length)
     if len(data) != length:
-        raise FieldError("expected %d, found %d" % (length, len(data)))
+        raise FieldError(f"expected {length}, found {len(data)}")
     return data
 
 def _write_stream(stream: IO[bytes], length: int, data: bytes) -> None:
     if length < 0:
         raise ValueError("length must be >= 0", length)
     if len(data) != length:
-        raise FieldError("expected %d, found %d" % (length, len(data)))
+        raise FieldError(f"expected {length}, found {len(data)}")
     stream.write(data)
 
 class StaticField(Construct):
@@ -452,12 +452,12 @@ class MetaArray(Subconstruct):
                     obj.append(self.subcon._parse(stream, context))
                     c += 1
         except ConstructError as ex:
-            raise ArrayError("expected %d, found %d" % (count, c), ex)
+            raise ArrayError(f"expected {count}, found {c}", ex)
         return obj
     def _build(self, obj: Any, stream: IO[bytes], context: Container) -> None:
         count = self.countfunc(context)
         if len(obj) != count:
-            raise ArrayError("expected %d, found %d" % (count, len(obj)))
+            raise ArrayError(f"expected {count}, found {len(obj)}")
         if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
             for subobj in obj:
                 self.subcon._build(subobj, stream, context.__copy__())
@@ -534,14 +534,12 @@ class Range(Subconstruct):
                     c += 1
         except ConstructError as ex:
             if c < self.mincount:
-                raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcout, c), ex)
+                raise RangeError(f"expected {self.mincount} to {self.maxcout}, found {c}", ex)
             stream.seek(pos)
         return obj
     def _build(self, obj: Any, stream: IO[bytes], context: Container) -> None:
         if len(obj) < self.mincount or len(obj) > self.maxcout:
-            raise RangeError("expected %d to %d, found %d" %
-                (self.mincount, self.maxcout, len(obj)))
+            raise RangeError(f"expected {self.mincount} to {self.maxcout}, found {len(obj)}")
         cnt = 0
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
@@ -558,8 +556,7 @@ class Range(Subconstruct):
                     cnt += 1
         except ConstructError as ex:
             if cnt < self.mincount:
-                raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcout, len(obj)), ex)
+                raise RangeError(f"expected {self.mincount} to {self.maxcout}, found {len(obj)}", ex)
     def _sizeof(self, context: Container) -> int:
         raise SizeofError("can't calculate size")
 

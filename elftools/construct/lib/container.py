@@ -103,7 +103,7 @@ class Container(MutableMapping[str, Any]):
     __copy__ = copy
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({repr(self.__dict__)})"
+        return f"{self.__class__.__name__}({self.__dict__!r})"
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({str(self.__dict__)})"
