@@ -216,7 +216,7 @@ class Dynamic:
 
         if list(self.iter_tags('DT_REL')):
             result['REL'] = RelocationTable(self.elffile,
-                self.get_table_offset('DT_REL')[1],
+                self.get_table_offset('DT_REL')[1],  # type: ignore[arg-type]
                 next(self.iter_tags('DT_RELSZ'))['d_val'], False)
 
             relentsz = next(self.iter_tags('DT_RELENT'))['d_val']
@@ -225,7 +225,7 @@ class Dynamic:
 
         if list(self.iter_tags('DT_RELA')):
             result['RELA'] = RelocationTable(self.elffile,
-                self.get_table_offset('DT_RELA')[1],
+                self.get_table_offset('DT_RELA')[1],  # type: ignore[arg-type]
                 next(self.iter_tags('DT_RELASZ'))['d_val'], True)
 
             relentsz = next(self.iter_tags('DT_RELAENT'))['d_val']
@@ -234,13 +234,13 @@ class Dynamic:
 
         if list(self.iter_tags('DT_RELR')):
             result['RELR'] = RelrRelocationTable(self.elffile,
-                self.get_table_offset('DT_RELR')[1],
+                self.get_table_offset('DT_RELR')[1],  # type: ignore[arg-type]
                 next(self.iter_tags('DT_RELRSZ'))['d_val'],
                 next(self.iter_tags('DT_RELRENT'))['d_val'])
 
         if list(self.iter_tags('DT_JMPREL')):
             result['JMPREL'] = RelocationTable(self.elffile,
-                self.get_table_offset('DT_JMPREL')[1],
+                self.get_table_offset('DT_JMPREL')[1],  # type: ignore[arg-type]
                 next(self.iter_tags('DT_PLTRELSZ'))['d_val'],
                 next(self.iter_tags('DT_PLTREL'))['d_val'] == ENUM_D_TAG['DT_RELA'])
 
