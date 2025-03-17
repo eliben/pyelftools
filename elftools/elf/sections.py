@@ -136,7 +136,7 @@ class Section:
 
     def __eq__(self, other: object) -> bool:
         try:
-            return self.header == other.header
+            return self.header == other.header  # type: ignore[attr-defined]
         except AttributeError:
             return False
 
