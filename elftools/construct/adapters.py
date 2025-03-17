@@ -311,11 +311,15 @@ class ExprAdapter(Adapter):
         decoder = lambda obj, ctx: obj * 4,
     )
     """
-    __slots__: list[str] = ["_encode", "_decode"]
+    __slots__: list[str] = ["__encode", "__decode"]
     def __init__(self, subcon: Construct, encoder: Callable[[Any, Container], bytes], decoder: Callable[[bytes, Container], Any]) -> None:
         Adapter.__init__(self, subcon)
-        self._encode = encoder
-        self._decode = decoder
+        self.__encode = encoder
+        self.__decode = decoder
+    def _encode(self, obj: Any, context: Container) -> Any:
+        return self.__encode(obj, context)
+    def _decode(self, obj: Any, context: Container) -> Any:
+        return self.__decode(obj, context)
 
 class HexDumpAdapter(Adapter):
     """
