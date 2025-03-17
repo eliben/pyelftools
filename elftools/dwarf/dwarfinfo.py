@@ -678,7 +678,7 @@ class DWARFInfo:
                         if self.supplementary_dwarfinfo:
                             replace_value(data, field.content_type, self.supplementary_dwarfinfo.get_string_from_table)
                         else:
-                            replace_value(data, field.content_type, lambda x: str(x))
+                            replace_value(data, field.content_type, lambda x: str(x).encode())
                     elif field.form in ('DW_FORM_strp_sup', 'DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4'):
                         raise NotImplementedError()
 
