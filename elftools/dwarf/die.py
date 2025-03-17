@@ -275,7 +275,9 @@ class DIE:
                     (form, raw_value, indirection_length) = self._resolve_indirect()
                     value = self._translate_attr_value(form, raw_value)
                 else:
-                    raw_value = structs.Dwarf_dw_form[form].parse_stream(stream)
+                    dw_form = structs.Dwarf_dw_form[form]
+                    assert dw_form is not None
+                    raw_value = dw_form.parse_stream(stream)
                     value = self._translate_attr_value(form, raw_value)
                 self.attributes[name] = AttributeValue(
                     name=name,
@@ -302,7 +304,9 @@ class DIE:
             except KeyError:
                 raise DWARFError('Found DW_FORM_indirect with unknown real form 0x%x' % real_form_code)
 
-            raw_value = struct_parse(structs.Dwarf_dw_form[real_form], self.stream)
+            dw_form = structs.Dwarf_dw_form[real_form]
+            assert dw_form is not None
+            raw_value: int = struct_parse(dw_form, self.stream)
 
             if real_form != 'DW_FORM_indirect': # Happy path: one level of indirection
                 return (real_form, raw_value, length)
