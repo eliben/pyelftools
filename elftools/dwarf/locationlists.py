@@ -125,10 +125,12 @@ class LocationLists:
         Passing the die is only neccessary in DWARF5+, for decoding
         location entry encodings that contain references to other sections.
         """
-        if self.version >= 5 and die is None:
-            raise DWARFError("For this binary, \"die\" needs to be provided")
         self.stream.seek(offset, os.SEEK_SET)
-        return self._parse_location_list_from_stream_v5(die.cu) if self.version >= 5 else self._parse_location_list_from_stream()
+        if self.version >= 5:
+            if die is None:
+                raise DWARFError("For this binary, \"die\" needs to be provided")
+            return self._parse_location_list_from_stream_v5(die.cu)
+        return self._parse_location_list_from_stream()
 
     def iter_location_lists(self) -> Iterator[list[_Location]]:
         """ Iterates through location lists and view pairs. Returns lists of
