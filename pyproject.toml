@@ -43,7 +43,7 @@ Repository = "https://github.com/eliben/pyelftools.git"
 Issues = "https://github.com/eliben/pyelftools/issues"
 
 [dependency-groups]
-typing = ["mypy[reports]", "pyright", "typeguard"]
+typing = ["mypy[reports]", "pyright", "typeguard", "typing_extensions"]
 
 [tool.setuptools]
 packages = [
