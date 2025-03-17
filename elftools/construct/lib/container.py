@@ -148,10 +148,10 @@ class LazyContainer:
         return self.subcon._parse(self.stream, self.context)
 
     def dispose(self) -> None:
-        self.subcon = None
-        self.stream = None
-        self.context = None
-        self.pos = None
+        del self.subcon
+        del self.stream
+        del self.context
+        del self.pos
 
     def _get_value(self) -> Any:
         if self._value is NotImplemented:
