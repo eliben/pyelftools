@@ -230,13 +230,15 @@ class CallFrameInfo:
             elif opcode == DW_CFA_def_cfa_offset_sf:
                 args = [struct_parse(structs.the_Dwarf_sleb128, self.stream)]
             elif opcode == DW_CFA_def_cfa_expression:
-                args = [struct_parse(
-                    structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
+                struct = structs.Dwarf_dw_form['DW_FORM_block']
+                assert struct is not None
+                args = [struct_parse(struct, self.stream)]
             elif opcode in (DW_CFA_expression, DW_CFA_val_expression):
+                struct = structs.Dwarf_dw_form['DW_FORM_block']
+                assert struct is not None
                 args = [
                     struct_parse(structs.the_Dwarf_uleb128, self.stream),
-                    struct_parse(
-                        structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
+                    struct_parse(struct, self.stream)]
             elif opcode in (DW_CFA_offset_extended_sf,
                             DW_CFA_def_cfa_sf, DW_CFA_val_offset_sf):
                 args = [
