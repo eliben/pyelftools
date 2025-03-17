@@ -276,6 +276,7 @@ class RelocationHandler:
         """
         # The symbol table associated with this relocation section
         symtab = self.elffile.get_section(reloc_section['sh_link'])
+        assert isinstance(symtab, SymbolTableSection)
         for reloc in reloc_section.iter_relocations():
             self._do_apply_relocation(stream, reloc, symtab)
 

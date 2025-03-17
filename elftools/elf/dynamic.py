@@ -141,6 +141,7 @@ class Dynamic:
             support the get_string() function.
         """
         if self._stringtable:
+            assert isinstance(self._stringtable, _StringTable)
             return self._stringtable
 
         # If the ELF has stripped its section table (which is unusual, but
@@ -149,11 +150,13 @@ class Dynamic:
         _, table_offset = self.get_table_offset('DT_STRTAB')
         if table_offset is not None:
             self._stringtable = _DynamicStringTable(self._stream, table_offset)
+            assert isinstance(self._stringtable, _StringTable)
             return self._stringtable
 
         # That didn't work for some reason.  Let's use the section header
         # even though this ELF is super weird.
         self._stringtable = self.elffile.get_section_by_name('.dynstr')
+        assert isinstance(self._stringtable, _StringTable)
         return self._stringtable
 
     def _iter_tags(self, type: str | None = None) -> Iterator[Container]:
