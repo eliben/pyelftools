@@ -649,10 +649,11 @@ ENUMMAP_EXTRA_D_TAG_MACHINE: Mapping[str, Mapping[str, int]] = dict(
 
 # Here is the full combined mapping from tag name to value
 
-ENUM_D_TAG = dict(ENUM_D_TAG_COMMON)
-ENUM_D_TAG.update(ENUM_D_TAG_SOLARIS)
-for k in ENUMMAP_EXTRA_D_TAG_MACHINE:
-    ENUM_D_TAG.update(ENUMMAP_EXTRA_D_TAG_MACHINE[k])
+ENUM_D_TAG: Mapping[str, int] = {
+    **ENUM_D_TAG_COMMON,
+    **ENUM_D_TAG_SOLARIS,
+    **{k: v for kv in ENUMMAP_EXTRA_D_TAG_MACHINE.values() for k, v in kv.items()},
+}
 
 ENUM_DT_FLAGS: Mapping[str, int] = dict(
     DF_ORIGIN=0x1,
