@@ -1003,7 +1003,7 @@ class Peek(Subconstruct):
         try:
             return self.subcon._parse(stream, context)
         except FieldError:
-            pass
+            return None
         finally:
             stream.seek(pos)
     def _build(self, obj: Construct, stream: IO[bytes], context: Container) -> None:
