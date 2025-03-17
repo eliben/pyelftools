@@ -130,12 +130,13 @@ class GNUHashTable:
         p: Container = struct_parse(self.elffile.structs.Gnu_Hash,
                                    self.elffile.stream,
                                    start_offset)
+        self.params = p
         # Element sizes in the hash table
         self._wordsize: int = self.elffile.structs.Elf_word('').sizeof()
         self._xwordsize: int = self.elffile.structs.Elf_xword('').sizeof()
         self._chain_pos: int = start_offset + 4 * self._wordsize + \
-            self.params['bloom_size'] * self._xwordsize + \
-            self.params['nbuckets'] * self._wordsize
+            p['bloom_size'] * self._xwordsize + \
+            p['nbuckets'] * self._wordsize
 
     def get_number_of_symbols(self) -> int:
         """ Get the number of symbols in the hash table by finding the bucket
