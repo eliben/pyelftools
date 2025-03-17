@@ -7,7 +7,7 @@ class BitStreamReader:
     def __init__(self, substream):
         self.substream = substream
         self.total_size = 0
-        self.buffer = ""
+        self.buffer = b""
 
     def close(self):
         if self.total_size % 8 != 0:
@@ -18,7 +18,7 @@ class BitStreamReader:
         return self.substream.tell()
 
     def seek(self, pos, whence = 0):
-        self.buffer = ""
+        self.buffer = b""
         self.total_size = 0
         self.substream.seek(pos, whence)
 
@@ -28,7 +28,7 @@ class BitStreamReader:
 
         l = len(self.buffer)
         if count == 0:
-            data = ""
+            data = b""
         elif count <= l:
             data = self.buffer[:count]
             self.buffer = self.buffer[count:]
@@ -57,7 +57,7 @@ class BitStreamWriter:
         self.flush()
 
     def flush(self):
-        bytes = decode_bin("".join(self.buffer))
+        bytes = decode_bin(b"".join(self.buffer))
         self.substream.write(bytes)
         self.buffer = []
         self.pos = 0
@@ -72,6 +72,6 @@ class BitStreamWriter:
     def write(self, data):
         if not data:
             return
-        if type(data) is not str:
-            raise TypeError("data must be a string, not %r" % (type(data),))
+        if type(data) is not bytes:
+            raise TypeError("data must be a bytes, not %r" % (type(data),))
         self.buffer.append(data)
