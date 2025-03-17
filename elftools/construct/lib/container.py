@@ -59,6 +59,23 @@ class Container(MutableMapping[str, Any]):
 
     # The core dictionary interface.
 
+    @overload
+    def __getitem__(self, name: Literal[
+        "ch_addralign", "ch_size",
+        "length",
+        "n_descsz", "n_offset", "n_namesz",
+        "sh_addralign", "sh_flags", "sh_size",
+        "bloom_size", "nbuckets",
+    ]) -> int: ...
+    @overload
+    def __getitem__(self, name: Literal[
+        "ch_type",
+        "sh_type",
+        "n_name", "n_type",
+        "tag", "vendor_name",
+    ]) -> str: ...
+    @overload
+    def __getitem__(self, name: str) -> Any: ...
     def __getitem__(self, name: str) -> Any:
         return self.__dict__[name]
 
@@ -86,6 +103,16 @@ class Container(MutableMapping[str, Any]):
 
     def __str__(self) -> str:
         return "%s(%s)" % (self.__class__.__name__, str(self.__dict__))
+
+    if TYPE_CHECKING:
+        # elftools.construct.debug Probe.printout()
+        stream_position: int
+        following_stream_data: str | HexString
+        context: Container
+        stack: ListContainer
+        # allow arbitray attributes
+        def __setattr__(self, name: str, value: object) -> None: ...
+        def __getattr__(self, name: str) -> Any: ...
 
 class FlagsContainer(Container):
     """
