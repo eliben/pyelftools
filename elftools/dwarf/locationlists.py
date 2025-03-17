@@ -277,7 +277,7 @@ class LocationLists:
             DWARFv5 debug_loclists one, and the target loclist
             contains indirect encodings.
         """
-        return [entry_translate[entry.entry_type](entry, cu)
+        return [entry_translate[entry.entry_type](entry, cu)  # type: ignore[arg-type]
             for entry
             in struct_parse(self.structs.Dwarf_loclists_entries, self.stream)]
 
