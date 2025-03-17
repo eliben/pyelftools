@@ -347,8 +347,7 @@ class LocationParser:
                 # We might get it without a full tree traversal using
                 # attr.offset as a key, but we assume a good DWARF5
                 # aware consumer would pass a DIE along.
-        else:
-            raise ValueError("Attribute does not have location information")
+        raise ValueError("Attribute does not have location information")
 
     #------ PRIVATE ------#
 
