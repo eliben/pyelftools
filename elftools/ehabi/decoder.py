@@ -8,7 +8,10 @@
 # -------------------------------------------------------------------------------
 from __future__ import annotations
 
-from typing import Callable, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class EHABIBytecodeDecoder:
@@ -30,13 +33,13 @@ class EHABIBytecodeDecoder:
 
     """
 
-    def __init__(self, bytecode_array):
+    def __init__(self, bytecode_array: list[int]) -> None:
         self._bytecode_array = bytecode_array
-        self._index = None
-        self.mnemonic_array = None
+        self._index: int = 0
+        self.mnemonic_array: list[MnemonicItem] | None = None
         self._decode()
 
-    def _decode(self):
+    def _decode(self) -> None:
         """ Decode bytecode array, put result into mnemonic_array.
         """
         self._index = 0
@@ -51,14 +54,14 @@ class EHABIBytecodeDecoder:
                         MnemonicItem(self._bytecode_array[start_idx: end_idx], mnemonic))
                     break
 
-    def _decode_00xxxxxx(self):
+    def _decode_00xxxxxx(self) -> str:
         #   SW.startLine() << format("0x%02X      ; vsp = vsp + %u\n", Opcode,
         #                            ((Opcode & 0x3f) << 2) + 4);
         opcode = self._bytecode_array[self._index]
         self._index += 1
         return 'vsp = vsp + %u' % (((opcode & 0x3f) << 2) + 4)
 
-    def _decode_01xxxxxx(self):
+    def _decode_01xxxxxx(self) -> str:
         # SW.startLine() << format("0x%02X      ; vsp = vsp - %u\n", Opcode,
         #                          ((Opcode & 0x3f) << 2) + 4);
         opcode = self._bytecode_array[self._index]
@@ -68,18 +71,18 @@ class EHABIBytecodeDecoder:
     gpr_register_names = ("r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
                           "r8", "r9", "r10", "fp", "ip", "sp", "lr", "pc")
 
-    def _calculate_range(self, start, count):
+    def _calculate_range(self, start: int, count: int) -> int:
         return ((1 << (count + 1)) - 1) << start
 
-    def _printGPR(self, gpr_mask):
+    def _printGPR(self, gpr_mask: int) -> str:
         hits = [self.gpr_register_names[i] for i in range(32) if gpr_mask & (1 << i) != 0]
         return '{%s}' % ', '.join(hits)
 
-    def _print_registers(self, vfp_mask, prefix):
+    def _print_registers(self, vfp_mask: int, prefix: str) -> str:
         hits = [prefix + str(i) for i in range(32) if vfp_mask & (1 << i) != 0]
         return '{%s}' % ', '.join(hits)
 
-    def _decode_1000iiii_iiiiiiii(self):
+    def _decode_1000iiii_iiiiiiii(self) -> str:
         op0 = self._bytecode_array[self._index]
         self._index += 1
         op1 = self._bytecode_array[self._index]
@@ -96,40 +99,40 @@ class EHABIBytecodeDecoder:
         else:
             return 'pop %s' % self._printGPR(gpr_mask)
 
-    def _decode_10011101(self):
+    def _decode_10011101(self) -> str:
         self._index += 1
         return 'reserved (ARM MOVrr)'
 
-    def _decode_10011111(self):
+    def _decode_10011111(self) -> str:
         self._index += 1
         return 'reserved (WiMMX MOVrr)'
 
-    def _decode_1001nnnn(self):
+    def _decode_1001nnnn(self) -> str:
         # SW.startLine() << format("0x%02X      ; vsp = r%u\n", Opcode, (Opcode & 0x0f));
         opcode = self._bytecode_array[self._index]
         self._index += 1
         return 'vsp = r%u' % (opcode & 0x0f)
 
-    def _decode_10100nnn(self):
+    def _decode_10100nnn(self) -> str:
         # SW.startLine() << format("0x%02X      ; pop ", Opcode);
         # PrintGPR((((1 << ((Opcode & 0x7) + 1)) - 1) << 4));
         opcode = self._bytecode_array[self._index]
         self._index += 1
         return 'pop %s' % self._printGPR(self._calculate_range(4, opcode & 0x07))
 
-    def _decode_10101nnn(self):
+    def _decode_10101nnn(self) -> str:
         # SW.startLine() << format("0x%02X      ; pop ", Opcode);
         # PrintGPR((((1 << ((Opcode & 0x7) + 1)) - 1) << 4) | (1 << 14));
         opcode = self._bytecode_array[self._index]
         self._index += 1
         return 'pop %s' % self._printGPR(self._calculate_range(4, opcode & 0x07) | (1 << 14))
 
-    def _decode_10110000(self):
+    def _decode_10110000(self) -> str:
         # SW.startLine() << format("0x%02X      ; finish\n", Opcode);
         self._index += 1
         return 'finish'
 
-    def _decode_10110001_0000iiii(self):
+    def _decode_10110001_0000iiii(self) -> str:
         # SW.startLine()
         #   << format("0x%02X 0x%02X ; %s", Opcode0, Opcode1,
         #             ((Opcode1 & 0xf0) || Opcode1 == 0x00) ? "spare" : "pop ");
@@ -143,7 +146,7 @@ class EHABIBytecodeDecoder:
         else:
             return 'pop %s' % self._printGPR(op1 & 0x0f)
 
-    def _decode_10110010_uleb128(self):
+    def _decode_10110010_uleb128(self) -> str:
         #  SmallVector<uint8_t, 4> ULEB;
         #  do { ULEB.push_back(Opcodes[OI ^ 3]); } while (Opcodes[OI++ ^ 3] & 0x80);
         #  uint64_t Value = 0;
@@ -161,21 +164,21 @@ class EHABIBytecodeDecoder:
             value = (value << 7) + (b & 0x7F)
         return 'vsp = vsp + %u' % (0x204 + (value << 2))
 
-    def _decode_10110011_sssscccc(self):
+    def _decode_10110011_sssscccc(self) -> str:
         # these two decoders are equal
         return self._decode_11001001_sssscccc()
 
-    def _decode_101101nn(self):
+    def _decode_101101nn(self) -> str:
         return self._spare()
 
-    def _decode_10111nnn(self):
+    def _decode_10111nnn(self) -> str:
         #  SW.startLine() << format("0x%02X      ; pop ", Opcode);
         #  PrintRegisters((((1 << ((Opcode & 0x07) + 1)) - 1) << 8), "d");
         opcode = self._bytecode_array[self._index]
         self._index += 1
         return 'pop %s' % self._print_registers(self._calculate_range(8, opcode & 0x07), "d")
 
-    def _decode_11000110_sssscccc(self):
+    def _decode_11000110_sssscccc(self) -> str:
         #  SW.startLine() << format("0x%02X 0x%02X ; pop ", Opcode0, Opcode1);
         #  uint8_t Start = ((Opcode1 & 0xf0) >> 4);
         #  uint8_t Count = ((Opcode1 & 0x0f) >> 0);
@@ -187,7 +190,7 @@ class EHABIBytecodeDecoder:
         count = ((op1 & 0x0f) >> 0)
         return 'pop %s' % self._print_registers(self._calculate_range(start, count), "wR")
 
-    def _decode_11000111_0000iiii(self):
+    def _decode_11000111_0000iiii(self) -> str:
         #   SW.startLine()
         #     << format("0x%02X 0x%02X ; %s", Opcode0, Opcode1,
         #               ((Opcode1 & 0xf0) || Opcode1 == 0x00) ? "spare" : "pop ");
@@ -201,7 +204,7 @@ class EHABIBytecodeDecoder:
         else:
             return 'pop %s' % self._print_registers(op1 & 0x0f, "wCGR")
 
-    def _decode_11001000_sssscccc(self):
+    def _decode_11001000_sssscccc(self) -> str:
         #   SW.startLine() << format("0x%02X 0x%02X ; pop ", Opcode0, Opcode1);
         #   uint8_t Start = 16 + ((Opcode1 & 0xf0) >> 4);
         #   uint8_t Count = ((Opcode1 & 0x0f) >> 0);
@@ -213,7 +216,7 @@ class EHABIBytecodeDecoder:
         count = ((op1 & 0x0f) >> 0)
         return 'pop %s' % self._print_registers(self._calculate_range(start, count), "d")
 
-    def _decode_11001001_sssscccc(self):
+    def _decode_11001001_sssscccc(self) -> str:
         #   SW.startLine() << format("0x%02X 0x%02X ; pop ", Opcode0, Opcode1);
         #   uint8_t Start = ((Opcode1 & 0xf0) >> 4);
         #   uint8_t Count = ((Opcode1 & 0x0f) >> 0);
@@ -225,24 +228,24 @@ class EHABIBytecodeDecoder:
         count = ((op1 & 0x0f) >> 0)
         return 'pop %s' % self._print_registers(self._calculate_range(start, count), "d")
 
-    def _decode_11001yyy(self):
+    def _decode_11001yyy(self) -> str:
         return self._spare()
 
-    def _decode_11000nnn(self):
+    def _decode_11000nnn(self) -> str:
         #   SW.startLine() << format("0x%02X      ; pop ", Opcode);
         #   PrintRegisters((((1 << ((Opcode & 0x07) + 1)) - 1) << 10), "wR");
         opcode = self._bytecode_array[self._index]
         self._index += 1
         return 'pop %s' % self._print_registers(self._calculate_range(10, opcode & 0x07), "wR")
 
-    def _decode_11010nnn(self):
+    def _decode_11010nnn(self) -> str:
         # these two decoders are equal
         return self._decode_10111nnn()
 
-    def _decode_11xxxyyy(self):
+    def _decode_11xxxyyy(self) -> str:
         return self._spare()
 
-    def _spare(self):
+    def _spare(self) -> str:
         self._index += 1
         return 'spare'
 
@@ -281,9 +284,9 @@ class MnemonicItem:
     """ Single mnemonic item.
     """
 
-    def __init__(self, bytecode, mnemonic):
+    def __init__(self, bytecode: list[int], mnemonic: str) -> None:
         self.bytecode = bytecode
         self.mnemonic = mnemonic
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s ; %s' % (' '.join(['0x%02x' % x for x in self.bytecode]), self.mnemonic)

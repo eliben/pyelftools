@@ -6,29 +6,46 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import IO, TYPE_CHECKING, Any, Literal, overload
+
 from ..construct import CString
 from ..common.utils import struct_parse
 from .constants import SH_FLAGS
 from .notes import iter_notes
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from ..construct import Container
+    from .elffile import ELFFile
+    from .sections import Section
+
 
 class Segment:
-    def __init__(self, header, stream):
+    def __init__(self, header: Container, stream: IO[bytes]) -> None:
         self.header = header
         self.stream = stream
 
-    def data(self):
+    def data(self) -> bytes:
         """ The segment data from the file.
         """
         self.stream.seek(self['p_offset'])
         return self.stream.read(self['p_filesz'])
 
-    def __getitem__(self, name):
+    @overload
+    def __getitem__(self, name: Literal["p_filesz", "p_memsz", "p_offset", "p_vaddr"]) -> int: ...
+    @overload
+    def __getitem__(self, name: Literal["p_type"]) -> str: ...
+    @overload
+    def __getitem__(self, name: str) -> Any: ...
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """
         return self.header[name]
 
-    def section_in_segment(self, section):
+    def section_in_segment(self, section: Section) -> bool:
         """ Is the given section contained in this segment?
 
             Note: this tries to reproduce the intricate rules of the
@@ -36,9 +53,9 @@ class Segment:
             elf/include/internal.h in the source of binutils.
         """
         # Only the 'strict' checks from ELF_SECTION_IN_SEGMENT_1 are included
-        segtype = self['p_type']
-        sectype = section['sh_type']
-        secflags = section['sh_flags']
+        segtype: str = self['p_type']
+        sectype: str = section['sh_type']
+        secflags: int = section['sh_flags']
 
         # Only PT_LOAD, PT_GNU_RELRO and PT_TLS segments can contain SHF_TLS
         # sections
@@ -62,8 +79,8 @@ class Segment:
         # In ELF_SECTION_IN_SEGMENT_STRICT the flag check_vma is on, so if
         # this is an alloc section, check whether its VMA is in bounds.
         if secflags & SH_FLAGS.SHF_ALLOC:
-            secaddr = section['sh_addr']
-            vaddr = self['p_vaddr']
+            secaddr: int = section['sh_addr']
+            vaddr: int = self['p_vaddr']
 
             # This checks that the section is wholly contained in the segment.
             # The third condition is the 'strict' one - an empty section will
@@ -83,8 +100,8 @@ class Segment:
         if sectype == 'SHT_NOBITS':
             return True
 
-        secoffset = section['sh_offset']
-        poffset = self['p_offset']
+        secoffset: int = section['sh_offset']
+        poffset: int = self['p_offset']
 
         # Same logic as with secaddr vs. vaddr checks above, just on offsets in
         # the file
@@ -98,13 +115,13 @@ class InterpSegment(Segment):
     """ INTERP segment. Knows how to obtain the path to the interpreter used
         for this ELF file.
     """
-    def __init__(self, header, stream):
+    def __init__(self, header: Container, stream: IO[bytes]) -> None:
         super().__init__(header, stream)
 
-    def get_interp_name(self):
+    def get_interp_name(self) -> str:
         """ Obtain the interpreter path used for this ELF file.
         """
-        path_offset = self['p_offset']
+        path_offset: int = self['p_offset']
         return struct_parse(
             CString('', encoding='utf-8'),
             self.stream,
@@ -114,11 +131,11 @@ class InterpSegment(Segment):
 class NoteSegment(Segment):
     """ NOTE segment. Knows how to parse notes.
     """
-    def __init__(self, header, stream, elffile):
+    def __init__(self, header: Container, stream: IO[bytes], elffile: ELFFile) -> None:
         super().__init__(header, stream)
         self.elffile = elffile
 
-    def iter_notes(self):
+    def iter_notes(self) -> Iterator[Container]:
 
         """ Yield all the notes in the segment.  Each result is a dictionary-
             like object with "n_name", "n_type", and "n_desc" fields, amongst

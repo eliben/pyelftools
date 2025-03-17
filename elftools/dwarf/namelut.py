@@ -6,12 +6,21 @@
 # Vijay Ramasami (rvijayc@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import collections
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import NamedTuple
+from typing import IO, TYPE_CHECKING, NamedTuple, TypeVar, overload
 
 from ..common.utils import struct_parse
 from ..construct import CString, Struct, If
+
+if TYPE_CHECKING:
+    from collections.abc import ItemsView, Iterator
+
+    from ..construct.lib.container import Container
+    from .structs import DWARFStructs
+
+    _T = TypeVar("_T")
 
 
 class NameLUTEntry(NamedTuple):
@@ -19,7 +28,7 @@ class NameLUTEntry(NamedTuple):
     die_ofs: int
 
 
-class NameLUT(Mapping):
+class NameLUT(Mapping[str, NameLUTEntry]):
     """
     A "Name LUT" holds any of the tables specified by .debug_pubtypes or
     .debug_pubnames sections. This is basically a dictionary where the key is
@@ -63,17 +72,17 @@ class NameLUT(Mapping):
 
     """
 
-    def __init__(self, stream, size, structs):
+    def __init__(self, stream: IO[bytes], size: int, structs: DWARFStructs) -> None:
 
         self._stream = stream
         self._size = size
         self._structs = structs
         # entries are lazily loaded on demand.
-        self._entries = None
+        self._entries: dict[str, NameLUTEntry] | None = None
         # CU headers (for readelf).
-        self._cu_headers = None
+        self._cu_headers: list[Container] | None = None
 
-    def get_entries(self):
+    def get_entries(self) -> dict[str, NameLUTEntry]:
         """
         Returns the parsed NameLUT entries. The returned object is a dictionary
         with the symbol name as the key and NameLUTEntry(cu_ofs, die_ofs) as
@@ -87,7 +96,7 @@ class NameLUT(Mapping):
             self._entries, self._cu_headers = self._get_entries()
         return self._entries
 
-    def set_entries(self, entries, cu_headers):
+    def set_entries(self, entries: dict[str, NameLUTEntry], cu_headers: list[Container]) -> None:
         """
         Set the NameLUT entries from an external source. The input is a
         dictionary with the symbol name as the key and NameLUTEntry(cu_ofs,
@@ -100,7 +109,7 @@ class NameLUT(Mapping):
         self._entries = entries
         self._cu_headers = cu_headers
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Returns the number of entries in the NameLUT.
         """
@@ -108,7 +117,7 @@ class NameLUT(Mapping):
             self._entries, self._cu_headers = self._get_entries()
         return len(self._entries)
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> NameLUTEntry:
         """
         Returns a namedtuple - NameLUTEntry(cu_ofs, die_ofs) - that corresponds
         to the given symbol name.
@@ -117,7 +126,7 @@ class NameLUT(Mapping):
             self._entries, self._cu_headers = self._get_entries()
         return self._entries[name]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """
         Returns an iterator to the NameLUT dictionary.
         """
@@ -125,7 +134,7 @@ class NameLUT(Mapping):
             self._entries, self._cu_headers = self._get_entries()
         return iter(self._entries)
 
-    def items(self):
+    def items(self) -> ItemsView[str, NameLUTEntry]:
         """
         Returns the NameLUT dictionary items.
         """
@@ -133,7 +142,11 @@ class NameLUT(Mapping):
             self._entries, self._cu_headers = self._get_entries()
         return self._entries.items()
 
-    def get(self, name, default=None):
+    @overload
+    def get(self, name: str) -> NameLUTEntry | None: ...
+    @overload
+    def get(self, name: str, default: NameLUTEntry | _T = ...) -> NameLUTEntry | _T: ...
+    def get(self, name: str, default: NameLUTEntry | _T | None = None) -> NameLUTEntry | _T | None:
         """
         Returns NameLUTEntry(cu_ofs, die_ofs) for the provided symbol name or
         None if the symbol does not exist in the corresponding section.
@@ -142,7 +155,7 @@ class NameLUT(Mapping):
             self._entries, self._cu_headers = self._get_entries()
         return self._entries.get(name, default)
 
-    def get_cu_headers(self):
+    def get_cu_headers(self) -> list[Container]:
         """
         Returns all CU headers. Mainly required for readelf.
         """
@@ -151,15 +164,15 @@ class NameLUT(Mapping):
 
         return self._cu_headers
 
-    def _get_entries(self):
+    def _get_entries(self) -> tuple[dict[str, NameLUTEntry], list[Container]]:
         """
         Parse the (name, cu_ofs, die_ofs) information from this section and
         store as a dictionary.
         """
 
         self._stream.seek(0)
-        entries = {}
-        cu_headers = []
+        entries: dict[str, NameLUTEntry] = {}
+        cu_headers: list[Container] = []
         offset = 0
         # According to 6.1.1. of DWARFv4, each set of names is terminated by
         # an offset field containing zero (and no following string). Because

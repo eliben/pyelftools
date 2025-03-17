@@ -6,6 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Final, TypeVar
+
 from .enums import (
     ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE_BASE, ENUM_SH_TYPE_BASE,
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
@@ -15,29 +19,40 @@ from .enums import (
     ENUM_DT_FLAGS_1, ENUM_RELOC_TYPE_PPC)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
+from .dynamic import DynamicSection
 from ..common.utils import bytes2hex
 
+if TYPE_CHECKING:
+    from collections.abc import Container as TContainer
+    from collections.abc import Iterable, Mapping
 
-def describe_ei_class(x):
+    from ..construct.lib.container import Container
+    from .elffile import ELFFile
+
+    _K = TypeVar("_K")
+    _V = TypeVar("_V")
+
+
+def describe_ei_class(x: str) -> str:
     return _DESCR_EI_CLASS.get(x, _unknown)
 
 
-def describe_ei_data(x):
+def describe_ei_data(x: str) -> str:
     return _DESCR_EI_DATA.get(x, _unknown)
 
 
-def describe_ei_version(x):
+def describe_ei_version(x: str) -> str:
     s = '%d' % ENUM_E_VERSION[x]
     if x == 'EV_CURRENT':
         s += ' (current)'
     return s
 
 
-def describe_ei_osabi(x):
+def describe_ei_osabi(x: str) -> str:
     return _DESCR_EI_OSABI.get(x, _unknown)
 
 
-def describe_e_type(x, elffile=None):
+def describe_e_type(x: str, elffile: ELFFile | None = None) -> str:
     if elffile is not None and x == 'ET_DYN':
         # Detect whether this is a normal SO or a PIE executable
         dynamic = elffile.get_section_by_name('.dynamic')
@@ -47,15 +62,15 @@ def describe_e_type(x, elffile=None):
     return _DESCR_E_TYPE.get(x, _unknown)
 
 
-def describe_e_machine(x):
+def describe_e_machine(x: str) -> str:
     return _DESCR_E_MACHINE.get(x, _unknown)
 
 
-def describe_e_version_numeric(x):
+def describe_e_version_numeric(x: str) -> str:
     return '0x%x' % ENUM_E_VERSION[x]
 
 
-def describe_p_type(x):
+def describe_p_type(x: int | str) -> str:
     if x in _DESCR_P_TYPE:
         return _DESCR_P_TYPE.get(x)
     elif x >= ENUM_P_TYPE_BASE['PT_LOOS'] and x <= ENUM_P_TYPE_BASE['PT_HIOS']:
@@ -64,14 +79,14 @@ def describe_p_type(x):
         return _unknown
 
 
-def describe_p_flags(x):
+def describe_p_flags(x: int) -> str:
     s = ''
     for flag in (P_FLAGS.PF_R, P_FLAGS.PF_W, P_FLAGS.PF_X):
         s += _DESCR_P_FLAGS[flag] if (x & flag) else ' '
     return s
 
 
-def describe_rh_flags(x):
+def describe_rh_flags(x: int) -> str:
     return ' '.join(
         _DESCR_RH_FLAGS[flag]
         for flag in (RH_FLAGS.RHF_NONE, RH_FLAGS.RHF_QUICKSTART,
@@ -87,7 +102,7 @@ def describe_rh_flags(x):
         if x & flag)
 
 
-def describe_sh_type(x):
+def describe_sh_type(x: int | str) -> str:
     if x in _DESCR_SH_TYPE:
         return _DESCR_SH_TYPE.get(x)
     elif (x >= ENUM_SH_TYPE_BASE['SHT_LOOS'] and
@@ -97,7 +112,7 @@ def describe_sh_type(x):
         return _unknown
 
 
-def describe_sh_flags(x):
+def describe_sh_flags(x: int) -> str:
     s = ''
     for flag in (
             SH_FLAGS.SHF_WRITE, SH_FLAGS.SHF_ALLOC, SH_FLAGS.SHF_EXECINSTR,
@@ -112,34 +127,34 @@ def describe_sh_flags(x):
     return s
 
 
-def describe_symbol_type(x):
+def describe_symbol_type(x: str) -> str:
     return _DESCR_ST_INFO_TYPE.get(x, _unknown)
 
 
-def describe_symbol_bind(x):
+def describe_symbol_bind(x: str) -> str:
     return _DESCR_ST_INFO_BIND.get(x, _unknown)
 
 
-def describe_symbol_visibility(x):
+def describe_symbol_visibility(x: str) -> str:
     return _DESCR_ST_VISIBILITY.get(x, _unknown)
 
 
-def describe_symbol_local(x):
+def describe_symbol_local(x: int) -> str:
     return '[<localentry>: ' + str(1 << x) + ']'
 
 
-def describe_symbol_other(x):
+def describe_symbol_other(x: Container) -> str:
     vis = describe_symbol_visibility(x['visibility'])
     if 1 < x['local'] < 7:
         return vis + ' ' + describe_symbol_local(x['local'])
     return vis
 
 
-def describe_symbol_shndx(x):
+def describe_symbol_shndx(x: int | str) -> str:
     return _DESCR_ST_SHNDX.get(x, '%3s' % x)
 
 
-def describe_reloc_type(x, elffile):
+def describe_reloc_type(x: int, elffile: ELFFile) -> str:
     arch = elffile.get_machine_arch()
     if arch == 'x86':
         return _DESCR_RELOC_TYPE_i386.get(x, _unknown)
@@ -163,21 +178,21 @@ def describe_reloc_type(x, elffile):
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
 
 
-def describe_dyn_tag(x):
+def describe_dyn_tag(x: int) -> str:
     return _DESCR_D_TAG.get(x, _unknown)
 
 
-def describe_dt_flags(x):
+def describe_dt_flags(x: int) -> str:
     return ' '.join(key[3:] for key, val in
         sorted(ENUM_DT_FLAGS.items(), key=lambda t: t[1]) if x & val)
 
 
-def describe_dt_flags_1(x):
+def describe_dt_flags_1(x: int) -> str:
     return ' '.join(key[5:] for key, val in
         sorted(ENUM_DT_FLAGS_1.items(), key=lambda t: t[1]) if x & val)
 
 
-def describe_syminfo_flags(x):
+def describe_syminfo_flags(x: int) -> str:
     return ''.join(_DESCR_SYMINFO_FLAGS[flag] for flag in (
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_CAP,
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECT,
@@ -191,18 +206,18 @@ def describe_syminfo_flags(x):
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED) if x & flag)
 
 
-def describe_symbol_boundto(x):
+def describe_symbol_boundto(x: str) -> str:
     return _DESCR_SYMINFO_BOUNDTO.get(x, '%3s' % x)
 
 
-def describe_ver_flags(x):
+def describe_ver_flags(x: int) -> str:
     return ' | '.join(_DESCR_VER_FLAGS[flag] for flag in (
         VER_FLAGS.VER_FLG_WEAK,
         VER_FLAGS.VER_FLG_BASE,
         VER_FLAGS.VER_FLG_INFO) if x & flag)
 
 
-def describe_note(x, machine):
+def describe_note(x: Container, machine: str) -> str:
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
@@ -236,7 +251,7 @@ def describe_note(x, machine):
     return '%s (%s)%s' % (note_type, note_type_desc, desc)
 
 
-def describe_attr_tag_arm(tag, val, extra):
+def describe_attr_tag_arm(tag: str, val: Any, extra: str | None) -> str:
     s = _DESCR_ATTR_TAG_ARM.get(tag, '"%s"' % tag)
     idx = ENUM_ATTR_TAG_ARM[tag] - 1
     d_entry = _DESCR_ATTR_VAL_ARM[idx]
@@ -262,7 +277,7 @@ def describe_attr_tag_arm(tag, val, extra):
     else:
         return s + d_entry[val]
 
-def describe_attr_tag_riscv(tag, val, extra):
+def describe_attr_tag_riscv(tag: str, val: Any, extra: str) -> str:
     idx = ENUM_ATTR_TAG_RISCV[tag] - 1
     d_entry = _DESCR_ATTR_VAL_RISCV[idx]
 
@@ -274,14 +289,14 @@ def describe_attr_tag_riscv(tag, val, extra):
     else:
         return _DESCR_ATTR_TAG_RISCV[tag] + d_entry[val]
 
-def describe_note_gnu_property_bitmap_and(values, prefix, value):
+def describe_note_gnu_property_bitmap_and(values: Iterable[tuple[int, str]], prefix: str, value: int) -> str:
     descs = []
     for mask, desc in values:
         if value & mask:
             descs.append(desc)
     return '%s: %s' % (prefix, ', '.join(descs))
 
-def describe_note_gnu_properties(properties, machine):
+def describe_note_gnu_properties(properties: list[Container], machine: str) -> str:
     descriptions = []
     for prop in properties:
         t, d, sz = prop.pr_type, prop.pr_data, prop.pr_datasz
@@ -336,7 +351,7 @@ def describe_note_gnu_properties(properties, machine):
     return '\n        '.join(descriptions)
 
 #-------------------------------------------------------------------------------
-_unknown = '<unknown>'
+_unknown: str = '<unknown>'
 
 
 _DESCR_EI_CLASS = dict(
@@ -686,7 +701,7 @@ _DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND = (
     (2, 'ZICFISS'),
 )
 
-def _reverse_dict(d, low_priority=()):
+def _reverse_dict(d: Mapping[_K, _V], low_priority: TContainer[_K] = ()) -> dict[_V, _K]:
     """
     This is a tiny helper function to "reverse" the keys/values of a dictionary
     provided in the first argument, i.e. {k: v} becomes {v: k}.
@@ -695,7 +710,7 @@ def _reverse_dict(d, low_priority=()):
     the case of conflicting values - if a value is present in this list, it will
     not override any other entries of the same value.
     """
-    out = {}
+    out: dict[_V, _K] = {}
     for k, v in d.items():
         if v in out and k in low_priority:
             continue
