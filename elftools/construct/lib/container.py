@@ -3,6 +3,7 @@ Various containers.
 """
 from __future__ import annotations
 
+import functools
 from collections.abc import MutableMapping
 from pprint import pformat
 from typing import IO, TYPE_CHECKING, Any, Literal, TypeVar, overload
@@ -35,6 +36,8 @@ def recursion_lock(
     def decorator(
         func: Callable[Concatenate[Any, _P], _T],
     ) -> Callable[Concatenate[Any, _P], _T | _R]:
+
+        @functools.wraps(func)
         def wrapper(self: Any, *args: _P.args, **kw: _P.kwargs) -> _T | _R:
             if getattr(self, lock_name, False):
                 return retval
@@ -43,8 +46,9 @@ def recursion_lock(
                 return func(self, *args, **kw)
             finally:
                 setattr(self, lock_name, False)
-        wrapper.__name__ = func.__name__
+
         return wrapper
+
     return decorator
 
 class Container(MutableMapping[str, Any]):
