@@ -354,6 +354,8 @@ class FormatField(StaticField, Generic[_T]):
     """
 
     __slots__: list[str] = ["packer"]
+    if TYPE_CHECKING:
+        name: str
     def __init__(self, name: str, endianity: Literal["<", ">", "="], format: str) -> None:
         if endianity not in (">", "<", "="):
             raise ValueError("endianity must be be '=', '<', or '>'",
@@ -1197,6 +1199,8 @@ class Anchor(Construct):
     )
     """
     __slots__: list[str] = []
+    if TYPE_CHECKING:
+        name: str
     def _parse(self, stream: IO[bytes], context: Container) -> int:
         return stream.tell()
     def _build(self, obj: None, stream: IO[bytes], context: Container) -> None:
@@ -1220,6 +1224,8 @@ class Value(Construct, Generic[_T]):
     )
     """
     __slots__: list[str] = ["func"]
+    if TYPE_CHECKING:
+        name: str
     def __init__(self, name: str, func: Callable[[Container], _T]) -> None:
         Construct.__init__(self, name)
         self.func = func
