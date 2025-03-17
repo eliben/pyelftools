@@ -1,11 +1,24 @@
+import io
+
 from .binary import encode_bin, decode_bin
 
-class BitStreamReader:
+class BitStream(io.RawIOBase):
 
-    __slots__ = ["substream", "buffer", "total_size"]
+    __slots__ = ["substream"]
 
     def __init__(self, substream):
         self.substream = substream
+
+    def __enter__(self):
+        return self
+
+
+class BitStreamReader(BitStream):
+
+    __slots__ = ["buffer", "total_size"]
+
+    def __init__(self, substream):
+        super().__init__(substream)
         self.total_size = 0
         self.buffer = b""
 
@@ -21,6 +34,7 @@ class BitStreamReader:
         self.buffer = b""
         self.total_size = 0
         self.substream.seek(pos, whence)
+        return 0
 
     def read(self, count):
         if count < 0:
@@ -44,12 +58,13 @@ class BitStreamReader:
         self.total_size += len(data)
         return data
 
-class BitStreamWriter:
 
-    __slots__ = ["substream", "buffer", "pos"]
+class BitStreamWriter(BitStream):
+
+    __slots__ = ["buffer", "pos"]
 
     def __init__(self, substream):
-        self.substream = substream
+        super().__init__(substream)
         self.buffer = []
         self.pos = 0
 
@@ -67,11 +82,12 @@ class BitStreamWriter:
 
     def seek(self, pos, whence = 0):
         self.flush()
-        self.substream.seek(pos, whence)
+        return self.substream.seek(pos, whence)
 
     def write(self, data):
         if not data:
-            return
+            return 0
         if type(data) is not bytes:
             raise TypeError("data must be a bytes, not %r" % (type(data),))
         self.buffer.append(data)
+        return len(data)
