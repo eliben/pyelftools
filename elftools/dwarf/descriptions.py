@@ -136,7 +136,9 @@ def describe_CFI_register_rule(rule: RegisterRule) -> str:
         s += '%+d' % rule.arg
     elif rule.type == 'REGISTER':
         assert isinstance(rule.arg, int)
-        s += describe_reg_name(rule.arg)
+        reg = describe_reg_name(rule.arg)
+        assert reg is not None
+        s += reg
     return s
 
 
