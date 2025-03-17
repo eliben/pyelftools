@@ -783,7 +783,7 @@ _DESCR_ATTR_TAG_ARM = dict(
     TAG_MPEXTENSION_USE_OLD='Tag_MPextension_use_old: ',
 )
 
-_DESCR_ATTR_VAL_ARM = [
+_DESCR_ATTR_VAL_ARM: Final = (
     None, #1
     None, #2
     None, #3
@@ -1031,7 +1031,7 @@ _DESCR_ATTR_VAL_ARM = [
         0: 'Not Allowed',
         1: 'Allowed',
     },
-]
+)
 
 _DESCR_ATTR_TAG_RISCV = dict(
     TAG_FILE='File Attributes',
@@ -1047,7 +1047,7 @@ _DESCR_ATTR_TAG_RISCV = dict(
     TAG_X3_REG_USAGE='Tag_RISCV_x3_reg_usage: ',
 )
 
-_DESCR_ATTR_VAL_RISCV = [
+_DESCR_ATTR_VAL_RISCV: Final = (
     None, #1
     None, #2
     None, #3
@@ -1075,4 +1075,4 @@ _DESCR_ATTR_VAL_RISCV = [
         2: 'This object uses x3 as the shadow stack pointer.',
         3: 'This object uses X3 as a temporary register.',
     },
-]
+)
