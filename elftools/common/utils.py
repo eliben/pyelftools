@@ -6,24 +6,43 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 from contextlib import contextmanager
+from typing import IO, TYPE_CHECKING, Any, TypeVar, overload
+
 from .exceptions import ELFParseError, ELFError, DWARFError
 from ..construct import ConstructError, ULInt8
 import os
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping
 
-def merge_dicts(*dicts):
+    from ..construct import Construct, FormatField
+    from ..dwarf.dwarfinfo import DebugSectionDescriptor
+    from .construct_utils import SLEB128, ULEB128, UBInt24, ULInt24
+
+    _T = TypeVar("_T")
+    _K = TypeVar("_K")
+    _V = TypeVar("_V")
+
+
+def merge_dicts(*dicts: Mapping[_K, _V]) -> dict[_K, _V]:
     "Given any number of dicts, merges them into a new one."""
-    result = {}
+    result: dict[_K, _V] = {}
     for d in dicts:
         result.update(d)
     return result
 
-def bytes2str(b):
+def bytes2str(b: bytes) -> str:
     """Decode a bytes object into a string."""
     return b.decode('latin-1')
 
-def struct_parse(struct, stream, stream_pos=None):
+@overload
+def struct_parse(struct: FormatField[_T] | ULEB128 | SLEB128 | UBInt24 | ULInt24, stream: IO[bytes], stream_pos: int | None = ...) -> _T: ...
+@overload
+def struct_parse(struct: Construct, stream: IO[bytes], stream_pos: int | None = ...) -> Any: ...
+def struct_parse(struct: Construct, stream: IO[bytes], stream_pos: int | None = None) -> Any:
     """ Convenience function for using the given struct to parse a stream.
         If stream_pos is provided, the stream is seeked to this position before
         the parsing is done. Otherwise, the current position of the stream is
@@ -38,7 +57,7 @@ def struct_parse(struct, stream, stream_pos=None):
         raise ELFParseError(str(e))
 
 
-def parse_cstring_from_stream(stream, stream_pos=None):
+def parse_cstring_from_stream(stream: IO[bytes], stream_pos: int | None = None) -> bytes | None:
     """ Parse a C-string from the given stream. The string is returned without
         the terminating \x00 byte. If the terminating byte wasn't found, None
         is returned (the stream is exhausted).
@@ -67,20 +86,20 @@ def parse_cstring_from_stream(stream, stream_pos=None):
     return b''.join(chunks) if found else None
 
 
-def elf_assert(cond, msg=''):
+def elf_assert(cond: object, msg: str = '') -> None:
     """ Assert that cond is True, otherwise raise ELFError(msg)
     """
     _assert_with_exception(cond, msg, ELFError)
 
 
-def dwarf_assert(cond, msg=''):
+def dwarf_assert(cond: object, msg: str = '') -> None:
     """ Assert that cond is True, otherwise raise DWARFError(msg)
     """
     _assert_with_exception(cond, msg, DWARFError)
 
 
 @contextmanager
-def preserve_stream_pos(stream):
+def preserve_stream_pos(stream: IO[bytes]) -> Iterator[None]:
     """ Usage:
         # stream has some position FOO (return value of stream.tell())
         with preserve_stream_pos(stream):
@@ -92,18 +111,18 @@ def preserve_stream_pos(stream):
     stream.seek(saved_pos)
 
 
-def roundup(num, bits):
+def roundup(num: int, bits: int) -> int:
     """ Round up a number to nearest multiple of 2^bits. The result is a number
         where the least significant bits passed in bits are 0.
     """
     return (num - 1 | (1 << bits) - 1) + 1
 
-def read_blob(stream, length):
+def read_blob(stream: IO[bytes], length: int) -> list[int]:
     """Read length bytes from stream, return a list of ints
     """
     return [struct_parse(ULInt8(''), stream) for i in range(length)]
 
-def save_dwarf_section(section, filename):
+def save_dwarf_section(section: DebugSectionDescriptor, filename: str) -> None:
     """Debug helper: dump section contents into a file
     Section is expected to be one of the debug_xxx_sec elements of DWARFInfo
     """
@@ -116,7 +135,7 @@ def save_dwarf_section(section, filename):
         file.write(data)
     stream.seek(pos, os.SEEK_SET)
 
-def iterbytes(b):
+def iterbytes(b: bytes) -> Iterator[bytes]:
     """Return an iterator over the elements of a bytes object.
 
     For example, for b'abc' yields b'a', b'b' and then b'c'.
@@ -124,13 +143,13 @@ def iterbytes(b):
     for i in range(len(b)):
         yield b[i:i+1]
 
-def bytes2hex(b, sep=''):
+def bytes2hex(b: bytes, sep: str = '') -> str:
     if not sep:
         return b.hex()
     return sep.join(map('{:02x}'.format, b))
 
 #------------------------- PRIVATE -------------------------
 
-def _assert_with_exception(cond, msg, exception_type):
+def _assert_with_exception(cond: object, msg: str, exception_type: type[BaseException]) -> None:
     if not cond:
         raise exception_type(msg)

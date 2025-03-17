@@ -6,8 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 from bisect import bisect_right
-from typing import IO, NamedTuple
+from typing import IO, TYPE_CHECKING, Callable, NamedTuple
 
 from ..construct.lib.container import Container
 from ..common.exceptions import DWARFError
@@ -24,6 +26,14 @@ from .ranges import RangeLists, RangeListsPair
 from .aranges import ARanges
 from .namelut import NameLUT
 from .dwarf_util import _get_base_offset
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from ..construct.lib.container import ListContainer
+    from .callframe import ZERO, CFIEntry
+    from .die import DIE
+    from .namelut import NameLUTEntry
 
 
 # Describes a debug section
@@ -69,27 +79,27 @@ class DWARFInfo:
         various parts of the debug information.
     """
     def __init__(self,
-            config,
-            debug_info_sec,
-            debug_aranges_sec,
-            debug_abbrev_sec,
-            debug_frame_sec,
-            eh_frame_sec,
-            debug_str_sec,
-            debug_loc_sec,
-            debug_ranges_sec,
-            debug_line_sec,
-            debug_pubtypes_sec,
-            debug_pubnames_sec,
-            debug_addr_sec,
-            debug_str_offsets_sec,
-            debug_line_str_sec,
-            debug_loclists_sec,
-            debug_rnglists_sec,
-            debug_sup_sec,
-            gnu_debugaltlink_sec,
-            debug_types_sec
-            ):
+        config: DwarfConfig,
+        debug_info_sec: DebugSectionDescriptor | None,
+        debug_aranges_sec: DebugSectionDescriptor | None,
+        debug_abbrev_sec: DebugSectionDescriptor | None,
+        debug_frame_sec: DebugSectionDescriptor | None,
+        eh_frame_sec: DebugSectionDescriptor | None,
+        debug_str_sec: DebugSectionDescriptor | None,
+        debug_loc_sec: DebugSectionDescriptor | None,
+        debug_ranges_sec: DebugSectionDescriptor | None,
+        debug_line_sec: DebugSectionDescriptor | None,
+        debug_pubtypes_sec: DebugSectionDescriptor | None,
+        debug_pubnames_sec: DebugSectionDescriptor | None,
+        debug_addr_sec: DebugSectionDescriptor | None,
+        debug_str_offsets_sec: DebugSectionDescriptor | None,
+        debug_line_str_sec: DebugSectionDescriptor | None,
+        debug_loclists_sec: DebugSectionDescriptor | None,
+        debug_rnglists_sec: DebugSectionDescriptor | None,
+        debug_sup_sec: DebugSectionDescriptor | None,
+        gnu_debugaltlink_sec: DebugSectionDescriptor | None,
+        debug_types_sec: DebugSectionDescriptor | None,
+    ) -> None:
         """ config:
                 A DwarfConfig object
 
@@ -122,7 +132,7 @@ class DWARFInfo:
         # Sets the supplementary_dwarfinfo to None. Client code can set this
         # to something else, typically a DWARFInfo file read from an ELFFile
         # which path is stored in the debug_sup_sec or gnu_debugaltlink_sec.
-        self.supplementary_dwarfinfo = None
+        self.supplementary_dwarfinfo: DWARFInfo | None = None
 
         # This is the DWARFStructs the context uses, so it doesn't depend on
         # DWARF format and address_size (these are determined per CU) - set them
@@ -133,20 +143,20 @@ class DWARFInfo:
             address_size=self.config.default_address_size)
 
         # Cache for abbrev tables: a dict keyed by offset
-        self._abbrevtable_cache = {}
+        self._abbrevtable_cache: dict[int, AbbrevTable] = {}
         # Cache for program lines tables: a dict keyed by offset
-        self._linetable_cache = {}
+        self._linetable_cache: dict[int, LineProgram] = {}
 
         # Cache of compile units and map of their offsets for bisect lookup.
         # Access with .iter_CUs(), .get_CU_containing(), and/or .get_CU_at().
-        self._cu_cache = []
-        self._cu_offsets_map = []
+        self._cu_cache: list[CompileUnit] = []
+        self._cu_offsets_map: list[int] = []
 
         # DWARF v4 type units by sig8 - ordered dict created when needed
-        self._type_units_by_sig = None
+        self._type_units_by_sig: dict[int, TypeUnit] | None = None
 
     @property
-    def has_debug_info(self):
+    def has_debug_info(self) -> bool:
         """ Return whether this contains debug information.
 
         It can be not the case when the ELF only contains .eh_frame, which is
@@ -154,12 +164,12 @@ class DWARFInfo:
         """
         return bool(self.debug_info_sec)
 
-    def has_debug_types(self):
+    def has_debug_types(self) -> bool:
         """ Return whether this contains debug types information.
         """
         return bool(self.debug_types_sec)
 
-    def get_DIE_from_lut_entry(self, lut_entry):
+    def get_DIE_from_lut_entry(self, lut_entry: NameLUTEntry) -> DIE:
         """ Get the DIE from the pubnames or putbtypes lookup table entry.
 
             lut_entry:
@@ -169,7 +179,7 @@ class DWARFInfo:
         cu = self.get_CU_at(lut_entry.cu_ofs)
         return self.get_DIE_from_refaddr(lut_entry.die_ofs, cu)
 
-    def get_DIE_from_refaddr(self, refaddr, cu=None):
+    def get_DIE_from_refaddr(self, refaddr: int, cu: CompileUnit | None = None) -> DIE:
         """ Given a .debug_info section offset of a DIE, return the DIE.
 
             refaddr:
@@ -183,7 +193,7 @@ class DWARFInfo:
             cu = self.get_CU_containing(refaddr)
         return cu.get_DIE_from_refaddr(refaddr)
 
-    def get_DIE_by_sig8(self, sig8):
+    def get_DIE_by_sig8(self, sig8: int) -> DIE:
         """ Find and return a DIE referenced by its type signature.
             sig8:
                 The 8 byte signature (as a 64-bit unsigned integer)
@@ -209,7 +219,7 @@ class DWARFInfo:
             raise KeyError("Signature %016x not found in .debug_types" % sig8)
         return tu._get_cached_DIE(tu.tu_offset + tu['type_offset'])
 
-    def get_CU_containing(self, refaddr):
+    def get_CU_containing(self, refaddr: int) -> CompileUnit:
         """ Find the CU that includes the given reference address in the
             .debug_info section.
 
@@ -243,7 +253,7 @@ class DWARFInfo:
 
         raise ValueError("CU for reference address %s not found" % refaddr)
 
-    def get_CU_at(self, offset):
+    def get_CU_at(self, offset: int) -> CompileUnit:
         """ Given a CU header offset, return the parsed CU.
 
             offset:
@@ -263,7 +273,7 @@ class DWARFInfo:
 
         return self._cached_CU_at_offset(offset)
 
-    def get_TU_by_sig8(self, sig8):
+    def get_TU_by_sig8(self, sig8: int) -> TypeUnit:
         """ Find and return a Type Unit referenced by its signature
 
             sig8:
@@ -279,17 +289,17 @@ class DWARFInfo:
             raise KeyError("Signature %016x not found in .debug_types" % sig8)
         return tu
 
-    def iter_CUs(self):
+    def iter_CUs(self) -> Iterator[CompileUnit]:
         """ Yield all the compile units (CompileUnit objects) in the debug info
         """
         return self._parse_CUs_iter()
 
-    def iter_TUs(self):
+    def iter_TUs(self) -> Iterator[TypeUnit]:
         """Yield all the type units (TypeUnit objects) in the debug_types
         """
         return self._parse_TUs_iter()
 
-    def get_abbrev_table(self, offset):
+    def get_abbrev_table(self, offset: int) -> AbbrevTable:
         """ Get an AbbrevTable from the given offset in the debug_abbrev
             section.
 
@@ -311,19 +321,19 @@ class DWARFInfo:
                 offset=offset)
         return self._abbrevtable_cache[offset]
 
-    def get_string_from_table(self, offset):
+    def get_string_from_table(self, offset: int) -> bytes | None:
         """ Obtain a string from the string table section, given an offset
             relative to the section.
         """
         return parse_cstring_from_stream(self.debug_str_sec.stream, offset)
 
-    def get_string_from_linetable(self, offset):
+    def get_string_from_linetable(self, offset: int) -> bytes | None:
         """ Obtain a string from the string table section, given an offset
             relative to the section.
         """
         return parse_cstring_from_stream(self.debug_line_str_sec.stream, offset)
 
-    def line_program_for_CU(self, CU):
+    def line_program_for_CU(self, CU: CompileUnit) -> LineProgram | None:
         """ Given a CU object, fetch the line program it points to from the
             .debug_line section.
             If the CU doesn't point to a line program, return None.
@@ -345,12 +355,12 @@ class DWARFInfo:
         else:
             return None
 
-    def has_CFI(self):
+    def has_CFI(self) -> bool:
         """ Does this dwarf info have a dwarf_frame CFI section?
         """
         return self.debug_frame_sec is not None
 
-    def CFI_entries(self):
+    def CFI_entries(self) -> list[CFIEntry | ZERO]:
         """ Get a list of dwarf_frame CFI entries from the .debug_frame section.
         """
         cfi = CallFrameInfo(
@@ -360,12 +370,12 @@ class DWARFInfo:
             base_structs=self.structs)
         return cfi.get_entries()
 
-    def has_EH_CFI(self):
+    def has_EH_CFI(self) -> bool:
         """ Does this dwarf info have a eh_frame CFI section?
         """
         return self.eh_frame_sec is not None
 
-    def EH_CFI_entries(self):
+    def EH_CFI_entries(self) -> list[CFIEntry | ZERO]:
         """ Get a list of eh_frame CFI entries from the .eh_frame section.
         """
         cfi = CallFrameInfo(
@@ -376,7 +386,7 @@ class DWARFInfo:
             for_eh_frame=True)
         return cfi.get_entries()
 
-    def get_pubtypes(self):
+    def get_pubtypes(self) -> NameLUT | None:
         """
         Returns a NameLUT object that contains information read from the
         .debug_pubtypes section in the ELF file.
@@ -392,7 +402,7 @@ class DWARFInfo:
         else:
             return None
 
-    def get_pubnames(self):
+    def get_pubnames(self) -> NameLUT | None:
         """
         Returns a NameLUT object that contains information read from the
         .debug_pubnames section in the ELF file.
@@ -408,7 +418,7 @@ class DWARFInfo:
         else:
             return None
 
-    def get_aranges(self):
+    def get_aranges(self) -> ARanges | None:
         """ Get an ARanges object representing the .debug_aranges section of
             the DWARF data, or None if the section doesn't exist
         """
@@ -419,7 +429,7 @@ class DWARFInfo:
         else:
             return None
 
-    def location_lists(self):
+    def location_lists(self) -> LocationLists | LocationListsPair | None:
         """ Get a LocationLists object representing the .debug_loc/debug_loclists section of
             the DWARF data, or None if this section doesn't exist.
 
@@ -434,7 +444,7 @@ class DWARFInfo:
         else:
             return None
 
-    def range_lists(self):
+    def range_lists(self) -> RangeLists | RangeListsPair | None:
         """ Get a RangeLists object representing the .debug_ranges/.debug_rnglists section of
             the DWARF data, or None if this section doesn't exist.
 
@@ -449,7 +459,7 @@ class DWARFInfo:
         else:
             return None
 
-    def get_addr(self, cu, addr_index):
+    def get_addr(self, cu: CompileUnit | TypeUnit, addr_index: int) -> int:
         """Provided a CU and an index, retrieves an address from the debug_addr section
         """
         if not self.debug_addr_sec:
@@ -460,7 +470,7 @@ class DWARFInfo:
 
     #------ PRIVATE ------#
 
-    def _parse_CUs_iter(self, offset=0):
+    def _parse_CUs_iter(self, offset: int = 0) -> Iterator[CompileUnit]:
         """ Iterate CU objects in order of appearance in the debug_info section.
 
             offset:
@@ -482,7 +492,7 @@ class DWARFInfo:
                       cu.structs.initial_length_field_size())
             yield cu
 
-    def _parse_TUs_iter(self, offset=0):
+    def _parse_TUs_iter(self, offset: int = 0) -> Iterator[TypeUnit]:
         """ Iterate Type Unit objects in order of appearance in the debug_types section.
 
             offset:
@@ -505,7 +515,7 @@ class DWARFInfo:
 
             yield tu
 
-    def _parse_debug_types(self):
+    def _parse_debug_types(self) -> None:
         """ Check if the .debug_types section is previously parsed. If not,
             parse all TUs and store them in an ordered dict using their unique
             64-bit signature as the key.
@@ -531,7 +541,7 @@ class DWARFInfo:
                       tu.structs.initial_length_field_size())
             self._type_units_by_sig[tu['signature']] = tu
 
-    def _cached_CU_at_offset(self, offset):
+    def _cached_CU_at_offset(self, offset: int) -> CompileUnit:
         """ Return the CU with unit header at the given offset into the
             debug_info section from the cache.  If not present, the unit is
             header is parsed and the object is installed in the cache.
@@ -557,7 +567,7 @@ class DWARFInfo:
         self._cu_cache.insert(i, cu)
         return cu
 
-    def _parse_CU_at_offset(self, offset):
+    def _parse_CU_at_offset(self, offset: int) -> CompileUnit:
         """ Parse and return a CU at the given offset in the debug_info stream.
         """
         # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v3
@@ -603,7 +613,7 @@ class DWARFInfo:
                 cu_offset=offset,
                 cu_die_offset=cu_die_offset)
 
-    def _parse_TU_at_offset(self, offset):
+    def _parse_TU_at_offset(self, offset: int) -> TypeUnit:
         """ Parse and return a Type Unit (TU) at the given offset in the debug_types stream.
         """
         # Section 7.4 (32-bit and 64-bit DWARF Formats) of the DWARF spec v4
@@ -648,12 +658,12 @@ class DWARFInfo:
             tu_offset=offset,
             tu_die_offset=tu_die_offset)
 
-    def _is_supported_version(self, version):
+    def _is_supported_version(self, version: int) -> bool:
         """ DWARF version supported by this parser
         """
         return 2 <= version <= 5
 
-    def _parse_line_program_at_offset(self, offset, structs):
+    def _parse_line_program_at_offset(self, offset: int, structs: DWARFStructs) -> LineProgram:
         """ Given an offset to the .debug_line section, parse the line program
             starting at this offset in the section and return it.
             structs is the DWARFStructs object used to do this parsing.
@@ -668,11 +678,11 @@ class DWARFInfo:
             offset)
 
         # DWARF5: resolve names
-        def resolve_strings(lineprog_header, format_field, data_field) -> None:
+        def resolve_strings(lineprog_header: Container, format_field: str, data_field: str) -> None:
             if lineprog_header.get(format_field, False):
                 data = lineprog_header[data_field]
                 for field in lineprog_header[format_field]:
-                    def replace_value(data, content_type, replacer):
+                    def replace_value(data: ListContainer, content_type: str, replacer: Callable[[int], bytes | None]) -> None:
                         for entry in data:
                             entry[content_type] = replacer(entry[content_type])
 
@@ -717,7 +727,7 @@ class DWARFInfo:
         self._linetable_cache[offset] = lineprogram
         return lineprogram
 
-    def parse_debugsupinfo(self):
+    def parse_debugsupinfo(self) -> bytes | None:
         """
         Extract a filename from .debug_sup, .gnu_debualtlink sections.
         """

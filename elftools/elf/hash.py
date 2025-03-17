@@ -12,9 +12,11 @@ import struct
 from typing import TYPE_CHECKING, Protocol
 
 from ..common.utils import struct_parse
+from ..construct.lib.container import Container
 from .sections import Section
 
 if TYPE_CHECKING:
+    from .elffile import ELFFile
     from .sections import Symbol
 
 
@@ -41,7 +43,7 @@ class ELFHashTable:
         supports symbol lookup without access to a symbol table section.
     """
 
-    def __init__(self, elffile, start_offset, size, symboltable):
+    def __init__(self, elffile: ELFFile, start_offset: int, size: int | None, symboltable: _SymbolTable) -> None:
         """
         Args:
             elffile (ELFFile): The ELF file.
@@ -52,23 +54,23 @@ class ELFHashTable:
         self.elffile = elffile
         self._symboltable = symboltable
         if size == 0:  # size may also be None if its unknown
-            self.params = {
+            self.params = Container(**{
                 'nbuckets': 0,
                 'nchains': 0,
                 'buckets': [],
                 'chains': [],
-            }
+            })
         else:
             self.params = struct_parse(self.elffile.structs.Elf_Hash,
                                        self.elffile.stream,
                                        start_offset)
 
-    def get_number_of_symbols(self):
+    def get_number_of_symbols(self) -> int:
         """ Get the number of symbols from the hash table parameters.
         """
         return self.params['nchains']
 
-    def get_symbol(self, name):
+    def get_symbol(self, name: str) -> Symbol | None:
         """ Look up a symbol from this hash table with the given name.
         """
         if self.params['nbuckets'] == 0:
@@ -83,7 +85,7 @@ class ELFHashTable:
         return None
 
     @staticmethod
-    def elf_hash(name):
+    def elf_hash(name: bytes | str) -> int:
         """ Compute the hash value for a given symbol name.
         """
         if not isinstance(name, bytes):
@@ -104,7 +106,7 @@ class ELFHashSection(Section, ELFHashTable):
         allows us to use the common functions defined on Section objects when
         dealing with the hash table.
     """
-    def __init__(self, header, name, elffile, symboltable):
+    def __init__(self, header: Container, name: str, elffile: ELFFile, symboltable: _SymbolTable) -> None:
         Section.__init__(self, header, name, elffile)
         ELFHashTable.__init__(self, elffile, self['sh_offset'], self['sh_size'], symboltable)
 
@@ -122,20 +124,20 @@ class GNUHashTable:
         one should use the DynamicSegment object as the symboltable as it
         supports symbol lookup without access to a symbol table section.
     """
-    def __init__(self, elffile, start_offset, symboltable):
+    def __init__(self, elffile: ELFFile, start_offset: int, symboltable: _SymbolTable) -> None:
         self.elffile = elffile
         self._symboltable = symboltable
-        self.params = struct_parse(self.elffile.structs.Gnu_Hash,
+        p: Container = struct_parse(self.elffile.structs.Gnu_Hash,
                                    self.elffile.stream,
                                    start_offset)
         # Element sizes in the hash table
-        self._wordsize = self.elffile.structs.Elf_word('').sizeof()
-        self._xwordsize = self.elffile.structs.Elf_xword('').sizeof()
-        self._chain_pos = start_offset + 4 * self._wordsize + \
+        self._wordsize: int = self.elffile.structs.Elf_word('').sizeof()
+        self._xwordsize: int = self.elffile.structs.Elf_xword('').sizeof()
+        self._chain_pos: int = start_offset + 4 * self._wordsize + \
             self.params['bloom_size'] * self._xwordsize + \
             self.params['nbuckets'] * self._wordsize
 
-    def get_number_of_symbols(self):
+    def get_number_of_symbols(self) -> int:
         """ Get the number of symbols in the hash table by finding the bucket
             with the highest symbol index and walking to the end of its chain.
         """
@@ -158,7 +160,7 @@ class GNUHashTable:
 
             max_idx += 1
 
-    def _matches_bloom(self, H1):
+    def _matches_bloom(self, H1: int) -> bool:
         """ Helper function to check if the given hash could be in the hash
             table by testing it against the bloom filter.
         """
@@ -168,7 +170,7 @@ class GNUHashTable:
         BITMASK = (1 << (H1 % arch_bits)) | (1 << (H2 % arch_bits))
         return (self.params['bloom'][word_idx] & BITMASK) == BITMASK
 
-    def get_symbol(self, name):
+    def get_symbol(self, name: str) -> Symbol | None:
         """ Look up a symbol from this hash table with the given name.
         """
         namehash = self.gnu_hash(name)
@@ -194,7 +196,7 @@ class GNUHashTable:
         return None
 
     @staticmethod
-    def gnu_hash(key):
+    def gnu_hash(key: bytes | str) -> int:
         """ Compute the GNU-style hash value for a given symbol name.
         """
         if not isinstance(key, bytes):
@@ -210,6 +212,6 @@ class GNUHashSection(Section, GNUHashTable):
         allows us to use the common functions defined on Section objects when
         dealing with the hash table.
     """
-    def __init__(self, header, name, elffile, symboltable):
+    def __init__(self, header: Container, name: str, elffile: ELFFile, symboltable: _SymbolTable) -> None:
         Section.__init__(self, header, name, elffile)
         GNUHashTable.__init__(self, elffile, self['sh_offset'], symboltable)

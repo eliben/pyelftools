@@ -6,6 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import IO, TYPE_CHECKING, Any, Literal, overload
+
 from ..common.exceptions import ELFCompressionError
 from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
 from collections import defaultdict
@@ -13,6 +17,14 @@ from .constants import SH_FLAGS
 from .notes import iter_notes
 
 import zlib
+from elftools.construct.lib.container import Container
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from ..construct.lib.container import Container
+    from .elffile import ELFFile
+    from .structs import ELFStructs
 
 
 class Section:
@@ -23,13 +35,13 @@ class Section:
          > sec = Section(...)
          > sec['sh_type']  # section type
     """
-    def __init__(self, header, name, elffile):
+    def __init__(self, header: Container, name: str, elffile: ELFFile) -> None:
         self.header = header
         self.name = name
         self.elffile = elffile
-        self.stream = self.elffile.stream
-        self.structs = self.elffile.structs
-        self._compressed = header['sh_flags'] & SH_FLAGS.SHF_COMPRESSED
+        self.stream: IO[bytes] = self.elffile.stream
+        self.structs: ELFStructs = self.elffile.structs
+        self._compressed: int = header['sh_flags'] & SH_FLAGS.SHF_COMPRESSED
 
         if self.compressed:
             # Read the compression header now to know about the size/alignment
@@ -37,21 +49,21 @@ class Section:
             header = struct_parse(self.structs.Elf_Chdr,
                                   self.stream,
                                   stream_pos=self['sh_offset'])
-            self._compression_type = header['ch_type']
-            self._decompressed_size = header['ch_size']
-            self._decompressed_align = header['ch_addralign']
+            self._compression_type: str = header['ch_type']
+            self._decompressed_size: int = header['ch_size']
+            self._decompressed_align: int = header['ch_addralign']
         else:
             self._decompressed_size = header['sh_size']
             self._decompressed_align = header['sh_addralign']
 
     @property
-    def compressed(self):
+    def compressed(self) -> int:
         """ Is this section compressed?
         """
         return self._compressed
 
     @property
-    def data_size(self):
+    def data_size(self) -> int:
         """ Return the logical size for this section's data.
 
         This can be different from the .sh_size header field when the section
@@ -60,7 +72,7 @@ class Section:
         return self._decompressed_size
 
     @property
-    def data_alignment(self):
+    def data_alignment(self) -> int:
         """ Return the logical alignment for this section's data.
 
         This can be different from the .sh_addralign header field when the
@@ -68,7 +80,7 @@ class Section:
         """
         return self._decompressed_align
 
-    def data(self):
+    def data(self) -> bytes:
         """ The section data from the file.
 
         Note that data is decompressed if the stored section data is
@@ -84,9 +96,9 @@ class Section:
             if c_type == 'ELFCOMPRESS_ZLIB':
                 # Read the data to decompress starting right after the
                 # compression header until the end of the section.
-                hdr_size = self.structs.Elf_Chdr.sizeof()
+                hdr_size: int = self.structs.Elf_Chdr.sizeof()
                 self.stream.seek(self['sh_offset'] + hdr_size)
-                compressed = self.stream.read(self['sh_size'] - hdr_size)
+                compressed: bytes = self.stream.read(self['sh_size'] - hdr_size)
 
                 decomp = zlib.decompressobj()
                 result = decomp.decompress(compressed, self.data_size)
@@ -106,37 +118,43 @@ class Section:
 
         return result
 
-    def is_null(self):
+    def is_null(self) -> bool:
         """ Is this a null section?
         """
         return False
 
-    def __getitem__(self, name):
+    @overload
+    def __getitem__(self, name: Literal["sh_addr", "sh_entsize", "sh_flags", "sh_offset", "sh_size"]) -> int: ...
+    @overload
+    def __getitem__(self, name: Literal["st_name", "sh_type"]) -> str: ...
+    @overload
+    def __getitem__(self, name: str) -> Any: ...
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """
         return self.header[name]
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         try:
             return self.header == other.header
         except AttributeError:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.header)
 
 
 class NullSection(Section):
     """ ELF NULL section
     """
-    def is_null(self):
+    def is_null(self) -> bool:
         return True
 
 
 class StringTableSection(Section):
     """ ELF string table section.
     """
-    def get_string(self, offset):
+    def get_string(self, offset: int) -> str:
         """ Get the string stored at the given offset in this string table.
         """
         table_offset = self['sh_offset']
@@ -151,11 +169,11 @@ class SymbolTableIndexSection(Section):
         SHN_XINDEX (0xffff). The format of the section is described at
         https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.sheader.html
     """
-    def __init__(self, header, name, elffile, symboltable):
+    def __init__(self, header: Container, name: str, elffile: ELFFile, symboltable: Container) -> None:
         super().__init__(header, name, elffile)
         self.symboltable = symboltable
 
-    def get_section_index(self, n):
+    def get_section_index(self, n: int) -> int:
         """ Get the section header table index for the symbol with index #n.
             The section contains an array of Elf32_word values with one entry
             for every symbol in the associated symbol table.
@@ -168,21 +186,21 @@ class SymbolTableSection(Section):
     """ ELF symbol table section. Has an associated StringTableSection that's
         passed in the constructor.
     """
-    def __init__(self, header, name, elffile, stringtable):
+    def __init__(self, header: Container, name: str, elffile: ELFFile, stringtable: StringTableSection) -> None:
         super().__init__(header, name, elffile)
         self.stringtable = stringtable
         elf_assert(self['sh_entsize'] > 0,
                 'Expected entry size of section %r to be > 0' % name)
         elf_assert(self['sh_size'] % self['sh_entsize'] == 0,
                 'Expected section size to be a multiple of entry size in section %r' % name)
-        self._symbol_name_map = None
+        self._symbol_name_map: dict[str, list[int]] | None = None
 
-    def num_symbols(self):
+    def num_symbols(self) -> int:
         """ Number of symbols in the table
         """
         return self['sh_size'] // self['sh_entsize']
 
-    def get_symbol(self, n):
+    def get_symbol(self, n: int) -> Symbol:
         """ Get the symbol at index #n from the table (Symbol object)
         """
         # Grab the symbol's entry from the stream
@@ -195,7 +213,7 @@ class SymbolTableSection(Section):
         name = self.stringtable.get_string(entry['st_name'])
         return Symbol(entry, name)
 
-    def get_symbol_by_name(self, name):
+    def get_symbol_by_name(self, name: str) -> list[Symbol] | None:
         """ Get a symbol(s) by name. Return None if no symbol by the given name
             exists.
         """
@@ -209,7 +227,7 @@ class SymbolTableSection(Section):
         symnums = self._symbol_name_map.get(name)
         return [self.get_symbol(i) for i in symnums] if symnums else None
 
-    def iter_symbols(self):
+    def iter_symbols(self) -> Iterator[Symbol]:
         """ Yield all the symbols in the table
         """
         for i in range(self.num_symbols()):
@@ -223,11 +241,11 @@ class Symbol:
         Similarly to Section objects, allows dictionary-like access to the
         symbol entry.
     """
-    def __init__(self, entry, name):
+    def __init__(self, entry: Container, name: str) -> None:
         self.entry = entry
         self.name = name
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to entries
         """
         return self.entry[name]
@@ -237,16 +255,16 @@ class SUNWSyminfoTableSection(Section):
     """ ELF .SUNW Syminfo table section.
         Has an associated SymbolTableSection that's passed in the constructor.
     """
-    def __init__(self, header, name, elffile, symboltable):
+    def __init__(self, header: Container, name: str, elffile: ELFFile, symboltable: SymbolTableSection) -> None:
         super().__init__(header, name, elffile)
         self.symboltable = symboltable
 
-    def num_symbols(self):
+    def num_symbols(self) -> int:
         """ Number of symbols in the table
         """
         return self['sh_size'] // self['sh_entsize'] - 1
 
-    def get_symbol(self, n):
+    def get_symbol(self, n: int) -> Symbol:
         """ Get the symbol at index #n from the table (Symbol object).
             It begins at 1 and not 0 since the first entry is used to
             store the current version of the syminfo table.
@@ -261,7 +279,7 @@ class SUNWSyminfoTableSection(Section):
         name = self.symboltable.get_symbol(n).name
         return Symbol(entry, name)
 
-    def iter_symbols(self):
+    def iter_symbols(self) -> Iterator[Symbol]:
         """ Yield all the symbols in the table
         """
         for i in range(1, self.num_symbols() + 1):
@@ -271,7 +289,7 @@ class SUNWSyminfoTableSection(Section):
 class NoteSection(Section):
     """ ELF NOTE section. Knows how to parse notes.
     """
-    def iter_notes(self):
+    def iter_notes(self) -> Iterator[Container]:
         """ Yield all the notes in the section.  Each result is a dictionary-
             like object with "n_name", "n_type", and "n_desc" fields, amongst
             others.
@@ -282,11 +300,11 @@ class NoteSection(Section):
 class StabSection(Section):
     """ ELF stab section.
     """
-    def iter_stabs(self):
+    def iter_stabs(self) -> Iterator[Container]:
         """ Yield all stab entries.  Result type is ELFStructs.Elf_Stabs.
         """
-        offset = self['sh_offset']
-        size = self['sh_size']
+        offset: int = self['sh_offset']
+        size: int = self['sh_size']
         end = offset + size
         while offset < end:
             stabs = struct_parse(
@@ -306,10 +324,10 @@ class Attribute:
         self.extra = None
 
     @property
-    def tag(self):
+    def tag(self) -> str:
         return self._tag['tag']
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = '<%s (%s): %r>' % \
             (self.__class__.__name__, self.tag, self.value)
         s += ' %s' % self.extra if self.extra is not None else ''
@@ -329,7 +347,7 @@ class AttributesSubsubsection(Section):
 
         self.attr_start = self.stream.tell()
 
-    def iter_attributes(self, tag=None):
+    def iter_attributes(self, tag: str | None = None) -> Iterator[Attribute]:
         """ Yield all attributes (limit to |tag| if specified).
         """
         for attribute in self._make_attributes():
@@ -337,18 +355,18 @@ class AttributesSubsubsection(Section):
                 yield attribute
 
     @property
-    def num_attributes(self):
+    def num_attributes(self) -> int:
         """ Number of attributes in the subsubsection.
         """
         return sum(1 for _ in self.iter_attributes()) + 1
 
     @property
-    def attributes(self):
+    def attributes(self) -> list[Attribute]:
         """ List of all attributes in the subsubsection.
         """
         return [self.header, *(self.iter_attributes())]
 
-    def _make_attributes(self):
+    def _make_attributes(self) -> Iterator[Attribute]:
         """ Create all attributes for this subsubsection except the first one
             which is the header.
         """
@@ -359,7 +377,7 @@ class AttributesSubsubsection(Section):
         while self.stream.tell() != end:
             yield self.attribute(self.structs, self.stream)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = "<%s (%s): %d bytes>"
         return s % (self.__class__.__name__,
                     self.header.tag[4:], self.header.value)
@@ -378,7 +396,7 @@ class AttributesSubsection(Section):
 
         self.subsubsec_start = self.stream.tell()
 
-    def iter_subsubsections(self, scope=None):
+    def iter_subsubsections(self, scope: str | None = None) -> Iterator[AttributesSubsubsection]:
         """ Yield all subsubsections (limit to |scope| if specified).
         """
         for subsubsec in self._make_subsubsections():
@@ -386,18 +404,18 @@ class AttributesSubsection(Section):
                 yield subsubsec
 
     @property
-    def num_subsubsections(self):
+    def num_subsubsections(self) -> int:
         """ Number of subsubsections in the subsection.
         """
         return sum(1 for _ in self.iter_subsubsections())
 
     @property
-    def subsubsections(self):
+    def subsubsections(self) -> list[AttributesSubsubsection]:
         """ List of all subsubsections in the subsection.
         """
         return list(self.iter_subsubsections())
 
-    def _make_subsubsections(self):
+    def _make_subsubsections(self) -> Iterator[AttributesSubsubsection]:
         """ Create all subsubsections for this subsection.
         """
         end = self.offset + self['length']
@@ -411,12 +429,12 @@ class AttributesSubsection(Section):
             self.stream.seek(self.subsubsec_start + subsubsec.header.value)
             yield subsubsec
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries.
         """
         return self.header[name]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = "<%s (%s): %d bytes>"
         return s  % (self.__class__.__name__,
                      self.header['vendor_name'], self.header['length'])
@@ -429,7 +447,7 @@ class AttributesSection(Section):
         super().__init__(header, name, elffile)
         self.subsection = subsection
 
-        fv = struct_parse(self.structs.Elf_byte('format_version'),
+        fv: int = struct_parse(self.structs.Elf_byte('format_version'),
                           self.stream,
                           self['sh_offset'])
 
@@ -438,7 +456,7 @@ class AttributesSection(Section):
 
         self.subsec_start = self.stream.tell()
 
-    def iter_subsections(self, vendor_name=None):
+    def iter_subsections(self, vendor_name: str | None = None) -> Iterator[AttributesSubsection]:
         """ Yield all subsections (limit to |vendor_name| if specified).
         """
         for subsec in self._make_subsections():
@@ -446,18 +464,18 @@ class AttributesSection(Section):
                 yield subsec
 
     @property
-    def num_subsections(self):
+    def num_subsections(self) -> int:
         """ Number of subsections in the section.
         """
         return sum(1 for _ in self.iter_subsections())
 
     @property
-    def subsections(self):
+    def subsections(self) -> list[AttributesSubsection]:
         """ List of all subsections in the section.
         """
         return list(self.iter_subsections())
 
-    def _make_subsections(self):
+    def _make_subsections(self) -> Iterator[AttributesSubsection]:
         """ Create all subsections for this section.
         """
         end = self['sh_offset'] + self.data_size
@@ -475,7 +493,7 @@ class AttributesSection(Section):
 class ARMAttribute(Attribute):
     """ ARM attribute object - representing a build attribute of ARM ELF files.
     """
-    def __init__(self, structs, stream):
+    def __init__(self, structs: ELFStructs, stream: IO[bytes]) -> None:
         super().__init__(
             struct_parse(structs.Elf_Arm_Attribute_Tag, stream))
 
@@ -483,8 +501,8 @@ class ARMAttribute(Attribute):
             self.value = struct_parse(structs.Elf_word('value'), stream)
 
             if self.tag != 'TAG_FILE':
-                self.extra = []
-                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
+                self.extra: list[int] = []  # type: ignore[assignment]
+                s_number: int = struct_parse(structs.Elf_uleb128('s_number'), stream)
 
                 while s_number != 0:
                     self.extra.append(s_number)
@@ -506,7 +524,7 @@ class ARMAttribute(Attribute):
             self.value = ARMAttribute(structs, stream)
 
             if type(self.value.value) is not str:
-                nul = struct_parse(structs.Elf_byte('nul'), stream)
+                nul: int = struct_parse(structs.Elf_byte('nul'), stream)
                 elf_assert(nul == 0,
                            "Invalid terminating byte %r, expecting NUL." % nul)
 
@@ -543,7 +561,7 @@ class ARMAttributesSection(AttributesSection):
 class RISCVAttribute(Attribute):
     """ Attribute of an ELF .riscv.attributes section.
     """
-    def __init__(self, structs, stream):
+    def __init__(self, structs: ELFStructs, stream: IO[bytes]) -> None:
         super().__init__(
             struct_parse(structs.Elf_RiscV_Attribute_Tag, stream))
 
@@ -551,8 +569,8 @@ class RISCVAttribute(Attribute):
             self.value = struct_parse(structs.Elf_word('value'), stream)
 
             if self.tag != 'TAG_FILE':
-                self.extra = []
-                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
+                self.extra: list[int] = []  # type: ignore[assignment]
+                s_number: int = struct_parse(structs.Elf_uleb128('s_number'), stream)
 
                 while s_number != 0:
                     self.extra.append(s_number)
