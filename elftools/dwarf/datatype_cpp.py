@@ -232,7 +232,7 @@ def DIE_is_ptr_to_member_struct(type_die: DIE) -> bool:
 
 def _strip_type_tag(die: DIE) -> str:
     """Given a DIE with DW_TAG_foo_type, returns foo"""
-    if isinstance(die.tag, int): # User-defined tag
+    if not isinstance(die.tag, str): # User-defined tag
         return ""
     return die.tag[7:-5]
 
