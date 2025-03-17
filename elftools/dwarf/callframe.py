@@ -269,7 +269,7 @@ class CallFrameInfo:
         """
         augmentation = header.get('augmentation')
         if not augmentation:
-            return ('', {})
+            return (b'', {})
 
         # Ignore armcc augmentations.
         if augmentation.startswith(b'armcc'):
