@@ -123,7 +123,7 @@ class Construct:
         self.conflags = flags
 
     def __repr__(self) -> str:
-        return "%s(%r)" % (self.__class__.__name__, self.name)
+        return f"{self.__class__.__name__}({self.name!r})"
 
     def _set_flag(self, flag: int) -> None:
         """

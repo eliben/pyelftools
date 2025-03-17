@@ -55,7 +55,7 @@ class Probe(Construct):
         self.show_stack = show_stack
         self.stream_lookahead = stream_lookahead
     def __repr__(self) -> str:
-        return "%s(%r)" % (self.__class__.__name__, self.printname)
+        return f"{self.__class__.__name__}({self.printname!r})"
     def _parse(self, stream: IO[bytes], context: Container) -> None:
         self.printout(stream, context)
     def _build(self, obj: Any, stream: IO[bytes], context: Container) -> None:
@@ -127,7 +127,7 @@ class Debugger(Subconstruct):
             self.handle_exc()
     def handle_exc(self, msg: str | None = None) -> None:
         print("=" * 80)
-        print("Debugging exception of %s:" % (self.subcon,))
+        print(f"Debugging exception of {self.subcon}:")
         print("".join(traceback.format_exception(*sys.exc_info())[1:]))
         if msg:
             print(msg)

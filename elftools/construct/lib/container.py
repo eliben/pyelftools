@@ -103,10 +103,10 @@ class Container(MutableMapping[str, Any]):
     __copy__ = copy
 
     def __repr__(self) -> str:
-        return "%s(%s)" % (self.__class__.__name__, repr(self.__dict__))
+        return f"{self.__class__.__name__}({repr(self.__dict__)})"
 
     def __str__(self) -> str:
-        return "%s(%s)" % (self.__class__.__name__, str(self.__dict__))
+        return f"{self.__class__.__name__}({str(self.__dict__)})"
 
     if TYPE_CHECKING:
         # elftools.construct.debug Probe.printout()
@@ -127,9 +127,9 @@ class FlagsContainer(Container):
 
     @recursion_lock("<...>")
     def __str__(self) -> str:
-        d = {k: self[k] for k in self
-                 if self[k] and not k.startswith("_")}
-        return "%s(%s)" % (self.__class__.__name__, pformat(d))
+        d = dict((k, self[k]) for k in self
+                 if self[k] and not k.startswith("_"))
+        return f"{self.__class__.__name__}({pformat(d)})"
 
 class ListContainer(list[Any]):
     """
@@ -172,7 +172,7 @@ class LazyContainer:
             text = self._value.__pretty_str__(nesting, indentation)
         else:
             text = str(self._value)
-        return "%s: %s" % (self.__class__.__name__, text)
+        return f"{self.__class__.__name__}: {text}"
 
     def read(self) -> Any:
         self.stream.seek(self.pos)

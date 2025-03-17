@@ -74,7 +74,7 @@ def deprecated(f: Callable[_P, _T]) -> Callable[_P, _T]:
     @functools.wraps(f)
     def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
         warnings.warn(
-            "This name is deprecated, use %s instead" % f.__name__,
+            f"This name is deprecated, use {f.__name__} instead",
             DeprecationWarning, stacklevel=2)
         return f(*args, **kwargs)
     return wrapper
