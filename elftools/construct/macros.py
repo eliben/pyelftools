@@ -291,10 +291,12 @@ def PrefixedArray(subcon: Construct, length_field: Construct = UBInt8("length"))
     * subcon - the subcon to be repeated
     * length_field - a construct returning an integer
     """
+    assert length_field.name is not None
+    name = length_field.name
     return LengthValueAdapter(
         Sequence(subcon.name,
             length_field,
-            Array(lambda ctx: ctx[length_field.name], subcon),
+            Array(lambda ctx: ctx[name], subcon),
             nested = False
         )
     )
