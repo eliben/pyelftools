@@ -537,6 +537,7 @@ class CFIEntry:
             # For a FDE, we need to decode the attached CIE first, because its
             # decoded table is needed. Its "initial instructions" describe a
             # line that serves as the base (first) line in the FDE's table.
+            assert self.cie is not None
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
             if cie_decoded_table.table:
@@ -632,6 +633,7 @@ class CFIEntry:
                 dwarf_assert(
                     isinstance(self, FDE),
                     '%s instruction must be in a FDE' % name)
+                assert last_line_in_CIE is not None
                 if instr.args[0] in last_line_in_CIE:
                     cur_line[instr.args[0]] = last_line_in_CIE[instr.args[0]]
                 else:

@@ -327,6 +327,7 @@ class DynamicSegment(Segment, Dynamic):
                             tab_ptr <= (segment['p_vaddr'] + segment['p_filesz'])):
                         nearest_ptr = segment['p_vaddr'] + segment['p_filesz']
 
+            assert nearest_ptr is not None
             end_ptr = nearest_ptr
             self._num_symbols = (end_ptr - tab_ptr) // self._symbol_size
 

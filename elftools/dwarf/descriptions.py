@@ -67,6 +67,7 @@ def describe_CFI_instructions(entry: CFIEntry) -> str:
         cie = entry
         pc: int | None = None
     else: # FDE
+        assert entry.cie is not None
         cie = entry.cie
         pc = entry['initial_location']
 
@@ -94,6 +95,7 @@ def describe_CFI_instructions(entry: CFIEntry) -> str:
         elif name in (  'DW_CFA_advance_loc1', 'DW_CFA_advance_loc2',
                         'DW_CFA_advance_loc4', 'DW_CFA_advance_loc'):
             _assert_FDE_instruction(instr)
+            assert pc is not None
             factored_offset: int = instr.args[0] * cie['code_alignment_factor']
             s += '  %s: %s to %08x\n' % (
                 name, factored_offset, factored_offset + pc)
@@ -111,6 +113,7 @@ def describe_CFI_instructions(entry: CFIEntry) -> str:
         elif name in ('DW_CFA_def_cfa_offset', 'DW_CFA_GNU_args_size'):
             s += '  %s: %s\n' % (name, instr.args[0])
         elif name == 'DW_CFA_def_cfa_offset_sf':
+            assert entry.cie is not None
             s += '  %s: %s\n' % (name, instr.args[0]*entry.cie['data_alignment_factor'])
         elif name == 'DW_CFA_def_cfa_expression':
             expr_dumper = ExprDumper(entry.structs)
