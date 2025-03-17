@@ -124,7 +124,7 @@ class LazyContainer:
 
     def __eq__(self, other: object) -> bool:
         try:
-            return self._value == other._value
+            return self._value == other._value  # type: ignore[attr-defined]
         except AttributeError:
             return False
 
