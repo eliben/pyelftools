@@ -140,6 +140,8 @@ class CallFrameInfo:
 
         # If the augmentation string is not empty, hope to find a length field
         # in order to skip the data specified augmentation.
+        lsda_pointer: int | None = None
+        aug_dict: dict[Any, Any] | None = None
         if is_CIE:
             aug_bytes, aug_dict = self._parse_cie_augmentation(
                     header, entry_structs)
@@ -153,8 +155,6 @@ class CallFrameInfo:
                 lsda_pointer = self._parse_lsda_pointer(entry_structs,
                                                         self.stream.tell() - len(aug_bytes),
                                                         lsda_encoding)
-            else:
-                lsda_pointer = None
 
         # For convenience, compute the end offset for this entry
         end_offset: int = (
@@ -528,6 +528,7 @@ class CFIEntry:
         """ Decode the instructions contained in the given CFI entry and return
             a DecodedCallFrameTable.
         """
+        last_line_in_CIE: dict[str, Any] | None = None
         if isinstance(self, CIE):
             # For a CIE, initialize cur_line to an "empty" line
             cie = self
