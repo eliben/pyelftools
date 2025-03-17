@@ -71,9 +71,9 @@ def parse_cpp_datatype(var_die: DIE) -> TypeDesc:
             params_ = tuple(format_function_param(p, p) for p in type_die.iter_children() if p.tag in ("DW_TAG_formal_parameter", "DW_TAG_unspecified_parameters") and 'DW_AT_artificial' not in p.attributes)
             params = ", ".join(params_)
             if 'DW_AT_type' in type_die.attributes:
-                retval_type = parse_cpp_datatype(type_die)
-                is_pointer = retval_type.modifiers and retval_type.modifiers[-1] == 'pointer'
-                retval_type = str(retval_type)
+                retval_type_ = parse_cpp_datatype(type_die)
+                is_pointer = retval_type_.modifiers and retval_type_.modifiers[-1] == 'pointer'
+                retval_type = str(retval_type_)
                 if not is_pointer:
                     retval_type += " "
             else:
