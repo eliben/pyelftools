@@ -157,7 +157,7 @@ class LocationLists:
 
         # Need to provide support for DW_AT_GNU_locviews. They are interspersed in
         # the locations section, no way to tell where short of checking all DIEs
-        all_offsets = set() # Set of offsets where either a locview pair set can be found, or a view-less loclist
+        all_offsets_ = set() # Set of offsets where either a locview pair set can be found, or a view-less loclist
         locviews = dict() # Map of locview offset to the respective loclist offset
         cu_map = dict() # Map of loclist offsets to CUs
         assert self.dwarfinfo is not None
@@ -174,7 +174,7 @@ class LocationLists:
                         list_offset: int = die.attributes['DW_AT_location'].value
                         locviews[views_offset] = list_offset
                         cu_map[list_offset] = cu
-                        all_offsets.add(views_offset)
+                        all_offsets_.add(views_offset)
 
                     # Scan other attributes for location lists
                     for key in die.attributes:
@@ -183,10 +183,9 @@ class LocationLists:
                             LocationParser.attribute_has_location(attr, cu_ver) and
                             LocationParser._attribute_has_loc_list(attr, cu_ver)):
                             list_offset = attr.value
-                            all_offsets.add(list_offset)
+                            all_offsets_.add(list_offset)
                             cu_map[list_offset] = cu
-        all_offsets = list(all_offsets)
-        all_offsets.sort()
+        all_offsets = sorted(all_offsets_)
 
         if ver5:
             # Loclists section is organized as an array of CUs, each length prefixed.
