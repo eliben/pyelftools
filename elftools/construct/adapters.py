@@ -172,7 +172,7 @@ class StringAdapter(Adapter):
         return obj
     def _decode(self, obj: bytes, context: Container) -> bytes | str:
         if self.encoding:
-            obj = obj.decode(self.encoding)
+            return obj.decode(self.encoding)
         return obj
 
 class PaddedStringAdapter(Adapter):
