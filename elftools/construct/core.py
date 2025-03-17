@@ -852,6 +852,7 @@ class Switch(Construct, Generic[_T]):
             return obj
     def _build(self, obj: tuple[_T | None, Construct] | Construct, stream: IO[bytes], context: Container) -> None:
         if self.include_key:
+            assert isinstance(obj, tuple)
             key, obj = obj
         else:
             key = self.keyfunc(context)
@@ -908,6 +909,7 @@ class Select(Construct):
         raise SelectError("no subconstruct matched")
     def _build(self, obj: tuple[str, Any] | Any, stream: IO[bytes], context: Container) -> None:
         if self.include_name:
+            assert isinstance(obj, tuple)
             name, obj = obj
             for sc in self.subcons:
                 if sc.name == name:
