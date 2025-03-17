@@ -477,7 +477,7 @@ def String(name, length, encoding=None, padchar=None, paddir="right",
     :param str encoding: encoding (e.g. "utf8") or None for no encoding
     :param bytes padchar: optional character to pad out strings
     :param str paddir: direction to pad out strings; one of "right", "left",
-                       or "both"
+                       or "center"
     :param str trim: direction to trim strings; one of "right", "left"
 
     >>> from ..construct import String
