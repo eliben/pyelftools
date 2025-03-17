@@ -315,6 +315,7 @@ class ELFStructs:
     def _create_dyn(self) -> None:
         d_tag_dict = dict(ENUM_D_TAG_COMMON)
         if self.e_machine in ENUMMAP_EXTRA_D_TAG_MACHINE:
+            assert self.e_machine is not None
             d_tag_dict.update(ENUMMAP_EXTRA_D_TAG_MACHINE[self.e_machine])
         elif self.e_ident_osabi == 'ELFOSABI_SOLARIS':
             d_tag_dict.update(ENUM_D_TAG_SOLARIS)

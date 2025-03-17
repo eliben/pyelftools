@@ -165,6 +165,7 @@ class RelrRelocationTable:
             else:
                 # We're processing a bitmap.
                 elf_assert(base is not None, 'RELR bitmap without base address')
+                assert base is not None
                 i = 0
                 while True:
                     # Iterate over all bits except the least significant one.
