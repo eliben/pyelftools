@@ -160,6 +160,7 @@ class LocationLists:
         all_offsets = set() # Set of offsets where either a locview pair set can be found, or a view-less loclist
         locviews = dict() # Map of locview offset to the respective loclist offset
         cu_map = dict() # Map of loclist offsets to CUs
+        assert self.dwarfinfo is not None
         for cu in self.dwarfinfo.iter_CUs():
             cu_ver: int = cu['version']
             if (cu_ver >= 5) == ver5:
@@ -230,6 +231,7 @@ class LocationLists:
         if self.version < 5:
             raise DWARFError("CU iteration in loclists is not supported with DWARF<5")
 
+        assert self.dwarfinfo is not None
         structs = next(self.dwarfinfo.iter_CUs()).structs # Just pick one
         return _iter_CUs_in_section(self.stream, structs, structs.Dwarf_loclists_CU_header)
 
@@ -339,6 +341,7 @@ class LocationParser:
             if self._attribute_has_loc_expr(attr, dwarf_version):
                 return LocationExpr(attr.value)
             elif self._attribute_has_loc_list(attr, dwarf_version):
+                assert self.location_lists is not None
                 return self.location_lists.get_location_list_at_offset(
                     attr.value, die)
                 # We don't yet know if the DIE context will be needed.
