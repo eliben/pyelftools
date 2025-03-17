@@ -10,10 +10,14 @@ from __future__ import annotations
 
 import os
 import copy
-from typing import NamedTuple
+from typing import IO, TYPE_CHECKING, Any, NamedTuple
 
 from ..common.utils import struct_parse, dwarf_assert
 from .constants import *
+
+if TYPE_CHECKING:
+    from ..construct.lib.container import Container
+    from .structs import DWARFStructs
 
 
 # LineProgramEntry - an entry in the line program.
@@ -51,7 +55,7 @@ class LineState:
         The instance variables of this class are the "state machine registers"
         described in section 6.2.2 of DWARFv3
     """
-    def __init__(self, default_is_stmt):
+    def __init__(self, default_is_stmt: int) -> None:
         self.address = 0
         self.file = 1
         self.line = 1
@@ -65,7 +69,7 @@ class LineState:
         self.isa = 0
         self.discriminator = 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '\n'.join((
             '<LineState %x:' % id(self),
             '  address = 0x%x' % self.address,
@@ -85,8 +89,8 @@ class LineProgram:
         sorted by increasing address, so it can be used to obtain the
         state information for each address.
     """
-    def __init__(self, header, stream, structs,
-                 program_start_offset, program_end_offset):
+    def __init__(self, header: Container, stream: IO[bytes], structs: DWARFStructs,
+            program_start_offset: int, program_end_offset: int) -> None:
         """
             header:
                 The header of this line program. Note: LineProgram may modify
@@ -110,9 +114,9 @@ class LineProgram:
         self.structs = structs
         self.program_start_offset = program_start_offset
         self.program_end_offset = program_end_offset
-        self._decoded_entries = None
+        self._decoded_entries: list[LineProgramEntry] | None = None
 
-    def get_entries(self):
+    def get_entries(self) -> list[LineProgramEntry]:
         """ Get the decoded entries for this line program. Return a list of
             LineProgramEntry objects.
             Note that this contains more information than absolutely required
@@ -127,16 +131,16 @@ class LineProgram:
 
     #------ PRIVATE ------#
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """
         return self.header[name]
 
-    def _decode_line_program(self):
+    def _decode_line_program(self) -> list[LineProgramEntry]:
         entries = []
         state = LineState(self.header['default_is_stmt'])
 
-        def add_entry_new_state(cmd, args, is_extended=False):
+        def add_entry_new_state(cmd: int, args: list[int], is_extended: bool = False) -> None:
             # Add an entry that sets a new state.
             # After adding, clear some state registers.
             entries.append(LineProgramEntry(
@@ -146,13 +150,13 @@ class LineProgram:
             state.prologue_end = False
             state.epilogue_begin = False
 
-        def add_entry_old_state(cmd, args, is_extended=False):
+        def add_entry_old_state(cmd: int, args: list[int], is_extended: bool = False) -> None:
             # Add an entry that doesn't visibly set a new state
             entries.append(LineProgramEntry(cmd, is_extended, args, None))
 
         offset = self.program_start_offset
         while offset < self.program_end_offset:
-            opcode = struct_parse(
+            opcode: int = struct_parse(
                 self.structs.the_Dwarf_uint8,
                 self.stream,
                 offset)
@@ -164,25 +168,25 @@ class LineProgram:
             # opcodes anyway.
             if opcode >= self.header['opcode_base']:
                 # Special opcode (follow the recipe in 6.2.5.1)
-                maximum_operations_per_instruction = self['maximum_operations_per_instruction']
-                adjusted_opcode = opcode - self['opcode_base']
-                operation_advance = adjusted_opcode // self['line_range']
-                address_addend = (
+                maximum_operations_per_instruction: int = self['maximum_operations_per_instruction']
+                adjusted_opcode: int = opcode - self['opcode_base']
+                operation_advance: int = adjusted_opcode // self['line_range']
+                address_addend: int = (
                     self['minimum_instruction_length'] *
                         ((state.op_index + operation_advance) //
                           maximum_operations_per_instruction))
                 state.address += address_addend
                 state.op_index = (state.op_index + operation_advance) % maximum_operations_per_instruction
-                line_addend = self['line_base'] + (adjusted_opcode % self['line_range'])
+                line_addend: int = self['line_base'] + (adjusted_opcode % self['line_range'])
                 state.line += line_addend
                 add_entry_new_state(
                     opcode, [line_addend, address_addend, state.op_index])
             elif opcode == 0:
                 # Extended opcode: start with a zero byte, followed by
                 # instruction size and the instruction itself.
-                inst_len = struct_parse(self.structs.the_Dwarf_uleb128,
+                inst_len: int = struct_parse(self.structs.the_Dwarf_uleb128,
                                         self.stream)
-                ex_opcode = struct_parse(self.structs.the_Dwarf_uint8,
+                ex_opcode: int = struct_parse(self.structs.the_Dwarf_uint8,
                                          self.stream)
 
                 if ex_opcode == DW_LNE_end_sequence:
@@ -192,7 +196,7 @@ class LineProgram:
                     # reset state
                     state = LineState(self.header['default_is_stmt'])
                 elif ex_opcode == DW_LNE_set_address:
-                    operand = struct_parse(self.structs.the_Dwarf_target_addr,
+                    operand: int = struct_parse(self.structs.the_Dwarf_target_addr,
                                            self.stream)
                     state.address = operand
                     add_entry_old_state(ex_opcode, [operand], is_extended=True)

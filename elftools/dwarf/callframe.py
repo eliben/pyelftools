@@ -6,9 +6,11 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 import copy
 import os
-from typing import Any, NamedTuple
+from typing import IO, TYPE_CHECKING, Any, Callable, Literal, NamedTuple
 
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos, iterbytes)
@@ -16,6 +18,10 @@ from ..construct import Struct, Switch
 from .enums import DW_EH_encoding_flags
 from .structs import DWARFStructs
 from .constants import *
+
+if TYPE_CHECKING:
+    from ..construct.core import Construct
+    from ..construct.lib.container import Container, ListContainer
 
 
 class CallFrameInfo:
@@ -46,25 +52,25 @@ class CallFrameInfo:
             such as guessing which CU contains which FDEs (based on their
             address ranges) and taking the address_size from those CUs.
     """
-    def __init__(self, stream, size, address, base_structs,
-                 for_eh_frame=False):
+    def __init__(self, stream: IO[bytes], size: int, address: int, base_structs: DWARFStructs,
+            for_eh_frame: bool = False) -> None:
         self.stream = stream
         self.size = size
         self.address = address
         self.base_structs = base_structs
-        self.entries = None
+        self.entries: list[CFIEntry | ZERO] | None = None
 
         # Map between an offset in the stream and the entry object found at this
         # offset. Useful for assigning CIE to FDEs according to the CIE_pointer
         # header field which contains a stream offset.
-        self._entry_cache = {}
+        self._entry_cache: dict[int, CFIEntry] = {}
 
         # The .eh_frame and .debug_frame section use almost the same CFI
         # encoding, but there are tiny variations we need to handle during
         # parsing.
         self.for_eh_frame = for_eh_frame
 
-    def get_entries(self):
+    def get_entries(self) -> list[CFIEntry | ZERO]:
         """ Get a list of entries that constitute this CFI. The list consists
             of CIE or FDE objects, in the order of their appearance in the
             section.
@@ -75,7 +81,7 @@ class CallFrameInfo:
 
     #-------------------------
 
-    def _parse_entries(self):
+    def _parse_entries(self) -> list[CFIEntry | ZERO]:
         entries = []
         offset = 0
         while offset < self.size:
@@ -83,7 +89,7 @@ class CallFrameInfo:
             offset = self.stream.tell()
         return entries
 
-    def _parse_entry_at(self, offset):
+    def _parse_entry_at(self, offset: int) -> CFIEntry | ZERO:
         """ Parse an entry from self.stream starting with the given offset.
             Return the entry object. self.stream will point right after the
             entry (even if pulled from the cache).
@@ -94,7 +100,7 @@ class CallFrameInfo:
                 entry.structs.initial_length_field_size(), os.SEEK_CUR)
             return entry
 
-        entry_length = struct_parse(
+        entry_length: int = struct_parse(
             self.base_structs.the_Dwarf_uint32, self.stream, offset)
 
         if self.for_eh_frame and entry_length == 0:
@@ -111,7 +117,7 @@ class CallFrameInfo:
             address_size=self.base_structs.address_size)
 
         # Read the next field to see whether this is a CIE or FDE
-        CIE_id = struct_parse(
+        CIE_id: int = struct_parse(
             entry_structs.the_Dwarf_offset, self.stream)
 
         if self.for_eh_frame:
@@ -140,7 +146,7 @@ class CallFrameInfo:
         else:
             cie = self._parse_cie_for_fde(offset, header, entry_structs)
             aug_bytes = self._read_augmentation_data(entry_structs)
-            lsda_encoding = cie.augmentation_dict.get('LSDA_encoding', DW_EH_encoding_flags['DW_EH_PE_omit'])
+            lsda_encoding: int = cie.augmentation_dict.get('LSDA_encoding', DW_EH_encoding_flags['DW_EH_PE_omit'])
             if lsda_encoding != DW_EH_encoding_flags['DW_EH_PE_omit']:
                 # parse LSDA pointer
                 lsda_pointer = self._parse_lsda_pointer(entry_structs,
@@ -150,7 +156,7 @@ class CallFrameInfo:
                 lsda_pointer = None
 
         # For convenience, compute the end offset for this entry
-        end_offset = (
+        end_offset: int = (
             offset + header.length +
             entry_structs.initial_length_field_size())
 
@@ -177,14 +183,14 @@ class CallFrameInfo:
         self._entry_cache[offset] = entry
         return entry
 
-    def _parse_instructions(self, structs, offset, end_offset):
+    def _parse_instructions(self, structs: DWARFStructs, offset: int, end_offset: int) -> list[CallFrameInstruction]:
         """ Parse a list of CFI instructions from self.stream, starting with
             the offset and until (not including) end_offset.
             Return a list of CallFrameInstruction objects.
         """
         instructions = []
         while offset < end_offset:
-            opcode = struct_parse(structs.the_Dwarf_uint8, self.stream, offset)
+            opcode: int = struct_parse(structs.the_Dwarf_uint8, self.stream, offset)
             args = []
 
             primary = opcode & _PRIMARY_MASK
@@ -244,7 +250,7 @@ class CallFrameInfo:
             offset = self.stream.tell()
         return instructions
 
-    def _parse_cie_for_fde(self, fde_offset, fde_header, entry_structs):
+    def _parse_cie_for_fde(self, fde_offset: int, fde_header: Container, entry_structs: DWARFStructs) -> CFIEntry | ZERO:
         """ Parse the CIE that corresponds to an FDE.
         """
         # Determine the offset of the CIE that corresponds to this FDE
@@ -252,8 +258,8 @@ class CallFrameInfo:
             # CIE_pointer contains the offset for a reverse displacement from
             # the section offset of the CIE_pointer field itself (not from the
             # FDE header offset).
-            cie_displacement = fde_header['CIE_pointer']
-            cie_offset = (fde_offset + entry_structs.dwarf_format // 8
+            cie_displacement: int = fde_header['CIE_pointer']
+            cie_offset: int = (fde_offset + entry_structs.dwarf_format // 8
                           - cie_displacement)
         else:
             cie_offset = fde_header['CIE_pointer']
@@ -262,13 +268,13 @@ class CallFrameInfo:
         with preserve_stream_pos(self.stream):
             return self._parse_entry_at(cie_offset)
 
-    def _parse_cie_augmentation(self, header, entry_structs):
+    def _parse_cie_augmentation(self, header: Container, entry_structs: DWARFStructs) -> tuple[bytes, dict[Any, Any]]:
         """ Parse CIE augmentation data from the annotation string in `header`.
 
         Return a tuple that contains 1) the augmentation data as a string
         (without the length field) and 2) the augmentation data as a dict.
         """
-        augmentation = header.get('augmentation')
+        augmentation: bytes | None = header.get('augmentation')
         if not augmentation:
             return (b'', {})
 
@@ -281,7 +287,7 @@ class CallFrameInfo:
         assert augmentation.startswith(b'z'), (
             'Unhandled augmentation string: {}'.format(repr(augmentation)))
 
-        available_fields = {
+        available_fields: dict[bytes, Construct | Literal[True]] = {
             b'z': entry_structs.Dwarf_uleb128('length'),
             b'L': entry_structs.Dwarf_uint8('LSDA_encoding'),
             b'R': entry_structs.Dwarf_uint8('FDE_encoding'),
@@ -297,8 +303,8 @@ class CallFrameInfo:
 
         # Build the Struct we will be using to parse the augmentation data.
         # Stop as soon as we are not able to match the augmentation string.
-        fields = []
-        aug_dict = {}
+        fields: list[Construct] = []
+        aug_dict: dict[Any, Any] = {}
 
         for b in iterbytes(augmentation):
             try:
@@ -323,7 +329,7 @@ class CallFrameInfo:
         aug_bytes = self._read_augmentation_data(entry_structs)
         return (aug_bytes, aug_dict)
 
-    def _read_augmentation_data(self, entry_structs):
+    def _read_augmentation_data(self, entry_structs: DWARFStructs) -> bytes:
         """ Read augmentation data.
 
         This assumes that the augmentation string starts with 'z', i.e. that
@@ -332,13 +338,13 @@ class CallFrameInfo:
         if not self.for_eh_frame:
             return b''
 
-        augmentation_data_length = struct_parse(
+        augmentation_data_length: int = struct_parse(
             Struct('Dummy_Augmentation_Data',
                    entry_structs.Dwarf_uleb128('length')),
             self.stream)['length']
         return self.stream.read(augmentation_data_length)
 
-    def _parse_lsda_pointer(self, structs, stream_offset, encoding):
+    def _parse_lsda_pointer(self, structs: DWARFStructs, stream_offset: int, encoding: int) -> int:
         """ Parse bytes to get an LSDA pointer.
 
         The basic encoding (lower four bits of the encoding) describes how the values are encoded in a CIE or an FDE.
@@ -353,7 +359,7 @@ class CallFrameInfo:
 
         formats = self._eh_encoding_to_field(structs)
 
-        ptr = struct_parse(
+        ptr: int = struct_parse(
             Struct('Augmentation_Data',
                    formats[basic_encoding]('LSDA_pointer')),
             self.stream, stream_pos=stream_offset)['LSDA_pointer']
@@ -369,7 +375,7 @@ class CallFrameInfo:
 
         return ptr
 
-    def _parse_fde_header(self, entry_structs, offset):
+    def _parse_fde_header(self, entry_structs: DWARFStructs, offset: int) -> Container:
         """ Compute a struct to parse the header of the current FDE.
         """
         if not self.for_eh_frame:
@@ -389,7 +395,7 @@ class CallFrameInfo:
         # Try to parse the initial location. We need the initial location in
         # order to create a meaningful FDE, so assume it's there. Omission does
         # not seem to happen in practice.
-        encoding = cie.augmentation_dict['FDE_encoding']
+        encoding: int = cie.augmentation_dict['FDE_encoding']
         assert encoding != DW_EH_encoding_flags['DW_EH_PE_omit']
         basic_encoding = encoding & 0x0f
         encoding_modifier = encoding & 0xf0
@@ -416,7 +422,7 @@ class CallFrameInfo:
         return result
 
     @staticmethod
-    def _eh_encoding_to_field(entry_structs):
+    def _eh_encoding_to_field(entry_structs: DWARFStructs) -> dict[int, Callable[[str], Construct]]:
         """
         Return a mapping from basic encodings (DW_EH_encoding_flags) the
         corresponding field constructors (for instance
@@ -445,7 +451,7 @@ class CallFrameInfo:
         }
 
 
-def instruction_name(opcode):
+def instruction_name(opcode: int) -> str:
     """ Given an opcode, return the instruction name.
     """
     primary = opcode & _PRIMARY_MASK
@@ -461,11 +467,11 @@ class CallFrameInstruction:
         arguments (including arguments embedded in the low bits of some
         instructions, when applicable), decoded from the stream.
     """
-    def __init__(self, opcode, args):
+    def __init__(self, opcode: int, args: list[Any]) -> None:
         self.opcode = opcode
         self.args = args
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s (0x%x): %s' % (
             instruction_name(self.opcode), self.opcode, self.args)
 
@@ -482,18 +488,26 @@ class CFIEntry:
             CallFrameInfo._parse_cie_augmentation and
             http://www.airs.com/blog/archives/460.
     """
-    def __init__(self, header, structs, instructions, offset,
-            augmentation_dict=None, augmentation_bytes=b'', cie=None):
+    def __init__(
+        self,
+        header: Container,
+        structs: DWARFStructs,
+        instructions: list[CallFrameInstruction],
+        offset: int,
+        augmentation_dict: dict[Any, Any] | None = None,
+        augmentation_bytes: bytes | None = b'',
+        cie: CIE | None = None,
+    ) -> None:
         self.header = header
         self.structs = structs
         self.instructions = instructions
         self.offset = offset
         self.cie = cie
-        self._decoded_table = None
+        self._decoded_table: DecodedCallFrameTable | None = None
         self.augmentation_dict = augmentation_dict or {}
         self.augmentation_bytes = augmentation_bytes
 
-    def get_decoded(self):
+    def get_decoded(self) -> DecodedCallFrameTable:
         """ Decode the CFI contained in this entry and return a
             DecodedCallFrameTable object representing it. See the documentation
             of that class to understand how to interpret the decoded table.
@@ -502,19 +516,19 @@ class CFIEntry:
             self._decoded_table = self._decode_CFI_table()
         return self._decoded_table
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """
         return self.header[name]
 
-    def _decode_CFI_table(self):
+    def _decode_CFI_table(self) -> DecodedCallFrameTable:
         """ Decode the instructions contained in the given CFI entry and return
             a DecodedCallFrameTable.
         """
         if isinstance(self, CIE):
             # For a CIE, initialize cur_line to an "empty" line
             cie = self
-            cur_line = dict(pc=0, cfa=CFARule(reg=None, offset=0))
+            cur_line: dict[str, Any] = dict(pc=0, cfa=CFARule(reg=None, offset=0))
             reg_order = []
         else: # FDE
             # For a FDE, we need to decode the attached CIE first, because its
@@ -536,7 +550,7 @@ class CFIEntry:
         # instructions.
         line_stack = []
 
-        def _add_to_order(regnum):
+        def _add_to_order(regnum: int) -> None:
             # DW_CFA_restore and others remove registers from cur_line,
             #  but they stay in reg_order. Avoid duplicates.
             if regnum not in reg_order:
@@ -622,7 +636,7 @@ class CFIEntry:
             elif name == 'DW_CFA_remember_state':
                 line_stack.append(copy.deepcopy(cur_line))
             elif name == 'DW_CFA_restore_state':
-                pc = cur_line['pc']
+                pc: int = cur_line['pc']
                 cur_line = line_stack.pop()
                 cur_line['pc'] = pc
 
@@ -644,7 +658,16 @@ class CIE(CFIEntry):
 
 
 class FDE(CFIEntry):
-    def __init__(self, header, structs, instructions, offset, augmentation_bytes=None, cie=None, lsda_pointer=None):
+    def __init__(
+        self,
+        header: Container,
+        structs: DWARFStructs,
+        instructions: list[CallFrameInstruction],
+        offset: int,
+        augmentation_bytes: bytes | None = None,
+        cie: CIE | None = None,
+        lsda_pointer: int | None = None,
+    ) -> None:
         super().__init__(header, structs, instructions, offset, augmentation_bytes=augmentation_bytes, cie=cie)
         self.lsda_pointer = lsda_pointer
 
@@ -656,7 +679,7 @@ class ZERO:
     in pure DWARF. `readelf` displays these as "ZERO terminator", hence the
     class name.
     """
-    def __init__(self, offset):
+    def __init__(self, offset: int) -> None:
         self.offset = offset
 
 
@@ -674,11 +697,11 @@ class RegisterRule:
     VAL_EXPRESSION = 'VAL_EXPRESSION'
     ARCHITECTURAL = 'ARCHITECTURAL'
 
-    def __init__(self, type, arg=None):
+    def __init__(self, type: str, arg: ListContainer | None = None) -> None:
         self.type = type
         self.arg = arg
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'RegisterRule(%s, %s)' % (self.type, self.arg)
 
 
@@ -686,12 +709,12 @@ class CFARule:
     """ A CFA rule is used to compute the CFA for each location. It either
         consists of a register+offset, or a DWARF expression.
     """
-    def __init__(self, reg=None, offset=None, expr=None):
+    def __init__(self, reg: int | None = None, offset: int | None = None, expr: ListContainer | None = None) -> None:
         self.reg = reg
         self.offset = offset
         self.expr = expr
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'CFARule(reg=%s, offset=%s, expr=%s)' % (
             self.reg, self.offset, self.expr)
 
@@ -728,7 +751,7 @@ _PRIMARY_ARG_MASK = 0b00111111
 # This dictionary is filled by automatically scanning the constants module
 # for DW_CFA_* instructions, and mapping their values to names. Since all
 # names were imported from constants with `import *`, we look in globals()
-_OPCODE_NAME_MAP = {
+_OPCODE_NAME_MAP: dict[int, str] = {
     value: name
     for name, value in globals().items()
     if name.startswith('DW_CFA')
