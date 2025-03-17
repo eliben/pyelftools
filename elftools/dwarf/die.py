@@ -247,6 +247,7 @@ class DIE:
             # that manipulate the stream by reading data from it.
             stream.seek(self.offset)
             self.abbrev_code = structs.the_Dwarf_uleb128.parse_stream(stream)
+            assert self.abbrev_code is not None
 
             # This may be a null entry
             if self.abbrev_code == 0:
@@ -333,14 +334,17 @@ class DIE:
         elif form in ('DW_FORM_addrx', 'DW_FORM_addrx1', 'DW_FORM_addrx2', 'DW_FORM_addrx3', 'DW_FORM_addrx4') and translate_indirect:
             return self.cu.dwarfinfo.get_addr(self.cu, raw_value)
         elif form in ('DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4') and translate_indirect:
+            assert self.dwarfinfo.debug_str_offsets_sec is not None
             stream = self.dwarfinfo.debug_str_offsets_sec.stream
             base_offset = _get_base_offset(self.cu, 'DW_AT_str_offsets_base')
             offset_size = 4 if self.cu.structs.dwarf_format == 32 else 8
             str_offset = struct_parse(self.cu.structs.the_Dwarf_offset, stream, base_offset + raw_value*offset_size)
             return self.dwarfinfo.get_string_from_table(str_offset)
         elif form == 'DW_FORM_loclistx' and translate_indirect:
+            assert self.dwarfinfo.debug_loclists_sec is not None
             return _resolve_via_offset_table(self.dwarfinfo.debug_loclists_sec.stream, self.cu, raw_value, 'DW_AT_loclists_base')
         elif form == 'DW_FORM_rnglistx' and translate_indirect:
+            assert self.dwarfinfo.debug_rnglists_sec is not None
             return _resolve_via_offset_table(self.dwarfinfo.debug_rnglists_sec.stream, self.cu, raw_value, 'DW_AT_rnglists_base')
         return raw_value
 

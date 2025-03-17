@@ -101,6 +101,7 @@ class CompileUnit:
         if self._diemap:
             return self._dielist[0]
 
+        assert self.dwarfinfo.debug_info_sec is not None
         top = DIE(
                 cu=self,
                 stream=self.dwarfinfo.debug_info_sec.stream,
@@ -145,6 +146,7 @@ class CompileUnit:
         """ Iterate over all the DIEs in the CU, in order of their appearance.
             Note that null DIEs will also be returned.
         """
+        assert self.dwarfinfo.debug_info_sec is not None
         stm = self.dwarfinfo.debug_info_sec.stream
         pos = self.cu_die_offset
         end_pos = self.cu_offset + self.size
@@ -152,7 +154,7 @@ class CompileUnit:
         die = self.get_top_DIE()
         yield die
         pos += die.size
-        parent = die
+        parent: DIE | None = die
         i = 1
         while pos < end_pos:
             if i < len(self._diemap) and self._diemap[i] == pos: # DIE already cached
@@ -165,7 +167,7 @@ class CompileUnit:
 
             die._parent = parent
 
-            if die.tag is None:
+            if die.tag is None and parent is not None:
                 parent._terminator = die
                 parent = parent._parent
 
@@ -231,6 +233,7 @@ class CompileUnit:
                 if child._terminator is None:
                     for _ in self.iter_DIE_children(child):
                         pass
+                    assert child._terminator is not None
 
                 cur_offset = child._terminator.offset + child._terminator.size
 
@@ -253,6 +256,7 @@ class CompileUnit:
         if die.has_children:
             for c in die.iter_children():
                 yield from die.cu._iter_DIE_subtree(c)
+            assert die._terminator is not None
             yield die._terminator
 
     def _get_cached_DIE(self, offset: int) -> DIE:

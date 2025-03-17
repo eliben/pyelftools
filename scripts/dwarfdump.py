@@ -463,6 +463,7 @@ class ReadElf:
     def dump_rnglists(self) -> None:
         self._emitline(".debug_rnglists contents:")
         ranges_sec = self._dwarfinfo.range_lists()
+        assert ranges_sec is not None
         if ranges_sec.version < 5:
             return
 

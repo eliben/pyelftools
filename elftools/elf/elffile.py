@@ -148,6 +148,7 @@ class ELFFile:
             subclass)
         """
         section_header = self._get_section_header(n)
+        assert section_header is not None
         if type and section_header.sh_type not in type:
             raise ELFError("Unexpected section type %s, expected %s" % (section_header['sh_type'], type))
         return self._make_section(section_header)
@@ -158,6 +159,7 @@ class ELFFile:
             Used for resolving section links with target type validation.
         """
         section_header = self._get_section_header(n)
+        assert section_header is not None
         if section_header['sh_type'] not in ('SHT_SYMTAB', 'SHT_DYNSYM'):
             raise ELFError("Section points at section %d of type %s, expected SHT_SYMTAB/SHT_DYNSYM" % (n, section_header['sh_type']))
         return self._make_section(section_header)
@@ -168,6 +170,7 @@ class ELFFile:
             Used for resolving section links with target type validation.
         """
         section_header = self._get_section_header(n)
+        assert section_header is not None
         if section_header['sh_type'] != 'SHT_STRTAB':
             raise ELFError("SHT_SYMTAB section points at section %d of type %s, expected SHT_STRTAB" % (n, section_header['sh_type']))
         return self._make_section(section_header)
@@ -181,6 +184,7 @@ class ELFFile:
         #
         if self._section_name_map is None:
             self._make_section_name_map()
+        assert self._section_name_map is not None
         secnum = self._section_name_map.get(name, None)
         return None if secnum is None else self.get_section(secnum)
 
@@ -193,6 +197,7 @@ class ELFFile:
         #
         if self._section_name_map is None:
             self._make_section_name_map()
+        assert self._section_name_map is not None
         return self._section_name_map.get(section_name, None)
 
     def has_section(self, section_name: str) -> bool:
@@ -200,6 +205,7 @@ class ELFFile:
         """
         if self._section_name_map is None:
             self._make_section_name_map()
+        assert self._section_name_map is not None
         return section_name in self._section_name_map
 
     def iter_sections(self, type: str | None = None) -> Iterator[Section]:

@@ -170,6 +170,7 @@ class RangeLists:
         if self.version < 5:
             raise DWARFError("CU iteration in rnglists is not supported with DWARF<5")
 
+        assert self._dwarfinfo is not None
         structs = next(self._dwarfinfo.iter_CUs()).structs # Just pick one
         return _iter_CUs_in_section(self.stream, structs, structs.Dwarf_rnglists_CU_header)
 
@@ -191,6 +192,7 @@ class RangeLists:
 
     def _parse_range_list_from_stream(self, cu: CompileUnit | None) -> list[RangeEntry | BaseAddressEntry]:
         if self.version >= 5:
+            assert cu is not None
             return list(entry_translate[entry.entry_type](entry, cu)
                 for entry
                 in struct_parse(self.structs.Dwarf_rnglists_entries, self.stream))
