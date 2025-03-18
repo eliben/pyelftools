@@ -269,7 +269,7 @@ class CallFrameInfo:
         """
         augmentation = header.get('augmentation')
         if not augmentation:
-            return ('', {})
+            return (b'', {})
 
         # Ignore armcc augmentations.
         if augmentation.startswith(b'armcc'):
@@ -489,7 +489,7 @@ class CFIEntry:
         self.offset = offset
         self.cie = cie
         self._decoded_table = None
-        self.augmentation_dict = augmentation_dict if augmentation_dict else {}
+        self.augmentation_dict = augmentation_dict or {}
         self.augmentation_bytes = augmentation_bytes
 
     def get_decoded(self):

@@ -130,7 +130,7 @@ def describe_symbol_local(x):
 
 def describe_symbol_other(x):
     vis = describe_symbol_visibility(x['visibility'])
-    if x['local'] > 1 and x['local'] < 7:
+    if 1 < x['local'] < 7:
         return vis + ' ' + describe_symbol_local(x['local'])
     return vis
 

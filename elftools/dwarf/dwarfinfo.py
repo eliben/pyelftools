@@ -662,7 +662,7 @@ class DWARFInfo:
             offset)
 
         # DWARF5: resolve names
-        def resolve_strings(self, lineprog_header, format_field, data_field):
+        def resolve_strings(lineprog_header, format_field, data_field) -> None:
             if lineprog_header.get(format_field, False):
                 data = lineprog_header[data_field]
                 for field in lineprog_header[format_field]:
@@ -678,12 +678,12 @@ class DWARFInfo:
                         if self.supplementary_dwarfinfo:
                             replace_value(data, field.content_type, self.supplementary_dwarfinfo.get_string_from_table)
                         else:
-                            replace_value(data, field.content_type, lambda x: str(x))
+                            replace_value(data, field.content_type, lambda x: str(x).encode())
                     elif field.form in ('DW_FORM_strp_sup', 'DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4'):
                         raise NotImplementedError()
 
-        resolve_strings(self, lineprog_header, 'directory_entry_format', 'directories')
-        resolve_strings(self, lineprog_header, 'file_name_entry_format', 'file_names')
+        resolve_strings(lineprog_header, 'directory_entry_format', 'directories')
+        resolve_strings(lineprog_header, 'file_name_entry_format', 'file_names')
 
         # DWARF5: provide compatible file/directory name arrays for legacy lineprogram consumers
         if lineprog_header.get('directories', False):

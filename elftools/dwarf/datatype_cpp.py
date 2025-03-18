@@ -84,7 +84,7 @@ def parse_cpp_datatype(var_die):
         dt.tag = "ptr_to_member_type" # Not a function pointer per se
         return dt
     elif t.tag == 'array':
-        t.dimensions = (_array_subtype_size(sub)
+        t.dimensions = tuple(_array_subtype_size(sub)
             for sub
             in type_die.iter_children()
             if sub.tag == 'DW_TAG_subrange_type')
