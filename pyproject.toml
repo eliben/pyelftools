@@ -80,6 +80,11 @@ packages = "elftools"
 # junit_xml = "mypy.junit.xml"
 junit_format = "per_file"
 
+[[tool.mypy.overrides]]
+module = "elftools.construct.*"
+follow_imports = "skip"
+ignore_errors = true
+
 [tool.pyright]
 include = [
     "elftools",
