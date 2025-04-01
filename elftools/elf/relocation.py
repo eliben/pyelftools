@@ -12,7 +12,7 @@ from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
 from .sections import Section
 from .enums import (
-    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
+    ENUM_RELOC_TYPE_RISCV, ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
     ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_BPF, ENUM_RELOC_TYPE_LOONGARCH)
 from ..construct import Container
@@ -234,6 +234,12 @@ def _arm_reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
 def _bpf_64_32_reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
     return (sym_value + addend) // 8 - 1
 
+def _reloc_calc_value_plus_sym_6(value, sym_value, offset, addend=0):
+    return ((sym_value + addend) & 0x3F) | (value & 0xC0)
+
+def _reloc_calc_value_minus_sym_addend_6(value, sym_value, offset, addend=0):
+    return (((value & 0x3F) - sym_value - addend) & 0x3F) | (value & 0xC0)
+
 
 class RelocationHandler:
     """ Handles the logic of relocations in ELF files.
@@ -319,6 +325,8 @@ class RelocationHandler:
                 raise ELFRelocationError(
                     'Unexpected REL relocation for LoongArch: %s' % reloc)
             recipe = self._RELOCATION_RECIPES_LOONGARCH.get(reloc_type, None)
+        elif self.elffile.get_machine_arch() == 'RISC-V':
+            recipe = self._RELOCATION_RECIPES_RISCV.get(reloc_type, None)
 
         if recipe is None:
             raise ELFRelocationError(
@@ -509,5 +517,27 @@ class RelocationHandler:
         ENUM_RELOC_TYPE_S390X['R_390_64']: _RELOCATION_RECIPE_TYPE(
             bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
     }
+    
+    # https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-elf.adoc#reloc-table
+    _RELOCATION_RECIPES_RISCV = {
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_NONE']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=False, calc_func=_reloc_calc_identity),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET16']: _RELOCATION_RECIPE_TYPE(
+            bytesize=2, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD16']: _RELOCATION_RECIPE_TYPE(
+            bytesize=2, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB16']: _RELOCATION_RECIPE_TYPE(
+            bytesize=2, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET6']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_reloc_calc_value_plus_sym_6),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB6']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend_6)
+        }
 
 
