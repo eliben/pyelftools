@@ -235,10 +235,10 @@ def _bpf_64_32_reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
     return (sym_value + addend) // 8 - 1
 
 def _reloc_calc_value_plus_sym_6(value, sym_value, offset, addend=0):
-    return ((sym_value + addend) & 0x3F) | (value & 0xC0)
+    return (sym_value + addend) & 0x3F
 
 def _reloc_calc_value_minus_sym_addend_6(value, sym_value, offset, addend=0):
-    return (((value & 0x3F) - sym_value - addend) & 0x3F) | (value & 0xC0)
+    return (value - sym_value - addend) & 0x3F
 
 
 class RelocationHandler:
