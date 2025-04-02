@@ -4,6 +4,7 @@ recursive-include examples *.py *.elf *.out
 recursive-include test *
 global-exclude *.py[cod]
 global-exclude __pycache__
+global-exclude .mypy_cache
 include README.rst
 include LICENSE
 include CHANGES
