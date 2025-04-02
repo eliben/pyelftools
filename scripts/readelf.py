@@ -303,15 +303,25 @@ class ReadElf:
         # First comes the table heading
         #
         if self.elffile.elfclass == 32:
-            self._emitline('  Segment Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align')
+            if do_TI_addr:
+                self._emitline('  Segment Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align')
+            else:
+                self._emitline('  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align')
         else:
-            self._emitline('  Segment Type           Offset             VirtAddr           PhysAddr')
-            self._emitline('                         FileSiz            MemSiz              Flags  Align')
+            if do_TI_addr:
+                self._emitline('  Segment Type           Offset             VirtAddr           PhysAddr')
+                self._emitline('                         FileSiz            MemSiz              Flags  Align')
+            else:
+                self._emitline('  Type           Offset             VirtAddr           PhysAddr')
+                self._emitline('                 FileSiz            MemSiz              Flags  Align')
 
         # Now the entries
         #
         for nseg, segment in enumerate(self.elffile.iter_segments()):
-            self._emit('   %2.2d     %-14s ' % (nseg, describe_p_type(segment['p_type'])))
+            if do_TI_addr:
+                self._emit('   %2.2d     %-14s ' % (nseg, describe_p_type(segment['p_type'])))
+            else:
+                self._emit('  %-14s ' % describe_p_type(segment['p_type']))
 
             if self.elffile.elfclass == 32:
                 self._emitline('%s %s %s %s %s %-3s %s' % (
@@ -327,7 +337,11 @@ class ReadElf:
                     self._format_hex(segment['p_offset'], fullhex=True),
                     self._format_hex(segment['p_vaddr'], fullhex=True),
                     self._format_hex(segment['p_paddr'], fullhex=True)))
-                self._emitline('                         %s %s  %-3s    %s' % (
+                if do_TI_addr:
+                    fmt = '                         %s %s  %-3s    %s'
+                else:
+                    fmt = '                 %s %s  %-3s    %s'
+                self._emitline(fmt % (
                     self._format_hex(segment['p_filesz'] >> (1 if do_TI_addr else 0), fullhex=True),
                     self._format_hex(segment['p_memsz'] >> (1 if do_TI_addr else 0), fullhex=True),
                     describe_p_flags(segment['p_flags']),
@@ -379,9 +393,15 @@ class ReadElf:
         # Different formatting constraints of 32-bit and 64-bit addresses
         #
         if self.elffile.elfclass == 32:
-            self._emitline('  [Nr] Name              Type            LoadAddr RunAddr  Off    Size   ES Flg Lk Inf Al')
+            if do_TI_addr:
+                self._emitline('  [Nr] Name              Type            LoadAddr RunAddr  Off    Size   ES Flg Lk Inf Al')
+            else:
+                self._emitline('  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al')
         else:
-            self._emitline('  [Nr] Name              Type             Load Address      Run Address       Offset')
+            if do_TI_addr:
+                self._emitline('  [Nr] Name              Type             Load Address      Run Address       Offset')
+            else:
+                self._emitline('  [Nr] Name              Type             Address           Offset')
             self._emitline('       Size              EntSize          Flags  Link  Info  Align')
 
         # Now the entries
@@ -411,22 +431,39 @@ class ReadElf:
                 TI = False
 
             if self.elffile.elfclass == 32:
-                self._emitline('%s %s %s %s %s %3s %2s %3s %2s' % (
-                    self._format_hex(load_addr, fieldsize=8, lead0x=False),
-                    self._format_hex(section['sh_addr'], fieldsize=8, lead0x=False),
-                    self._format_hex(section['sh_offset'], fieldsize=6, lead0x=False),
-                    self._format_hex(section['sh_size'] >> (1 if TI else 0), fieldsize=6, lead0x=False),
-                    self._format_hex(section['sh_entsize'], fieldsize=2, lead0x=False),
-                    describe_sh_flags(section['sh_flags']),
-                    section['sh_link'], section['sh_info'],
-                    section['sh_addralign']))
+                if do_TI_addr:
+                    self._emitline('%s %s %s %s %s %3s %2s %3s %2s' % (
+                        self._format_hex(load_addr, fieldsize=8, lead0x=False),
+                        self._format_hex(section['sh_addr'], fieldsize=8, lead0x=False),
+                        self._format_hex(section['sh_offset'], fieldsize=6, lead0x=False),
+                        self._format_hex(section['sh_size'] >> (1 if TI else 0), fieldsize=6, lead0x=False),
+                        self._format_hex(section['sh_entsize'], fieldsize=2, lead0x=False),
+                        describe_sh_flags(section['sh_flags']),
+                        section['sh_link'], section['sh_info'],
+                        section['sh_addralign']))
+                else:
+                    self._emitline('%s %s %s %s %3s %2s %3s %2s' % (
+                        self._format_hex(section['sh_addr'], fieldsize=8, lead0x=False),
+                        self._format_hex(section['sh_offset'], fieldsize=6, lead0x=False),
+                        self._format_hex(section['sh_size'], fieldsize=6, lead0x=False),
+                        self._format_hex(section['sh_entsize'], fieldsize=2, lead0x=False),
+                        describe_sh_flags(section['sh_flags']),
+                        section['sh_link'], section['sh_info'],
+                        section['sh_addralign']))
             else: # 64
-                self._emitline(' %s %s  %s' % (
-                    self._format_hex(load_addr, fullhex=True, lead0x=False),
-                    self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
-                    self._format_hex(section['sh_offset'],
-                        fieldsize=16 if section['sh_offset'] > 0xffffffff else 8,
-                        lead0x=False)))
+                if do_TI_addr:
+                    self._emitline(' %s %s  %s' % (
+                        self._format_hex(load_addr, fullhex=True, lead0x=False),
+                        self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
+                        self._format_hex(section['sh_offset'],
+                            fieldsize=16 if section['sh_offset'] > 0xffffffff else 8,
+                            lead0x=False)))
+                else:
+                    self._emitline(' %s  %s' % (
+                        self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
+                        self._format_hex(section['sh_offset'],
+                            fieldsize=16 if section['sh_offset'] > 0xffffffff else 8,
+                            lead0x=False)))
                 self._emitline('       %s  %s %3s      %2s   %3s     %s' % (
                     self._format_hex(section['sh_size'] >> (1 if TI else 0), fullhex=True, lead0x=False),
                     self._format_hex(section['sh_entsize'], fullhex=True, lead0x=False),
