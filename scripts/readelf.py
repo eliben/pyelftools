@@ -272,7 +272,7 @@ class ReadElf:
 
         return description
 
-    def display_program_headers(self, show_heading=True):
+    def display_program_headers(self, show_heading=True, do_TI_addr=False):
         """ Display the ELF program headers.
             If show_heading is True, displays the heading for this information
             (Elf file type is...)
@@ -303,23 +303,23 @@ class ReadElf:
         # First comes the table heading
         #
         if self.elffile.elfclass == 32:
-            self._emitline('  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align')
+            self._emitline('  Segment Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align')
         else:
-            self._emitline('  Type           Offset             VirtAddr           PhysAddr')
-            self._emitline('                 FileSiz            MemSiz              Flags  Align')
+            self._emitline('  Segment Type           Offset             VirtAddr           PhysAddr')
+            self._emitline('                         FileSiz            MemSiz              Flags  Align')
 
         # Now the entries
         #
-        for segment in self.elffile.iter_segments():
-            self._emit('  %-14s ' % describe_p_type(segment['p_type']))
+        for nseg, segment in enumerate(self.elffile.iter_segments()):
+            self._emit('   %2.2d     %-14s ' % (nseg, describe_p_type(segment['p_type'])))
 
             if self.elffile.elfclass == 32:
                 self._emitline('%s %s %s %s %s %-3s %s' % (
                     self._format_hex(segment['p_offset'], fieldsize=6),
                     self._format_hex(segment['p_vaddr'], fullhex=True),
                     self._format_hex(segment['p_paddr'], fullhex=True),
-                    self._format_hex(segment['p_filesz'], fieldsize=5),
-                    self._format_hex(segment['p_memsz'], fieldsize=5),
+                    self._format_hex(segment['p_filesz'] >> (1 if do_TI_addr else 0), fieldsize=5),
+                    self._format_hex(segment['p_memsz'] >> (1 if do_TI_addr else 0), fieldsize=5),
                     describe_p_flags(segment['p_flags']),
                     self._format_hex(segment['p_align'])))
             else: # 64
@@ -327,9 +327,9 @@ class ReadElf:
                     self._format_hex(segment['p_offset'], fullhex=True),
                     self._format_hex(segment['p_vaddr'], fullhex=True),
                     self._format_hex(segment['p_paddr'], fullhex=True)))
-                self._emitline('                 %s %s  %-3s    %s' % (
-                    self._format_hex(segment['p_filesz'], fullhex=True),
-                    self._format_hex(segment['p_memsz'], fullhex=True),
+                self._emitline('                         %s %s  %-3s    %s' % (
+                    self._format_hex(segment['p_filesz'] >> (1 if do_TI_addr else 0), fullhex=True),
+                    self._format_hex(segment['p_memsz'] >> (1 if do_TI_addr else 0), fullhex=True),
                     describe_p_flags(segment['p_flags']),
                     # lead0x set to False for p_align, to mimic readelf.
                     # No idea why the difference from 32-bit mode :-|
@@ -361,7 +361,7 @@ class ReadElf:
 
             self._emitline('')
 
-    def display_section_headers(self, show_heading=True):
+    def display_section_headers(self, show_heading=True, do_TI_addr=False):
         """ Display the ELF section headers
         """
         elfheader = self.elffile.header
@@ -379,9 +379,9 @@ class ReadElf:
         # Different formatting constraints of 32-bit and 64-bit addresses
         #
         if self.elffile.elfclass == 32:
-            self._emitline('  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al')
+            self._emitline('  [Nr] Name              Type            LoadAddr RunAddr  Off    Size   ES Flg Lk Inf Al')
         else:
-            self._emitline('  [Nr] Name              Type             Address           Offset')
+            self._emitline('  [Nr] Name              Type             Load Address      Run Address       Offset')
             self._emitline('       Size              EntSize          Flags  Link  Info  Align')
 
         # Now the entries
@@ -390,25 +390,47 @@ class ReadElf:
             self._emit('  [%2u] %-17.17s %-15.15s ' % (
                 nsec, section.name, describe_sh_type(section['sh_type'])))
 
+            # compute section LOAD address from the RUN address (section['sh_addr'])
+            load_addr = section['sh_addr']
+            for segment in self.elffile.iter_segments():
+                if segment.section_in_segment(section):
+                    if segment['p_paddr'] == segment['p_vaddr']:
+                        load_addr = section['sh_addr']
+                    else:
+                        if do_TI_addr:
+                            # TI ELF files need this instead:
+                            load_addr = segment['p_paddr'] + ((section['sh_offset'] - segment['p_offset']) >> 1)
+                            # because addresses point to 16-bit words in memory not 8-bit bytes
+                        else:
+                            load_addr = segment['p_paddr'] + (section['sh_offset'] - segment['p_offset'])
+                    break
+
+            flags = section['sh_flags']
+            TI = do_TI_addr
+            if (flags & SH_FLAGS.SHF_ALLOC) == 0:
+                TI = False
+
             if self.elffile.elfclass == 32:
-                self._emitline('%s %s %s %s %3s %2s %3s %2s' % (
+                self._emitline('%s %s %s %s %s %3s %2s %3s %2s' % (
+                    self._format_hex(load_addr, fieldsize=8, lead0x=False),
                     self._format_hex(section['sh_addr'], fieldsize=8, lead0x=False),
                     self._format_hex(section['sh_offset'], fieldsize=6, lead0x=False),
-                    self._format_hex(section['sh_size'], fieldsize=6, lead0x=False),
+                    self._format_hex(section['sh_size'] >> (1 if TI else 0), fieldsize=6, lead0x=False),
                     self._format_hex(section['sh_entsize'], fieldsize=2, lead0x=False),
                     describe_sh_flags(section['sh_flags']),
                     section['sh_link'], section['sh_info'],
                     section['sh_addralign']))
             else: # 64
-                self._emitline(' %s  %s' % (
+                self._emitline(' %s %s  %s' % (
+                    self._format_hex(load_addr, fullhex=True, lead0x=False),
                     self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
                     self._format_hex(section['sh_offset'],
                         fieldsize=16 if section['sh_offset'] > 0xffffffff else 8,
                         lead0x=False)))
                 self._emitline('       %s  %s %3s      %2s   %3s     %s' % (
-                    self._format_hex(section['sh_size'], fullhex=True, lead0x=False),
+                    self._format_hex(section['sh_size'] >> (1 if TI else 0), fullhex=True, lead0x=False),
                     self._format_hex(section['sh_entsize'], fullhex=True, lead0x=False),
-                    describe_sh_flags(section['sh_flags']),
+                    describe_sh_flags(flags),
                     section['sh_link'], section['sh_info'],
                     section['sh_addralign']))
 
@@ -1905,6 +1927,11 @@ def main(stream=None):
     argparser.add_argument('-A', '--arch-specific',
             action='store_true', dest='show_arch_specific',
             help='Display the architecture-specific information (if present)')
+    argparser.add_argument('-T', '--TI',
+            action='store_true', dest='TI_style_addresses',
+            help=(
+                 'Assume Texas Instruments style addresses, ' +
+                 'pointing to 16-bit words instead of 8-bit bytes'))
     argparser.add_argument('--debug-dump',
             action='store', dest='debug_dump_what', metavar='<what>',
             help=(
@@ -1935,10 +1962,12 @@ def main(stream=None):
                 readelf.display_file_header()
             if do_section_header:
                 readelf.display_section_headers(
-                        show_heading=not do_file_header)
+                        show_heading=not do_file_header,
+                        do_TI_addr=args.TI_style_addresses)
             if do_program_header:
                 readelf.display_program_headers(
-                        show_heading=not do_file_header)
+                        show_heading=not do_file_header,
+                        do_TI_addr=args.TI_style_addresses)
             if args.show_dynamic_tags:
                 readelf.display_dynamic_tags()
             if args.show_symbols:
