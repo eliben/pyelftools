@@ -31,7 +31,7 @@ these are the directories you'll see:
   * ``./elftools/construct``: the "construct" library used by **pyelftools** for low-level binary stream parsing.
 
 * ``./scripts``: some useful scripts and tools built on top of the ``elftools`` package. For example - a clone of ``readelf``.
-* ``./test``: tests for **pyelftools**, of interest mainly to those who wish to modify or extend the library, rather than simply use it. See the `Hacking guide <Hacking-guide>`_ for more details.
+* ``./test``: tests for **pyelftools**, of interest mainly to those who wish to modify or extend the library, rather than simply use it. See the `Hacking guide <hacking-guide.rst>`_ for more details.
 
 From this point on, ``elftools`` is going to refer only to the Python library, and **pyelftools** to the whole source distribution which includes, in addition to the library, also examples, scripts and tests.
 
