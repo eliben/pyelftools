@@ -4,7 +4,7 @@ Hacking guide
 Introduction
 ------------
 
-Although **pyelftools** is functional and very useful already, it still needs a lot of work. Some things are still missing (see the "Limitations" section in the `user guide <User's-guide>`_, and there are surely some bugs left to smoke out.
+Although **pyelftools** is functional and very useful already, it still needs a lot of work. Some things are still missing (see the "Limitations" section in the `user guide <user-guide.rst>`_, and there are surely some bugs left to smoke out.
 
 Contributing
 ------------
