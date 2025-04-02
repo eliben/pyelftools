@@ -788,7 +788,6 @@ ENUM_RELOC_TYPE_i386 = dict(
     _default_=Pass,
 )
 
-# https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-elf.adoc#reloc-table
 ENUM_RELOC_TYPE_RISCV = dict(
     R_RISCV_NONE = 0,
     R_RISCV_32 = 1,
