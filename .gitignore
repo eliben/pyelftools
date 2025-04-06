@@ -10,7 +10,5 @@ MANIFEST
 *.egg-info
 .vscode
 temp
-
-
-
-
+mypy.junit.xml
+mypy/

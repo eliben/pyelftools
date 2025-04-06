@@ -65,4 +65,26 @@ Coding conventions
 **pyelftools** is written in Python, following the `PEP 8 <http://www.python.org/dev/peps/pep-0008/>`_ style guide.
 
 
+Type checking
+-------------
 
+**pyelftools** is using and providing Type Hints, following the `PEP 484 <https://peps.python.org/pep-0484/>`_.
+Please make sure new functions and methods are properly type hinted.
+There are some known limitations as **pyelftools** is dynamic for some types, which does not work well for _static typing_.
+
+Please make sure to run [pyright](https://github.com/microsoft/pyright) and/or [mypy](https://mypy.readthedocs.io/en/stable/) on your contributions.
+For this Python 3.12 (or newer) is required:
+
+.. sourcecode:: text
+
+  > uv sync --dev --group typing --python 3.12
+  > . .venv/bin/activate
+  > pyright
+  > mypy
+
+You can also install ``pyright`` or ``mypy`` globally and (re-)use them for multiple projects:
+
+1. either install them once with ``uv tool install -p 3.12 pyright`` respective ``uv tool install -p 3.12 mypy``. Afterwards you can directly invoke ``pyright`` or ``mypy``.
+2. or run them from a temporary VENV each time by using ``uv tool run -p 3.12 pyright`` respective ``uv tool run -p 3.12 mypy``.
+
+Compared to the recommendation above this has the drawback that (in the future) type hints for external dependencies might be missing.

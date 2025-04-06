@@ -42,6 +42,9 @@ Homepage = "https://github.com/eliben/pyelftools"
 Repository = "https://github.com/eliben/pyelftools.git"
 Issues = "https://github.com/eliben/pyelftools/issues"
 
+[dependency-groups]
+typing = ["mypy[reports]", "pyright", "typeguard"]
+
 [tool.setuptools]
 packages = [
     "elftools",
@@ -64,3 +67,20 @@ version = {attr = "elftools.__version__"}
 
 [tool.setuptools.package-data]
 elftools = ["py.types"]
+
+[tool.mypy]
+error_summary = false
+disallow_any_generics = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+# html_report = "mypy"
+packages = "elftools"
+# junit_xml = "mypy.junit.xml"
+junit_format = "per_file"
+
+[tool.pyright]
+include = [
+    "elftools",
+]
