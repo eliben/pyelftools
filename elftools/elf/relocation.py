@@ -524,24 +524,34 @@ class RelocationHandler:
             bytesize=8, has_addend=False, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_RISCV['R_RISCV_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
-        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET16']: _RELOCATION_RECIPE_TYPE(
-            bytesize=2, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD8']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
         ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD16']: _RELOCATION_RECIPE_TYPE(
             bytesize=2, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
-        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB16']: _RELOCATION_RECIPE_TYPE(
-            bytesize=2, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend),
         ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
-        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB32']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend),
-        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET6']: _RELOCATION_RECIPE_TYPE(
-            bytesize=1, has_addend=True, calc_func=_reloc_calc_value_plus_sym_6),
-        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB6']: _RELOCATION_RECIPE_TYPE(
-            bytesize=1, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend_6),
-        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET8']: _RELOCATION_RECIPE_TYPE(
-            bytesize=1, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
         ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB8']: _RELOCATION_RECIPE_TYPE(
             bytesize=1, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB16']: _RELOCATION_RECIPE_TYPE(
+            bytesize=2, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB6']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend_6),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET6']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_reloc_calc_value_plus_sym_6),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET8']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET16']: _RELOCATION_RECIPE_TYPE(
+            bytesize=2, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
         }
     
 
