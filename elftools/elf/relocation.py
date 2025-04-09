@@ -540,6 +540,8 @@ class RelocationHandler:
             bytesize=1, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend_6),
         ENUM_RELOC_TYPE_RISCV['R_RISCV_SET8']: _RELOCATION_RECIPE_TYPE(
             bytesize=1, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB8']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_reloc_calc_value_minus_sym_addend),
         }
     
 
