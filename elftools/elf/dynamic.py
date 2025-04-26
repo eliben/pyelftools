@@ -234,7 +234,7 @@ class DynamicSection(Section, Dynamic):
     """
     def __init__(self, header, name, elffile):
         Section.__init__(self, header, name, elffile)
-        stringtable = elffile.get_section(header['sh_link'], ('SHT_STRTAB', 'SHT_NOBITS'))
+        stringtable = elffile.get_section(header['sh_link'], ('SHT_STRTAB', 'SHT_NOBITS', 'SHT_NULL'))
         Dynamic.__init__(self, self.stream, self.elffile, stringtable,
             self['sh_offset'], self['sh_type'] == 'SHT_NOBITS')
 
