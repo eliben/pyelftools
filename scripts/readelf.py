@@ -1254,7 +1254,7 @@ class ReadElf:
             lineprogram = self._dwarfinfo.line_program_for_CU(cu)
 
             if lineprogram is None or lineprogram in lineprogram_list:
-                continue 
+                continue
 
             lineprogram_list.append(lineprogram)
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
@@ -1572,8 +1572,8 @@ class ReadElf:
             self._dump_debug_locsection(di, loc_lists_sec._loclists)
         else:
             self._dump_debug_locsection(di, loc_lists_sec)
-        
-    def _dump_debug_locsection(self, di, loc_lists_sec):        
+
+    def _dump_debug_locsection(self, di, loc_lists_sec):
         """ Dump the location lists from .debug_loc/.debug_loclists section
         """
         ver5 = loc_lists_sec.version >= 5
@@ -1601,8 +1601,8 @@ class ReadElf:
             # Present but empty locations section - readelf outputs a message
             self._emitline("\nSection '%s' has no debugging data." % (section_name,))
             return
-        
-        # The v5 loclists section consists of CUs - small header, and 
+
+        # The v5 loclists section consists of CUs - small header, and
         # an optional loclist offset table. Readelf prints out the header data dump
         # on top of every CU, so we should too. But we don't scroll through
         # the loclists section, we are effectively scrolling through the info
@@ -1701,7 +1701,7 @@ class ReadElf:
         if cu.offsets:
             self._emitline('  Offsets starting at 0x%x:' % cu.offset_table_offset)
             for i_offset in enumerate(cu.offsets):
-                self._emitline('    [%6d] 0x%x' % i_offset)        
+                self._emitline('    [%6d] 0x%x' % i_offset)
 
     def _dump_debug_ranges(self):
         # TODO: GNU readelf format doesn't need entry_length?
@@ -1744,7 +1744,7 @@ class ReadElf:
             for cu in di.iter_CUs()
             for die in cu.iter_DIEs()
             if 'DW_AT_ranges' in die.attributes}
-        
+
         rcus = list(range_lists_sec.iter_CUs()) if ver5 else None
         rcu_index = 0
         next_rcu_offset = 0
