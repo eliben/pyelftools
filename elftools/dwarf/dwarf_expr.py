@@ -94,9 +94,9 @@ DW_OP_name2opcode = dict(
     DW_OP_GNU_deref_type=0xf6,
     DW_OP_GNU_convert=0xf7,
     DW_OP_GNU_parameter_ref=0xfa,
-    OP_GNU_addr_index=0xfb,
-    OP_GNU_const_index=0xfc,
-    OP_GNU_variable_value=0xfd,
+    DW_OP_GNU_addr_index=0xfb,
+    DW_OP_GNU_const_index=0xfc,
+    DW_OP_GNU_variable_value=0xfd,
     DW_OP_hi_user=0xff,
 )
 
@@ -251,7 +251,7 @@ def _init_dispatch_table(structs):
         add('DW_OP_breg%s' % n, parse_arg_struct(structs.the_Dwarf_sleb128))
 
     for opname in [ 'DW_OP_regx', 'DW_OP_piece', 'DW_OP_convert', 'DW_OP_GNU_convert',
-                    'OP_GNU_addr_index', 'OP_GNU_const_index', 'OP_GNU_variable_value']:
+                    'DW_OP_GNU_addr_index', 'DW_OP_GNU_const_index', 'DW_OP_GNU_variable_value']:
         add(opname, parse_arg_struct(structs.the_Dwarf_uleb128))
 
     add('DW_OP_fbreg', parse_arg_struct(structs.the_Dwarf_sleb128))
