@@ -94,6 +94,9 @@ DW_OP_name2opcode = dict(
     DW_OP_GNU_deref_type=0xf6,
     DW_OP_GNU_convert=0xf7,
     DW_OP_GNU_parameter_ref=0xfa,
+    DW_OP_GNU_addr_index=0xfb,
+    DW_OP_GNU_const_index=0xfc,
+    DW_OP_GNU_variable_value=0xfd,
     DW_OP_hi_user=0xff,
 )
 
@@ -247,11 +250,13 @@ def _init_dispatch_table(structs):
         add('DW_OP_reg%s' % n, parse_noargs())
         add('DW_OP_breg%s' % n, parse_arg_struct(structs.the_Dwarf_sleb128))
 
+    for opname in [ 'DW_OP_regx', 'DW_OP_piece', 'DW_OP_convert', 'DW_OP_GNU_convert',
+                    'DW_OP_GNU_addr_index', 'DW_OP_GNU_const_index', 'DW_OP_GNU_variable_value']:
+        add(opname, parse_arg_struct(structs.the_Dwarf_uleb128))
+
     add('DW_OP_fbreg', parse_arg_struct(structs.the_Dwarf_sleb128))
-    add('DW_OP_regx', parse_arg_struct(structs.the_Dwarf_uleb128))
     add('DW_OP_bregx', parse_arg_struct2(structs.the_Dwarf_uleb128,
                                          structs.the_Dwarf_sleb128))
-    add('DW_OP_piece', parse_arg_struct(structs.the_Dwarf_uleb128))
     add('DW_OP_bit_piece', parse_arg_struct2(structs.the_Dwarf_uleb128,
                                              structs.the_Dwarf_uleb128))
     add('DW_OP_deref_size', parse_arg_struct(structs.Dwarf_int8('')))
@@ -268,7 +273,6 @@ def _init_dispatch_table(structs):
                                               structs.the_Dwarf_uleb128))
     add('DW_OP_implicit_pointer', parse_arg_struct2(structs.the_Dwarf_offset,
                                                         structs.the_Dwarf_sleb128))
-    add('DW_OP_convert', parse_arg_struct(structs.the_Dwarf_uleb128))
     add('DW_OP_GNU_entry_value', parse_nestedexpr())
     add('DW_OP_GNU_const_type', parse_typedblob())
     add('DW_OP_GNU_regval_type', parse_arg_struct2(structs.the_Dwarf_uleb128,
@@ -278,7 +282,6 @@ def _init_dispatch_table(structs):
     add('DW_OP_GNU_implicit_pointer', parse_arg_struct2(structs.the_Dwarf_offset,
                                                         structs.the_Dwarf_sleb128))
     add('DW_OP_GNU_parameter_ref', parse_arg_struct(structs.the_Dwarf_offset))
-    add('DW_OP_GNU_convert', parse_arg_struct(structs.the_Dwarf_uleb128))
     add('DW_OP_WASM_location', parse_wasmloc())
 
     return table
