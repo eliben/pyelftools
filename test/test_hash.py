@@ -41,7 +41,7 @@ class TestELFHash(unittest.TestCase):
 
             _, hash_offset = dynamic_segment.get_table_offset('DT_HASH')
 
-            hash_section = ELFHashTable(elf, hash_offset, dynamic_segment)
+            hash_section = ELFHashTable(elf, hash_offset, None, dynamic_segment)
             self.assertIsNotNone(hash_section)
             self.assertEqual(hash_section.get_number_of_symbols(), 4)
 
@@ -57,6 +57,15 @@ class TestELFHash(unittest.TestCase):
             symbol_main = hash_section.get_symbol('main')
             self.assertIsNotNone(symbol_main)
             self.assertEqual(symbol_main['st_value'], 0x400790)
+
+    def test_empty_table_without_header(self):
+        """ Verify we can handle an empty (0 byte) ELF hash section.
+        """
+        elffile = None
+        symboltable = None
+        empty_hash_section = ELFHashTable(elffile, 0, 0, symboltable)
+        self.assertEqual(empty_hash_section.get_number_of_symbols(), 0)
+        self.assertEqual(empty_hash_section.params['nbuckets'], 0)
 
 
 class TestGNUHash(unittest.TestCase):

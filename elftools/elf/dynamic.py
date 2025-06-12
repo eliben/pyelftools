@@ -280,7 +280,7 @@ class DynamicSegment(Segment, Dynamic):
             _, hash_offset = self.get_table_offset('DT_HASH')
             if hash_offset is not None:
                 # Get the hash table from the DT_HASH offset
-                hash_section = ELFHashTable(self.elffile, hash_offset, self)
+                hash_section = ELFHashTable(self.elffile, hash_offset, None, self)
                 self._num_symbols = hash_section.get_number_of_symbols()
 
         if self._num_symbols is None:
