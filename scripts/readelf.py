@@ -8,6 +8,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import argparse
+import os
 import sys
 import re
 import traceback
@@ -1928,9 +1929,11 @@ def main(stream=None):
         do_section_header = args.show_section_header
         do_program_header = args.show_program_header
 
+    output = stream or sys.stdout
+
     with open(args.file, 'rb') as file:
         try:
-            readelf = ReadElf(file, stream or sys.stdout)
+            readelf = ReadElf(file, output)
             if do_file_header:
                 readelf.display_file_header()
             if do_section_header:
@@ -1959,11 +1962,18 @@ def main(stream=None):
                 readelf.display_string_dump(args.show_string_dump)
             if args.debug_dump_what:
                 readelf.display_debug_dump(args.debug_dump_what)
+            output.flush()
         except ELFError as ex:
             sys.stdout.flush()
             sys.stderr.write('ELF error: %s\n' % ex)
             if args.show_traceback:
                 traceback.print_exc()
+            sys.exit(1)
+        except BrokenPipeError:
+            # Python flushes standard streams on exit; redirect remaining output
+            # to devnull to avoid another BrokenPipeError at shutdown
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, output.fileno())
             sys.exit(1)
 
 
