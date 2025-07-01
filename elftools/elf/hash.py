@@ -27,12 +27,27 @@ class ELFHashTable:
         supports symbol lookup without access to a symbol table section.
     """
 
-    def __init__(self, elffile, start_offset, symboltable):
+    def __init__(self, elffile, start_offset, size, symboltable):
+        """
+        Args:
+            elffile (ELFFile): The ELF file.
+            start_offset: The offset of the start of the symbol table in the ELF file.
+            size: Size of the table in bytes (can be None if unknown).
+            symboltable: A symbol table with a get_symbol() method to do symbol lookup.
+        """
         self.elffile = elffile
         self._symboltable = symboltable
-        self.params = struct_parse(self.elffile.structs.Elf_Hash,
-                                   self.elffile.stream,
-                                   start_offset)
+        if size == 0:  # size may also be None if its unknown
+            self.params = {
+                'nbuckets': 0,
+                'nchains': 0,
+                'buckets': [],
+                'chains': [],
+            }
+        else:
+            self.params = struct_parse(self.elffile.structs.Elf_Hash,
+                                       self.elffile.stream,
+                                       start_offset)
 
     def get_number_of_symbols(self):
         """ Get the number of symbols from the hash table parameters.
@@ -77,7 +92,7 @@ class ELFHashSection(Section, ELFHashTable):
     """
     def __init__(self, header, name, elffile, symboltable):
         Section.__init__(self, header, name, elffile)
-        ELFHashTable.__init__(self, elffile, self['sh_offset'], symboltable)
+        ELFHashTable.__init__(self, elffile, self['sh_offset'], self['sh_size'], symboltable)
 
 
 class GNUHashTable:
