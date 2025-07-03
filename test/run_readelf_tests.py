@@ -98,11 +98,6 @@ def run_test_on_file(filename, verbose=False, opt=None):
         if "dwarf_v4cie" in filename and option == "--debug-dump=frames-interp":
             continue
 
-        # TODO(sevaa): excluding the binary with unaligned aranges entries. Readelf tried to recover
-        # but produces nonsensical output, but ultimately it's a toolchain bug (in IAR I presume).
-        if "dwarf_v4cie" in filename and option == "--debug-dump=aranges":
-            continue        
-
         # TODO(pmhahn): for now only ARM works
         if option in {"-A", "--arch-specific"} and "-eabi-" not in filename:
             continue
