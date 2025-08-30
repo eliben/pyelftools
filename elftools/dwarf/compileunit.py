@@ -133,7 +133,42 @@ class CompileUnit:
         """ Iterate over all the DIEs in the CU, in order of their appearance.
             Note that null DIEs will also be returned.
         """
-        return self._iter_DIE_subtree(self.get_top_DIE())
+        stm = self.dwarfinfo.debug_info_sec.stream
+        pos = self.cu_die_offset
+        end_pos = self.cu_offset + self.size
+
+        die = self.get_top_DIE()
+        yield die
+        pos += die.size
+        parent = die
+        i = 1
+        while pos < end_pos:
+            if i < len(self._diemap) and self._diemap[i] == pos: # DIE already cached
+                die = self._dielist[i]
+            else:
+                die = DIE(self, stm, pos)
+                self._dielist.insert(i, die)
+                self._diemap.insert(i, pos)
+            i += 1
+
+            die._parent = parent
+
+            if die.tag is None:
+                parent._terminator = die
+                parent = parent._parent
+
+            if die.has_children:
+                parent = die
+
+            if die.tag == 'DW_TAG_imported_unit' and self.dwarfinfo.supplementary_dwarfinfo:
+                # Falls back to subtree traversal in the supplemental DWARF. Any way to streamline that too?
+                supp_die = die.get_DIE_from_attribute('DW_AT_import')
+                supp_die.cu._iter_DIE_subtree(supp_die)
+            else:
+                yield die
+
+            pos += die.size
+
 
     def iter_DIE_children(self, die):
         """ Given a DIE, yields either its children, without null DIE list
