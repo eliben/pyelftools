@@ -163,7 +163,7 @@ class CompileUnit:
             if die.tag == 'DW_TAG_imported_unit' and self.dwarfinfo.supplementary_dwarfinfo:
                 # Falls back to subtree traversal in the supplemental DWARF. Any way to streamline that too?
                 supp_die = die.get_DIE_from_attribute('DW_AT_import')
-                supp_die.cu._iter_DIE_subtree(supp_die)
+                yield from supp_die.cu._iter_DIE_subtree(supp_die)
             else:
                 yield die
 
