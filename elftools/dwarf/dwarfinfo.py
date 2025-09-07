@@ -82,7 +82,8 @@ class DWARFInfo:
             debug_rnglists_sec,
             debug_sup_sec,
             gnu_debugaltlink_sec,
-            debug_types_sec
+            debug_types_sec,
+            max_cu_cache_size = -1
             ):
         """ config:
                 A DwarfConfig object
@@ -91,6 +92,9 @@ class DWARFInfo:
                 DebugSectionDescriptor for a section. Pass None for sections
                 that don't exist. These arguments are best given with
                 keyword syntax.
+            
+            max_cu_cache_size:
+                Enforces a limit on CU cache size, For unlimitted  cache size set to -1
         """
         self.config = config
         self.debug_info_sec = debug_info_sec
@@ -113,6 +117,8 @@ class DWARFInfo:
         self.gnu_debugaltlink_sec = gnu_debugaltlink_sec
         self.debug_types_sec = debug_types_sec
 
+        self.max_cu_cache_size = max_cu_cache_size
+        
         # Sets the supplementary_dwarfinfo to None. Client code can set this
         # to something else, typically a DWARFInfo file read from an ELFFile
         # which path is stored in the debug_sup_sec or gnu_debugaltlink_sec.
@@ -547,6 +553,12 @@ class DWARFInfo:
         # bisect_right search while the parallel indexed ._cu_cache[] holds
         # the object references.
         cu = self._parse_CU_at_offset(offset)
+
+        # max_cu_cache_size of -1 makes cache size unlimited
+        if self.max_cu_cache_size != -1 and len(self._cu_cache) > self.max_cu_cache_size:
+            self._cu_offsets_map.pop(0)
+            self._cu_cache.pop(0) 
+        
         self._cu_offsets_map.insert(i, offset)
         self._cu_cache.insert(i, cu)
         return cu
