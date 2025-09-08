@@ -261,7 +261,7 @@ class ELFFile:
             self.has_section('.zdebug_info') or
             (not strict and self.has_section('.eh_frame')))
 
-    def get_dwarf_info(self, relocate_dwarf_sections=True, follow_links=True):
+    def get_dwarf_info(self, relocate_dwarf_sections=True, follow_links=True, max_cu_cache_size = -1):
         """ Return a DWARFInfo object representing the debugging information in
             this file.
 
@@ -355,7 +355,8 @@ class ELFFile:
                 debug_rnglists_sec=debug_sections[debug_rnglists_sec_name],
                 debug_sup_sec=debug_sections[debug_sup_name],
                 gnu_debugaltlink_sec=debug_sections[gnu_debugaltlink_name],
-                debug_types_sec=debug_sections[debug_types_sec_name]
+                debug_types_sec=debug_sections[debug_types_sec_name],
+                max_cu_cache_size = max_cu_cache_size
                 )
         if follow_links:
             dwarfinfo.supplementary_dwarfinfo = self.get_supplementary_dwarfinfo(dwarfinfo)
