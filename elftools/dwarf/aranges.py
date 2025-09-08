@@ -61,7 +61,7 @@ class ARanges:
             Terminating null entries of CU blocks are not returned, unless
             need_empty is set to True and the CU block contains nothing but
             a null entry. The null entry will have both address and length
-            set to 0. 
+            set to 0.
         """
         self.stream.seek(0)
         entries = []
@@ -103,7 +103,7 @@ class ARanges:
                     if addr != 0 or length != 0:
                         addr = struct_parse(addr_size('addr'), self.stream)
                         length = struct_parse(addr_size('length'), self.stream)
-                    
+
             # Segmentation exists in executable
             elif aranges_header["segment_size"] != 0:
                 raise NotImplementedError("Segmentation not implemented")

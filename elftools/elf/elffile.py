@@ -97,7 +97,7 @@ class ELFFile:
         """
         stream = open(path, 'rb')
         return ELFFile(stream, ELFFile.make_relative_loader(path))
-    
+
     @staticmethod
     def make_relative_loader(base_path):
         """ Return a function that takes a potentially relative path,
@@ -139,7 +139,7 @@ class ELFFile:
         if type and section_header.sh_type not in type:
             raise ELFError("Unexpected section type %s, expected %s" % (section_header['sh_type'], type))
         return self._make_section(section_header)
-    
+
     def _get_linked_symtab_section(self, n):
         """ Get the section at index #n from the file, throws
             if it's not a SYMTAB/DYNTAB.
@@ -149,7 +149,7 @@ class ELFFile:
         if section_header['sh_type'] not in ('SHT_SYMTAB', 'SHT_DYNSYM'):
             raise ELFError("Section points at section %d of type %s, expected SHT_SYMTAB/SHT_DYNSYM" % (n, section_header['sh_type']))
         return self._make_section(section_header)
-    
+
     def _get_linked_strtab_section(self, n):
         """ Get the section at index #n from the file, throws
             if it's not a STRTAB.
@@ -158,7 +158,7 @@ class ELFFile:
         section_header = self._get_section_header(n)
         if section_header['sh_type'] != 'SHT_STRTAB':
             raise ELFError("SHT_SYMTAB section points at section %d of type %s, expected SHT_STRTAB" % (n, section_header['sh_type']))
-        return self._make_section(section_header)    
+        return self._make_section(section_header)
 
     def get_section_by_name(self, name):
         """ Get a section from the file, by name. Return None if no such
@@ -182,7 +182,7 @@ class ELFFile:
         if self._section_name_map is None:
             self._make_section_name_map()
         return self._section_name_map.get(section_name, None)
-    
+
     def has_section(self, section_name):
         """ Section existence check by name, without the overhead of parsing if found.
         """
@@ -291,7 +291,7 @@ class ELFFile:
                 # Inheriting the stream loader like that might be wrong if the supplementary DWARF link in the other file
                 # is relative to the other file's directory as opposed to this file's directory.
                 return ext_elffile.get_dwarf_info(relocate_dwarf_sections=relocate_dwarf_sections, follow_links=True)
-       
+
         section_names = ('.debug_info', '.debug_aranges', '.debug_abbrev',
                          '.debug_str', '.debug_line', '.debug_frame',
                          '.debug_loc', '.debug_ranges', '.debug_pubtypes',
@@ -360,13 +360,13 @@ class ELFFile:
         if follow_links:
             dwarfinfo.supplementary_dwarfinfo = self.get_supplementary_dwarfinfo(dwarfinfo)
         return dwarfinfo
-    
+
     def has_dwarf_link(self):
         """ Whether the binary's debug info is in an
             external file. Use get_dwarf_link to retrieve the path to it.
         """
         return self.has_section('.gnu_debuglink')
-    
+
     def get_dwarf_link(self):
         """ Read the .gnu_debuglink section, return an object with filename (as bytes) and checksum (as number) in it.
         """

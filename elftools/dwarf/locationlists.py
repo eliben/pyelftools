@@ -93,7 +93,7 @@ class LocationLists:
         location entry encodings that contain references to other sections.
         """
         if self.version >= 5 and die is None:
-            raise DWARFError("For this binary, \"die\" needs to be provided")              
+            raise DWARFError("For this binary, \"die\" needs to be provided")
         self.stream.seek(offset, os.SEEK_SET)
         return self._parse_location_list_from_stream_v5(die.cu) if self.version >= 5 else self._parse_location_list_from_stream()
 
@@ -330,7 +330,7 @@ class LocationParser:
                  not attr.name == 'DW_AT_const_value') or
                 attr.form in ('DW_FORM_sec_offset', 'DW_FORM_loclistx')) and
                 not LocationParser._attribute_is_constant(attr, dwarf_version))
-    
+
     # Starting with DWARF3, DW_AT_data_member_location may contain an integer offset
     # instead of a location expression. Need to prevent false positives on attribute_has_location().
     # As for DW_AT_upper_bound/DW_AT_count, we've seen it in form DW_FORM_locexpr in a V5 binary. usually it's a constant,

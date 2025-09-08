@@ -202,7 +202,7 @@ class DWARFStructs:
         )
         # DWARFv5 reverses the order of address_size and debug_abbrev_offset.
         # DWARFv5 7.5.1.1
-        dwarfv5_CP_CU_header = Struct('',                  
+        dwarfv5_CP_CU_header = Struct('',
             self.Dwarf_uint8('address_size'),
             self.Dwarf_offset('debug_abbrev_offset')
         )
@@ -316,7 +316,7 @@ class DWARFStructs:
             DW_FORM_ref_addr=self.the_Dwarf_target_addr if self.dwarf_version == 2 else self.the_Dwarf_offset,
 
             DW_FORM_indirect=self.the_Dwarf_uleb128,
-            
+
             # Treated separatedly while parsing, but here so that all forms resovle
             DW_FORM_implicit_const=None,
 

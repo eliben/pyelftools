@@ -304,7 +304,7 @@ def describe_note_gnu_properties(properties, machine):
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
-                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_2_FLAGS, 'x86 feature used', d)                
+                prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_2_FLAGS, 'x86 feature used', d)
         elif t == 'GNU_PROPERTY_X86_ISA_1_NEEDED':
             if sz != 4:
                 prop_desc = ' <corrupt length: 0x%x>' % sz

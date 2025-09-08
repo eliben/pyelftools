@@ -130,7 +130,7 @@ class DWARFInfo:
         self._abbrevtable_cache = {}
         # Cache for program lines tables: a dict keyed by offset
         self._linetable_cache = {}
- 
+
         # Cache of compile units and map of their offsets for bisect lookup.
         # Access with .iter_CUs(), .get_CU_containing(), and/or .get_CU_at().
         self._cu_cache = []
@@ -176,7 +176,7 @@ class DWARFInfo:
         if cu is None:
             cu = self.get_CU_containing(refaddr)
         return cu.get_DIE_from_refaddr(refaddr)
-    
+
     def get_DIE_by_sig8(self, sig8):
         """ Find and return a DIE referenced by its type signature.
             sig8:
@@ -201,7 +201,7 @@ class DWARFInfo:
         tu = self._type_units_by_sig.get(sig8)
         if tu is None:
             raise KeyError("Signature %016x not found in .debug_types" % sig8)
-        return tu._get_cached_DIE(tu.tu_offset + tu['type_offset'])    
+        return tu._get_cached_DIE(tu.tu_offset + tu['type_offset'])
 
     def get_CU_containing(self, refaddr):
         """ Find the CU that includes the given reference address in the
@@ -450,7 +450,7 @@ class DWARFInfo:
             raise DWARFError('The file does not contain a debug_addr section for indirect address access')
         # Selectors are not supported, but no assert on that. TODO?
         cu_addr_base = _get_base_offset(cu, 'DW_AT_addr_base')
-        return struct_parse(cu.structs.the_Dwarf_target_addr, self.debug_addr_sec.stream, cu_addr_base + addr_index*cu.header.address_size)            
+        return struct_parse(cu.structs.the_Dwarf_target_addr, self.debug_addr_sec.stream, cu_addr_base + addr_index*cu.header.address_size)
 
     #------ PRIVATE ------#
 

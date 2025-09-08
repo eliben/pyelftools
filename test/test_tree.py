@@ -6,7 +6,7 @@
 #
 # Making sure the two ways of iterating through DIEs (linear and by tree)
 # return an identically built tree (parents, children, terminators).
-# 
+#
 # TODO: find a siblingless file. None in the corpus so far.
 #------------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ class TestTree(unittest.TestCase):
     def run_test_on(self, file_name, cu_index, test_cached):
         def die_summary(die):
             return (die.offset, die.tag, die._terminator.offset if die._terminator else None, die.get_parent().offset if die.get_parent() else None)
-        
+
         with ELFFile.load_from_path(os.path.join('test', 'testfiles_for_unittests', file_name)) as elf:
             di = elf.get_dwarf_info()
             cu = next(c for i,c in enumerate(di.iter_CUs()) if i == cu_index)

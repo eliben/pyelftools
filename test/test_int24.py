@@ -20,7 +20,7 @@ class TestInt24(unittest.TestCase):
         self.assertEqual(n, (b[0] << 16) | (b[1] << 8) | b[2])
         s = UBInt24('').build(n)
         self.assertEqual(s, b)
-        
+
         n = struct_parse(ULInt24(''), BytesIO(b))
         self.assertEqual(n, b[0] | (b[1] << 8) | (b[2] << 16))
         s = ULInt24('').build(n)

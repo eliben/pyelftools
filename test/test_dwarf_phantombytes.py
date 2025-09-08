@@ -21,6 +21,6 @@ class TestPhantomBytes(unittest.TestCase):
             dwarfinfo = elffile.get_dwarf_info()
             for CU in dwarfinfo.iter_CUs():
                 self.assertEqual(CU.get_top_DIE().tag, 'DW_TAG_compile_unit')
-                        
+
     def test_main(self):
-        self._test_file('dwarf_phantombytes.elf')    
+        self._test_file('dwarf_phantombytes.elf')

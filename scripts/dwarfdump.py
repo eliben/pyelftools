@@ -64,7 +64,7 @@ def _DIE_linkage_name(die):
     elif 'DW_AT_name' in die.attributes:
         return bytes2str(die.attributes['DW_AT_name'].value)
     else:
-        raise DWARFError()        
+        raise DWARFError()
 
 def _safe_DIE_name(die, default=None):
     if 'DW_AT_name' in die.attributes:
@@ -90,7 +90,7 @@ def _desc_ref(attr, die, extra=''):
     if attr.form == 'DW_FORM_ref_sig8':
         return "0x%016x" % attr.value
     # TODO: leading zeros on the addend to CU - sometimes present, sometimes not.
-    # Check by the LLVM sources.    
+    # Check by the LLVM sources.
     return "cu + 0x%04x => {0x%08x}%s" % (
         attr.raw_value,
         die.cu.cu_offset + attr.raw_value,
@@ -304,7 +304,7 @@ def _get_origin_name(die):
         if 'DW_AT_specification' in func_die.attributes:
             name = _DIE_linkage_name(func_die.get_DIE_from_attribute('DW_AT_specification'))
         elif 'DW_AT_abstract_origin' in func_die.attributes:
-            return _get_origin_name(func_die)    
+            return _get_origin_name(func_die)
     return name
 
 def _desc_origin(attr, die):
@@ -390,7 +390,7 @@ class ReadElf:
             for die in cu.iter_DIEs():
                 if die.get_parent() == parent:
                     parent = die
-                if not die.is_null(): 
+                if not die.is_null():
                     self._emitline("0x%08x: %s [%d] %s %s" % (
                         die.offset,
                         die.tag if isinstance(die.tag, str) else "DW_TAG_unknown_%x" % die.tag,
@@ -409,7 +409,7 @@ class ReadElf:
                 self._emitline()
 
     def describe_attr_value(self, die, attr):
-        """This describes the attribute value in the way that's compatible 
+        """This describes the attribute value in the way that's compatible
         with llvm_dwarfdump. Somewhat duplicates the work of describe_attr_value() in descriptions
         """
         if attr.name in ATTR_DESCRIPTIONS:
@@ -442,7 +442,7 @@ class ReadElf:
             elif isinstance(entry, elftools.dwarf.ranges.BaseAddressEntry):
                 base_ip = entry.base_address
             else:
-                raise NotImplementedError("Unknown object in a range list")    
+                raise NotImplementedError("Unknown object in a range list")
 
     def dump_rnglists(self):
         self._emitline(".debug_rnglists contents:")
@@ -478,7 +478,7 @@ class ReadElf:
     def dump_v5_rangelist(self, rangelist, cu_map, max_type_len):
         cu = cu_map[rangelist[0].entry_offset]
         addr_str_len = cu.header.address_size*2
-        base_ip = _get_cu_base(cu)        
+        base_ip = _get_cu_base(cu)
         for entry in rangelist:
             type = entry.entry_type
             self._emit("0x%08x: [%s]:  " % (entry.entry_offset, type.ljust(max_type_len)))

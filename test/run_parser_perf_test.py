@@ -50,13 +50,13 @@ def main():
     if not is_in_rootdir():
         print('Error: Please run me from the root dir of pyelftools!', file=sys.stderr)
         return 1
-    
+
     argparser = argparse.ArgumentParser()
     argparser.add_argument('-l', action='store_true', dest='locs')
     argparser.add_argument('-r', action='store_true', dest='ranges')
     argparser.add_argument('-p', action='store_true', dest='lineprog')
     args = argparser.parse_args()
-    
+
     root = os.path.join('.', 'test', 'testfiles_for_dwarfdump')
     filenames = [filename for filename in os.listdir(root) if os.path.splitext(filename)[1] == '.elf']
     fileblobs = [slurp(os.path.join(root, filename)) for filename in filenames]
@@ -70,4 +70,4 @@ if __name__ == '__main__':
     sys.exit(main())
 
 # To profile:
-# python -m cProfile -s tottime test/run_parser_perf_test.py 
+# python -m cProfile -s tottime test/run_parser_perf_test.py

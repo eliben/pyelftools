@@ -202,7 +202,7 @@ def _init_dispatch_table(structs):
     # ULEB128 with datatype DIE offset, then byte, then a blob of that size
     def parse_typedblob():
         return lambda stream: [struct_parse(structs.the_Dwarf_uleb128, stream), read_blob(stream, struct_parse(structs.the_Dwarf_uint8, stream))]
-    
+
     # https://yurydelendik.github.io/webassembly-dwarf/
     # Byte, then variant: 0, 1, 2 => uleb128, 3 => uint32
     def parse_wasmloc():

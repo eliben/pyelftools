@@ -59,7 +59,7 @@ def _iter_CUs_in_section(stream, structs, parser):
         else:
             header['offsets'] = False
         yield header
-        offset = header.offset_after_length + header.unit_length   
+        offset = header.offset_after_length + header.unit_length
 
 def _file_crc32(file):
     """ Provided a readable binary stream, reads the stream to the end

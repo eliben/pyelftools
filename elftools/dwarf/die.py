@@ -287,9 +287,9 @@ class DIE:
                 real_form = DW_FORM_raw2name[real_form_code] # Form name or exception if bogus code
             except KeyError:
                 raise DWARFError('Found DW_FORM_indirect with unknown real form 0x%x' % real_form_code)
-            
+
             raw_value = struct_parse(structs.Dwarf_dw_form[real_form], self.stream)
-            
+
             if real_form != 'DW_FORM_indirect': # Happy path: one level of indirection
                 return (real_form, raw_value, length)
             else: # Indirection cascade
@@ -333,7 +333,7 @@ class DIE:
 
     def _translate_indirect_attributes(self):
         """ This is a hook to translate the DW_FORM_...x values in the top DIE
-            once the top DIE is parsed to the end. They can't be translated 
+            once the top DIE is parsed to the end. They can't be translated
             while the top DIE is being parsed, because they implicitly make a
             reference to the DW_AT_xxx_base attribute in the same DIE that may
             not have been parsed yet.

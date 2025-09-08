@@ -19,7 +19,7 @@ class TestLocationAttrubute(unittest.TestCase):
         # can't vary by code location). DWARFv3 spec also provides that DW_AT_data_member_location
         # may be a small integer with an offset from the structure's base address, and that
         # seems to be the case here. Ergo, pyelftools should not claim this attribute a location.
-        # Since the location/loclist parse function uses the same check, ths fix will 
+        # Since the location/loclist parse function uses the same check, ths fix will
         # prevent such attribute values from being misparsed, also.
         #
         # The notion that member location in a structure had to be a DWARF expression

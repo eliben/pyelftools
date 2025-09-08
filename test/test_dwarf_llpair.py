@@ -23,7 +23,7 @@ class TestLocListsPair(unittest.TestCase):
             self.assertTrue(isinstance(llp, LocationListsPair))
             locparser = LocationParser(llp)
 
-            CUs = list(dwarfinfo.iter_CUs())     
+            CUs = list(dwarfinfo.iter_CUs())
 
             # The first CU is the v5 one
             # Just in case, make sure we can hit a loclist in a V5 section

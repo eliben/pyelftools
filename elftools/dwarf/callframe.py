@@ -235,7 +235,7 @@ class CallFrameInfo:
                     struct_parse(structs.the_Dwarf_sleb128, self.stream)]
             elif opcode == DW_CFA_GNU_args_size:
                 args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
-            
+
             else:
                 dwarf_assert(False, 'Unknown CFI opcode: 0x%x' % opcode)
 

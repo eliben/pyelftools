@@ -64,7 +64,7 @@ class RangeListsPair:
 
     def iter_CUs(self):
         """See RangeLists.iter_CUs()
-        
+
         CU structure is only present in DWARFv5 rnglists sections. A well written
         section dumper should check if one is present.
         """
@@ -77,7 +77,7 @@ class RangeListsPair:
         section dumper should check if one is present.
         """
         return self._rnglists.iter_CU_range_lists_ex(cu)
-    
+
     def translate_v5_entry(self, entry, cu):
         """Forwards a V5 entry translation request to the V5 section
         """
@@ -162,7 +162,7 @@ class RangeLists:
             yield struct_parse(self.structs.Dwarf_rnglists_entries, stream)
 
     def translate_v5_entry(self, entry, cu):
-        """Translates entries in a DWARFv5 rangelist from raw parsed format to 
+        """Translates entries in a DWARFv5 rangelist from raw parsed format to
         a list of BaseAddressEntry/RangeEntry, using the CU
         """
         return entry_translate[entry.entry_type](entry, cu)

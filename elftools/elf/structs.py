@@ -191,7 +191,7 @@ class ELFStructs:
         if self.e_machine == 'EM_ARM':
             sh_type_dict = ENUM_SH_TYPE_ARM
         elif self.e_machine == 'EM_AARCH64':
-            sh_type_dict = ENUM_SH_TYPE_AARCH64           
+            sh_type_dict = ENUM_SH_TYPE_AARCH64
         elif self.e_machine == 'EM_X86_64':
             sh_type_dict = ENUM_SH_TYPE_AMD64
         elif self.e_machine == 'EM_MIPS':
@@ -563,7 +563,7 @@ class ELFStructs:
                                self.Elf_word('bloom_shift'),
                                Array(lambda ctx: ctx['bloom_size'], self.Elf_xword('bloom')),
                                Array(lambda ctx: ctx['nbuckets'], self.Elf_word('buckets')))
-        
+
     def _create_gnu_debuglink(self):
         self.Gnu_debuglink = Struct('Gnu_debuglink',
             CString("filename"),
