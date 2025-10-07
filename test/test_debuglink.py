@@ -4,6 +4,9 @@
 # Gabriele Digregorio - Io_no
 # This code is in the public domain
 #------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import IO
 
 from elftools.elf.elffile import ELFFile
 import unittest
@@ -16,7 +19,7 @@ class TestDebuglink(unittest.TestCase):
         We verify that the subprograms are correctly retrieved from the debug file.
     """
 
-    def stream_loader(self, external_filename: str) -> 'IO[bytes]':
+    def stream_loader(self, external_filename: str) -> IO[bytes]:
         """
         This function takes an external filename to load a supplementary object file,
         and returns a stream suitable for creating a new ELFFile.
@@ -30,7 +33,7 @@ class TestDebuglink(unittest.TestCase):
         stream = open(b'test/testfiles_for_unittests/' + external_filename, 'rb')
         return stream
 
-    def subprograms_from_debuglink(self, elf: ELFFile) -> dict[str, (int, int)]:
+    def subprograms_from_debuglink(self, elf: ELFFile) -> dict[str, tuple[int, int]]:
         """Returns a dictionary containing the subprograms of the specified ELF file from the linked
         debug file.
         Args:

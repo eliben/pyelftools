@@ -43,7 +43,7 @@ Repository = "https://github.com/eliben/pyelftools.git"
 Issues = "https://github.com/eliben/pyelftools/issues"
 
 [dependency-groups]
-typing = ["mypy[reports]", "pyright", "typeguard"]
+typing = ["mypy[reports]", "pyright", "typeguard", "typing_extensions"]
 
 [tool.setuptools]
 packages = [
@@ -79,6 +79,11 @@ warn_unused_ignores = true
 packages = "elftools"
 # junit_xml = "mypy.junit.xml"
 junit_format = "per_file"
+
+[[tool.mypy.overrides]]
+module = "elftools.construct.*"
+follow_imports = "skip"
+ignore_errors = true
 
 [tool.pyright]
 include = [

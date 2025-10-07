@@ -6,6 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Final, TypeVar
+
 from .enums import (
     ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE_BASE, ENUM_SH_TYPE_BASE,
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
@@ -15,63 +19,75 @@ from .enums import (
     ENUM_DT_FLAGS_1, ENUM_RELOC_TYPE_PPC)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
+from .dynamic import DynamicSection
 from ..common.utils import bytes2hex
 
+if TYPE_CHECKING:
+    from collections.abc import Container as TContainer
+    from collections.abc import Iterable, Mapping
 
-def describe_ei_class(x):
+    from ..construct.lib.container import Container
+    from .elffile import ELFFile
+
+    _K = TypeVar("_K")
+    _V = TypeVar("_V")
+
+
+def describe_ei_class(x: str) -> str:
     return _DESCR_EI_CLASS.get(x, _unknown)
 
 
-def describe_ei_data(x):
+def describe_ei_data(x: str) -> str:
     return _DESCR_EI_DATA.get(x, _unknown)
 
 
-def describe_ei_version(x):
+def describe_ei_version(x: str) -> str:
     s = '%d' % ENUM_E_VERSION[x]
     if x == 'EV_CURRENT':
         s += ' (current)'
     return s
 
 
-def describe_ei_osabi(x):
+def describe_ei_osabi(x: str) -> str:
     return _DESCR_EI_OSABI.get(x, _unknown)
 
 
-def describe_e_type(x, elffile=None):
+def describe_e_type(x: str, elffile: ELFFile | None = None) -> str:
     if elffile is not None and x == 'ET_DYN':
         # Detect whether this is a normal SO or a PIE executable
         dynamic = elffile.get_section_by_name('.dynamic')
+        assert isinstance(dynamic, DynamicSection)
         for t in dynamic.iter_tags('DT_FLAGS_1'):
             if t.entry.d_val & ENUM_DT_FLAGS_1['DF_1_PIE']:
                 return 'DYN (Position-Independent Executable file)'
     return _DESCR_E_TYPE.get(x, _unknown)
 
 
-def describe_e_machine(x):
+def describe_e_machine(x: str) -> str:
     return _DESCR_E_MACHINE.get(x, _unknown)
 
 
-def describe_e_version_numeric(x):
+def describe_e_version_numeric(x: str) -> str:
     return '0x%x' % ENUM_E_VERSION[x]
 
 
-def describe_p_type(x):
-    if x in _DESCR_P_TYPE:
-        return _DESCR_P_TYPE.get(x)
-    elif x >= ENUM_P_TYPE_BASE['PT_LOOS'] and x <= ENUM_P_TYPE_BASE['PT_HIOS']:
+def describe_p_type(x: int | str) -> str:
+    if isinstance(x, str) and x in _DESCR_P_TYPE:
+        return _DESCR_P_TYPE[x]
+    elif isinstance(x, int) and ENUM_P_TYPE_BASE['PT_LOOS'] <= x <= ENUM_P_TYPE_BASE['PT_HIOS']:
         return 'LOOS+%lx' % (x - ENUM_P_TYPE_BASE['PT_LOOS'])
     else:
         return _unknown
 
 
-def describe_p_flags(x):
+def describe_p_flags(x: int) -> str:
     s = ''
     for flag in (P_FLAGS.PF_R, P_FLAGS.PF_W, P_FLAGS.PF_X):
         s += _DESCR_P_FLAGS[flag] if (x & flag) else ' '
     return s
 
 
-def describe_rh_flags(x):
+def describe_rh_flags(x: int) -> str:
     return ' '.join(
         _DESCR_RH_FLAGS[flag]
         for flag in (RH_FLAGS.RHF_NONE, RH_FLAGS.RHF_QUICKSTART,
@@ -87,17 +103,16 @@ def describe_rh_flags(x):
         if x & flag)
 
 
-def describe_sh_type(x):
-    if x in _DESCR_SH_TYPE:
-        return _DESCR_SH_TYPE.get(x)
-    elif (x >= ENUM_SH_TYPE_BASE['SHT_LOOS'] and
-          x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']):
+def describe_sh_type(x: int | str) -> str:
+    if isinstance(x, str) and x in _DESCR_SH_TYPE:
+        return _DESCR_SH_TYPE[x]
+    elif isinstance(x, int) and ENUM_SH_TYPE_BASE['SHT_LOOS'] <= x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']:
         return 'loos+0x%lx' % (x - ENUM_SH_TYPE_BASE['SHT_LOOS'])
     else:
         return _unknown
 
 
-def describe_sh_flags(x):
+def describe_sh_flags(x: int) -> str:
     s = ''
     for flag in (
             SH_FLAGS.SHF_WRITE, SH_FLAGS.SHF_ALLOC, SH_FLAGS.SHF_EXECINSTR,
@@ -112,34 +127,34 @@ def describe_sh_flags(x):
     return s
 
 
-def describe_symbol_type(x):
+def describe_symbol_type(x: str) -> str:
     return _DESCR_ST_INFO_TYPE.get(x, _unknown)
 
 
-def describe_symbol_bind(x):
+def describe_symbol_bind(x: str) -> str:
     return _DESCR_ST_INFO_BIND.get(x, _unknown)
 
 
-def describe_symbol_visibility(x):
+def describe_symbol_visibility(x: str) -> str:
     return _DESCR_ST_VISIBILITY.get(x, _unknown)
 
 
-def describe_symbol_local(x):
+def describe_symbol_local(x: int) -> str:
     return '[<localentry>: ' + str(1 << x) + ']'
 
 
-def describe_symbol_other(x):
+def describe_symbol_other(x: Container) -> str:
     vis = describe_symbol_visibility(x['visibility'])
     if 1 < x['local'] < 7:
         return vis + ' ' + describe_symbol_local(x['local'])
     return vis
 
 
-def describe_symbol_shndx(x):
-    return _DESCR_ST_SHNDX.get(x, '%3s' % x)
+def describe_symbol_shndx(x: int | str) -> str:
+    return _DESCR_ST_SHNDX.get(x, '%3s' % x)  # type: ignore[arg-type]
 
 
-def describe_reloc_type(x, elffile):
+def describe_reloc_type(x: int, elffile: ELFFile) -> str:
     arch = elffile.get_machine_arch()
     if arch == 'x86':
         return _DESCR_RELOC_TYPE_i386.get(x, _unknown)
@@ -163,21 +178,21 @@ def describe_reloc_type(x, elffile):
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
 
 
-def describe_dyn_tag(x):
+def describe_dyn_tag(x: int) -> str:
     return _DESCR_D_TAG.get(x, _unknown)
 
 
-def describe_dt_flags(x):
+def describe_dt_flags(x: int) -> str:
     return ' '.join(key[3:] for key, val in
         sorted(ENUM_DT_FLAGS.items(), key=lambda t: t[1]) if x & val)
 
 
-def describe_dt_flags_1(x):
+def describe_dt_flags_1(x: int) -> str:
     return ' '.join(key[5:] for key, val in
         sorted(ENUM_DT_FLAGS_1.items(), key=lambda t: t[1]) if x & val)
 
 
-def describe_syminfo_flags(x):
+def describe_syminfo_flags(x: int) -> str:
     return ''.join(_DESCR_SYMINFO_FLAGS[flag] for flag in (
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_CAP,
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECT,
@@ -191,18 +206,18 @@ def describe_syminfo_flags(x):
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED) if x & flag)
 
 
-def describe_symbol_boundto(x):
+def describe_symbol_boundto(x: str) -> str:
     return _DESCR_SYMINFO_BOUNDTO.get(x, '%3s' % x)
 
 
-def describe_ver_flags(x):
+def describe_ver_flags(x: int) -> str:
     return ' | '.join(_DESCR_VER_FLAGS[flag] for flag in (
         VER_FLAGS.VER_FLG_WEAK,
         VER_FLAGS.VER_FLG_BASE,
         VER_FLAGS.VER_FLG_INFO) if x & flag)
 
 
-def describe_note(x, machine):
+def describe_note(x: Container, machine: str) -> str:
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
@@ -236,7 +251,7 @@ def describe_note(x, machine):
     return '%s (%s)%s' % (note_type, note_type_desc, desc)
 
 
-def describe_attr_tag_arm(tag, val, extra):
+def describe_attr_tag_arm(tag: str, val: Any, extra: str | None) -> str:
     s = _DESCR_ATTR_TAG_ARM.get(tag, '"%s"' % tag)
     idx = ENUM_ATTR_TAG_ARM[tag] - 1
     d_entry = _DESCR_ATTR_VAL_ARM[idx]
@@ -248,7 +263,7 @@ def describe_attr_tag_arm(tag, val, extra):
         elif tag == 'TAG_ALSO_COMPATIBLE_WITH':
             if val.tag == 'TAG_CPU_ARCH':
                 d_entry = _DESCR_ATTR_VAL_ARM[5]  # TAG_CPU_ARCH
-                return s + d_entry.get(val.value, '??? (%d)' % val.value)
+                return s + (d_entry.get(val.value) or '??? (%d)' % val.value)
 
             else:
                 return s + '??? (%d)' % val.tag
@@ -262,7 +277,7 @@ def describe_attr_tag_arm(tag, val, extra):
     else:
         return s + d_entry[val]
 
-def describe_attr_tag_riscv(tag, val, extra):
+def describe_attr_tag_riscv(tag: str, val: Any, extra: str) -> str:
     idx = ENUM_ATTR_TAG_RISCV[tag] - 1
     d_entry = _DESCR_ATTR_VAL_RISCV[idx]
 
@@ -274,19 +289,21 @@ def describe_attr_tag_riscv(tag, val, extra):
     else:
         return _DESCR_ATTR_TAG_RISCV[tag] + d_entry[val]
 
-def describe_note_gnu_property_bitmap_and(values, prefix, value):
+def describe_note_gnu_property_bitmap_and(values: Iterable[tuple[int, str]], prefix: str, value: int) -> str:
     descs = []
     for mask, desc in values:
         if value & mask:
             descs.append(desc)
     return '%s: %s' % (prefix, ', '.join(descs))
 
-def describe_note_gnu_properties(properties, machine):
+def describe_note_gnu_properties(properties: list[Container], machine: str) -> str:
     descriptions = []
     for prop in properties:
-        t, d, sz = prop.pr_type, prop.pr_data, prop.pr_datasz
+        t: str | int = prop.pr_type
+        d = prop.pr_data
+        sz: int = prop.pr_datasz
         if t == 'GNU_PROPERTY_STACK_SIZE':
-            if type(d) is int:
+            if isinstance(d, int):
                 prop_desc = 'stack size: 0x%x' % d
             else:
                 prop_desc = 'stack size: <corrupt length: 0x%x>' % sz
@@ -326,9 +343,9 @@ def describe_note_gnu_properties(properties, machine):
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND, 'RISC-V AND feature', d)
-        elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
+        elif isinstance(t, int) and _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
             prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
-        elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
+        elif isinstance(t, int) and _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
             prop_desc = '<application-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         else:
             prop_desc = '<unknown type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
@@ -336,7 +353,7 @@ def describe_note_gnu_properties(properties, machine):
     return '\n        '.join(descriptions)
 
 #-------------------------------------------------------------------------------
-_unknown = '<unknown>'
+_unknown: str = '<unknown>'
 
 
 _DESCR_EI_CLASS = dict(
@@ -686,7 +703,7 @@ _DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND = (
     (2, 'ZICFISS'),
 )
 
-def _reverse_dict(d, low_priority=()):
+def _reverse_dict(d: Mapping[_K, _V], low_priority: TContainer[_K] = ()) -> dict[_V, _K]:
     """
     This is a tiny helper function to "reverse" the keys/values of a dictionary
     provided in the first argument, i.e. {k: v} becomes {v: k}.
@@ -695,7 +712,7 @@ def _reverse_dict(d, low_priority=()):
     the case of conflicting values - if a value is present in this list, it will
     not override any other entries of the same value.
     """
-    out = {}
+    out: dict[_V, _K] = {}
     for k, v in d.items():
         if v in out and k in low_priority:
             continue
@@ -770,7 +787,7 @@ _DESCR_ATTR_TAG_ARM = dict(
     TAG_MPEXTENSION_USE_OLD='Tag_MPextension_use_old: ',
 )
 
-_DESCR_ATTR_VAL_ARM = [
+_DESCR_ATTR_VAL_ARM: Final = (
     None, #1
     None, #2
     None, #3
@@ -1018,7 +1035,7 @@ _DESCR_ATTR_VAL_ARM = [
         0: 'Not Allowed',
         1: 'Allowed',
     },
-]
+)
 
 _DESCR_ATTR_TAG_RISCV = dict(
     TAG_FILE='File Attributes',
@@ -1034,7 +1051,7 @@ _DESCR_ATTR_TAG_RISCV = dict(
     TAG_X3_REG_USAGE='Tag_RISCV_x3_reg_usage: ',
 )
 
-_DESCR_ATTR_VAL_RISCV = [
+_DESCR_ATTR_VAL_RISCV: Final = (
     None, #1
     None, #2
     None, #3
@@ -1062,4 +1079,4 @@ _DESCR_ATTR_VAL_RISCV = [
         2: 'This object uses x3 as the shadow stack pointer.',
         3: 'This object uses X3 as a temporary register.',
     },
-]
+)
