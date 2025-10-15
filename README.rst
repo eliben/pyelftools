@@ -31,7 +31,7 @@ historic versions from the *Downloads* tab on the `pyelftools project page
 <https://github.com/eliben/pyelftools>`_ (by going to *Tags*). Then, you can
 install from source, as usual::
 
-    > python setup.py install
+    > python -m pip install .
 
 Since **pyelftools** is a work in progress, it's recommended to have the most
 recent version of the code. This can be done by downloading the `master zip
