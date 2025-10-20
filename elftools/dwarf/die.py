@@ -6,14 +6,22 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple
+from __future__ import annotations
+
 import os
+from typing import IO, TYPE_CHECKING, Any, NamedTuple
 
 from ..common.exceptions import DWARFError, ELFParseError
 from ..common.utils import bytes2str, struct_parse
 from .enums import DW_FORM_raw2name
 from .dwarf_util import _resolve_via_offset_table, _get_base_offset
 from ..construct import ConstructError
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from .compileunit import CompileUnit
+    from .typeunit import TypeUnit
 
 
 # AttributeValue - describes an attribute value in the DIE:
@@ -40,8 +48,13 @@ from ..construct import ConstructError
 #   If the form of the attribute is DW_FORM_indirect, the form will contain
 #   the resolved form, and this will contain the length of the indirection chain.
 #   0 means no indirection.
-AttributeValue = namedtuple(
-    'AttributeValue', 'name form value raw_value offset indirection_length')
+class AttributeValue(NamedTuple):
+    name: str
+    form: str
+    value: Any
+    raw_value: int
+    offset: int
+    indirection_length: int
 
 
 class DIE:
@@ -73,7 +86,7 @@ class DIE:
 
         See also the public methods.
     """
-    def __init__(self, cu, stream, offset):
+    def __init__(self, cu: CompileUnit | TypeUnit, stream: IO[bytes], offset: int) -> None:
         """ cu:
                 CompileUnit object this DIE belongs to. Used to obtain context
                 information (structs, abbrev table, etc.)
@@ -86,24 +99,24 @@ class DIE:
         self.stream = stream
         self.offset = offset
 
-        self.attributes = {}
-        self.tag = None
-        self.has_children = None
-        self.abbrev_code = None
+        self.attributes: dict[str, Any] = {}
+        self.tag: str | int | None = None
+        self.has_children: bool | None = None
+        self.abbrev_code: int | None = None
         self.size = 0
         # Null DIE terminator. It can be used to obtain offset range occupied
         # by this DIE including its whole subtree.
-        self._terminator = None
-        self._parent = None
+        self._terminator: DIE | None = None
+        self._parent: DIE | None = None
 
         self._parse_DIE()
 
-    def is_null(self):
+    def is_null(self) -> bool:
         """ Is this a null entry?
         """
         return self.tag is None
 
-    def get_DIE_from_attribute(self, name):
+    def get_DIE_from_attribute(self, name: str) -> DIE:
         """ Return the DIE referenced by the named attribute of this DIE.
             The attribute must be in the reference attribute class.
 
@@ -127,7 +140,7 @@ class DIE:
         else:
             raise DWARFError('%s is not a reference class form attribute' % attr)
 
-    def get_parent(self):
+    def get_parent(self) -> DIE | None:
         """ Return the parent DIE of this DIE, or None if the DIE has no
             parent (i.e. is a top-level DIE).
         """
@@ -135,7 +148,7 @@ class DIE:
             self._search_ancestor_offspring()
         return self._parent
 
-    def get_full_path(self):
+    def get_full_path(self) -> str:
         """ Return the full path filename for the DIE.
 
             The filename is the join of 'DW_AT_comp_dir' and 'DW_AT_name',
@@ -149,12 +162,12 @@ class DIE:
         fname = bytes2str(fname_attr.value) if fname_attr else ''
         return os.path.join(comp_dir, fname)
 
-    def iter_children(self):
+    def iter_children(self) -> Iterator[DIE]:
         """ Iterates all children of this DIE
         """
         return self.cu.iter_DIE_children(self)
 
-    def iter_siblings(self):
+    def iter_siblings(self) -> Iterator[DIE]:
         """ Yield all siblings of this DIE
         """
         parent = self.get_parent()
@@ -169,12 +182,12 @@ class DIE:
     # interesting to consumers
     #
 
-    def set_parent(self, die):
+    def set_parent(self, die: DIE) -> None:
         self._parent = die
 
     #------ PRIVATE ------#
 
-    def _search_ancestor_offspring(self):
+    def _search_ancestor_offspring(self) -> None:
         """ Search our ancestors identifying their offspring to find our parent.
 
             DIEs are stored as a flattened tree.  The top DIE is the ancestor
@@ -189,7 +202,7 @@ class DIE:
         # called for siblings, it is more efficient if siblings references are
         # provided and no worse than a single walk if they are missing, while
         # stopping iteration early could result in O(n^2) walks.
-        search = self.cu.get_top_DIE()
+        search: DIE = self.cu.get_top_DIE()
         while search.offset < self.offset:
             prev = search
             for child in search.iter_children():
@@ -198,7 +211,7 @@ class DIE:
                     prev = child
 
             # We also need to check the offset of the terminator DIE
-            if search.has_children and search._terminator.offset <= self.offset:
+            if search.has_children and search._terminator and search._terminator.offset <= self.offset:
                     prev = search._terminator
 
             # If we didn't find a closer parent, give up, don't loop.
@@ -210,17 +223,17 @@ class DIE:
 
             search = prev
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = 'DIE %s, size=%s, has_children=%s\n' % (
             self.tag, self.size, self.has_children)
         for attrname, attrval in self.attributes.items():
             s += '    |%-18s:  %s\n' % (attrname, attrval)
         return s
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__repr__()
 
-    def _parse_DIE(self):
+    def _parse_DIE(self) -> None:
         """ Parses the DIE info from the section, based on the abbreviation
             table of the CU
         """
@@ -234,6 +247,7 @@ class DIE:
             # that manipulate the stream by reading data from it.
             stream.seek(self.offset)
             self.abbrev_code = structs.the_Dwarf_uleb128.parse_stream(stream)
+            assert self.abbrev_code is not None
 
             # This may be a null entry
             if self.abbrev_code == 0:
@@ -261,7 +275,9 @@ class DIE:
                     (form, raw_value, indirection_length) = self._resolve_indirect()
                     value = self._translate_attr_value(form, raw_value)
                 else:
-                    raw_value = structs.Dwarf_dw_form[form].parse_stream(stream)
+                    dw_form = structs.Dwarf_dw_form[form]
+                    assert dw_form is not None
+                    raw_value = dw_form.parse_stream(stream)
                     value = self._translate_attr_value(form, raw_value)
                 self.attributes[name] = AttributeValue(
                     name=name,
@@ -275,20 +291,22 @@ class DIE:
         except ConstructError as e:
             raise ELFParseError(str(e))
 
-    def _resolve_indirect(self):
+    def _resolve_indirect(self) -> tuple[str, int, int]:
         # Supports arbitrary indirection nesting (the standard doesn't prohibit that).
         # Expects the stream to be at the real form.
         # Returns (form, raw_value, length).
         structs = self.cu.structs
         length = 1
-        real_form_code = struct_parse(structs.the_Dwarf_uleb128, self.stream) # Numeric form code
+        real_form_code: int = struct_parse(structs.the_Dwarf_uleb128, self.stream) # Numeric form code
         while True:
             try:
                 real_form = DW_FORM_raw2name[real_form_code] # Form name or exception if bogus code
             except KeyError:
                 raise DWARFError('Found DW_FORM_indirect with unknown real form 0x%x' % real_form_code)
 
-            raw_value = struct_parse(structs.Dwarf_dw_form[real_form], self.stream)
+            dw_form = structs.Dwarf_dw_form[real_form]
+            assert dw_form is not None
+            raw_value: int = struct_parse(dw_form, self.stream)
 
             if real_form != 'DW_FORM_indirect': # Happy path: one level of indirection
                 return (real_form, raw_value, length)
@@ -298,7 +316,7 @@ class DIE:
                 # And continue parsing
             # No explicit infinite loop guard because the stream will end eventually
 
-    def _translate_attr_value(self, form, raw_value):
+    def _translate_attr_value(self, form: str, raw_value: Any) -> Any:
         """ Translate a raw attr value according to the form
         """
         # Indirect forms can only be parsed if the top DIE of this CU has already been parsed
@@ -320,18 +338,21 @@ class DIE:
         elif form in ('DW_FORM_addrx', 'DW_FORM_addrx1', 'DW_FORM_addrx2', 'DW_FORM_addrx3', 'DW_FORM_addrx4') and translate_indirect:
             return self.cu.dwarfinfo.get_addr(self.cu, raw_value)
         elif form in ('DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4') and translate_indirect:
+            assert self.dwarfinfo.debug_str_offsets_sec is not None
             stream = self.dwarfinfo.debug_str_offsets_sec.stream
             base_offset = _get_base_offset(self.cu, 'DW_AT_str_offsets_base')
             offset_size = 4 if self.cu.structs.dwarf_format == 32 else 8
             str_offset = struct_parse(self.cu.structs.the_Dwarf_offset, stream, base_offset + raw_value*offset_size)
             return self.dwarfinfo.get_string_from_table(str_offset)
         elif form == 'DW_FORM_loclistx' and translate_indirect:
+            assert self.dwarfinfo.debug_loclists_sec is not None
             return _resolve_via_offset_table(self.dwarfinfo.debug_loclists_sec.stream, self.cu, raw_value, 'DW_AT_loclists_base')
         elif form == 'DW_FORM_rnglistx' and translate_indirect:
+            assert self.dwarfinfo.debug_rnglists_sec is not None
             return _resolve_via_offset_table(self.dwarfinfo.debug_rnglists_sec.stream, self.cu, raw_value, 'DW_AT_rnglists_base')
         return raw_value
 
-    def _translate_indirect_attributes(self):
+    def _translate_indirect_attributes(self) -> None:
         """ This is a hook to translate the DW_FORM_...x values in the top DIE
             once the top DIE is parsed to the end. They can't be translated
             while the top DIE is being parsed, because they implicitly make a

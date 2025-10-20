@@ -6,18 +6,33 @@
 # Dorothy Chen (dorothchen@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import namedtuple
+from __future__ import annotations
+
+from typing import IO, TYPE_CHECKING, Callable, NamedTuple
+
 from ..common.utils import struct_parse
 from bisect import bisect_right
 import math
+
+if TYPE_CHECKING:
+    from ..construct.core import Construct
+    from .structs import DWARFStructs
+
 
 # An entry in the aranges table;
 # begin_addr: The beginning address in the CU
 # length: The length of the address range in this entry
 # info_offset: The CU's offset into .debug_info
 # see 6.1.2 in DWARF4 docs for explanation of the remaining fields
-ARangeEntry = namedtuple('ARangeEntry',
-    'begin_addr length info_offset unit_length version address_size segment_size')
+class ARangeEntry(NamedTuple):
+    begin_addr: int
+    length: int
+    info_offset: int
+    unit_length: int
+    version: int
+    address_size: int
+    segment_size: int
+
 
 class ARanges:
     """ ARanges table in DWARF
@@ -28,7 +43,7 @@ class ARanges:
         structs:
             A DWARFStructs instance for parsing the data
     """
-    def __init__(self, stream, size, structs):
+    def __init__(self, stream: IO[bytes], size: int, structs: DWARFStructs) -> None:
         self.stream = stream
         self.size = size
         self.structs = structs
@@ -43,7 +58,7 @@ class ARanges:
         self.keys = [entry.begin_addr for entry in self.entries]
 
 
-    def cu_offset_at_addr(self, addr):
+    def cu_offset_at_addr(self, addr: int) -> int | None:
         """ Given an address, get the offset of the CU it belongs to, where
             'offset' refers to the offset in the .debug_info section.
         """
@@ -55,7 +70,7 @@ class ARanges:
 
 
     #------ PRIVATE ------#
-    def _get_entries(self, need_empty=False):
+    def _get_entries(self, need_empty: bool = False) -> list[ARangeEntry]:
         """ Populate self.entries with ARangeEntry tuples for each range of addresses
 
             Terminating null entries of CU blocks are not returned, unless
@@ -64,7 +79,7 @@ class ARanges:
             set to 0.
         """
         self.stream.seek(0)
-        entries = []
+        entries: list[ARangeEntry] = []
         offset = 0
 
         # one loop == one "set" == one CU
@@ -76,7 +91,7 @@ class ARanges:
             # No segmentation
             if aranges_header["segment_size"] == 0:
                 # pad to nearest multiple of tuple size
-                tuple_size = aranges_header["address_size"] * 2
+                tuple_size: int = aranges_header["address_size"] * 2
                 fp = self.stream.tell()
                 seek_to = int(math.ceil(fp/float(tuple_size)) * tuple_size)
                 self.stream.seek(seek_to)
@@ -87,8 +102,8 @@ class ARanges:
                 got_entries = False
 
                 # entries in this set/CU
-                addr = struct_parse(addr_size('addr'), self.stream)
-                length = struct_parse(addr_size('length'), self.stream)
+                addr: int = struct_parse(addr_size('addr'), self.stream)
+                length: int = struct_parse(addr_size('length'), self.stream)
                 while addr != 0 or length != 0 or (not got_entries and need_empty):
                     # 'begin_addr length info_offset version address_size segment_size'
                     entries.append(
@@ -114,7 +129,7 @@ class ARanges:
 
         return entries
 
-    def _get_addr_size_struct(self, addr_header_value):
+    def _get_addr_size_struct(self, addr_header_value: int) -> Callable[[str], Construct]:
         """ Given this set's header value (int) for the address size,
             get the Construct representation of that size
         """

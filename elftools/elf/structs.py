@@ -7,6 +7,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
@@ -17,6 +21,12 @@ from ..construct import (
 from ..common.construct_utils import ULEB128
 from ..common.utils import roundup
 from .enums import *
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ..construct.core import FormatField
+    from ..construct.lib.container import Container
 
 
 class ELFStructs:
@@ -41,23 +51,40 @@ class ELFStructs:
             Elf_Rel, Elf_Rela:
                 Entries in relocation sections
     """
-    def __init__(self, little_endian=True, elfclass=32):
+    if TYPE_CHECKING:
+        Elf_byte: Callable[[str], FormatField[int]]
+        Elf_half: Callable[[str], FormatField[int]]
+        Elf_word: Callable[[str], FormatField[int]]
+        Elf_word64: Callable[[str], FormatField[int]]
+        Elf_addr: Callable[[str], FormatField[int]]
+        Elf_offset: Callable[[str], FormatField[int]]
+        Elf_sword: Callable[[str], FormatField[int]]
+        Elf_sxword: Callable[[str], FormatField[int]]
+        Elf_xsword: Callable[[str], FormatField[int]]
+        Elf_Ehdr: Struct
+        Elf_Phdr: Struct
+        Elf_Shdr: Struct
+        Elf_Sym: Struct
+        Elf_Rel: Struct
+        Elf_Rela: Struct
+
+    def __init__(self, little_endian: bool = True, elfclass: int = 32) -> None:
         assert elfclass == 32 or elfclass == 64
         self.little_endian = little_endian
         self.elfclass = elfclass
-        self.e_type = None
-        self.e_machine = None
-        self.e_ident_osabi = None
+        self.e_type: str | None = None  # ENUM_E_TYPE
+        self.e_machine: str | None = None  # ENUM_E_MACHINE
+        self.e_ident_osabi: str | None = None  # ENUM_E_VERSION
 
-    def __getstate__(self):
+    def __getstate__(self) -> tuple[bool, int, str | None, str | None, str | None]:
         return self.little_endian, self.elfclass, self.e_type, self.e_machine, self.e_ident_osabi
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: tuple[bool, int, str | None, str | None, str | None]) -> None:
         self.little_endian, self.elfclass, e_type, e_machine, e_osabi = state
         self.create_basic_structs()
         self.create_advanced_structs(e_type, e_machine, e_osabi)
 
-    def create_basic_structs(self):
+    def create_basic_structs(self) -> None:
         """ Create word-size related structs and ehdr struct needed for
             initial determining of ELF type.
         """
@@ -85,7 +112,7 @@ class ELFStructs:
         self._create_leb128()
         self._create_ntbs()
 
-    def create_advanced_structs(self, e_type=None, e_machine=None, e_ident_osabi=None):
+    def create_advanced_structs(self, e_type: str | None = None, e_machine: str | None = None, e_ident_osabi: str | None = None) -> None:
         """ Create all ELF structs except the ehdr. They may possibly depend
             on provided e_type and/or e_machine parsed from ehdr.
         """
@@ -116,7 +143,7 @@ class ELFStructs:
 
     #-------------------------------- PRIVATE --------------------------------#
 
-    def _create_ehdr(self):
+    def _create_ehdr(self) -> None:
         self.Elf_Ehdr = Struct('Elf_Ehdr',
             Struct('e_ident',
                 Array(4, self.Elf_byte('EI_MAG')),
@@ -142,13 +169,13 @@ class ELFStructs:
             self.Elf_half('e_shstrndx'),
         )
 
-    def _create_leb128(self):
+    def _create_leb128(self) -> None:
         self.Elf_uleb128 = ULEB128
 
-    def _create_ntbs(self):
+    def _create_ntbs(self) -> None:
         self.Elf_ntbs = CString
 
-    def _create_phdr(self):
+    def _create_phdr(self) -> None:
         p_type_dict = ENUM_P_TYPE_BASE
         if self.e_machine == 'EM_ARM':
             p_type_dict = ENUM_P_TYPE_ARM
@@ -182,7 +209,7 @@ class ELFStructs:
                 self.Elf_xword('p_align'),
             )
 
-    def _create_shdr(self):
+    def _create_shdr(self) -> None:
         """Section header parsing.
 
         Depends on e_machine because of machine-specific values in sh_type.
@@ -212,7 +239,7 @@ class ELFStructs:
             self.Elf_xword('sh_entsize'),
         )
 
-    def _create_chdr(self):
+    def _create_chdr(self) -> None:
         # Structure of compressed sections header. It is documented in Oracle
         # "Linker and Libraries Guide", Part IV ELF Application Binary
         # Interface, Chapter 13 Object File Format, Section Compression:
@@ -226,7 +253,7 @@ class ELFStructs:
             fields.insert(1, self.Elf_word('ch_reserved'))
         self.Elf_Chdr = Struct('Elf_Chdr', *fields)
 
-    def _create_rel(self):
+    def _create_rel(self) -> None:
         # r_info is also taken apart into r_info_sym and r_info_type. This is
         # done in Value to avoid endianity issues while parsing.
         if self.elfclass == 32:
@@ -285,9 +312,10 @@ class ELFStructs:
         # For us, this is the same as self.Elf_addr (or self.Elf_xword).
         self.Elf_Relr = Struct('Elf_Relr', self.Elf_addr('r_offset'))
 
-    def _create_dyn(self):
+    def _create_dyn(self) -> None:
         d_tag_dict = dict(ENUM_D_TAG_COMMON)
         if self.e_machine in ENUMMAP_EXTRA_D_TAG_MACHINE:
+            assert self.e_machine is not None
             d_tag_dict.update(ENUMMAP_EXTRA_D_TAG_MACHINE[self.e_machine])
         elif self.e_ident_osabi == 'ELFOSABI_SOLARIS':
             d_tag_dict.update(ENUM_D_TAG_SOLARIS)
@@ -298,7 +326,7 @@ class ELFStructs:
             Value('d_ptr', lambda ctx: ctx['d_val']),
         )
 
-    def _create_sym(self):
+    def _create_sym(self) -> None:
         # st_info is hierarchical. To access the type, use
         # container['st_info']['type']
         st_info_struct = BitStruct('st_info',
@@ -331,13 +359,13 @@ class ELFStructs:
                 self.Elf_xword('st_size'),
             )
 
-    def _create_sunw_syminfo(self):
+    def _create_sunw_syminfo(self) -> None:
         self.Elf_Sunw_Syminfo = Struct('Elf_Sunw_Syminfo',
             Enum(self.Elf_half('si_boundto'), **ENUM_SUNW_SYMINFO_BOUNDTO),
             self.Elf_half('si_flags'),
         )
 
-    def _create_gnu_verneed(self):
+    def _create_gnu_verneed(self) -> None:
         # Structure of "version needed" entries is documented in
         # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Verneed = Struct('Elf_Verneed',
@@ -355,7 +383,7 @@ class ELFStructs:
             self.Elf_word('vna_next'),
         )
 
-    def _create_gnu_verdef(self):
+    def _create_gnu_verdef(self) -> None:
         # Structure of "version definition" entries are documented in
         # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Verdef = Struct('Elf_Verdef',
@@ -372,14 +400,14 @@ class ELFStructs:
             self.Elf_word('vda_next'),
         )
 
-    def _create_gnu_versym(self):
+    def _create_gnu_versym(self) -> None:
         # Structure of "version symbol" entries are documented in
         # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Versym = Struct('Elf_Versym',
             Enum(self.Elf_half('ndx'), **ENUM_VERSYM),
         )
 
-    def _create_gnu_abi(self):
+    def _create_gnu_abi(self) -> None:
         # Structure of GNU ABI notes is documented in
         # https://code.woboq.org/userspace/glibc/csu/abi-note.S.html
         self.Elf_abi = Struct('Elf_abi',
@@ -389,20 +417,20 @@ class ELFStructs:
             self.Elf_word('abi_tiny'),
         )
 
-    def _create_gnu_debugaltlink(self):
+    def _create_gnu_debugaltlink(self) -> None:
         self.Elf_debugaltlink = Struct('Elf_debugaltlink',
             CString("sup_filename"),
             String("sup_checksum", length=20))
 
-    def _create_gnu_property(self):
+    def _create_gnu_property(self) -> None:
         # Structure of GNU property notes is documented in
         # https://github.com/hjl-tools/linux-abi/wiki/linux-abi-draft.pdf
-        def roundup_padding(ctx):
+        def roundup_padding(ctx: Container) -> int:
             if self.elfclass == 32:
                 return roundup(ctx.pr_datasz, 2) - ctx.pr_datasz
             return roundup(ctx.pr_datasz, 3) - ctx.pr_datasz
 
-        def classify_pr_data(ctx):
+        def classify_pr_data(ctx: Container) -> tuple[str, int, int] | None:
             if type(ctx.pr_type) is not str:
                 return None
             if ctx.pr_type.startswith('GNU_PROPERTY_X86_'):
@@ -428,7 +456,7 @@ class ELFStructs:
             Padding(roundup_padding)
         )
 
-    def _create_note(self, e_type=None):
+    def _create_note(self, e_type: str | None = None) -> None:
         # Structure of "PT_NOTE" section
 
         self.Elf_ugid = self.Elf_half if self.elfclass == 32 and self.e_machine in {
@@ -503,7 +531,7 @@ class ELFStructs:
                                   Array(lambda ctx: ctx.num_map_entries,
                                         CString('filename')))
 
-    def _create_stabs(self):
+    def _create_stabs(self) -> None:
         # Structure of one stabs entry, see binutils/bfd/stabs.c
         # Names taken from https://sourceware.org/gdb/current/onlinedocs/stabs.html#Overview
         self.Elf_Stabs = Struct('Elf_Stabs',
@@ -514,7 +542,7 @@ class ELFStructs:
             self.Elf_word('n_value'),
         )
 
-    def _create_attributes_subsection(self):
+    def _create_attributes_subsection(self) -> None:
         # Structure of a build attributes subsection header. A subsection is
         # either public to all tools that process the ELF file or private to
         # the vendor's tools.
@@ -524,21 +552,21 @@ class ELFStructs:
                                                                encoding='utf-8')
         )
 
-    def _create_arm_attributes(self):
+    def _create_arm_attributes(self) -> None:
         # Structure of an ARM build attribute tag.
         self.Elf_Arm_Attribute_Tag = Struct('Elf_Arm_Attribute_Tag',
                                              Enum(self.Elf_uleb128('tag'),
                                                   **ENUM_ATTR_TAG_ARM)
         )
 
-    def _create_riscv_attributes(self):
+    def _create_riscv_attributes(self) -> None:
         # Structure of a RISC-V build attribute tag.
         self.Elf_RiscV_Attribute_Tag = Struct('Elf_RiscV_Attribute_Tag',
                                         Enum(self.Elf_uleb128('tag'),
                                              **ENUM_ATTR_TAG_RISCV)
         )
 
-    def _create_elf_hash(self):
+    def _create_elf_hash(self) -> None:
         # Structure of the old SYSV-style hash table header. It is documented
         # in the Oracle "Linker and Libraries Guide", Part IV ELF Application
         # Binary Interface, Chapter 14 Object File Format, Section Hash Table
@@ -551,7 +579,7 @@ class ELFStructs:
                                Array(lambda ctx: ctx['nbuckets'], self.Elf_word('buckets')),
                                Array(lambda ctx: ctx['nchains'], self.Elf_word('chains')))
 
-    def _create_gnu_hash(self):
+    def _create_gnu_hash(self) -> None:
         # Structure of the GNU-style hash table header. Documentation for this
         # table is mostly in the GLIBC source code, a good explanation of the
         # format can be found in this blog post:
@@ -564,7 +592,7 @@ class ELFStructs:
                                Array(lambda ctx: ctx['bloom_size'], self.Elf_xword('bloom')),
                                Array(lambda ctx: ctx['nbuckets'], self.Elf_word('buckets')))
 
-    def _create_gnu_debuglink(self):
+    def _create_gnu_debuglink(self) -> None:
         self.Gnu_debuglink = Struct('Gnu_debuglink',
             CString("filename"),
             Padding(lambda ctx: 3 - len(ctx.filename) % 4, strict=True),

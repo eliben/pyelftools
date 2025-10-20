@@ -6,23 +6,56 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 import os
-from collections import namedtuple
+from typing import IO, TYPE_CHECKING, NamedTuple
+from typing import Union as TUnion
+
 from ..common.exceptions import DWARFError
 from ..common.utils import struct_parse
 from .dwarf_util import _iter_CUs_in_section
 
-LocationExpr = namedtuple('LocationExpr', 'loc_expr')
-LocationEntry = namedtuple('LocationEntry', 'entry_offset entry_length begin_offset end_offset loc_expr is_absolute')
-BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset entry_length base_address')
-LocationViewPair = namedtuple('LocationViewPair', 'entry_offset begin end')
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator, Mapping
 
-def _translate_startx_length(e, cu):
-    start_offset = cu.dwarfinfo.get_addr(cu, e.start_index)
+    from ..construct.lib.container import Container
+    from .compileunit import CompileUnit
+    from .die import DIE, AttributeValue
+    from .dwarfinfo import DWARFInfo
+    from .structs import DWARFStructs
+    from .typeunit import TypeUnit
+
+
+class LocationExpr(NamedTuple):
+    loc_expr: list[int]
+
+class LocationEntry(NamedTuple):
+    entry_offset: int
+    entry_length: int
+    begin_offset: int
+    end_offset: int
+    loc_expr: list[int]
+    is_absolute: bool
+
+class BaseAddressEntry(NamedTuple):
+    entry_offset: int
+    entry_length: int
+    base_address: int
+
+class LocationViewPair(NamedTuple):
+    entry_offset: int
+    begin: int
+    end: int
+
+_Location = TUnion[LocationExpr, LocationEntry, BaseAddressEntry, LocationViewPair]
+
+def _translate_startx_length(e: Container, cu: CompileUnit | TypeUnit) -> LocationEntry:
+    start_offset: int = cu.dwarfinfo.get_addr(cu, e.start_index)
     return LocationEntry(e.entry_offset, e.entry_length, start_offset, start_offset + e.length, e.loc_expr, True)
 
 # Maps parsed entries to the tuples above; LocationViewPair is mapped elsewhere
-entry_translate = {
+entry_translate: dict[str, Callable[[Container, CompileUnit | TypeUnit], _Location]] = {
     'DW_LLE_base_address'    : lambda e, cu: BaseAddressEntry(e.entry_offset, e.entry_length, e.address),
     'DW_LLE_offset_pair'     : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, e.start_offset, e.end_offset, e.loc_expr, False),
     'DW_LLE_start_length'    : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, e.start_address, e.start_address + e.length, e.loc_expr, True),
@@ -37,11 +70,11 @@ class LocationListsPair:
     """For those binaries that contain both a debug_loc and a debug_loclists section,
     it holds a LocationLists object for both and forwards API calls to the right one.
     """
-    def __init__(self, streamv4, streamv5, structs, dwarfinfo=None):
+    def __init__(self, streamv4: IO[bytes], streamv5: IO[bytes], structs: DWARFStructs, dwarfinfo: DWARFInfo | None = None) -> None:
         self._loc = LocationLists(streamv4, structs, 4, dwarfinfo)
         self._loclists = LocationLists(streamv5, structs, 5, dwarfinfo)
 
-    def get_location_list_at_offset(self, offset, die=None):
+    def get_location_list_at_offset(self, offset: int, die: DIE | None = None) -> list[_Location]:
         """See LocationLists.get_location_list_at_offset().
         """
         if die is None:
@@ -49,13 +82,13 @@ class LocationListsPair:
         section = self._loclists if die.cu.header.version >= 5 else self._loc
         return section.get_location_list_at_offset(offset, die)
 
-    def iter_location_lists(self):
+    def iter_location_lists(self) -> Iterator[BaseAddressEntry | LocationEntry]:
         """Tricky proposition, since the structure of loc and loclists
         is not identical. A realistic readelf implementation needs to be aware of both
         """
         raise DWARFError("Iterating through two sections is not supported")
 
-    def iter_CUs(self):
+    def iter_CUs(self) -> Iterator[CompileUnit]:
         """See LocationLists.iter_CUs()
 
         There are no CUs in DWARFv4 sections.
@@ -80,24 +113,26 @@ class LocationLists:
         that contain references to other sections (e. g. DW_LLE_startx_endx),
         and only for location list enumeration.
     """
-    def __init__(self, stream, structs, version=4, dwarfinfo=None):
+    def __init__(self, stream: IO[bytes], structs: DWARFStructs, version: int = 4, dwarfinfo: DWARFInfo | None = None) -> None:
         self.stream = stream
         self.structs = structs
         self.dwarfinfo = dwarfinfo
         self.version = version
-        self._max_addr = 2 ** (self.structs.address_size * 8) - 1
+        self._max_addr: int = 2 ** (self.structs.address_size * 8) - 1
 
-    def get_location_list_at_offset(self, offset, die=None):
+    def get_location_list_at_offset(self, offset: int, die: DIE | None = None) -> list[_Location]:
         """ Get a location list at the given offset in the section.
         Passing the die is only neccessary in DWARF5+, for decoding
         location entry encodings that contain references to other sections.
         """
-        if self.version >= 5 and die is None:
-            raise DWARFError("For this binary, \"die\" needs to be provided")
         self.stream.seek(offset, os.SEEK_SET)
-        return self._parse_location_list_from_stream_v5(die.cu) if self.version >= 5 else self._parse_location_list_from_stream()
+        if self.version >= 5:
+            if die is None:
+                raise DWARFError("For this binary, \"die\" needs to be provided")
+            return self._parse_location_list_from_stream_v5(die.cu)
+        return self._parse_location_list_from_stream()
 
-    def iter_location_lists(self):
+    def iter_location_lists(self) -> Iterator[list[_Location]]:
         """ Iterates through location lists and view pairs. Returns lists of
         LocationEntry, BaseAddressEntry, and LocationViewPair objects.
         """
@@ -124,11 +159,12 @@ class LocationLists:
 
         # Need to provide support for DW_AT_GNU_locviews. They are interspersed in
         # the locations section, no way to tell where short of checking all DIEs
-        all_offsets = set() # Set of offsets where either a locview pair set can be found, or a view-less loclist
+        all_offsets_ = set() # Set of offsets where either a locview pair set can be found, or a view-less loclist
         locviews = dict() # Map of locview offset to the respective loclist offset
         cu_map = dict() # Map of loclist offsets to CUs
+        assert self.dwarfinfo is not None
         for cu in self.dwarfinfo.iter_CUs():
-            cu_ver = cu['version']
+            cu_ver: int = cu['version']
             if (cu_ver >= 5) == ver5:
                 for die in cu.iter_DIEs():
                     # A combination of location and locviews means there is a location list
@@ -136,11 +172,11 @@ class LocationLists:
                     if 'DW_AT_GNU_locviews' in die.attributes:
                         assert('DW_AT_location' in die.attributes and
                             LocationParser._attribute_has_loc_list(die.attributes['DW_AT_location'], cu_ver))
-                        views_offset = die.attributes['DW_AT_GNU_locviews'].value
-                        list_offset = die.attributes['DW_AT_location'].value
+                        views_offset: int = die.attributes['DW_AT_GNU_locviews'].value
+                        list_offset: int = die.attributes['DW_AT_location'].value
                         locviews[views_offset] = list_offset
                         cu_map[list_offset] = cu
-                        all_offsets.add(views_offset)
+                        all_offsets_.add(views_offset)
 
                     # Scan other attributes for location lists
                     for key in die.attributes:
@@ -149,10 +185,9 @@ class LocationLists:
                             LocationParser.attribute_has_location(attr, cu_ver) and
                             LocationParser._attribute_has_loc_list(attr, cu_ver)):
                             list_offset = attr.value
-                            all_offsets.add(list_offset)
+                            all_offsets_.add(list_offset)
                             cu_map[list_offset] = cu
-        all_offsets = list(all_offsets)
-        all_offsets.sort()
+        all_offsets = sorted(all_offsets_)
 
         if ver5:
             # Loclists section is organized as an array of CUs, each length prefixed.
@@ -167,7 +202,7 @@ class LocationLists:
                 # We don't have a binary for the former yet. On an off chance that we one day might,
                 # let's parse the header anyway.
 
-                cu_end_offset = cu_header.offset_after_length + cu_header.unit_length
+                cu_end_offset: int = cu_header.offset_after_length + cu_header.unit_length
                 # Unit_length includes the header but doesn't include the length
 
                 while stream.tell() < cu_end_offset:
@@ -191,24 +226,25 @@ class LocationLists:
                     entries = self._parse_location_list_from_stream()
                     yield locview_pairs + entries
 
-    def iter_CUs(self):
+    def iter_CUs(self) -> Iterator[CompileUnit]:
         """For DWARF5 returns an array of objects, where each one has an array of offsets
         """
         if self.version < 5:
             raise DWARFError("CU iteration in loclists is not supported with DWARF<5")
 
+        assert self.dwarfinfo is not None
         structs = next(self.dwarfinfo.iter_CUs()).structs # Just pick one
         return _iter_CUs_in_section(self.stream, structs, structs.Dwarf_loclists_CU_header)
 
     #------ PRIVATE ------#
 
-    def _parse_location_list_from_stream(self):
-        lst = []
+    def _parse_location_list_from_stream(self) -> list[_Location]:
+        lst: list[_Location] = []
         while True:
             entry_offset = self.stream.tell()
-            begin_offset = struct_parse(
+            begin_offset: int = struct_parse(
                 self.structs.the_Dwarf_target_addr, self.stream)
-            end_offset = struct_parse(
+            end_offset: int = struct_parse(
                 self.structs.the_Dwarf_target_addr, self.stream)
             if begin_offset == 0 and end_offset == 0:
                 # End of list - we're done.
@@ -219,9 +255,9 @@ class LocationLists:
                 lst.append(BaseAddressEntry(entry_offset=entry_offset, entry_length=entry_length, base_address=end_offset))
             else:
                 # Location list entry
-                expr_len = struct_parse(
+                expr_len: int = struct_parse(
                     self.structs.the_Dwarf_uint16, self.stream)
-                loc_expr = [struct_parse(self.structs.the_Dwarf_uint8,
+                loc_expr: list[int] = [struct_parse(self.structs.the_Dwarf_uint8,
                                          self.stream)
                                 for i in range(expr_len)]
                 entry_length = self.stream.tell() - entry_offset
@@ -234,7 +270,7 @@ class LocationLists:
                     is_absolute = False))
         return lst
 
-    def _parse_location_list_from_stream_v5(self, cu=None):
+    def _parse_location_list_from_stream_v5(self, cu: CompileUnit | TypeUnit | None = None) -> list[_Location]:
         """ Returns an array with BaseAddressEntry and LocationEntry.
             No terminator entries.
 
@@ -242,15 +278,15 @@ class LocationLists:
             DWARFv5 debug_loclists one, and the target loclist
             contains indirect encodings.
         """
-        return [entry_translate[entry.entry_type](entry, cu)
+        return [entry_translate[entry.entry_type](entry, cu)  # type: ignore[arg-type]
             for entry
             in struct_parse(self.structs.Dwarf_loclists_entries, self.stream)]
 
     # From V5 style entries to a LocationEntry/BaseAddressEntry
-    def _translate_entry_v5(self, entry, die):
-        off = entry.entry_offset
-        len = entry.entry_end_offset - off
-        type = entry.entry_type
+    def _translate_entry_v5(self, entry: Container, die: DIE) -> _Location:
+        off: int = entry.entry_offset
+        len: int = entry.entry_end_offset - off
+        type: str = entry.entry_type
         if type == 'DW_LLE_base_address':
             return BaseAddressEntry(off, len, entry.address)
         elif type == 'DW_LLE_offset_pair':
@@ -269,10 +305,10 @@ class LocationLists:
             raise DWARFError(False, "Unknown DW_LLE code: %s" % (type,))
 
     # Locviews is the dict, mapping locview offsets to corresponding loclist offsets
-    def _parse_locview_pairs(self, locviews):
+    def _parse_locview_pairs(self, locviews: Mapping[int, int]) -> list[LocationViewPair]:
         stream = self.stream
-        list_offset = locviews.get(stream.tell(), None)
-        pairs = []
+        list_offset: int | None = locviews.get(stream.tell(), None)
+        pairs: list[LocationViewPair] = []
         if list_offset is not None:
             while stream.tell() < list_offset:
                 pair = struct_parse(self.structs.Dwarf_locview_pair, stream)
@@ -287,18 +323,18 @@ class LocationParser:
         location lists in the .debug_loc section (represented as a
         list).
     """
-    def __init__(self, location_lists):
+    def __init__(self, location_lists: LocationLists | LocationListsPair | None) -> None:
         self.location_lists = location_lists
 
     @staticmethod
-    def attribute_has_location(attr, dwarf_version):
+    def attribute_has_location(attr: AttributeValue, dwarf_version: int) -> bool:
         """ Checks if a DIE attribute contains location information.
         """
         return (LocationParser._attribute_is_loclistptr_class(attr) and
                 (LocationParser._attribute_has_loc_expr(attr, dwarf_version) or
                  LocationParser._attribute_has_loc_list(attr, dwarf_version)))
 
-    def parse_from_attribute(self, attr, dwarf_version, die = None):
+    def parse_from_attribute(self, attr: AttributeValue, dwarf_version: int, die: DIE | None = None) -> LocationExpr | list[_Location]:
         """ Parses a DIE attribute and returns either a LocationExpr or
             a list.
         """
@@ -306,25 +342,25 @@ class LocationParser:
             if self._attribute_has_loc_expr(attr, dwarf_version):
                 return LocationExpr(attr.value)
             elif self._attribute_has_loc_list(attr, dwarf_version):
+                assert self.location_lists is not None
                 return self.location_lists.get_location_list_at_offset(
                     attr.value, die)
                 # We don't yet know if the DIE context will be needed.
                 # We might get it without a full tree traversal using
                 # attr.offset as a key, but we assume a good DWARF5
                 # aware consumer would pass a DIE along.
-        else:
-            raise ValueError("Attribute does not have location information")
+        raise ValueError("Attribute does not have location information")
 
     #------ PRIVATE ------#
 
     @staticmethod
-    def _attribute_has_loc_expr(attr, dwarf_version):
+    def _attribute_has_loc_expr(attr: AttributeValue, dwarf_version: int) -> bool:
         return ((dwarf_version < 4 and attr.form.startswith('DW_FORM_block') and
             not attr.name == 'DW_AT_const_value') or
             attr.form == 'DW_FORM_exprloc')
 
     @staticmethod
-    def _attribute_has_loc_list(attr, dwarf_version):
+    def _attribute_has_loc_list(attr: AttributeValue, dwarf_version: int) -> bool:
         return (((dwarf_version < 4 and
                  attr.form in ('DW_FORM_data1', 'DW_FORM_data2', 'DW_FORM_data4', 'DW_FORM_data8') and
                  not attr.name == 'DW_AT_const_value') or
@@ -336,13 +372,13 @@ class LocationParser:
     # As for DW_AT_upper_bound/DW_AT_count, we've seen it in form DW_FORM_locexpr in a V5 binary. usually it's a constant,
     # but the constant sholdn't be misinterpreted as a loclist pointer.
     @staticmethod
-    def _attribute_is_constant(attr, dwarf_version):
+    def _attribute_is_constant(attr: AttributeValue, dwarf_version: int) -> bool:
         return (((dwarf_version >= 3 and attr.name == 'DW_AT_data_member_location') or
                  (attr.name in ('DW_AT_upper_bound', 'DW_AT_count'))) and
             attr.form in ('DW_FORM_data1', 'DW_FORM_data2', 'DW_FORM_data4', 'DW_FORM_data8', 'DW_FORM_sdata', 'DW_FORM_udata'))
 
     @staticmethod
-    def _attribute_is_loclistptr_class(attr):
+    def _attribute_is_loclistptr_class(attr: AttributeValue) -> bool:
         return (attr.name in ( 'DW_AT_location', 'DW_AT_string_length',
                                'DW_AT_const_value', 'DW_AT_return_addr',
                                'DW_AT_data_member_location',

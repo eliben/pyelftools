@@ -6,7 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 from collections import defaultdict
+from typing import TYPE_CHECKING, Any
 
 from .constants import *
 from .dwarf_expr import DWARFExprParser
@@ -14,13 +17,19 @@ from .die import DIE
 from ..common.utils import preserve_stream_pos, dwarf_assert, bytes2str
 from .callframe import instruction_name, CIE, FDE
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
 
-def set_global_machine_arch(machine_arch):
+    from .callframe import CallFrameInstruction, CFARule, CFIEntry, RegisterRule
+    from .die import AttributeValue
+    from .structs import DWARFStructs
+
+def set_global_machine_arch(machine_arch: str) -> None:
     global _MACHINE_ARCH
     _MACHINE_ARCH = machine_arch
 
 
-def describe_attr_value(attr, die, section_offset):
+def describe_attr_value(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     """ Given an attribute attr, return the textual representation of its
         value, suitable for tools like readelf.
 
@@ -38,16 +47,16 @@ def describe_attr_value(attr, die, section_offset):
     return str(val_description) + '\t' + extra_info
 
 
-def describe_CFI_instructions(entry):
+def describe_CFI_instructions(entry: CFIEntry) -> str:
     """ Given a CFI entry (CIE or FDE), return the textual description of its
         instructions.
     """
-    def _assert_FDE_instruction(instr):
+    def _assert_FDE_instruction(instr: CallFrameInstruction) -> None:
         dwarf_assert(
             isinstance(entry, FDE),
             'Unexpected instruction "%s" for a CIE' % instr)
 
-    def _full_reg_name(regnum):
+    def _full_reg_name(regnum: int) -> str:
         regname = describe_reg_name(regnum, _MACHINE_ARCH, False)
         if regname:
             return 'r%s (%s)' % (regnum, regname)
@@ -56,7 +65,9 @@ def describe_CFI_instructions(entry):
 
     if isinstance(entry, CIE):
         cie = entry
+        pc: int | None = None
     else: # FDE
+        assert entry.cie is not None
         cie = entry.cie
         pc = entry['initial_location']
 
@@ -84,7 +95,8 @@ def describe_CFI_instructions(entry):
         elif name in (  'DW_CFA_advance_loc1', 'DW_CFA_advance_loc2',
                         'DW_CFA_advance_loc4', 'DW_CFA_advance_loc'):
             _assert_FDE_instruction(instr)
-            factored_offset = instr.args[0] * cie['code_alignment_factor']
+            assert pc is not None
+            factored_offset: int = instr.args[0] * cie['code_alignment_factor']
             s += '  %s: %s to %08x\n' % (
                 name, factored_offset, factored_offset + pc)
             pc += factored_offset
@@ -101,6 +113,7 @@ def describe_CFI_instructions(entry):
         elif name in ('DW_CFA_def_cfa_offset', 'DW_CFA_GNU_args_size'):
             s += '  %s: %s\n' % (name, instr.args[0])
         elif name == 'DW_CFA_def_cfa_offset_sf':
+            assert entry.cie is not None
             s += '  %s: %s\n' % (name, instr.args[0]*entry.cie['data_alignment_factor'])
         elif name == 'DW_CFA_def_cfa_expression':
             expr_dumper = ExprDumper(entry.structs)
@@ -117,23 +130,27 @@ def describe_CFI_instructions(entry):
     return s
 
 
-def describe_CFI_register_rule(rule):
+def describe_CFI_register_rule(rule: RegisterRule) -> str:
     s = _DESCR_CFI_REGISTER_RULE_TYPE[rule.type]
     if rule.type in ('OFFSET', 'VAL_OFFSET'):
         s += '%+d' % rule.arg
     elif rule.type == 'REGISTER':
-        s += describe_reg_name(rule.arg)
+        assert isinstance(rule.arg, int)
+        reg = describe_reg_name(rule.arg)
+        assert reg is not None
+        s += reg
     return s
 
 
-def describe_CFI_CFA_rule(rule):
+def describe_CFI_CFA_rule(rule: CFARule) -> str:
     if rule.expr:
         return 'exp'
     else:
+        assert isinstance(rule.reg, int)
         return '%s%+d' % (describe_reg_name(rule.reg), rule.offset)
 
 
-def describe_DWARF_expr(expr, structs, cu_offset=None):
+def describe_DWARF_expr(expr: Any, structs: DWARFStructs, cu_offset: int | None = None) -> str:
     """ Textual description of a DWARF expression encoded in 'expr'.
         structs should come from the entity encompassing the expression - it's
         needed to be able to parse it correctly.
@@ -149,7 +166,7 @@ def describe_DWARF_expr(expr, structs, cu_offset=None):
     return '(' + dwarf_expr_dumper.dump_expr(expr, cu_offset) + ')'
 
 
-def describe_reg_name(regnum, machine_arch=None, default=True):
+def describe_reg_name(regnum: int, machine_arch: str | None = None, default: bool = True) -> str | None:
     """ Provide a textual description for a register name, given its serial
         number. The number is expected to be valid.
     """
@@ -167,7 +184,7 @@ def describe_reg_name(regnum, machine_arch=None, default=True):
     else:
         return None
 
-def describe_form_class(form):
+def describe_form_class(form: str) -> str | None:
     """For a given form name, determine its value class.
 
     For example, given 'DW_FORM_data1' returns 'constant'.
@@ -183,56 +200,56 @@ def describe_form_class(form):
 
 # The machine architecture. Set globally via set_global_machine_arch
 #
-_MACHINE_ARCH = None
+_MACHINE_ARCH: str | None = None
 
 # Implements the alternative format of readelf: lowercase hex, prefixed with 0x unless 0
-def _format_hex(n):
+def _format_hex(n: int) -> str:
     return '0x%x' % n if n != 0 else '0'
 
-def _describe_attr_ref(attr, die, section_offset):
+def _describe_attr_ref(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return '<%s>' % _format_hex(attr.value + die.cu.cu_offset)
 
-def _describe_attr_ref_sig8(attr, die, section_offset):
+def _describe_attr_ref_sig8(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return 'signature: %s' % _format_hex(attr.value)
 
-def _describe_attr_value_passthrough(attr, die, section_offset):
+def _describe_attr_value_passthrough(attr: AttributeValue, die: DIE, section_offset: int) -> str | int:
     return attr.value
 
-def _describe_attr_hex(attr, die, section_offset):
+def _describe_attr_hex(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return '%s' % _format_hex(attr.value)
 
-def _describe_attr_hex_addr(attr, die, section_offset):
+def _describe_attr_hex_addr(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return '<%s>' % _format_hex(attr.value)
 
-def _describe_attr_split_64bit(attr, die, section_offset):
+def _describe_attr_split_64bit(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     low_word = attr.value & 0xFFFFFFFF
     high_word = (attr.value >> 32) & 0xFFFFFFFF
     return '%s %s' % (_format_hex(low_word), _format_hex(high_word))
 
-def _describe_attr_strp(attr, die, section_offset):
+def _describe_attr_strp(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return '(indirect string, offset: %s): %s' % (
         _format_hex(attr.raw_value), bytes2str(attr.value))
 
-def _describe_attr_line_strp(attr, die, section_offset):
+def _describe_attr_line_strp(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return '(indirect line string, offset: %s): %s' % (
         _format_hex(attr.raw_value), bytes2str(attr.value))
 
-def _describe_attr_string(attr, die, section_offset):
+def _describe_attr_string(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return bytes2str(attr.value)
 
-def _describe_attr_debool(attr, die, section_offset):
+def _describe_attr_debool(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     """ To be consistent with readelf, generate 1 for True flags, 0 for False
         flags.
     """
     return '1' if attr.value else '0'
 
-def _describe_attr_present(attr, die, section_offset):
+def _describe_attr_present(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     """ Some forms may simply mean that an attribute is present,
         without providing any value.
     """
     return '1'
 
-def _describe_attr_block(attr, die, section_offset):
+def _describe_attr_block(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     s = '%s byte block: ' % len(attr.value)
     s += ' '.join('%x' % item for item in attr.value) + ' '
     return s
@@ -425,11 +442,11 @@ _DESCR_CFI_REGISTER_RULE_TYPE = dict(
     ARCHITECTURAL='a',
 )
 
-def _make_extra_mapper(mapping, default, default_interpolate_value=False):
+def _make_extra_mapper(mapping: Mapping[int, str], default: str, default_interpolate_value: bool = False) -> Callable[[AttributeValue, DIE, int], str]:
     """ Create a mapping function from attribute parameters to an extra
         value that should be displayed.
     """
-    def mapper(attr, die, section_offset):
+    def mapper(attr: AttributeValue, die: DIE, section_offset: int) -> str:
         if default_interpolate_value:
             d = default % attr.value
         else:
@@ -438,17 +455,17 @@ def _make_extra_mapper(mapping, default, default_interpolate_value=False):
     return mapper
 
 
-def _make_extra_string(s=''):
+def _make_extra_string(s: str = '') -> Callable[[AttributeValue, DIE, int], str]:
     """ Create an extra function that just returns a constant string.
     """
-    def extra(attr, die, section_offset):
+    def extra(attr: AttributeValue, die: DIE, section_offset: int) -> str:
         return s
     return extra
 
 
-_DWARF_EXPR_DUMPER_CACHE = {}
+_DWARF_EXPR_DUMPER_CACHE: dict[int, ExprDumper] = {}
 
-def _location_list_extra(attr, die, section_offset):
+def _location_list_extra(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     # According to section 2.6 of the DWARF spec v3, class loclistptr means
     # a location list, and class block means a location expression.
     # DW_FORM_sec_offset is new in DWARFv4 as a section offset.
@@ -458,7 +475,7 @@ def _location_list_extra(attr, die, section_offset):
         return describe_DWARF_expr(attr.value, die.cu.structs, die.cu.cu_offset)
 
 
-def _data_member_location_extra(attr, die, section_offset):
+def _data_member_location_extra(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     # According to section 5.5.6 of the DWARF spec v4, a data member location
     # can be an integer offset, or a location description.
     #
@@ -470,7 +487,7 @@ def _data_member_location_extra(attr, die, section_offset):
         return describe_DWARF_expr(attr.value, die.cu.structs, die.cu.cu_offset)
 
 
-def _import_extra(attr, die, section_offset):
+def _import_extra(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     # For DW_AT_import the value points to a DIE (that can be either in the
     # current DIE's CU or in another CU, depending on the FORM). The extra
     # information for it is the abbreviation number in this DIE and its tag.
@@ -587,12 +604,12 @@ class ExprDumper:
 
         Usage: after creation, call dump_expr repeatedly - it's stateless.
     """
-    def __init__(self, structs):
+    def __init__(self, structs: DWARFStructs) -> None:
         self.structs = structs
         self.expr_parser = DWARFExprParser(self.structs)
         self._init_lookups()
 
-    def dump_expr(self, expr, cu_offset=None):
+    def dump_expr(self, expr: list[int], cu_offset: int | None = None) -> str:
         """ Parse and dump a DWARF expression. expr should be a list of
             (integer) byte values. cu_offset is the cu_offset
             value from the CU object where the expression resides.
@@ -608,7 +625,7 @@ class ExprDumper:
             for deo in parsed
         )
 
-    def _init_lookups(self):
+    def _init_lookups(self) -> None:
         self._ops_with_decimal_arg = set([
             'DW_OP_const1u', 'DW_OP_const1s', 'DW_OP_const2u', 'DW_OP_const2s',
             'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_const8u', 'DW_OP_const8s',
@@ -624,7 +641,7 @@ class ExprDumper:
         self._ops_with_hex_arg = set(
             ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
 
-    def _dump_to_string(self, opcode, opcode_name, args, cu_offset=None):
+    def _dump_to_string(self, opcode: int, opcode_name: str, args: list[Any], cu_offset: int | None = None) -> str:
         # Some GNU ops contain an offset from the current CU as an argument,
         # but readelf emits those ops with offset from the info section
         # so we need the base offset of the parent CU.

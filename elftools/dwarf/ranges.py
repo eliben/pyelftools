@@ -6,24 +6,44 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 import os
-from collections import namedtuple
+from typing import IO, TYPE_CHECKING, NamedTuple, NoReturn
 
 from ..common.utils import struct_parse
 from ..common.exceptions import DWARFError
 from .dwarf_util import _iter_CUs_in_section
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
 
-RangeEntry = namedtuple('RangeEntry', 'entry_offset entry_length begin_offset end_offset is_absolute')
-BaseAddressEntry = namedtuple('BaseAddressEntry', 'entry_offset base_address')
+    from ..construct.lib.container import Container
+    from .compileunit import CompileUnit
+    from .dwarfinfo import DWARFInfo
+    from .structs import DWARFStructs
+
+
+class RangeEntry(NamedTuple):
+    entry_offset: int
+    entry_length: int
+    begin_offset: int
+    end_offset: int
+    is_absolute: bool
+
+
+class BaseAddressEntry(NamedTuple):
+    entry_offset: int
+    base_address: int
+
 # If we ever see a list with a base entry at the end, there will be an error that entry_length is not a field.
 
-def _translate_startx_length(e, cu):
+def _translate_startx_length(e: Container, cu: CompileUnit) -> RangeEntry:
     start_offset = cu.dwarfinfo.get_addr(cu, e.start_index)
     return RangeEntry(e.entry_offset, e.entry_length, start_offset, start_offset + e.length, True)
 
 # Maps parsed entry types to RangeEntry/BaseAddressEntry objects
-entry_translate = {
+entry_translate: dict[str, Callable[[Container, CompileUnit], RangeEntry | BaseAddressEntry]] = {
     'DW_RLE_base_address' : lambda e, cu: BaseAddressEntry(e.entry_offset, e.address),
     'DW_RLE_offset_pair'  : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, e.start_offset, e.end_offset, False),
     'DW_RLE_start_end'    : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, e.start_address, e.end_address, True),
@@ -38,11 +58,11 @@ class RangeListsPair:
     it holds a RangeLists object for both and forwards API calls to the right one based
     on the CU version.
     """
-    def __init__(self, streamv4, streamv5, structs, dwarfinfo=None):
+    def __init__(self, streamv4: IO[bytes], streamv5: IO[bytes], structs: DWARFStructs, dwarfinfo: DWARFInfo | None = None) -> None:
         self._ranges = RangeLists(streamv4, structs, 4, dwarfinfo)
         self._rnglists = RangeLists(streamv5, structs, 5, dwarfinfo)
 
-    def get_range_list_at_offset(self, offset, cu=None):
+    def get_range_list_at_offset(self, offset: int, cu: CompileUnit | None = None) -> list[RangeEntry | BaseAddressEntry]:
         """Forwards the call to either v4 section or v5 one,
         depending on DWARF version in the CU.
         """
@@ -51,18 +71,18 @@ class RangeListsPair:
         section = self._rnglists if cu.header.version >= 5 else self._ranges
         return section.get_range_list_at_offset(offset, cu)
 
-    def get_range_list_at_offset_ex(self, offset):
+    def get_range_list_at_offset_ex(self, offset: int) -> Container:
         """Gets an untranslated v5 rangelist from the v5 section.
         """
         return self._rnglists.get_range_list_at_offset_ex(offset)
 
-    def iter_range_lists(self):
+    def iter_range_lists(self) -> NoReturn:
         """Tricky proposition, since the structure of ranges and rnglists
         is not identical. A realistic readelf implementation needs to be aware of both.
         """
         raise DWARFError("Iterating through two sections is not supported")
 
-    def iter_CUs(self):
+    def iter_CUs(self) -> Iterator[CompileUnit]:
         """See RangeLists.iter_CUs()
 
         CU structure is only present in DWARFv5 rnglists sections. A well written
@@ -70,7 +90,7 @@ class RangeListsPair:
         """
         return self._rnglists.iter_CUs()
 
-    def iter_CU_range_lists_ex(self, cu):
+    def iter_CU_range_lists_ex(self, cu: Container) -> Iterator[CompileUnit]:
         """See RangeLists.iter_CU_range_lists_ex()
 
         CU structure is only present in DWARFv5 rnglists sections. A well written
@@ -78,7 +98,7 @@ class RangeListsPair:
         """
         return self._rnglists.iter_CU_range_lists_ex(cu)
 
-    def translate_v5_entry(self, entry, cu):
+    def translate_v5_entry(self, entry: Container, cu: CompileUnit) -> RangeEntry | BaseAddressEntry:
         """Forwards a V5 entry translation request to the V5 section
         """
         return self._rnglists.translate_v5_entry(entry, cu)
@@ -95,14 +115,14 @@ class RangeLists:
         The dwarfinfo is needed for enumeration, because enumeration
         requires scanning the DIEs, because ranges may overlap, even on DWARF<=4
     """
-    def __init__(self, stream, structs, version, dwarfinfo):
+    def __init__(self, stream: IO[bytes], structs: DWARFStructs, version: int, dwarfinfo: DWARFInfo | None) -> None:
         self.stream = stream
         self.structs = structs
         self._max_addr = 2 ** (self.structs.address_size * 8) - 1
         self.version = version
         self._dwarfinfo = dwarfinfo
 
-    def get_range_list_at_offset(self, offset, cu=None):
+    def get_range_list_at_offset(self, offset: int, cu: CompileUnit | None = None) -> list[RangeEntry | BaseAddressEntry]:
         """ Get a range list at the given offset in the section.
 
             The cu argument is necessary if the ranges section is a
@@ -112,13 +132,13 @@ class RangeLists:
         self.stream.seek(offset, os.SEEK_SET)
         return self._parse_range_list_from_stream(cu)
 
-    def get_range_list_at_offset_ex(self, offset):
+    def get_range_list_at_offset_ex(self, offset: int) -> Container:
         """Get a DWARF v5 range list, addresses and offsets unresolved,
         at the given offset in the section
         """
         return struct_parse(self.structs.Dwarf_rnglists_entries, self.stream, offset)
 
-    def iter_range_lists(self):
+    def iter_range_lists(self) -> Iterator[list[RangeEntry | BaseAddressEntry]]:
         """ Yields all range lists found in the section according to readelf rules.
         Scans the DIEs for rangelist offsets, then pulls those.
         Returned rangelists are always translated into lists of BaseAddressEntry/RangeEntry objects.
@@ -135,7 +155,7 @@ class RangeLists:
         ver5 = self.version >= 5
         # This maps list offset to CU
         cu_map = {die.attributes['DW_AT_ranges'].value : cu
-            for cu in self._dwarfinfo.iter_CUs()
+            for cu in self._dwarfinfo.iter_CUs()  # type: ignore[union-attr]
             for die in cu.iter_DIEs()
             if 'DW_AT_ranges' in die.attributes and (cu['version'] >= 5) == ver5}
         all_offsets = list(cu_map.keys())
@@ -144,16 +164,17 @@ class RangeLists:
         for offset in all_offsets:
             yield self.get_range_list_at_offset(offset, cu_map[offset])
 
-    def iter_CUs(self):
+    def iter_CUs(self) -> Iterator[CompileUnit]:
         """For DWARF5 returns an array of objects, where each one has an array of offsets
         """
         if self.version < 5:
             raise DWARFError("CU iteration in rnglists is not supported with DWARF<5")
 
+        assert self._dwarfinfo is not None
         structs = next(self._dwarfinfo.iter_CUs()).structs # Just pick one
         return _iter_CUs_in_section(self.stream, structs, structs.Dwarf_rnglists_CU_header)
 
-    def iter_CU_range_lists_ex(self, cu):
+    def iter_CU_range_lists_ex(self, cu: Container) -> Iterator[CompileUnit]:
         """For DWARF5, returns untranslated rangelists in the CU, where CU comes from iter_CUs above
         """
         stream = self.stream
@@ -161,7 +182,7 @@ class RangeLists:
         while stream.tell() < cu.offset_after_length + cu.unit_length:
             yield struct_parse(self.structs.Dwarf_rnglists_entries, stream)
 
-    def translate_v5_entry(self, entry, cu):
+    def translate_v5_entry(self, entry: Container, cu: CompileUnit) -> RangeEntry | BaseAddressEntry:
         """Translates entries in a DWARFv5 rangelist from raw parsed format to
         a list of BaseAddressEntry/RangeEntry, using the CU
         """
@@ -169,13 +190,14 @@ class RangeLists:
 
     #------ PRIVATE ------#
 
-    def _parse_range_list_from_stream(self, cu):
+    def _parse_range_list_from_stream(self, cu: CompileUnit | None) -> list[RangeEntry | BaseAddressEntry]:
         if self.version >= 5:
+            assert cu is not None
             return list(entry_translate[entry.entry_type](entry, cu)
                 for entry
                 in struct_parse(self.structs.Dwarf_rnglists_entries, self.stream))
         else:
-            lst = []
+            lst: list[RangeEntry | BaseAddressEntry] = []
             while True:
                 entry_offset = self.stream.tell()
                 begin_offset = struct_parse(
