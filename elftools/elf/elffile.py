@@ -84,8 +84,7 @@ class ELFFile:
         self.stream.seek(0)
         self.e_ident_raw = self.stream.read(16)
 
-        self._section_header_stringtable = \
-            self._get_section_header_stringtable()
+        self._section_header_stringtable = False # Lazy load
         self._section_name_map = None
         self.stream_loader = stream_loader
 
@@ -693,6 +692,9 @@ class ELFFile:
         """ Given a section header, find this section's name in the file's
             string table
         """
+        if self._section_header_stringtable == False:
+            self._section_header_stringtable = self._get_section_header_stringtable()
+
         if self._section_header_stringtable is None:
             raise ELFParseError("String Table not found")
 
