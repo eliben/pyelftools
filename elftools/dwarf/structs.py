@@ -299,6 +299,7 @@ class DWARFStructs:
             DW_FORM_strp=self.the_Dwarf_offset,
             DW_FORM_strp_sup=self.the_Dwarf_offset,
             DW_FORM_line_strp=self.the_Dwarf_offset,
+            DW_FORM_strx=self.the_Dwarf_uleb128,
             DW_FORM_strx1=self.the_Dwarf_uint8,
             DW_FORM_strx2=self.the_Dwarf_uint16,
             DW_FORM_strx3=self.Dwarf_uint24(''),
@@ -317,7 +318,7 @@ class DWARFStructs:
 
             DW_FORM_indirect=self.the_Dwarf_uleb128,
 
-            # Treated separatedly while parsing, but here so that all forms resovle
+            # Treated separatedly while parsing, but here so that all forms resolve
             DW_FORM_implicit_const=None,
 
             # New forms in DWARFv4
