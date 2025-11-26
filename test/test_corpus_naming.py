@@ -10,7 +10,7 @@ import os
 from elftools.elf.elffile import ELFFile
 from elftools.elf.segments import NoteSegment
 
-class TestCoreNotes(unittest.TestCase):
+class TestCorpusNaming(unittest.TestCase):
     def scan_under(self, subdir):
         dir = os.path.join('test', subdir)
         for filename in os.listdir(dir):
