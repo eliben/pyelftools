@@ -12,7 +12,7 @@ from elftools.elf.elffile import ELFFile
 class TestLocListsPair(unittest.TestCase):
     def test_llpair(self):
         path = os.path.join('test', 'testfiles_for_unittests',
-                            'dwarf_llpair.elf')
+                            'dwarf_llpair.so.elf')
         with open(path, 'rb') as f:
             elffile = ELFFile(f)
             dwarfinfo = elffile.get_dwarf_info(follow_links=False)

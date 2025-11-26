@@ -12,7 +12,7 @@ from elftools.elf.elffile import ELFFile
 class TestFormData16(unittest.TestCase):
     def test_formdata16(self):
         path = os.path.join('test', 'testfiles_for_unittests',
-                            'dwarf_lineprog_data16.elf')
+                            'dwarf_lineprog_data16.so.elf')
         with open(path, 'rb') as f:
             elffile = ELFFile(f)
             dwarfinfo = elffile.get_dwarf_info(follow_links=False)

@@ -57,7 +57,7 @@ class TestEHABIELF(unittest.TestCase):
                 self.assertNotIsInstance(info.get_entry(i), CorruptEHABIEntry)
 
     def test_parse_executable(self):
-        fname = os.path.join('test', 'testfiles_for_unittests', 'arm_exidx_test.elf')
+        fname = os.path.join('test', 'testfiles_for_unittests', 'arm_exidx_test.so.elf')
         with open(fname, 'rb') as f:
             elf = ELFFile(f)
             self.assertTrue(elf.has_ehabi_info())

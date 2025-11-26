@@ -16,7 +16,7 @@ from elftools.elf.elffile import ELFFile
 
 class TestTree(unittest.TestCase):
     def test_tree(self):
-        self.run_test_on('dwarf_llpair.elf', 0, True)
+        self.run_test_on('dwarf_llpair.so.elf', 0, True)
         self.run_test_on('test_debugsup1.debug', 2, False)
 
     def run_test_on(self, file_name, cu_index, test_cached):
