@@ -78,7 +78,7 @@ class TestDynamic(unittest.TestCase):
         """ Verify we can read symbol table without SymbolTableSection but with
             a GNU symbol hash table"""
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'android_dyntags.elf'), 'rb') as f:
+                               'android_dyntags.so.elf'), 'rb') as f:
             elf = ELFFile(f)
             for segment in elf.iter_segments():
                 if segment.header.p_type != 'PT_DYNAMIC':
@@ -114,7 +114,7 @@ class TestDynamic(unittest.TestCase):
         f1 = extract_sunw(os.path.join('test', 'testfiles_for_unittests',
             'exe_solaris32_cc.sparc.elf'))
         f2 = extract_sunw(os.path.join('test', 'testfiles_for_unittests',
-            'android_dyntags.elf'))
+            'android_dyntags.so.elf'))
         self.assertEqual(f1, {'DT_SUNW_STRPAD', 'DT_SUNW_LDMACH'})
         self.assertEqual(f2, set())
 

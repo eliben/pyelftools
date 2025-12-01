@@ -18,7 +18,7 @@ class TestStab(unittest.TestCase):
             ("label", 0x95, 0xc8, 0x4072, 0xdeadbeef),
             ("another label", 0x41, 0x66, 0xf9b1, 0xcafebabe)]
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'obj_stabs.elf'), 'rb') as f:
+                               'obj_stabs.o.elf'), 'rb') as f:
             elf = ELFFile(f)
 
             # using correct type?

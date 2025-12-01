@@ -12,7 +12,7 @@ class TestDBGFile(unittest.TestCase):
         """ Test that the degenerate case for the dynamic segment does not crash
         """
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'debug_info.elf'), 'rb') as f:
+                               'debug_info.so.elf'), 'rb') as f:
             elf = ELFFile(f)
 
             seen_dynamic_segment = False
@@ -28,7 +28,7 @@ class TestDBGFile(unittest.TestCase):
         """ Test that the degenerate case for the dynamic section does not crash
         """
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'debug_info.elf'), 'rb') as f:
+                               'debug_info.so.elf'), 'rb') as f:
             elf = ELFFile(f)
             section = DynamicSection(elf.get_section_by_name('.dynamic').header, '.dynamic', elf)
 
@@ -38,7 +38,7 @@ class TestDBGFile(unittest.TestCase):
         """ Test that parsing .eh_frame with SHT_NOBITS does not crash
         """
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'debug_info.elf'), 'rb') as f:
+                               'debug_info.so.elf'), 'rb') as f:
             elf = ELFFile(f)
             dwarf = elf.get_dwarf_info()
             eh_frame = list(dwarf.EH_CFI_entries())
