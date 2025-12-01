@@ -23,6 +23,9 @@ class TestCorpusNaming(unittest.TestCase):
                         self.assertTrue('.so.' in filename)
                     elif ef.header.e_type == 'ET_REL':
                         self.assertTrue('.o.' in filename)
+                    else: # Covers ET_EXEC, ET_CORE, ET_NONE
+                        self.assertFalse('.so.' in filename)
+                        self.assertFalse('.o.' in filename)
                 except:
                     pass
 
