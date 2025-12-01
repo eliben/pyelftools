@@ -48,7 +48,7 @@ class TestSymbolVersioning(unittest.TestCase):
         reference_data = TestSymbolVersioning.versym_reference_data
 
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'lib_versioned64.so.1.elf'), 'rb') as f:
+                               'lib_versioned64.so.elf'), 'rb') as f:
             elf = ELFFile(f)
             versym_section = None
             for section in elf.iter_sections():
@@ -78,7 +78,7 @@ class TestSymbolVersioning(unittest.TestCase):
         reference_data = TestSymbolVersioning.verneed_reference_data
 
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'lib_versioned64.so.1.elf'), 'rb') as f:
+                               'lib_versioned64.so.elf'), 'rb') as f:
             elf = ELFFile(f)
             verneed_section = None
             for section in elf.iter_sections():
@@ -128,7 +128,7 @@ class TestSymbolVersioning(unittest.TestCase):
         reference_data = TestSymbolVersioning.verdef_reference_data
 
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'lib_versioned64.so.1.elf'), 'rb') as f:
+                               'lib_versioned64.so.elf'), 'rb') as f:
             elf = ELFFile(f)
             for section in elf.iter_sections():
                 if isinstance(section, GNUVerDefSection):

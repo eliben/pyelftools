@@ -90,7 +90,7 @@ class TestGNUHash(unittest.TestCase):
         """
 
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'lib_versioned64.so.1.elf'), 'rb') as f:
+                               'lib_versioned64.so.elf'), 'rb') as f:
             elf = ELFFile(f)
             hash_section = elf.get_section_by_name('.gnu.hash')
             self.assertIsNotNone(hash_section)
@@ -100,7 +100,7 @@ class TestGNUHash(unittest.TestCase):
         """ Verify we can get a specific symbol from a GNU hash section.
         """
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'lib_versioned64.so.1.elf'), 'rb') as f:
+                               'lib_versioned64.so.elf'), 'rb') as f:
             elf = ELFFile(f)
             hash_section = elf.get_section_by_name('.gnu.hash')
             self.assertIsNotNone(hash_section)

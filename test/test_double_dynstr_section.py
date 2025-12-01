@@ -44,13 +44,13 @@ class TestDoubleDynstrSections(unittest.TestCase):
         """ First test with the good dynstr section first
         """
         self._test_double_dynstr_section_generic(
-                'lib_with_two_dynstr_sections.so.1.elf')
+                'lib_with_two_dynstr_sections.so.elf')
 
     def test_double_dynstr_section_reverse(self):
         """ Second test with the good dynstr section last
         """
         self._test_double_dynstr_section_generic(
-                'lib_with_two_dynstr_sections_reversed.so.1.elf')
+                'lib_with_two_dynstr_sections_reversed.so.elf')
 
 
 if __name__ == '__main__':

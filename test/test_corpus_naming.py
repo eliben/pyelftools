@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# elftools tests
+# Enforce consistency of test naming for some testfiles.
 #
 # Seva Alekseyev (sevaa@sprynet.com)
 # This code is in the public domain
@@ -16,18 +16,12 @@ class TestCorpusNaming(unittest.TestCase):
         for filename in os.listdir(dir):
             name, ext = os.path.splitext(filename)
             if ext == '.elf':
-                try:
-                    ef = ELFFile.load_from_path(os.path.join(dir, filename))
-                    
+                with ELFFile.load_from_path(os.path.join(dir, filename)) as ef:
+                    _, pre_ext = os.path.splitext(name)
                     if ef.header.e_type == 'ET_DYN':
-                        self.assertTrue('.so.' in filename)
+                        self.assertEqual(pre_ext, '.so', f'{filename} is ET_DYN')
                     elif ef.header.e_type == 'ET_REL':
-                        self.assertTrue('.o.' in filename)
-                    else: # Covers ET_EXEC, ET_CORE, ET_NONE
-                        self.assertFalse('.so.' in filename)
-                        self.assertFalse('.o.' in filename)
-                except:
-                    pass
+                        self.assertEqual(pre_ext, '.o', f'{filename} is ET_REL')
 
     def test_corpus_naming(self):
         self.scan_under('testfiles_for_readelf')
