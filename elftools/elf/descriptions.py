@@ -344,12 +344,15 @@ def describe_note_gnu_properties(properties: list[Container], machine: str) -> s
                 prop_desc = ' <corrupt length: 0x%x>' % sz
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND, 'RISC-V AND feature', d)
-        elif isinstance(t, int) and _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
-            prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
-        elif isinstance(t, int) and _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
-            prop_desc = '<application-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
+        elif isinstance(t, int):
+            if _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
+                prop_desc = '<processor-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
+            elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
+                prop_desc = '<application-specific type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
+            else:
+                prop_desc = '<unknown type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
         else:
-            prop_desc = '<unknown type 0x%x data: %s >' % (t, bytes2hex(d, sep=' '))
+            prop_desc = '<unknown type %r data: %s >' % (t, bytes2hex(d, sep=' '))
         descriptions.append(prop_desc)
     return '\n        '.join(descriptions)
 
