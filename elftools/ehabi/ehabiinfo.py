@@ -161,7 +161,8 @@ class EHABIEntry:
             return None
 
     def __repr__(self) -> str:
-        return "<EHABIEntry function_offset=0x%x, personality=%d, %sbytecode=%s>" % (
+        assert isinstance(self.function_offset, int)
+        return "<EHABIEntry function_offset=0x%x, personality=%s, %sbytecode=%s>" % (
             self.function_offset,
             self.personality,
             "eh_table_offset=0x%x, " % self.eh_table_offset if self.eh_table_offset else "",
@@ -185,6 +186,9 @@ class CannotUnwindEHABIEntry(EHABIEntry):
     """ This function cannot be unwind. Attribute #unwindable will be False.
     """
 
+    if TYPE_CHECKING:
+        function_offset: int
+
     def __init__(self, function_offset: int) -> None:
         super().__init__(function_offset, personality=None, bytecode_array=None,
                                                      unwindable=False)
@@ -196,6 +200,10 @@ class CannotUnwindEHABIEntry(EHABIEntry):
 class GenericEHABIEntry(EHABIEntry):
     """ This entry is generic model rather than ARM compact model.Attribute #bytecode_array will be None.
     """
+
+    if TYPE_CHECKING:
+        function_offset: int
+        personality: int
 
     def __init__(self, function_offset: int, personality: int) -> None:
         super().__init__(function_offset, personality, bytecode_array=None)
