@@ -55,7 +55,7 @@ class EHABIInfo:
         """ Get the exception handler entry at index #n. (EHABIEntry object or a subclass)
         """
         if n >= self.num_entry():
-            raise IndexError('Invalid entry %d/%d' % (n, self._num_entry))
+            raise IndexError('Invalid entry %d/%d' % (n, self.num_entry()))
         eh_index_entry_offset = self.section_offset() + n * EHABI_INDEX_ENTRY_SIZE
         eh_index_data = struct_parse(self._struct.EH_index_struct, self._arm_idx_section.stream, eh_index_entry_offset)
         word0, word1 = eh_index_data['word0'], eh_index_data['word1']
