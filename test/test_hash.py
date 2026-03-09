@@ -5,10 +5,11 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import unittest
+import unittest.mock
 import os
 
 from elftools.elf.elffile import ELFFile
-from elftools.elf.hash import ELFHashTable, GNUHashTable
+from elftools.elf.hash import ELFHashTable, GNUHashTable, _SymbolTable
 
 class TestELFHash(unittest.TestCase):
     """ Tests for the ELF hash table.
@@ -61,8 +62,8 @@ class TestELFHash(unittest.TestCase):
     def test_empty_table_without_header(self):
         """ Verify we can handle an empty (0 byte) ELF hash section.
         """
-        elffile = None
-        symboltable = None
+        elffile = unittest.mock.MagicMock(ELFFile)
+        symboltable = unittest.mock.MagicMock(_SymbolTable)
         empty_hash_section = ELFHashTable(elffile, 0, 0, symboltable)
         self.assertEqual(empty_hash_section.get_number_of_symbols(), 0)
         self.assertEqual(empty_hash_section.params['nbuckets'], 0)
