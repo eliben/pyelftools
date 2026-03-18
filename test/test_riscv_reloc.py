@@ -2,13 +2,17 @@
 # elftools tests
 #
 # Test RISC-V relocation support.
-# Verifies the RISC-V-specific relocation calculation functions and that the
-# relocation recipe table has correct bytesizes and calc functions.
+# Verifies the RISC-V-specific relocation calculation functions, that the
+# relocation recipe table has correct bytesizes and calc functions, and that
+# end-to-end relocation via RelocationHandler produces correct bytes.
 #
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import os
 import unittest
+from io import BytesIO
 
+from elftools.elf.elffile import ELFFile
 from elftools.elf.enums import ENUM_RELOC_TYPE_RISCV
 from elftools.elf.relocation import (
     RelocationHandler,
@@ -131,6 +135,50 @@ class TestRISCVRelocationRecipes(unittest.TestCase):
                 recipe = self.recipes[ENUM_RELOC_TYPE_RISCV[f'R_RISCV_SET{suffix}']]
                 self.assertEqual(recipe.bytesize, expected_size)
                 self.assertEqual(recipe.calc_func, _reloc_calc_sym_plus_addend)
+
+
+class TestRISCVRelocationEndToEnd(unittest.TestCase):
+    """End-to-end test using a synthetic RISC-V ELF relocatable object.
+
+    riscv_reloc.o contains a 16-byte .text section and four RELA entries:
+
+      offset  type            sym_value  addend  initial  expected
+      ------  --------------  ---------  ------  -------  --------
+           0  R_RISCV_32      0x1000         0   0x00..   0x00100000  (LE)
+           4  R_RISCV_64      0x0005         2   0x00..   0x0700..    (LE)
+          12  R_RISCV_SET6    0x1000         3   0xC0     0xC3
+          13  R_RISCV_SUB6    0x0005         0   0xC7     0xC2
+    """
+
+    def _apply_relocations(self, elf):
+        text = elf.get_section_by_name('.text')
+        rela = elf.get_section_by_name('.rela.text')
+        stream = BytesIO(text.data())
+        RelocationHandler(elf).apply_section_relocations(stream, rela)
+        return stream.getvalue()
+
+    def test_riscv_reloc_o(self):
+        test_dir = os.path.join('test', 'testfiles_for_unittests')
+        with open(os.path.join(test_dir, 'riscv_reloc.o'), 'rb') as f:
+            elf = ELFFile(f)
+            self.assertEqual(elf.get_machine_arch(), 'RISC-V')
+            result = self._apply_relocations(elf)
+
+        # R_RISCV_32 at offset 0: sym_a(0x1000) + addend(0) = 0x1000 (4 bytes LE)
+        self.assertEqual(result[0:4], b'\x00\x10\x00\x00')
+
+        # R_RISCV_64 at offset 4: sym_b(0x0005) + addend(2) = 0x0007 (8 bytes LE)
+        self.assertEqual(result[4:12], b'\x07\x00\x00\x00\x00\x00\x00\x00')
+
+        # R_RISCV_SET6 at offset 12: (sym_a+3)&0x3F | (0xC0&0xC0) = 0x03|0xC0 = 0xC3
+        self.assertEqual(result[12], 0xC3)
+
+        # R_RISCV_SUB6 at offset 13: ((0xC7&0x3F)-sym_b-0)&0x3F | (0xC7&0xC0)
+        #                            = (0x07-0x05)&0x3F | 0xC0 = 0x02|0xC0 = 0xC2
+        self.assertEqual(result[13], 0xC2)
+
+        # Unrelocated bytes remain zero
+        self.assertEqual(result[14:16], b'\x00\x00')
 
 
 if __name__ == '__main__':
