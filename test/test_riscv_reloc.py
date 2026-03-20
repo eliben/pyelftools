@@ -9,6 +9,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os
+import struct
 import unittest
 from io import BytesIO
 
@@ -138,21 +139,14 @@ class TestRISCVRelocationRecipes(unittest.TestCase):
 
 
 class TestRISCVRelocationEndToEnd(unittest.TestCase):
-    """End-to-end test using a real RISC-V ELF relocatable object.
+    """End-to-end tests using a real RISC-V ELF relocatable object.
 
     riscv_reloc.o is compiled from riscv_reloc_source.s using:
         riscv64-linux-gnu-gcc -c riscv_reloc_source.s -o riscv_reloc.o
 
-    The .text section is 16 bytes with four RELA entries. The assembler folds
-    absolute symbol values into the addend (sym_idx=0), so the effective
-    computation is sym_value(0) + addend:
-
-      offset  type            addend   initial  expected
-      ------  --------------  -------  -------  --------
-           0  R_RISCV_32      0x1000   0x00..   0x00100000  (LE)
-           4  R_RISCV_64      0x0007   0x00..   0x0700..    (LE)
-          12  R_RISCV_SET6    0x1003   0xC0     0xC3
-          13  R_RISCV_SUB6    0x0005   0xC7     0xC2
+    The assembler folds absolute symbol values into the RELA addend
+    (sym_idx=0), so the effective computation uses sym_value=0 and the full
+    symbol value as addend. All types in _RELOCATION_RECIPES_RISCV are covered.
     """
 
     def _apply_relocations(self, elf):
@@ -184,6 +178,72 @@ class TestRISCVRelocationEndToEnd(unittest.TestCase):
 
         # Unrelocated bytes remain zero
         self.assertEqual(result[14:16], b'\x00\x00')
+
+    def test_riscv_set8_set16_set32(self):
+        """R_RISCV_SET8/16/32: result = sym_value + addend, written as N bytes."""
+        test_dir = os.path.join('test', 'testfiles_for_unittests')
+        with open(os.path.join(test_dir, 'riscv_reloc.o'), 'rb') as f:
+            elf = ELFFile(f)
+            by_type = {r['r_info_type']: r['r_offset']
+                       for r in elf.get_section_by_name('.rela.text').iter_relocations()}
+            result = self._apply_relocations(elf)
+
+        R = ENUM_RELOC_TYPE_RISCV
+        # SET8:  addend = sym_b(5) + 3 = 8
+        off = by_type[R['R_RISCV_SET8']]
+        self.assertEqual(result[off:off+1], struct.pack('<B', 8))
+        # SET16: addend = sym_a(0x1000)
+        off = by_type[R['R_RISCV_SET16']]
+        self.assertEqual(result[off:off+2], struct.pack('<H', 0x1000))
+        # SET32: addend = sym_b(5) + 7 = 12
+        off = by_type[R['R_RISCV_SET32']]
+        self.assertEqual(result[off:off+4], struct.pack('<I', 12))
+
+    def test_riscv_add8_add16_add32_add64(self):
+        """R_RISCV_ADD*: result = initial_value + sym_value + addend."""
+        test_dir = os.path.join('test', 'testfiles_for_unittests')
+        with open(os.path.join(test_dir, 'riscv_reloc.o'), 'rb') as f:
+            elf = ELFFile(f)
+            by_type = {r['r_info_type']: r['r_offset']
+                       for r in elf.get_section_by_name('.rela.text').iter_relocations()}
+            result = self._apply_relocations(elf)
+
+        R = ENUM_RELOC_TYPE_RISCV
+        # ADD8:  initial=10,    sym_b(5) → 10 + 5 = 15
+        off = by_type[R['R_RISCV_ADD8']]
+        self.assertEqual(result[off:off+1], struct.pack('<B', 15))
+        # ADD16: initial=100,   sym_b(5) → 100 + 5 = 105
+        off = by_type[R['R_RISCV_ADD16']]
+        self.assertEqual(result[off:off+2], struct.pack('<H', 105))
+        # ADD32: initial=1000,  sym_b(5) → 1000 + 5 = 1005
+        off = by_type[R['R_RISCV_ADD32']]
+        self.assertEqual(result[off:off+4], struct.pack('<I', 1005))
+        # ADD64: initial=10000, sym_b(5) → 10000 + 5 = 10005
+        off = by_type[R['R_RISCV_ADD64']]
+        self.assertEqual(result[off:off+8], struct.pack('<Q', 10005))
+
+    def test_riscv_sub8_sub16_sub32_sub64(self):
+        """R_RISCV_SUB*: result = initial_value - sym_value - addend."""
+        test_dir = os.path.join('test', 'testfiles_for_unittests')
+        with open(os.path.join(test_dir, 'riscv_reloc.o'), 'rb') as f:
+            elf = ELFFile(f)
+            by_type = {r['r_info_type']: r['r_offset']
+                       for r in elf.get_section_by_name('.rela.text').iter_relocations()}
+            result = self._apply_relocations(elf)
+
+        R = ENUM_RELOC_TYPE_RISCV
+        # SUB8:  initial=20,    sym_b(5) → 20 - 5 = 15
+        off = by_type[R['R_RISCV_SUB8']]
+        self.assertEqual(result[off:off+1], struct.pack('<B', 15))
+        # SUB16: initial=200,   sym_b(5) → 200 - 5 = 195
+        off = by_type[R['R_RISCV_SUB16']]
+        self.assertEqual(result[off:off+2], struct.pack('<H', 195))
+        # SUB32: initial=2000,  sym_b(5) → 2000 - 5 = 1995
+        off = by_type[R['R_RISCV_SUB32']]
+        self.assertEqual(result[off:off+4], struct.pack('<I', 1995))
+        # SUB64: initial=20000, sym_b(5) → 20000 - 5 = 19995
+        off = by_type[R['R_RISCV_SUB64']]
+        self.assertEqual(result[off:off+8], struct.pack('<Q', 19995))
 
 
 if __name__ == '__main__':
