@@ -138,16 +138,21 @@ class TestRISCVRelocationRecipes(unittest.TestCase):
 
 
 class TestRISCVRelocationEndToEnd(unittest.TestCase):
-    """End-to-end test using a synthetic RISC-V ELF relocatable object.
+    """End-to-end test using a real RISC-V ELF relocatable object.
 
-    riscv_reloc.o contains a 16-byte .text section and four RELA entries:
+    riscv_reloc.o is compiled from riscv_reloc_source.s using:
+        riscv64-linux-gnu-gcc -c riscv_reloc_source.s -o riscv_reloc.o
 
-      offset  type            sym_value  addend  initial  expected
-      ------  --------------  ---------  ------  -------  --------
-           0  R_RISCV_32      0x1000         0   0x00..   0x00100000  (LE)
-           4  R_RISCV_64      0x0005         2   0x00..   0x0700..    (LE)
-          12  R_RISCV_SET6    0x1000         3   0xC0     0xC3
-          13  R_RISCV_SUB6    0x0005         0   0xC7     0xC2
+    The .text section is 16 bytes with four RELA entries. The assembler folds
+    absolute symbol values into the addend (sym_idx=0), so the effective
+    computation is sym_value(0) + addend:
+
+      offset  type            addend   initial  expected
+      ------  --------------  -------  -------  --------
+           0  R_RISCV_32      0x1000   0x00..   0x00100000  (LE)
+           4  R_RISCV_64      0x0007   0x00..   0x0700..    (LE)
+          12  R_RISCV_SET6    0x1003   0xC0     0xC3
+          13  R_RISCV_SUB6    0x0005   0xC7     0xC2
     """
 
     def _apply_relocations(self, elf):
