@@ -6,6 +6,9 @@
 #------------------------------------------------------------------------------
 
 from elftools.elf.elffile import ELFFile
+from elftools.common.exceptions import ELFError
+import os
+import tempfile
 import unittest
 
 
@@ -88,6 +91,35 @@ class TestDebuglink(unittest.TestCase):
         subprograms = self.subprograms_from_debuglink(elf)
         self.assertEqual(subprograms, {b'main': (0x1161, 0x52), b'addNumbers': (0x1149, 0x18)})
 
+    def test_relative_loader_rejects_path_traversal(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_path = os.fsencode(os.path.join(tmpdir, 'bin', 'sample.elf'))
+            os.makedirs(os.path.dirname(base_path))
+            loader = ELFFile.make_relative_loader(base_path)
+
+            with self.assertRaisesRegex(ELFError, 'escapes the ELF file directory'):
+                loader(b'../outside.debug')
+
+    def test_relative_loader_rejects_absolute_paths(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_path = os.fsencode(os.path.join(tmpdir, 'bin', 'sample.elf'))
+            os.makedirs(os.path.dirname(base_path))
+            loader = ELFFile.make_relative_loader(base_path)
+
+            with self.assertRaisesRegex(ELFError, 'must be relative'):
+                loader(os.fsencode(os.path.abspath(os.path.join(tmpdir, 'outside.debug'))))
+
+    def test_relative_loader_rejects_str_paths(self):
+        with self.assertRaisesRegex(TypeError, 'base_path must be bytes'):
+            ELFFile.make_relative_loader('sample.elf')
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            base_path = os.fsencode(os.path.join(tmpdir, 'bin', 'sample.elf'))
+            os.makedirs(os.path.dirname(base_path))
+            loader = ELFFile.make_relative_loader(base_path)
+
+            with self.assertRaisesRegex(TypeError, 'rel_path must be bytes'):
+                loader('outside.debug')
+
 if __name__ == '__main__':
     unittest.main()
-

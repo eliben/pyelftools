@@ -95,21 +95,32 @@ class ELFFile:
         original file.
         """
         stream = open(path, 'rb')
-        return ELFFile(stream, ELFFile.make_relative_loader(path))
+        return ELFFile(stream, ELFFile.make_relative_loader(os.fsencode(path)))
 
     @staticmethod
     def make_relative_loader(base_path):
         """ Return a function that takes a potentially relative path,
-            resolves it against base_path (bytes or str), and opens a file at that.
+            resolves it against base_path (bytes), and opens a file at that.
 
-            ELFFile uses functions like that for resolving DWARF links.
+            ELFFile uses functions like that for resolving DWARF links, whose
+            filenames are parsed from ELF data as bytes.
         """
-        if isinstance(base_path, str):
-            base_path = base_path.encode('UTF-8') # resolver takes a bytes path
-        base_directory = os.path.dirname(base_path)
+        if not isinstance(base_path, bytes):
+            raise TypeError('base_path must be bytes')
+        base_directory = os.path.realpath(os.path.dirname(base_path))
         def loader(rel_path):
-            if not os.path.isabs(rel_path):
-                rel_path = os.path.join(base_directory, rel_path)
+            if not isinstance(rel_path, bytes):
+                raise TypeError('rel_path must be bytes')
+
+            if os.path.isabs(rel_path):
+                raise ELFError('External DWARF path must be relative to the ELF file directory.')
+
+            rel_path = os.path.realpath(os.path.join(base_directory, rel_path))
+            # Resolve ".." segments and symlinks before checking that the final
+            # target still lives under the ELF file's directory.
+            if os.path.commonpath([base_directory, rel_path]) != base_directory:
+                raise ELFError('External DWARF path escapes the ELF file directory.')
+
             return open(rel_path, 'rb')
         return loader
 
