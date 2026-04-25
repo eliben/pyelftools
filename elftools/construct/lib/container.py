@@ -65,7 +65,7 @@ class Container(MutableMapping[str, Any]):
         "length",
         "n_descsz", "n_offset", "n_namesz",
         "sh_addralign", "sh_flags", "sh_size",
-        "bloom_size", "nbuckets",
+        "bloom_size", "nbuckets", "nchains",
     ]) -> int: ...
     @overload
     def __getitem__(self, name: Literal[
@@ -74,6 +74,10 @@ class Container(MutableMapping[str, Any]):
         "n_name", "n_type",
         "tag", "vendor_name",
     ]) -> str: ...
+    @overload
+    def __getitem__(self, name: Literal[
+        "buckets", "chains",
+    ]) -> list[int]: ...
     @overload
     def __getitem__(self, name: str) -> Any: ...
     def __getitem__(self, name: str) -> Any:
