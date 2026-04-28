@@ -8,7 +8,6 @@ import unittest
 import os
 
 from elftools.elf.elffile import ELFFile
-from elftools.elf.segments import NoteSegment
 
 class TestCorpusNaming(unittest.TestCase):
     def scan_under(self, subdir):
