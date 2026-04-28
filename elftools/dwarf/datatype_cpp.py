@@ -60,8 +60,11 @@ def parse_cpp_datatype(var_die):
             ptr_prefix = ''
 
         if t.tag == 'subroutine':
-            params = tuple(format_function_param(p, p) for p in type_die.iter_children() if p.tag in ("DW_TAG_formal_parameter", "DW_TAG_unspecified_parameters") and 'DW_AT_artificial' not in p.attributes)
-            params = ", ".join(params)
+            params = ", ".join(
+                format_function_param(p, p)
+                for p in type_die.iter_children()
+                if p.tag in ("DW_TAG_formal_parameter", "DW_TAG_unspecified_parameters") and 'DW_AT_artificial' not in p.attributes
+            )
             if 'DW_AT_type' in type_die.attributes:
                 datatype = parse_cpp_datatype(type_die)
                 is_pointer = datatype.modifiers and datatype.modifiers[-1] == 'pointer'
