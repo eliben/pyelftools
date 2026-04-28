@@ -59,6 +59,7 @@ Embed = Embedded
 #===============================================================================
 import functools
 import warnings
+from types import FunctionType
 from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
@@ -71,6 +72,7 @@ if TYPE_CHECKING:
 
 
 def deprecated(f: Callable[_P, _T]) -> Callable[_P, _T]:
+    assert isinstance(f, (FunctionType, type))
     @functools.wraps(f)
     def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _T:
         warnings.warn(
