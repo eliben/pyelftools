@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 import copy
 import os
-from collections import namedtuple
+from typing import Any, NamedTuple
 from warnings import warn
 
 from ..common.utils import (
@@ -700,5 +700,6 @@ class CFARule:
 # A list of register numbers that are described in the table by the order of
 # their appearance.
 #
-DecodedCallFrameTable = namedtuple(
-    'DecodedCallFrameTable', 'table reg_order')
+class DecodedCallFrameTable(NamedTuple):
+    table: list[dict[str, Any]]
+    reg_order: list[int]
