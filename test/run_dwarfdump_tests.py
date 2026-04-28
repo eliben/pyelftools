@@ -157,7 +157,7 @@ def main():
     args = argparser.parse_args()
 
     if args.parallel:
-        if args.verbose or args.keep_going == False:
+        if args.verbose or not args.keep_going:
             print('WARNING: parallel mode disables verbosity and always keeps going')
 
     if args.verbose:
