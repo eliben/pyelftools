@@ -837,7 +837,7 @@ class Switch(Construct, Generic[_T]):
 
     __slots__ = ("subcons", "keyfunc", "cases", "default", "include_key")
 
-    def __init__(self, name: str | None, keyfunc: Callable[[Container], _T | None], cases: Mapping[_T | None, Construct], default: Construct = NoDefault,
+    def __init__(self, name: str | None, keyfunc: Callable[[Container], _T], cases: Mapping[_T, Construct], default: Construct = NoDefault,
             include_key: bool = False) -> None:
         Construct.__init__(self, name)
         self._inherit_flags(*cases.values())
@@ -854,7 +854,7 @@ class Switch(Construct, Generic[_T]):
             return key, obj
         else:
             return obj
-    def _build(self, obj: tuple[_T | None, Construct] | Construct, stream: IO[bytes], context: Container) -> None:
+    def _build(self, obj: tuple[_T, Construct] | Construct, stream: IO[bytes], context: Container) -> None:
         if self.include_key:
             assert isinstance(obj, tuple)
             key, obj = obj
