@@ -9,7 +9,7 @@
 from collections import defaultdict
 
 from .constants import (
-    DW_ACCESS, DW_ATE, DW_CC, DW_ID, DW_INL, DW_LANG, DW_ORD, DW_VIRTUALITY, DW_VIS,
+    DW_ACCESS, DW_ATE, DW_CC, DW_CFA, DW_ID, DW_INL, DW_LANG, DW_ORD, DW_VIRTUALITY, DW_VIS,
     )
 from .dwarf_expr import DWARFExprParser
 from .die import DIE
@@ -65,56 +65,53 @@ def describe_CFI_instructions(entry):
     s = ''
     for instr in entry.instructions:
         name = instr.opcode.FQN
-
-        if name in ('DW_CFA_offset',
-                    'DW_CFA_offset_extended', 'DW_CFA_offset_extended_sf',
-                    'DW_CFA_val_offset', 'DW_CFA_val_offset_sf'):
-            s += '  %s: %s at cfa%+d\n' % (
-                name, _full_reg_name(instr.args[0]),
-                instr.args[1] * cie['data_alignment_factor'])
-        elif name in (  'DW_CFA_restore', 'DW_CFA_restore_extended',
-                        'DW_CFA_undefined', 'DW_CFA_same_value',
-                        'DW_CFA_def_cfa_register'):
-            s += '  %s: %s\n' % (name, _full_reg_name(instr.args[0]))
-        elif name == 'DW_CFA_register':
-            s += '  %s: %s in %s' % (
-                name, _full_reg_name(instr.args[0]),
-                _full_reg_name(instr.args[1]))
-        elif name == 'DW_CFA_set_loc':
-            pc = instr.args[0]
-            s += '  %s: %08x\n' % (name, pc)
-        elif name in (  'DW_CFA_advance_loc1', 'DW_CFA_advance_loc2',
-                        'DW_CFA_advance_loc4', 'DW_CFA_advance_loc'):
-            _assert_FDE_instruction(instr)
-            factored_offset = instr.args[0] * cie['code_alignment_factor']
-            s += '  %s: %s to %08x\n' % (
-                name, factored_offset, factored_offset + pc)
-            pc += factored_offset
-        elif name in (  'DW_CFA_remember_state', 'DW_CFA_restore_state',
-                        'DW_CFA_nop', 'DW_CFA_AARCH64_negate_ra_state'):
-            s += '  %s\n' % name
-        elif name == 'DW_CFA_def_cfa':
-            s += '  %s: %s ofs %s\n' % (
-                name, _full_reg_name(instr.args[0]), instr.args[1])
-        elif name == 'DW_CFA_def_cfa_sf':
-            s += '  %s: %s ofs %s\n' % (
-                name, _full_reg_name(instr.args[0]),
-                instr.args[1] * cie['data_alignment_factor'])
-        elif name in ('DW_CFA_def_cfa_offset', 'DW_CFA_GNU_args_size'):
-            s += '  %s: %s\n' % (name, instr.args[0])
-        elif name == 'DW_CFA_def_cfa_offset_sf':
-            s += '  %s: %s\n' % (name, instr.args[0]*entry.cie['data_alignment_factor'])
-        elif name == 'DW_CFA_def_cfa_expression':
-            expr_dumper = ExprDumper(entry.structs)
-            # readelf output is missing a colon for DW_CFA.def_cfa_expression
-            s += '  %s (%s)\n' % (name, expr_dumper.dump_expr(instr.args[0]))
-        elif name == 'DW_CFA_expression':
-            expr_dumper = ExprDumper(entry.structs)
-            s += '  %s: %s (%s)\n' % (
-                name, _full_reg_name(instr.args[0]),
-                                     expr_dumper.dump_expr(instr.args[1]))
-        else:
-            s += '  %s: <??>\n' % name
+        match instr.opcode:
+            case DW_CFA.offset | DW_CFA.offset_extended | DW_CFA.offset_extended_sf | DW_CFA.val_offset | DW_CFA.val_offset_sf:
+                s += '  %s: %s at cfa%+d\n' % (
+                    name, _full_reg_name(instr.args[0]),
+                    instr.args[1] * cie['data_alignment_factor'])
+            case DW_CFA.restore | DW_CFA.restore_extended | DW_CFA.undefined | DW_CFA.same_value | DW_CFA.def_cfa_register:
+                s += '  %s: %s\n' % (name, _full_reg_name(instr.args[0]))
+            case DW_CFA.register:
+                s += '  %s: %s in %s' % (
+                    name, _full_reg_name(instr.args[0]),
+                    _full_reg_name(instr.args[1]))
+            case DW_CFA.set_loc:
+                pc = instr.args[0]
+                assert pc is not None
+                s += '  %s: %08x\n' % (name, pc)
+            case DW_CFA.advance_loc1 | DW_CFA.advance_loc2 | DW_CFA.advance_loc4 | DW_CFA.advance_loc:
+                _assert_FDE_instruction(instr)
+                assert pc is not None
+                factored_offset: int = instr.args[0] * cie['code_alignment_factor']
+                s += '  %s: %s to %08x\n' % (
+                    name, factored_offset, factored_offset + pc)
+                pc += factored_offset
+            case DW_CFA.remember_state | DW_CFA.restore_state | DW_CFA.nop | DW_CFA.AARCH64_negate_ra_state:
+                s += '  %s\n' % name
+            case DW_CFA.def_cfa:
+                s += '  %s: %s ofs %s\n' % (
+                    name, _full_reg_name(instr.args[0]), instr.args[1])
+            case DW_CFA.def_cfa_sf:
+                s += '  %s: %s ofs %s\n' % (
+                    name, _full_reg_name(instr.args[0]),
+                    instr.args[1] * cie['data_alignment_factor'])
+            case DW_CFA.def_cfa_offset | DW_CFA.GNU_args_size:
+                s += '  %s: %s\n' % (name, instr.args[0])
+            case DW_CFA.def_cfa_offset_sf:
+                assert entry.cie is not None
+                s += '  %s: %s\n' % (name, instr.args[0]*entry.cie['data_alignment_factor'])
+            case DW_CFA.def_cfa_expression:
+                expr_dumper = ExprDumper(entry.structs)
+                # readelf output is missing a colon for DW_CFA.def_cfa_expression
+                s += '  %s (%s)\n' % (name, expr_dumper.dump_expr(instr.args[0]))
+            case DW_CFA.expression:
+                expr_dumper = ExprDumper(entry.structs)
+                s += '  %s: %s (%s)\n' % (
+                    name, _full_reg_name(instr.args[0]),
+                                         expr_dumper.dump_expr(instr.args[1]))
+            case _:
+                s += '  %s: <??>\n' % name
 
     return s
 
