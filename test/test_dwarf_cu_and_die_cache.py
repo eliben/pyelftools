@@ -31,9 +31,9 @@ class TestCacheLUTandDIEref(unittest.TestCase):
             for (k, v) in pt.items():
                 ndie = dwarf.get_DIE_from_lut_entry(v)
                 self.dprint(ndie)
-                if not 'DW_AT_type' in ndie.attributes:
+                if 'DW_AT_type' not in ndie.attributes:
                     continue
-                if not 'DW_AT_name' in ndie.attributes:
+                if 'DW_AT_name' not in ndie.attributes:
                     continue
                 tlist = []
                 tdie = ndie

@@ -19,7 +19,7 @@ def _get_base_offset(cu, base_attribute_name):
     encoded objects - range lists, location lists, strings, addresses.
     """
     cu_top_die = cu.get_top_DIE()
-    if not base_attribute_name in cu_top_die.attributes:
+    if base_attribute_name not in cu_top_die.attributes:
         raise DWARFError("The CU at offset 0x%x needs %s" % (cu.cu_offset, base_attribute_name))
     return cu_top_die.attributes[base_attribute_name].value
 

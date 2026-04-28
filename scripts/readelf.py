@@ -1031,7 +1031,7 @@ class ReadElf:
 
         symbol = self._versioninfo['versym'].get_symbol(nsym)
         index = symbol.entry['ndx']
-        if not index in ('VER_NDX_LOCAL', 'VER_NDX_GLOBAL'):
+        if index not in ('VER_NDX_LOCAL', 'VER_NDX_GLOBAL'):
             index = int(index)
 
             if self._versioninfo['type'] == 'GNU':
@@ -1172,7 +1172,7 @@ class ReadElf:
 
                     attr_desc = describe_attr_value(attr, die, section_offset)
 
-                    if 'DW_OP_fbreg' in attr_desc and current_function and not 'DW_AT_frame_base' in current_function.attributes:
+                    if 'DW_OP_fbreg' in attr_desc and current_function and 'DW_AT_frame_base' not in current_function.attributes:
                         postfix = ' [without dw_at_frame_base]'
                     else:
                         postfix = ''
