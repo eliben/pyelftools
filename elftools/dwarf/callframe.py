@@ -11,12 +11,13 @@ from __future__ import annotations
 import copy
 import os
 from collections.abc import Iterator
-from typing import IO, TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, cast, overload
+from typing import IO, TYPE_CHECKING, Any, Literal, NamedTuple, Protocol, TypedDict, cast, overload
 from warnings import warn
 
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos, iterbytes)
 from ..construct import Struct, Switch
+from ..construct.lib.container import Container
 from .enums import DW_EH_encoding_flags
 from .structs import DWARFStructs
 from .constants import DW_CFA
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from ..construct.core import Construct
-    from ..construct.lib.container import Container, ListContainer
+    from ..construct.lib.container import ListContainer
 
 
 class Line(Protocol):
@@ -51,6 +52,16 @@ class Line(Protocol):
 
     def __iter__(self) -> Iterator[str | int]: ...
     def __len__(self) -> int: ...
+
+
+class Augmentation(TypedDict, total=False):
+    length: int
+    LSDA_encoding: int
+    FDE_encoding: int
+    personality: Container
+    S: Literal[True]
+    B: Literal[True]
+    G: Literal[True]
 
 
 class CallFrameInfo:
@@ -170,7 +181,7 @@ class CallFrameInfo:
         # If the augmentation string is not empty, hope to find a length field
         # in order to skip the data specified augmentation.
         lsda_pointer: int | None = None
-        aug_dict: dict[Any, Any] | None = None
+        aug_dict: Augmentation | None = None
         if is_CIE:
             aug_bytes, aug_dict = self._parse_cie_augmentation(
                     header, entry_structs)
@@ -286,7 +297,7 @@ class CallFrameInfo:
         with preserve_stream_pos(self.stream):
             return self._parse_entry_at(cie_offset)
 
-    def _parse_cie_augmentation(self, header: Container, entry_structs: DWARFStructs) -> tuple[bytes, dict[Any, Any]]:
+    def _parse_cie_augmentation(self, header: Container, entry_structs: DWARFStructs) -> tuple[bytes, Augmentation]:
         """ Parse CIE augmentation data from the annotation string in `header`.
 
         Return a tuple that contains 1) the augmentation data as a string
@@ -309,7 +320,7 @@ class CallFrameInfo:
             b'z': entry_structs.Dwarf_uleb128('length'),
             b'L': entry_structs.Dwarf_uint8('LSDA_encoding'),
             b'R': entry_structs.Dwarf_uint8('FDE_encoding'),
-            b'S': True,
+            b'S': True,  # Signal handler stack frame
             b'P': Struct(
                 'personality',
                 entry_structs.Dwarf_uint8('encoding'),
@@ -317,12 +328,14 @@ class CallFrameInfo:
                     enc: fld_cons('function')
                     for enc, fld_cons
                     in self._eh_encoding_to_field(entry_structs).items()})),
+            b'B': True,  # aadwarf64: associated frames uses the B key for return address signing
+            b'G': True,  # aadwarf64: associated frames may modify MTE tags on the stack space
         }
 
         # Build the Struct we will be using to parse the augmentation data.
         # Stop as soon as we are not able to match the augmentation string.
         fields: list[Construct] = []
-        aug_dict: dict[Any, Any] = {}
+        aug_dict: Augmentation = {}
 
         for b in iterbytes(augmentation):
             try:
@@ -331,7 +344,7 @@ class CallFrameInfo:
                 break
 
             if fld is True:
-                aug_dict[fld] = True
+                aug_dict[b.decode()] = True  # type: ignore[literal-required] # ty: ignore[invalid-key]
             else:
                 fields.append(fld)
 
@@ -414,7 +427,7 @@ class CallFrameInfo:
         # Try to parse the initial location. We need the initial location in
         # order to create a meaningful FDE, so assume it's there. Omission does
         # not seem to happen in practice.
-        encoding: int = cie.augmentation_dict['FDE_encoding']
+        encoding: int = cie.augmentation_dict['FDE_encoding']  # pyright: ignore[reportTypedDictNotRequiredAccess]
         assert encoding != DW_EH_encoding_flags['DW_EH_PE_omit']
         basic_encoding = encoding & 0x0f
         encoding_modifier = encoding & 0xf0
@@ -509,7 +522,7 @@ class CFIEntry:
         structs: DWARFStructs,
         instructions: list[CallFrameInstruction],
         offset: int,
-        augmentation_dict: dict[Any, Any] | None = None,
+        augmentation_dict: Augmentation | None = None,
         augmentation_bytes: bytes | None = b'',
         cie: CIE | None = None,
     ) -> None:
