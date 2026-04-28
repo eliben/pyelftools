@@ -151,8 +151,7 @@ class LocationLists:
                             list_offset = attr.value
                             all_offsets.add(list_offset)
                             cu_map[list_offset] = cu
-        all_offsets = list(all_offsets)
-        all_offsets.sort()
+        sorted_offsets = sorted(all_offsets)
 
         if ver5:
             # Loclists section is organized as an array of CUs, each length prefixed.
@@ -172,7 +171,7 @@ class LocationLists:
 
                 while stream.tell() < cu_end_offset:
                     # Skip the gap to the next object
-                    next_offset = all_offsets[offset_index]
+                    next_offset = sorted_offsets[offset_index]
                     if next_offset == stream.tell(): # At an object, either a loc list or a loc view pair
                         locview_pairs = self._parse_locview_pairs(locviews)
                         entries = self._parse_location_list_from_stream_v5(cu_map[stream.tell()])
@@ -183,7 +182,7 @@ class LocationLists:
                             next_offset = cu_end_offset # And implicitly quit the loop within the CU
                         stream.seek(next_offset, os.SEEK_SET)
         else:
-            for offset in all_offsets:
+            for offset in sorted_offsets:
                 list_offset = locviews.get(offset, offset)
                 if cu_map[list_offset].header.version < 5:
                     stream.seek(offset, os.SEEK_SET)
