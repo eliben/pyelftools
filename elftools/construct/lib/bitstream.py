@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class BitStream(io.RawIOBase, IO[bytes]):
 
-    __slots__: list[str] = ["substream"]
+    __slots__ = ("substream",)
 
     def __init__(self, substream: IO[bytes]) -> None:
         self.substream = substream
@@ -23,7 +23,7 @@ class BitStream(io.RawIOBase, IO[bytes]):
 
 class BitStreamReader(BitStream):
 
-    __slots__: list[str] = ["buffer", "total_size"]
+    __slots__ = ("buffer", "total_size")
 
     def __init__(self, substream: IO[bytes]) -> None:
         super().__init__(substream)
@@ -69,7 +69,7 @@ class BitStreamReader(BitStream):
 
 class BitStreamWriter(BitStream):
 
-    __slots__: list[str] = ["buffer", "pos"]
+    __slots__ = ("buffer", "pos")
 
     def __init__(self, substream: IO[bytes]) -> None:
         super().__init__(substream)

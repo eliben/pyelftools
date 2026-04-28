@@ -32,23 +32,23 @@ __all__ = [
 # exceptions
 #===============================================================================
 class ConstructError(Exception):
-    __slots__: list[str] = []
+    __slots__ = ()
 class FieldError(ConstructError):
-    __slots__: list[str] = []
+    __slots__ = ()
 class SizeofError(ConstructError):
-    __slots__: list[str] = []
+    __slots__ = ()
 class AdaptationError(ConstructError):
-    __slots__: list[str] = []
+    __slots__ = ()
 class ArrayError(ConstructError):
-    __slots__: list[str] = []
+    __slots__ = ()
 class RangeError(ConstructError):
-    __slots__: list[str] = []
+    __slots__ = ()
 class SwitchError(ConstructError):
-    __slots__: list[str] = []
+    __slots__ = ()
 class SelectError(ConstructError):
-    __slots__: list[str] = []
+    __slots__ = ()
 class TerminatorError(ConstructError):
-    __slots__: list[str] = []
+    __slots__ = ()
 
 #===============================================================================
 # abstract constructs
@@ -113,7 +113,7 @@ class Construct:
     FLAG_EMBED                 = 0x0004
     FLAG_NESTING               = 0x0008
 
-    __slots__: list[str] = ["name", "conflags"]
+    __slots__ = ("name", "conflags")
     def __init__(self, name: str | None, flags: int = 0) -> None:
         if name is not None:
             if type(name) is not str:
@@ -277,7 +277,7 @@ class Subconstruct(Construct):
     Parameters:
     * subcon - the construct to wrap
     """
-    __slots__: list[str] = ["subcon"]
+    __slots__ = ("subcon",)
     def __init__(self, subcon: Construct) -> None:
         Construct.__init__(self, subcon.name, subcon.conflags)
         self.subcon = subcon
@@ -295,7 +295,7 @@ class Adapter(Subconstruct):
     Parameters:
     * subcon - the construct to wrap
     """
-    __slots__: list[str] = []
+    __slots__ = ()
     def _parse(self, stream: IO[bytes], context: Container) -> Any:
         return self._decode(self.subcon._parse(stream, context), context)
     def _build(self, obj: Any, stream: IO[bytes], context: Container) -> None:
@@ -332,7 +332,7 @@ class StaticField(Construct):
     :param int length: number of bytes in the field
     """
 
-    __slots__: list[str] = ["length"]
+    __slots__ = ("length",)
     def __init__(self, name: str | None, length: int) -> None:
         Construct.__init__(self, name)
         self.length = length
@@ -354,7 +354,7 @@ class FormatField(StaticField, Generic[_T]):
     :param str format: a single format character
     """
 
-    __slots__: list[str] = ["packer"]
+    __slots__ = ("packer",)
     if TYPE_CHECKING:
         name: str
     def __init__(self, name: str, endianity: Literal["<", ">", "="], format: str) -> None:
@@ -403,7 +403,7 @@ class MetaField(Construct):
     Container({'length': 4, 'data': b'ABCD'})
     """
 
-    __slots__: list[str] = ["lengthfunc"]
+    __slots__ = ("lengthfunc",)
     def __init__(self, name: str | None, lengthfunc: Callable[[Container], int]) -> None:
         Construct.__init__(self, name)
         self.lengthfunc = lengthfunc
@@ -433,7 +433,7 @@ class MetaArray(Subconstruct):
     Example:
     MetaArray(lambda ctx: 5, UBInt8("foo"))
     """
-    __slots__: list[str] = ["countfunc"]
+    __slots__ = ("countfunc",)
     def __init__(self, countfunc: Callable[[Container], int], subcon: Construct) -> None:
         Subconstruct.__init__(self, subcon)
         self.countfunc = countfunc
@@ -512,7 +512,7 @@ class Range(Subconstruct):
     RangeError: expected 3..7, found 8
     """
 
-    __slots__: list[str] = ["mincount", "maxcout"]
+    __slots__ = ("mincount", "maxcout")
     def __init__(self, mincount: int, maxcout: int, subcon: Construct) -> None:
         Subconstruct.__init__(self, subcon)
         self.mincount = mincount
@@ -581,7 +581,7 @@ class RepeatUntil(Subconstruct):
         Field("chars", 1)
     )
     """
-    __slots__: list[str] = ["predicate"]
+    __slots__ = ("predicate",)
     def __init__(self, predicate: Callable[[Any, Container], bool], subcon: Construct) -> None:
         Subconstruct.__init__(self, subcon)
         self.predicate = predicate
@@ -650,7 +650,7 @@ class Struct(Construct):
         UBInt8("third_element"),
     )
     """
-    __slots__: list[str] = ["subcons", "nested"]
+    __slots__ = ("subcons", "nested",)
     def __init__(self, name: str | None, *subcons: Construct, nested: bool = True) -> None:
         self.nested = nested
         Construct.__init__(self, name)
@@ -716,7 +716,7 @@ class Sequence(Struct):
         UBInt8("third_element"),
     )
     """
-    __slots__: list[str] = []
+    __slots__ = ()
     def _parse(self, stream: IO[bytes], context: Container) -> ListContainer:  # type: ignore[override]
         if "<obj>" in context:
             obj = context["<obj>"]
@@ -776,7 +776,7 @@ class Union(Construct):
         ),
     )
     """
-    __slots__: list[str] = ["parser", "builder"]
+    __slots__ = ("parser", "builder")
     def __init__(self, name: str | None, master: Construct, *subcons: Construct) -> None:
         Construct.__init__(self, name)
         args: list[Construct] = [Peek(sc) for sc in subcons]
@@ -834,7 +834,7 @@ class Switch(Construct, Generic[_T]):
             raise SwitchError("no default case defined")
     NoDefault: Final = _NoDefault("No default value specified")
 
-    __slots__: list[str] = ["subcons", "keyfunc", "cases", "default", "include_key"]
+    __slots__ = ("subcons", "keyfunc", "cases", "default", "include_key")
 
     def __init__(self, name: str | None, keyfunc: Callable[[Container], _T | None], cases: Mapping[_T | None, Construct], default: Construct = NoDefault,
             include_key: bool = False) -> None:
@@ -888,7 +888,7 @@ class Select(Construct):
         UBInt8("tiny"),
     )
     """
-    __slots__: list[str] = ["subcons", "include_name"]
+    __slots__ = ("subcons", "include_name")
     def __init__(self, name: str | None, *subcons: Construct, include_name: bool = False) -> None:
         Construct.__init__(self, name)
         self.subcons = subcons
@@ -960,7 +960,7 @@ class Pointer(Subconstruct):
         )
     )
     """
-    __slots__: list[str] = ["offsetfunc"]
+    __slots__ = ("offsetfunc",)
     def __init__(self, offsetfunc: Callable[[Container], int], subcon: Construct) -> None:
         Subconstruct.__init__(self, subcon)
         self.offsetfunc = offsetfunc
@@ -997,7 +997,7 @@ class Peek(Subconstruct):
     Example:
     Peek(UBInt8("foo"))
     """
-    __slots__: list[str] = ["perform_build"]
+    __slots__ = ("perform_build",)
     def __init__(self, subcon: Construct, perform_build: bool = False) -> None:
         Subconstruct.__init__(self, subcon)
         self.perform_build = perform_build
@@ -1039,7 +1039,7 @@ class OnDemand(Subconstruct):
     Example:
     OnDemand(Array(10000, UBInt8("foo"))
     """
-    __slots__: list[str] = ["advance_stream", "force_build"]
+    __slots__ = ("advance_stream", "force_build")
     def __init__(self, subcon: Construct, advance_stream: bool = True, force_build: bool = True) -> None:
         Subconstruct.__init__(self, subcon)
         self.advance_stream = advance_stream
@@ -1082,7 +1082,7 @@ class Buffered(Subconstruct):
         resizer = lambda size: size / 8,
     )
     """
-    __slots__: list[str] = ["encoder", "decoder", "resizer"]
+    __slots__ = ("encoder", "decoder", "resizer")
     def __init__(self, subcon: Construct, decoder: Callable[[bytes], bytes], encoder: Callable[[bytes], bytes], resizer: Callable[[int], int]) -> None:
         Subconstruct.__init__(self, subcon)
         self.encoder = encoder
@@ -1132,7 +1132,7 @@ class Restream(Subconstruct):
         resizer = lambda size: size / 8,
     )
     """
-    __slots__: list[str] = ["stream_reader", "stream_writer", "resizer"]
+    __slots__ = ("stream_reader", "stream_writer", "resizer")
     def __init__(self, subcon: Construct, stream_reader: type[BitStream], stream_writer: type[BitStream], resizer: Callable[[int], int]) -> None:
         Subconstruct.__init__(self, subcon)
         self.stream_reader = stream_reader
@@ -1168,7 +1168,7 @@ class Reconfig(Subconstruct):
     Example:
     Reconfig("foo", UBInt8("bar"))
     """
-    __slots__: list[str] = []
+    __slots__ = ()
     def __init__(self, name: str | None, subcon: Construct, setflags: int = 0, clearflags: int = 0) -> None:
         Construct.__init__(self, name, subcon.conflags)
         self.subcon = subcon
@@ -1199,7 +1199,7 @@ class Anchor(Construct):
         )
     )
     """
-    __slots__: list[str] = []
+    __slots__ = ()
     if TYPE_CHECKING:
         name: str
     def _parse(self, stream: IO[bytes], context: Container) -> int:
@@ -1224,7 +1224,7 @@ class Value(Construct, Generic[_T]):
         Value("total_pixels", lambda ctx: ctx.width * ctx.height),
     )
     """
-    __slots__: list[str] = ["func"]
+    __slots__ = ("func",)
     if TYPE_CHECKING:
         name: str
     def __init__(self, name: str, func: Callable[[Container], _T]) -> None:
@@ -1261,7 +1261,7 @@ class Value(Construct, Generic[_T]):
 #        Dynamic("spam", factory),
 #    )
 #    """
-#    __slots__: list[str] = ["factoryfunc"]
+#    __slots__ = ("factoryfunc",)
 #    def __init__(self, name: str, factoryfunc: Callable[[Container], Construct]) -> None:
 #        Construct.__init__(self, name, self.FLAG_COPY_CONTEXT)
 #        self.factoryfunc = factoryfunc
@@ -1287,7 +1287,7 @@ class LazyBound(Construct):
         LazyBound("next", lambda: foo),
     )
     """
-    __slots__: list[str] = ["bindfunc", "bound"]
+    __slots__ = ("bindfunc", "bound")
     def __init__(self, name: str, bindfunc: Callable[[], Construct]) -> None:
         Construct.__init__(self, name)
         self.bound: Construct | None = None
@@ -1318,7 +1318,7 @@ class _Pass(Construct):
     Example:
     Pass
     """
-    __slots__: list[str] = []
+    __slots__ = ()
     def _parse(self, stream: IO[bytes], context: Container) -> None:
         pass
     def _build(self, obj: None, stream: IO[bytes], context: Container) -> None:
@@ -1343,7 +1343,7 @@ class _Terminator(Construct):
     Example:
     Terminator
     """
-    __slots__: list[str] = []
+    __slots__ = ()
     def _parse(self, stream: IO[bytes], context: Container) -> None:
         if stream.read(1):
             raise TerminatorError("expected end of stream")
