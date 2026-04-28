@@ -73,6 +73,7 @@ def describe_CFI_instructions(entry: CFIEntry) -> str:
         cie = entry
         pc: int | None = None
     else: # FDE
+        assert entry.cie is not None
         cie = entry.cie
         pc = entry['initial_location']
 

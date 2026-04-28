@@ -550,6 +550,7 @@ class CFIEntry:
             # For a FDE, we need to decode the attached CIE first, because its
             # decoded table is needed. Its "initial instructions" describe a
             # line that serves as the base (first) line in the FDE's table.
+            assert self.cie is not None
             cie = self.cie
             cie_decoded_table = cie.get_decoded()
             pc = self['initial_location']

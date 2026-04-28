@@ -214,6 +214,7 @@ class DWARFInfo:
             .debug_types section.
         """
         self._parse_debug_types()
+        assert self._type_units_by_sig is not None
         tu = self._type_units_by_sig.get(sig8)
         if tu is None:
             raise KeyError("Signature %016x not found in .debug_types" % sig8)
@@ -235,6 +236,7 @@ class DWARFInfo:
         dwarf_assert(
             self.has_debug_info,
             'CU lookup but no debug info section')
+        assert self.debug_info_sec is not None
         dwarf_assert(
             0 <= refaddr < self.debug_info_sec.size,
             "refaddr %s beyond .debug_info size" % refaddr)
@@ -267,6 +269,7 @@ class DWARFInfo:
         dwarf_assert(
             self.has_debug_info,
             'CU lookup but no debug info section')
+        assert self.debug_info_sec is not None
         dwarf_assert(
             0 <= offset < self.debug_info_sec.size,
             "offset %s beyond .debug_info size" % offset)
@@ -284,6 +287,7 @@ class DWARFInfo:
 
         """
         self._parse_debug_types()
+        assert self._type_units_by_sig is not None
         tu = self._type_units_by_sig.get(sig8)
         if tu is None:
             raise KeyError("Signature %016x not found in .debug_types" % sig8)
@@ -311,6 +315,7 @@ class DWARFInfo:
             AbbrevTable objects are cached internally (two calls for the same
             offset will return the same object).
         """
+        assert self.debug_abbrev_sec is not None
         dwarf_assert(
             offset < self.debug_abbrev_sec.size,
             "Offset '0x%x' to abbrev table out of section bounds" % offset)
@@ -325,12 +330,14 @@ class DWARFInfo:
         """ Obtain a string from the string table section, given an offset
             relative to the section.
         """
+        assert self.debug_str_sec is not None
         return parse_cstring_from_stream(self.debug_str_sec.stream, offset)
 
     def get_string_from_linetable(self, offset: int) -> bytes | None:
         """ Obtain a string from the string table section, given an offset
             relative to the section.
         """
+        assert self.debug_line_str_sec is not None
         return parse_cstring_from_stream(self.debug_line_str_sec.stream, offset)
 
     def line_program_for_CU(self, CU: CompileUnit) -> LineProgram | None:
@@ -363,6 +370,7 @@ class DWARFInfo:
     def CFI_entries(self) -> list[CFIEntry | ZERO]:
         """ Get a list of dwarf_frame CFI entries from the .debug_frame section.
         """
+        assert self.debug_frame_sec is not None
         cfi = CallFrameInfo(
             stream=self.debug_frame_sec.stream,
             size=self.debug_frame_sec.size,
@@ -378,6 +386,7 @@ class DWARFInfo:
     def EH_CFI_entries(self) -> list[CFIEntry | ZERO]:
         """ Get a list of eh_frame CFI entries from the .eh_frame section.
         """
+        assert self.eh_frame_sec is not None
         cfi = CallFrameInfo(
             stream=self.eh_frame_sec.stream,
             size=self.eh_frame_sec.size,
@@ -578,6 +587,7 @@ class DWARFInfo:
         # dwarf format. Based on it, we then create a new DWARFStructs
         # instance suitable for this CU and use it to parse the rest.
         #
+        assert self.debug_info_sec is not None
         initial_length = struct_parse(
             self.structs.the_Dwarf_uint32, self.debug_info_sec.stream, offset)
         dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
@@ -624,6 +634,7 @@ class DWARFInfo:
         # dwarf format. Based on it, we then create a new DWARFStructs
         # instance suitable for this TU and use it to parse the rest.
         #
+        assert self.debug_types_sec is not None
         initial_length = struct_parse(
             self.structs.the_Dwarf_uint32, self.debug_types_sec.stream, offset)
         dwarf_format = 64 if initial_length == 0xFFFFFFFF else 32
@@ -672,6 +683,7 @@ class DWARFInfo:
         if offset in self._linetable_cache:
             return self._linetable_cache[offset]
 
+        assert self.debug_line_sec is not None
         lineprog_header = struct_parse(
             structs.Dwarf_lineprog_header,
             self.debug_line_sec.stream,
