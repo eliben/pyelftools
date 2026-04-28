@@ -256,7 +256,8 @@ class CStringAdapter(StringAdapter):
         self.terminators = terminators
     def _encode(self, obj: bytes | str, context: Container) -> bytes:
         return StringAdapter._encode(self, obj, context) + self.terminators[0:1]
-    def _decode(self, obj: list[bytes], context: Container) -> bytes | str:  # type: ignore[override]
+    def _decode(self, obj: list[bytes], context: Container) -> bytes | str:  # type: ignore[override] # ty: ignore[invalid-method-override]
+        # This violates the Liskov Substitution Principle: should be `obj: bytes`, but RepeatUntil() converts `bytes` to `list[byte]`
         return StringAdapter._decode(self, b''.join(obj[:-1]), context)
 
 class TunnelAdapter(Adapter):

@@ -717,7 +717,8 @@ class Sequence(Struct):
     )
     """
     __slots__ = ()
-    def _parse(self, stream: IO[bytes], context: Container) -> ListContainer:  # type: ignore[override]
+    def _parse(self, stream: IO[bytes], context: Container) -> ListContainer:  # type: ignore[override] # ty: ignore[invalid-method-override]
+        # This violates the Liskov Substitution Principle: `ListContainer` is no sub-class of `Container`; they're unrelated
         if "<obj>" in context:
             obj = context["<obj>"]
             del context["<obj>"]
