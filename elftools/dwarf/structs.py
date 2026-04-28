@@ -414,7 +414,7 @@ class DWARFStructs:
                     parser = context[self.format_field + "_parser"]
                 else:
                     fields = tuple(
-                        Rename(f.content_type, self.structs.Dwarf_dw_form[f.form])
+                        Rename(f.content_type, self.structs.Dwarf_dw_form[f.form])  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
                         for f in context[self.format_field])
                     parser = Struct('formatted_entry', *fields)
                     context[self.format_field + "_parser"] = parser
