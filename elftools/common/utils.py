@@ -127,7 +127,7 @@ def iterbytes(b):
 def bytes2hex(b, sep=''):
     if not sep:
         return b.hex()
-    return sep.join(map('{:02x}'.format, b))
+    return sep.join(f'{o:02x}' for o in b)
 
 #------------------------- PRIVATE -------------------------
 
