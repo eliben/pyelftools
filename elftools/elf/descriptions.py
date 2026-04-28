@@ -152,7 +152,7 @@ def describe_symbol_other(x: Container) -> str:
 
 
 def describe_symbol_shndx(x: int | str) -> str:
-    return _DESCR_ST_SHNDX.get(x, '%3s' % x)
+    return _DESCR_ST_SHNDX.get(x, f'{x:3}')  # type: ignore[arg-type] # ty: ignore[no-matching-overload]
 
 
 def describe_reloc_type(x: int, elffile: ELFFile) -> str:
