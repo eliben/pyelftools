@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Self  # 3.11+
+    from typing_extensions import Self  # 3.11+
 
 
 # Map an integer in the inclusive range 0-255 to its string byte representation

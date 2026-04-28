@@ -7,13 +7,14 @@ from typing import IO, TYPE_CHECKING, Any, Final, Generic, Literal, NoReturn, Ty
 from .lib import Container, ListContainer, LazyContainer
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
-    from typing import Self  # 3.11+
+    from collections.abc import Callable, Iterable, Mapping
+
+    from typing_extensions import Self  # 3.11+
 
     from .lib.bitstream import BitStream
 
-_T = TypeVar("_T")
 
+_T = TypeVar("_T")
 
 __all__ = [
     "ConstructError", "FieldError", "SizeofError", "AdaptationError", "ArrayError", "RangeError", "SwitchError", "SelectError", "TerminatorError",
@@ -835,7 +836,7 @@ class Switch(Construct, Generic[_T]):
 
     __slots__: list[str] = ["subcons", "keyfunc", "cases", "default", "include_key"]
 
-    def __init__(self, name: str | None, keyfunc: Callable[[Container], _T | None], cases: dict[_T | None, Construct], default: Construct = NoDefault,
+    def __init__(self, name: str | None, keyfunc: Callable[[Container], _T | None], cases: Mapping[_T | None, Construct], default: Construct = NoDefault,
             include_key: bool = False) -> None:
         Construct.__init__(self, name)
         self._inherit_flags(*cases.values())

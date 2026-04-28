@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from .core import Adapter, AdaptationError, Pass
 from .lib import int_to_bin, bin_to_int, swap_bytes
 from .lib import FlagsContainer, HexString
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Mapping, Sized
+    from collections.abc import Callable, Hashable, Mapping, Sized
 
     from .core import Construct, _Pass
     from .lib import Container, ListContainer
