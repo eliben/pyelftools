@@ -164,7 +164,7 @@ class EHABIEntry:
         fo = self.function_offset
         to = self.eh_table_offset
         return (
-	    "<EHABIEntry"
+            "<EHABIEntry"
             f" function_offset={'' if fo is None else '{fo:#x}'}"
             f", personaality={self.personality}"
             f"{', eh_table_offset={to:#x}' if to else ''}"
@@ -190,6 +190,9 @@ class CannotUnwindEHABIEntry(EHABIEntry):
     """ This function cannot be unwind. Attribute #unwindable will be False.
     """
 
+    if TYPE_CHECKING:
+        function_offset: int  # instead of `int|None` to save `is None` checks everywhere
+
     def __init__(self, function_offset: int) -> None:
         super().__init__(function_offset, personality=None, bytecode_array=None,
                                                      unwindable=False)
@@ -201,6 +204,10 @@ class CannotUnwindEHABIEntry(EHABIEntry):
 class GenericEHABIEntry(EHABIEntry):
     """ This entry is generic model rather than ARM compact model.Attribute #bytecode_array will be None.
     """
+
+    if TYPE_CHECKING:
+        function_offset: int  # instead of `int|None` to save `is None` checks everywhere
+        personality: int
 
     def __init__(self, function_offset: int, personality: int) -> None:
         super().__init__(function_offset, personality, bytecode_array=None)
