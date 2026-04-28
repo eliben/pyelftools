@@ -6,9 +6,12 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 import copy
 import os
-from typing import Any, NamedTuple
+from collections.abc import Iterator
+from typing import Any, Literal, NamedTuple, Protocol, overload
 from warnings import warn
 
 from ..common.utils import (
@@ -17,6 +20,31 @@ from ..construct import Struct, Switch
 from .enums import DW_EH_encoding_flags
 from .structs import DWARFStructs
 from .constants import DW_CFA
+
+
+class Line(Protocol):
+    """ Fake dict for typing until TypedDict can handle non-string-keys.
+    https://peps.python.org/pep-0728/
+    """
+
+    @overload
+    def __getitem__(self, key: Literal["pc"], /) -> int: ...
+    @overload
+    def __getitem__(self, key: Literal["cfa"], /) -> CFARule: ...
+    @overload
+    def __getitem__(self, key: int, /) -> RegisterRule: ...
+
+    @overload
+    def __setitem__(self, key: Literal["pc"], value: int, /) -> None: ...
+    @overload
+    def __setitem__(self, key: Literal["cfa"], value: CFARule, /) -> None: ...
+    @overload
+    def __setitem__(self, key: int, value: RegisterRule, /) -> None: ...
+
+    def pop(self, key: int, default: None = None, /) -> RegisterRule: ...
+
+    def __iter__(self) -> Iterator[str | int]: ...
+    def __len__(self) -> int: ...
 
 
 class CallFrameInfo:
