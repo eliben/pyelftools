@@ -191,7 +191,7 @@ class PaddedStringAdapter(Adapter):
     """
     __slots__ = ("padchar", "paddir", "trimdir")
     def __init__(self, subcon: Construct, padchar: bytes = b"\x00", paddir: Literal["right", "left", "center"] = "right",
-            trimdir: Literal["right", "left"] = "right"):
+            trimdir: Literal["right", "left"] = "right") -> None:
         if paddir not in ("right", "left", "center"):
             raise ValueError("paddir must be 'right', 'left' or 'center'",
                 paddir)
