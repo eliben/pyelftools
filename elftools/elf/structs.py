@@ -7,6 +7,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import elftools.elf .enums as e
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
     ULInt8, ULInt16, ULInt32, ULInt64,
@@ -16,7 +17,6 @@ from ..construct import (
     )
 from ..common.construct_utils import ULEB128
 from ..common.utils import roundup
-from .enums import *
 
 
 class ELFStructs:
@@ -120,16 +120,16 @@ class ELFStructs:
         self.Elf_Ehdr = Struct('Elf_Ehdr',
             Struct('e_ident',
                 Array(4, self.Elf_byte('EI_MAG')),
-                Enum(self.Elf_byte('EI_CLASS'), **ENUM_EI_CLASS),
-                Enum(self.Elf_byte('EI_DATA'), **ENUM_EI_DATA),
-                Enum(self.Elf_byte('EI_VERSION'), **ENUM_E_VERSION),
-                Enum(self.Elf_byte('EI_OSABI'), **ENUM_EI_OSABI),
+                Enum(self.Elf_byte('EI_CLASS'), **e.ENUM_EI_CLASS),
+                Enum(self.Elf_byte('EI_DATA'), **e.ENUM_EI_DATA),
+                Enum(self.Elf_byte('EI_VERSION'), **e.ENUM_E_VERSION),
+                Enum(self.Elf_byte('EI_OSABI'), **e.ENUM_EI_OSABI),
                 self.Elf_byte('EI_ABIVERSION'),
                 Padding(7)
             ),
-            Enum(self.Elf_half('e_type'), **ENUM_E_TYPE),
-            Enum(self.Elf_half('e_machine'), **ENUM_E_MACHINE),
-            Enum(self.Elf_word('e_version'), **ENUM_E_VERSION),
+            Enum(self.Elf_half('e_type'), **e.ENUM_E_TYPE),
+            Enum(self.Elf_half('e_machine'), **e.ENUM_E_MACHINE),
+            Enum(self.Elf_word('e_version'), **e.ENUM_E_VERSION),
             self.Elf_addr('e_entry'),
             self.Elf_offset('e_phoff'),
             self.Elf_offset('e_shoff'),
@@ -149,15 +149,15 @@ class ELFStructs:
         self.Elf_ntbs = CString
 
     def _create_phdr(self):
-        p_type_dict = ENUM_P_TYPE_BASE
+        p_type_dict = e.ENUM_P_TYPE_BASE
         if self.e_machine == 'EM_ARM':
-            p_type_dict = ENUM_P_TYPE_ARM
+            p_type_dict = e.ENUM_P_TYPE_ARM
         elif self.e_machine == 'EM_AARCH64':
-            p_type_dict = ENUM_P_TYPE_AARCH64
+            p_type_dict = e.ENUM_P_TYPE_AARCH64
         elif self.e_machine == 'EM_MIPS':
-            p_type_dict = ENUM_P_TYPE_MIPS
+            p_type_dict = e.ENUM_P_TYPE_MIPS
         elif self.e_machine == 'EM_RISCV':
-            p_type_dict = ENUM_P_TYPE_RISCV
+            p_type_dict = e.ENUM_P_TYPE_RISCV
 
         if self.elfclass == 32:
             self.Elf_Phdr = Struct('Elf_Phdr',
@@ -187,17 +187,17 @@ class ELFStructs:
 
         Depends on e_machine because of machine-specific values in sh_type.
         """
-        sh_type_dict = ENUM_SH_TYPE_BASE
+        sh_type_dict = e.ENUM_SH_TYPE_BASE
         if self.e_machine == 'EM_ARM':
-            sh_type_dict = ENUM_SH_TYPE_ARM
+            sh_type_dict = e.ENUM_SH_TYPE_ARM
         elif self.e_machine == 'EM_AARCH64':
-            sh_type_dict = ENUM_SH_TYPE_AARCH64
+            sh_type_dict = e.ENUM_SH_TYPE_AARCH64
         elif self.e_machine == 'EM_X86_64':
-            sh_type_dict = ENUM_SH_TYPE_AMD64
+            sh_type_dict = e.ENUM_SH_TYPE_AMD64
         elif self.e_machine == 'EM_MIPS':
-            sh_type_dict = ENUM_SH_TYPE_MIPS
+            sh_type_dict = e.ENUM_SH_TYPE_MIPS
         if self.e_machine == 'EM_RISCV':
-            sh_type_dict = ENUM_SH_TYPE_RISCV
+            sh_type_dict = e.ENUM_SH_TYPE_RISCV
 
         self.Elf_Shdr = Struct('Elf_Shdr',
             self.Elf_word('sh_name'),
@@ -218,7 +218,7 @@ class ELFStructs:
         # Interface, Chapter 13 Object File Format, Section Compression:
         # https://docs.oracle.com/cd/E53394_01/html/E54813/section_compression.html
         fields = [
-            Enum(self.Elf_word('ch_type'), **ENUM_ELFCOMPRESS_TYPE),
+            Enum(self.Elf_word('ch_type'), **e.ENUM_ELFCOMPRESS_TYPE),
             self.Elf_xword('ch_size'),
             self.Elf_xword('ch_addralign'),
         ]
@@ -286,11 +286,11 @@ class ELFStructs:
         self.Elf_Relr = Struct('Elf_Relr', self.Elf_addr('r_offset'))
 
     def _create_dyn(self):
-        d_tag_dict = dict(ENUM_D_TAG_COMMON)
-        if self.e_machine in ENUMMAP_EXTRA_D_TAG_MACHINE:
-            d_tag_dict.update(ENUMMAP_EXTRA_D_TAG_MACHINE[self.e_machine])
+        d_tag_dict = dict(e.ENUM_D_TAG_COMMON)
+        if self.e_machine in e.ENUMMAP_EXTRA_D_TAG_MACHINE:
+            d_tag_dict.update(e.ENUMMAP_EXTRA_D_TAG_MACHINE[self.e_machine])
         elif self.e_ident_osabi == 'ELFOSABI_SOLARIS':
-            d_tag_dict.update(ENUM_D_TAG_SOLARIS)
+            d_tag_dict.update(e.ENUM_D_TAG_SOLARIS)
 
         self.Elf_Dyn = Struct('Elf_Dyn',
             Enum(self.Elf_sxword('d_tag'), **d_tag_dict),
@@ -302,16 +302,16 @@ class ELFStructs:
         # st_info is hierarchical. To access the type, use
         # container['st_info']['type']
         st_info_struct = BitStruct('st_info',
-            Enum(BitField('bind', 4), **ENUM_ST_INFO_BIND),
-            Enum(BitField('type', 4), **ENUM_ST_INFO_TYPE))
+            Enum(BitField('bind', 4), **e.ENUM_ST_INFO_BIND),
+            Enum(BitField('type', 4), **e.ENUM_ST_INFO_TYPE))
         # st_other is hierarchical. To access the visibility,
         # use container['st_other']['visibility']
         st_other_struct = BitStruct('st_other',
             # https://openpowerfoundation.org/wp-content/uploads/2016/03/ABI64BitOpenPOWERv1.1_16July2015_pub4.pdf
             # See 3.4.1 Symbol Values.
-            Enum(BitField('local', 3), **ENUM_ST_LOCAL),
+            Enum(BitField('local', 3), **e.ENUM_ST_LOCAL),
             Padding(2),
-            Enum(BitField('visibility', 3), **ENUM_ST_VISIBILITY))
+            Enum(BitField('visibility', 3), **e.ENUM_ST_VISIBILITY))
         if self.elfclass == 32:
             self.Elf_Sym = Struct('Elf_Sym',
                 self.Elf_word('st_name'),
@@ -319,21 +319,21 @@ class ELFStructs:
                 self.Elf_word('st_size'),
                 st_info_struct,
                 st_other_struct,
-                Enum(self.Elf_half('st_shndx'), **ENUM_ST_SHNDX),
+                Enum(self.Elf_half('st_shndx'), **e.ENUM_ST_SHNDX),
             )
         else:
             self.Elf_Sym = Struct('Elf_Sym',
                 self.Elf_word('st_name'),
                 st_info_struct,
                 st_other_struct,
-                Enum(self.Elf_half('st_shndx'), **ENUM_ST_SHNDX),
+                Enum(self.Elf_half('st_shndx'), **e.ENUM_ST_SHNDX),
                 self.Elf_addr('st_value'),
                 self.Elf_xword('st_size'),
             )
 
     def _create_sunw_syminfo(self):
         self.Elf_Sunw_Syminfo = Struct('Elf_Sunw_Syminfo',
-            Enum(self.Elf_half('si_boundto'), **ENUM_SUNW_SYMINFO_BOUNDTO),
+            Enum(self.Elf_half('si_boundto'), **e.ENUM_SUNW_SYMINFO_BOUNDTO),
             self.Elf_half('si_flags'),
         )
 
@@ -376,14 +376,14 @@ class ELFStructs:
         # Structure of "version symbol" entries are documented in
         # Oracle "Linker and Libraries Guide", Chapter 13 Object File Format
         self.Elf_Versym = Struct('Elf_Versym',
-            Enum(self.Elf_half('ndx'), **ENUM_VERSYM),
+            Enum(self.Elf_half('ndx'), **e.ENUM_VERSYM),
         )
 
     def _create_gnu_abi(self):
         # Structure of GNU ABI notes is documented in
         # https://code.woboq.org/userspace/glibc/csu/abi-note.S.html
         self.Elf_abi = Struct('Elf_abi',
-            Enum(self.Elf_word('abi_os'), **ENUM_NOTE_ABI_TAG_OS),
+            Enum(self.Elf_word('abi_os'), **e.ENUM_NOTE_ABI_TAG_OS),
             self.Elf_word('abi_major'),
             self.Elf_word('abi_minor'),
             self.Elf_word('abi_tiny'),
@@ -414,7 +414,7 @@ class ELFStructs:
             return (ctx.pr_type, ctx.pr_datasz, self.elfclass)
 
         self.Elf_Prop = Struct('Elf_Prop',
-            Enum(self.Elf_word('pr_type'), **ENUM_NOTE_GNU_PROPERTY_TYPE),
+            Enum(self.Elf_word('pr_type'), **e.ENUM_NOTE_GNU_PROPERTY_TYPE),
             self.Elf_word('pr_datasz'),
             Switch[tuple[str, int, int] | None]('pr_data', classify_pr_data, {
                     ('GNU_PROPERTY_STACK_SIZE', 4, 32): self.Elf_word('pr_data'),
@@ -448,8 +448,8 @@ class ELFStructs:
             self.Elf_word('n_namesz'),
             self.Elf_word('n_descsz'),
             Enum(self.Elf_word('n_type'),
-                 **(ENUM_NOTE_N_TYPE if e_type != "ET_CORE"
-                    else ENUM_CORE_NOTE_N_TYPE)),
+                 **(e.ENUM_NOTE_N_TYPE if e_type != "ET_CORE"
+                    else e.ENUM_CORE_NOTE_N_TYPE)),
         )
 
         # A process psinfo structure according to
@@ -528,14 +528,14 @@ class ELFStructs:
         # Structure of an ARM build attribute tag.
         self.Elf_Arm_Attribute_Tag = Struct('Elf_Arm_Attribute_Tag',
                                              Enum(self.Elf_uleb128('tag'),
-                                                  **ENUM_ATTR_TAG_ARM)
+                                                  **e.ENUM_ATTR_TAG_ARM)
         )
 
     def _create_riscv_attributes(self):
         # Structure of a RISC-V build attribute tag.
         self.Elf_RiscV_Attribute_Tag = Struct('Elf_RiscV_Attribute_Tag',
                                         Enum(self.Elf_uleb128('tag'),
-                                             **ENUM_ATTR_TAG_RISCV)
+                                             **e.ENUM_ATTR_TAG_RISCV)
         )
 
     def _create_elf_hash(self):
