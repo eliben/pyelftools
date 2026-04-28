@@ -166,19 +166,15 @@ class Construct:
         Obtain a dictionary representing this construct's state.
         """
 
-        attrs = {}
-        if hasattr(self, "__dict__"):
-            attrs.update(self.__dict__)
-        slots = []
-        c: type[Construct] | None = self.__class__
-        while c is not None:
-            if hasattr(c, "__slots__"):
-                slots.extend(c.__slots__)
-            c = c.__base__
-        for name in slots:
-            if hasattr(self, name):
-                attrs[name] = getattr(self, name)
-        return attrs
+        slots = {
+            sym
+            for cls in type(self).__mro__
+            for sym in getattr(cls, "__slots__", ())
+        }
+        return {
+            **getattr(self, "__dict__", {}),
+            **{name: getattr(self, name) for name in slots if hasattr(self, name)},
+        }
 
     def __setstate__(self, attrs: dict[str, Any]) -> None:
         """
