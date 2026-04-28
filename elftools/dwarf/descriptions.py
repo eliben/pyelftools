@@ -500,7 +500,7 @@ _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
     lambda: _make_extra_string(''), # default_factory
 
     DW_AT_inline=_make_extra_mapper(
-        _DESCR_DW_INL, '(Unknown inline attribute value: %x',
+        _DESCR_DW_INL, '(Unknown inline attribute value: %x)',
         default_interpolate_value=True),
     DW_AT_language=_make_extra_mapper(
         _DESCR_DW_LANG, '(Unknown: %x)', default_interpolate_value=True),
