@@ -55,7 +55,13 @@ class RepeatUntilExcluding(Subconstruct):
     def _sizeof(self, context: Container) -> int:
         raise SizeofError("can't calculate size")
 
-class ULEB128(Construct):
+
+class _NamedConstruct(Construct):
+    if TYPE_CHECKING:
+        name: str  # instead of `str|None` from Construct to save us from `is None` checks everywhere
+
+
+class ULEB128(_NamedConstruct):
     """A construct based parser for ULEB128 encoding.
     """
     def _parse(self, stream: IO[bytes], context: Container) -> int:
@@ -71,7 +77,8 @@ class ULEB128(Construct):
             if b & 0x80 == 0:
                 return value
 
-class SLEB128(Construct):
+
+class SLEB128(_NamedConstruct):
     """A construct based parser for SLEB128 encoding.
     """
     def _parse(self, stream: IO[bytes], context: Container) -> int:
@@ -87,7 +94,8 @@ class SLEB128(Construct):
             if b & 0x80 == 0:
                 return value | (~0 << shift) if b & 0x40 else value
 
-class StreamOffset(Construct):
+
+class StreamOffset(_NamedConstruct):
     """
     Captures the current stream offset
 
