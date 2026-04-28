@@ -48,8 +48,8 @@ entry_translate: dict[str, Callable[[Container, CompileUnit], RangeEntry | BaseA
     'DW_RLE_offset_pair'  : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, e.start_offset, e.end_offset, False),
     'DW_RLE_start_end'    : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, e.start_address, e.end_address, True),
     'DW_RLE_start_length' : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, e.start_address, e.start_address + e.length, True),
-    'DW_RLE_base_addressx': lambda e, cu: BaseAddressEntry(e.entry_offset, cu.dwarfinfo.get_addr(cu, e.index)),
-    'DW_RLE_startx_endx'  : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, cu.dwarfinfo.get_addr(cu, e.start_index), cu.dwarfinfo.get_addr(cu, e.end_index), True),
+    'DW_RLE_base_addressx': lambda e, cu: BaseAddressEntry(e.entry_offset, cu.dwarfinfo.get_addr(cu, e.index)),  # type: ignore[has-type]
+    'DW_RLE_startx_endx'  : lambda e, cu: RangeEntry(e.entry_offset, e.entry_length, cu.dwarfinfo.get_addr(cu, e.start_index), cu.dwarfinfo.get_addr(cu, e.end_index), True),  # type: ignore[has-type]
     'DW_RLE_startx_length': _translate_startx_length
 }
 

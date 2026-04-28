@@ -63,8 +63,8 @@ entry_translate: dict[str, Callable[[Container, CompileUnit | TypeUnit], _Locati
     'DW_LLE_start_length'    : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, e.start_address, e.start_address + e.length, e.loc_expr, True),
     'DW_LLE_start_end'       : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, e.start_address, e.end_address, e.loc_expr, True),
     'DW_LLE_default_location': lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, -1, -1, e.loc_expr, True),
-    'DW_LLE_base_addressx'   : lambda e, cu: BaseAddressEntry(e.entry_offset, e.entry_length, cu.dwarfinfo.get_addr(cu, e.index)),
-    'DW_LLE_startx_endx'     : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, cu.dwarfinfo.get_addr(cu, e.start_index), cu.dwarfinfo.get_addr(cu, e.end_index), e.loc_expr, True),
+    'DW_LLE_base_addressx'   : lambda e, cu: BaseAddressEntry(e.entry_offset, e.entry_length, cu.dwarfinfo.get_addr(cu, e.index)),  # type: ignore[has-type]
+    'DW_LLE_startx_endx'     : lambda e, cu: LocationEntry(e.entry_offset, e.entry_length, cu.dwarfinfo.get_addr(cu, e.start_index), cu.dwarfinfo.get_addr(cu, e.end_index), e.loc_expr, True),  # type: ignore[has-type]
     'DW_LLE_startx_length'   : _translate_startx_length
 }
 
