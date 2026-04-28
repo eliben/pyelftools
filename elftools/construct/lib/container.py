@@ -155,10 +155,7 @@ class LazyContainer:
         self._value = NotImplemented
 
     def __eq__(self, other: object) -> bool:
-        try:
-            return self._value == other._value  # type: ignore[attr-defined]
-        except AttributeError:
-            return False
+        return isinstance(other, LazyContainer) and self._value == other._value
 
     def __ne__(self, other: object) -> bool:
         return not (self == other)
