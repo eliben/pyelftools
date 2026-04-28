@@ -3,8 +3,8 @@ import unittest
 
 from elftools.elf.elffile import ELFFile
 
-address_a = 0x112f;
-address_b = 0x1154;
+address_a = 0x112f
+address_b = 0x1154
 
 class TestRangeLists(unittest.TestCase):
     def test_arange_absent(self):
