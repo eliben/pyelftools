@@ -18,18 +18,18 @@ class TestLineProgram(unittest.TestCase):
         """
         ds = DWARFStructs(little_endian=True, dwarf_format=32, address_size=4)
         header = ds.Dwarf_lineprog_header.parse(
-            b'\x04\x10\x00\x00' +    # initial length
-            b'\x03\x00' +            # version
-            b'\x20\x00\x00\x00' +    # header length
-            b'\x01\x01\x01\x0F' +    # flags
-            b'\x0A' +                # opcode_base
-            b'\x00\x01\x04\x08\x0C\x01\x01\x01\x00' + # standard_opcode_lengths
+            b'\x04\x10\x00\x00'    # initial length
+            b'\x03\x00'            # version
+            b'\x20\x00\x00\x00'    # header length
+            b'\x01\x01\x01\x0F'    # flags
+            b'\x0A'                # opcode_base
+            b'\x00\x01\x04\x08\x0C\x01\x01\x01\x00' # standard_opcode_lengths
             # 2 dir names followed by a NULL
-            b'\x61\x62\x00\x70\x00\x00' +
+            b'\x61\x62\x00\x70\x00\x00'
             # a file entry
-            b'\x61\x72\x00\x0C\x0D\x0F' +
+            b'\x61\x72\x00\x0C\x0D\x0F'
             # and another entry
-            b'\x45\x50\x51\x00\x86\x12\x07\x08' +
+            b'\x45\x50\x51\x00\x86\x12\x07\x08'
             # followed by NULL
             b'\x00')
 
@@ -45,14 +45,13 @@ class TestLineProgram(unittest.TestCase):
 
     def test_spec_sample_59(self):
         # Sample in figure 59 of DWARFv3
-        s = BytesIO()
-        s.write(
-            b'\x02\xb9\x04' +
-            b'\x0b' +
-            b'\x38' +
-            b'\x82' +
-            b'\x73' +
-            b'\x02\x02' +
+        s = BytesIO(
+            b'\x02\xb9\x04'
+            b'\x0b'
+            b'\x38'
+            b'\x82'
+            b'\x73'
+            b'\x02\x02'
             b'\x00\x01\x01')
 
         lp = self._make_program_in_stream(s)
@@ -74,17 +73,16 @@ class TestLineProgram(unittest.TestCase):
 
     def test_spec_sample_60(self):
         # Sample in figure 60 of DWARFv3
-        s = BytesIO()
-        s.write(
-            b'\x09\x39\x02' +
-            b'\x0b' +
-            b'\x09\x03\x00' +
-            b'\x0b' +
-            b'\x09\x08\x00' +
-            b'\x0a' +
-            b'\x09\x07\x00' +
-            b'\x0a' +
-            b'\x09\x02\x00' +
+        s = BytesIO(
+            b'\x09\x39\x02'
+            b'\x0b'
+            b'\x09\x03\x00'
+            b'\x0b'
+            b'\x09\x08\x00'
+            b'\x0a'
+            b'\x09\x07\x00'
+            b'\x0a'
+            b'\x09\x02\x00'
             b'\x00\x01\x01')
 
         lp = self._make_program_in_stream(s)
