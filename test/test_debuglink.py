@@ -90,6 +90,7 @@ class TestDebuglink(unittest.TestCase):
         elf = ELFFile.load_from_path('test/testfiles_for_unittests/debuglink')
         subprograms = self.subprograms_from_debuglink(elf)
         self.assertEqual(subprograms, {b'main': (0x1161, 0x52), b'addNumbers': (0x1149, 0x18)})
+        elf.close()
 
     def test_relative_loader_rejects_path_traversal(self):
         with tempfile.TemporaryDirectory() as tmpdir:

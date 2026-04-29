@@ -29,7 +29,7 @@ def parse_cpp_datatype(var_die):
     """
     t = TypeDesc()
 
-    if not 'DW_AT_type' in var_die.attributes:
+    if 'DW_AT_type' not in var_die.attributes:
         t.tag = ''
         return t
 
@@ -40,7 +40,7 @@ def parse_cpp_datatype(var_die):
     while type_die.tag in ('DW_TAG_const_type', 'DW_TAG_volatile_type', 'DW_TAG_pointer_type', 'DW_TAG_reference_type'):
         modifier = _strip_type_tag(type_die) # const/volatile/reference/pointer
         mods.insert(0, modifier)
-        if not 'DW_AT_type' in type_die.attributes: # void* is encoded as a pointer to nothing
+        if 'DW_AT_type' not in type_die.attributes: # void* is encoded as a pointer to nothing
             t.name = t.tag = "void"
             t.modifiers = tuple(mods)
             return t

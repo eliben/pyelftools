@@ -117,10 +117,7 @@ class Section:
         return self.header[name]
 
     def __eq__(self, other):
-        try:
-            return self.header == other.header
-        except AttributeError:
-            return False
+        return isinstance(other, Section) and self.header == other.header
 
     def __hash__(self):
         return hash(self.header)

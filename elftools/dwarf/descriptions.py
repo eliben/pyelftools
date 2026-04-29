@@ -500,7 +500,7 @@ _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
     lambda: _make_extra_string(''), # default_factory
 
     DW_AT_inline=_make_extra_mapper(
-        _DESCR_DW_INL, '(Unknown inline attribute value: %x',
+        _DESCR_DW_INL, '(Unknown inline attribute value: %x)',
         default_interpolate_value=True),
     DW_AT_language=_make_extra_mapper(
         _DESCR_DW_LANG, '(Unknown: %x)', default_interpolate_value=True),
@@ -609,20 +609,20 @@ class ExprDumper:
         )
 
     def _init_lookups(self):
-        self._ops_with_decimal_arg = set([
+        self._ops_with_decimal_arg = {
             'DW_OP_const1u', 'DW_OP_const1s', 'DW_OP_const2u', 'DW_OP_const2s',
             'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_const8u', 'DW_OP_const8s',
             'DW_OP_constu', 'DW_OP_consts', 'DW_OP_pick', 'DW_OP_plus_uconst',
             'DW_OP_bra', 'DW_OP_skip', 'DW_OP_fbreg', 'DW_OP_piece',
-            'DW_OP_deref_size', 'DW_OP_xderef_size', 'DW_OP_regx',])
+            'DW_OP_deref_size', 'DW_OP_xderef_size', 'DW_OP_regx'}
 
         for n in range(0, 32):
             self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)
 
-        self._ops_with_two_decimal_args = set(['DW_OP_bregx'])
+        self._ops_with_two_decimal_args = {'DW_OP_bregx'}
 
-        self._ops_with_hex_arg = set(
-            ['DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'])
+        self._ops_with_hex_arg = {
+            'DW_OP_addr', 'DW_OP_call2', 'DW_OP_call4', 'DW_OP_call_ref'}
 
     def _dump_to_string(self, opcode, opcode_name, args, cu_offset=None):
         # Some GNU ops contain an offset from the current CU as an argument,
