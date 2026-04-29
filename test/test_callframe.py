@@ -26,8 +26,7 @@ class TestCallFrame(unittest.TestCase):
 
     def test_spec_sample_d6(self):
         # D.6 sample in DWARFv3
-        s = BytesIO()
-        data = (
+        s = BytesIO(
             # first comes the CIE
             b'\x20\x00\x00\x00'        # length
             b'\xff\xff\xff\xff'        # CIE_id
@@ -63,10 +62,9 @@ class TestCallFrame(unittest.TestCase):
             b'\x0e\x00'
             b'\x00\x00'
             )
-        s.write(data)
 
         structs = DWARFStructs(little_endian=True, dwarf_format=32, address_size=4)
-        cfi = CallFrameInfo(s, len(data), 0, structs)
+        cfi = CallFrameInfo(s, len(s.getbuffer()), 0, structs)
         entries = cfi.get_entries()
 
         self.assertEqual(len(entries), 2)
@@ -131,17 +129,16 @@ class TestCallFrame(unittest.TestCase):
 
     def test_describe_CFI_instructions(self):
         # The data here represents a single CIE
-        data = (
+        s = BytesIO(
             b'\x16\x00\x00\x00'        # length
             b'\xff\xff\xff\xff'        # CIE_id
             b'\x03\x00\x04\x7c'        # version, augmentation, caf, daf
             b'\x08'                    # return address
             b'\x0c\x07\x02'
             b'\x10\x02\x07\x03\x01\x02\x00\x00\x06\x06')
-        s = BytesIO(data)
 
         structs = DWARFStructs(little_endian=True, dwarf_format=32, address_size=4)
-        cfi = CallFrameInfo(s, len(data), 0, structs)
+        cfi = CallFrameInfo(s, len(s.getbuffer()), 0, structs)
         entries = cfi.get_entries()
 
         set_global_machine_arch('x86')
@@ -172,7 +169,7 @@ class TestCallFrame(unittest.TestCase):
     def test_ehframe_fde_with_lsda_pointer(self):
         # CIE and FDE dumped from exceptions_0, offset 0xcc0
         # binary is at https://github.com/angr/binaries/blob/master/tests/x86_64/exceptions_0
-        data = (
+        s = BytesIO(
             # CIE
             b'\x1c\x00\x00\x00'       # length
             b'\x00\x00\x00\x00'       # ID
@@ -201,10 +198,9 @@ class TestCallFrame(unittest.TestCase):
             b'\x7f\x0c\x07\x08'
             b'\x00\x00\x00'
             )
-        s = BytesIO(data)
 
         structs = DWARFStructs(little_endian=True, dwarf_format=32, address_size=8)
-        cfi = CallFrameInfo(s, len(data), 0, structs, for_eh_frame=True)
+        cfi = CallFrameInfo(s, len(s.getbuffer()), 0, structs, for_eh_frame=True)
         entries = cfi.get_entries()
 
         self.assertEqual(len(entries), 2)

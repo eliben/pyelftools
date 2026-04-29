@@ -45,8 +45,7 @@ class TestLineProgram(unittest.TestCase):
 
     def test_spec_sample_59(self):
         # Sample in figure 59 of DWARFv3
-        s = BytesIO()
-        s.write(
+        s = BytesIO(
             b'\x02\xb9\x04'
             b'\x0b'
             b'\x38'
@@ -74,8 +73,7 @@ class TestLineProgram(unittest.TestCase):
 
     def test_spec_sample_60(self):
         # Sample in figure 60 of DWARFv3
-        s = BytesIO()
-        s.write(
+        s = BytesIO(
             b'\x09\x39\x02'
             b'\x0b'
             b'\x09\x03\x00'
