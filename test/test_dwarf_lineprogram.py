@@ -9,7 +9,7 @@ from io import BytesIO
 
 from elftools.dwarf.lineprogram import LineProgram
 from elftools.dwarf.structs import DWARFStructs
-from elftools.dwarf.constants import *
+from elftools.dwarf.constants import DW_LNS
 
 
 class TestLineProgram(unittest.TestCase):
@@ -59,7 +59,7 @@ class TestLineProgram(unittest.TestCase):
 
         self.assertEqual(len(linetable), 7)
         self.assertIs(linetable[0].state, None)  # doesn't modify state
-        self.assertEqual(linetable[0].command, DW_LNS_advance_pc)
+        self.assertEqual(linetable[0].command, DW_LNS.advance_pc)
         self.assertEqual(linetable[0].args, [0x239])
         self.assertLineState(linetable[1].state, address=0x239, line=3)
         self.assertEqual(linetable[1].command, 0xb)
@@ -67,7 +67,7 @@ class TestLineProgram(unittest.TestCase):
         self.assertLineState(linetable[2].state, address=0x23c, line=5)
         self.assertLineState(linetable[3].state, address=0x244, line=6)
         self.assertLineState(linetable[4].state, address=0x24b, line=7, end_sequence=False)
-        self.assertEqual(linetable[5].command, DW_LNS_advance_pc)
+        self.assertEqual(linetable[5].command, DW_LNS.advance_pc)
         self.assertEqual(linetable[5].args, [2])
         self.assertLineState(linetable[6].state, address=0x24d, line=7, end_sequence=True)
 
@@ -90,7 +90,7 @@ class TestLineProgram(unittest.TestCase):
 
         self.assertEqual(len(linetable), 10)
         self.assertIs(linetable[0].state, None)  # doesn't modify state
-        self.assertEqual(linetable[0].command, DW_LNS_fixed_advance_pc)
+        self.assertEqual(linetable[0].command, DW_LNS.fixed_advance_pc)
         self.assertEqual(linetable[0].args, [0x239])
         self.assertLineState(linetable[1].state, address=0x239, line=3)
         self.assertLineState(linetable[3].state, address=0x23c, line=5)
@@ -100,22 +100,22 @@ class TestLineProgram(unittest.TestCase):
 
     def test_lne_set_discriminator(self):
         """
-        Tests the handling of DWARFv4's new DW_LNE_set_discriminator opcode.
+        Tests the handling of DWARFv4's new DW_LNE.set_discriminator opcode.
         """
         s = BytesIO()
         s.write(
-            b'\x00\x02\x04\x05' +  # DW_LNE_set_discriminator (discriminator=0x05)
-            b'\x01' +              # DW_LNS_copy
-            b'\x00\x01\x01'        # DW_LNE_end_sequence
+            b'\x00\x02\x04\x05' +  # DW_LNE.set_discriminator (discriminator=0x05)
+            b'\x01' +              # DW_LNS.copy
+            b'\x00\x01\x01'        # DW_LNE.end_sequence
         )
 
         lp = self._make_program_in_stream(s)
         linetable = lp.get_entries()
 
-        # We expect two entries, since DW_LNE_set_discriminator does not add
+        # We expect two entries, since DW_LNE.set_discriminator does not add
         # an entry of its own.
         self.assertEqual(len(linetable), 2)
-        self.assertEqual(linetable[0].command, DW_LNS_copy)
+        self.assertEqual(linetable[0].command, DW_LNS.copy)
         self.assertLineState(linetable[0].state, discriminator=0x05)
         self.assertLineState(linetable[1].state, discriminator=0x00, end_sequence=True)
 

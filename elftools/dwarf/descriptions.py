@@ -8,7 +8,9 @@
 #-------------------------------------------------------------------------------
 from collections import defaultdict
 
-from .constants import *
+from .constants import (
+    DW_ACCESS, DW_ATE, DW_CC, DW_ID, DW_INL, DW_LANG, DW_ORD, DW_VIRTUALITY, DW_VIS,
+    )
 from .dwarf_expr import DWARFExprParser
 from .die import DIE
 from ..common.utils import preserve_stream_pos, dwarf_assert, bytes2str
@@ -104,7 +106,7 @@ def describe_CFI_instructions(entry):
             s += '  %s: %s\n' % (name, instr.args[0]*entry.cie['data_alignment_factor'])
         elif name == 'DW_CFA_def_cfa_expression':
             expr_dumper = ExprDumper(entry.structs)
-            # readelf output is missing a colon for DW_CFA_def_cfa_expression
+            # readelf output is missing a colon for DW_CFA.def_cfa_expression
             s += '  %s (%s)\n' % (name, expr_dumper.dump_expr(instr.args[0]))
         elif name == 'DW_CFA_expression':
             expr_dumper = ExprDumper(entry.structs)
@@ -170,9 +172,9 @@ def describe_reg_name(regnum, machine_arch=None, default=True):
 def describe_form_class(form):
     """For a given form name, determine its value class.
 
-    For example, given 'DW_FORM_data1' returns 'constant'.
+    For example, given 'DW_FORM.data1' returns 'constant'.
 
-    For some forms, like DW_FORM_indirect and DW_FORM_sec_offset, the class is
+    For some forms, like DW_FORM.indirect and DW_FORM.sec_offset, the class is
     not hard-coded and extra information is required. For these, None is
     returned.
     """
@@ -297,121 +299,121 @@ _FORM_CLASS = dict(
 )
 
 _DESCR_DW_INL = {
-    DW_INL_not_inlined: '(not inlined)',
-    DW_INL_inlined: '(inlined)',
-    DW_INL_declared_not_inlined: '(declared as inline but ignored)',
-    DW_INL_declared_inlined: '(declared as inline and inlined)',
+    DW_INL.not_inlined: '(not inlined)',
+    DW_INL.inlined: '(inlined)',
+    DW_INL.declared_not_inlined: '(declared as inline but ignored)',
+    DW_INL.declared_inlined: '(declared as inline and inlined)',
 }
 
 _DESCR_DW_LANG = {
-    DW_LANG_C89: '(ANSI C)',
-    DW_LANG_C: '(non-ANSI C)',
-    DW_LANG_Ada83: '(Ada)',
-    DW_LANG_C_plus_plus: '(C++)',
-    DW_LANG_Cobol74: '(Cobol 74)',
-    DW_LANG_Cobol85: '(Cobol 85)',
-    DW_LANG_Fortran77: '(FORTRAN 77)',
-    DW_LANG_Fortran90: '(Fortran 90)',
-    DW_LANG_Pascal83: '(ANSI Pascal)',
-    DW_LANG_Modula2: '(Modula 2)',
-    DW_LANG_Java: '(Java)',
-    DW_LANG_C99: '(ANSI C99)',
-    DW_LANG_Ada95: '(ADA 95)',
-    DW_LANG_Fortran95: '(Fortran 95)',
-    DW_LANG_PLI: '(PLI)',
-    DW_LANG_ObjC: '(Objective C)',
-    DW_LANG_ObjC_plus_plus: '(Objective C++)',
-    DW_LANG_UPC: '(Unified Parallel C)',
-    DW_LANG_D: '(D)',
-    DW_LANG_Python: '(Python)',
-    DW_LANG_OpenCL: '(OpenCL)',
-    DW_LANG_Go: '(Go)',
-    DW_LANG_Modula3: '(Modula 3)',
-    DW_LANG_Haskell: '(Haskell)',
-    DW_LANG_C_plus_plus_03: '(C++03)',
-    DW_LANG_C_plus_plus_11: '(C++11)',
-    DW_LANG_OCaml: '(OCaml)',
-    DW_LANG_Rust: '(Rust)',
-    DW_LANG_C11: '(C11)',
-    DW_LANG_Swift: '(Swift)',
-    DW_LANG_Julia: '(Julia)',
-    DW_LANG_Dylan: '(Dylan)',
-    DW_LANG_C_plus_plus_14: '(C++14)',
-    DW_LANG_Fortran03: '(Fortran 03)',
-    DW_LANG_Fortran08: '(Fortran 08)',
-    DW_LANG_RenderScript: '(RenderScript)',
-    DW_LANG_BLISS: '(Bliss)', # Not in binutils
-    DW_LANG_Mips_Assembler: '(MIPS assembler)',
-    DW_LANG_HP_Bliss: '(HP Bliss)',
-    DW_LANG_HP_Basic91: '(HP Basic 91)',
-    DW_LANG_HP_Pascal91: '(HP Pascal 91)',
-    DW_LANG_HP_IMacro: '(HP IMacro)',
-    DW_LANG_HP_Assembler: '(HP assembler)'
+    DW_LANG.C89: '(ANSI C)',
+    DW_LANG.C: '(non-ANSI C)',
+    DW_LANG.Ada83: '(Ada)',
+    DW_LANG.C_plus_plus: '(C++)',
+    DW_LANG.Cobol74: '(Cobol 74)',
+    DW_LANG.Cobol85: '(Cobol 85)',
+    DW_LANG.Fortran77: '(FORTRAN 77)',
+    DW_LANG.Fortran90: '(Fortran 90)',
+    DW_LANG.Pascal83: '(ANSI Pascal)',
+    DW_LANG.Modula2: '(Modula 2)',
+    DW_LANG.Java: '(Java)',
+    DW_LANG.C99: '(ANSI C99)',
+    DW_LANG.Ada95: '(ADA 95)',
+    DW_LANG.Fortran95: '(Fortran 95)',
+    DW_LANG.PLI: '(PLI)',
+    DW_LANG.ObjC: '(Objective C)',
+    DW_LANG.ObjC_plus_plus: '(Objective C++)',
+    DW_LANG.UPC: '(Unified Parallel C)',
+    DW_LANG.D: '(D)',
+    DW_LANG.Python: '(Python)',
+    DW_LANG.OpenCL: '(OpenCL)',
+    DW_LANG.Go: '(Go)',
+    DW_LANG.Modula3: '(Modula 3)',
+    DW_LANG.Haskell: '(Haskell)',
+    DW_LANG.C_plus_plus_03: '(C++03)',
+    DW_LANG.C_plus_plus_11: '(C++11)',
+    DW_LANG.OCaml: '(OCaml)',
+    DW_LANG.Rust: '(Rust)',
+    DW_LANG.C11: '(C11)',
+    DW_LANG.Swift: '(Swift)',
+    DW_LANG.Julia: '(Julia)',
+    DW_LANG.Dylan: '(Dylan)',
+    DW_LANG.C_plus_plus_14: '(C++14)',
+    DW_LANG.Fortran03: '(Fortran 03)',
+    DW_LANG.Fortran08: '(Fortran 08)',
+    DW_LANG.RenderScript: '(RenderScript)',
+    DW_LANG.BLISS: '(Bliss)', # Not in binutils
+    DW_LANG.Mips_Assembler: '(MIPS assembler)',
+    DW_LANG.HP_Bliss: '(HP Bliss)',
+    DW_LANG.HP_Basic91: '(HP Basic 91)',
+    DW_LANG.HP_Pascal91: '(HP Pascal 91)',
+    DW_LANG.HP_IMacro: '(HP IMacro)',
+    DW_LANG.HP_Assembler: '(HP assembler)'
 }
 
 _DESCR_DW_ATE = {
-    DW_ATE_void: '(void)',
-    DW_ATE_address: '(machine address)',
-    DW_ATE_boolean: '(boolean)',
-    DW_ATE_complex_float: '(complex float)',
-    DW_ATE_float: '(float)',
-    DW_ATE_signed: '(signed)',
-    DW_ATE_signed_char: '(signed char)',
-    DW_ATE_unsigned: '(unsigned)',
-    DW_ATE_unsigned_char: '(unsigned char)',
-    DW_ATE_imaginary_float: '(imaginary float)',
-    DW_ATE_decimal_float: '(decimal float)',
-    DW_ATE_packed_decimal: '(packed_decimal)',
-    DW_ATE_numeric_string: '(numeric_string)',
-    DW_ATE_edited: '(edited)',
-    DW_ATE_signed_fixed: '(signed_fixed)',
-    DW_ATE_unsigned_fixed: '(unsigned_fixed)',
-    DW_ATE_UTF: '(unicode string)',
-    DW_ATE_HP_float80: '(HP_float80)',
-    DW_ATE_HP_complex_float80: '(HP_complex_float80)',
-    DW_ATE_HP_float128: '(HP_float128)',
-    DW_ATE_HP_complex_float128: '(HP_complex_float128)',
-    DW_ATE_HP_floathpintel: '(HP_floathpintel)',
-    DW_ATE_HP_imaginary_float80: '(HP_imaginary_float80)',
-    DW_ATE_HP_imaginary_float128: '(HP_imaginary_float128)',
+    DW_ATE.void: '(void)',
+    DW_ATE.address: '(machine address)',
+    DW_ATE.boolean: '(boolean)',
+    DW_ATE.complex_float: '(complex float)',
+    DW_ATE.float: '(float)',
+    DW_ATE.signed: '(signed)',
+    DW_ATE.signed_char: '(signed char)',
+    DW_ATE.unsigned: '(unsigned)',
+    DW_ATE.unsigned_char: '(unsigned char)',
+    DW_ATE.imaginary_float: '(imaginary float)',
+    DW_ATE.decimal_float: '(decimal float)',
+    DW_ATE.packed_decimal: '(packed_decimal)',
+    DW_ATE.numeric_string: '(numeric_string)',
+    DW_ATE.edited: '(edited)',
+    DW_ATE.signed_fixed: '(signed_fixed)',
+    DW_ATE.unsigned_fixed: '(unsigned_fixed)',
+    DW_ATE.UTF: '(unicode string)',
+    DW_ATE.HP_float80: '(HP_float80)',
+    DW_ATE.HP_complex_float80: '(HP_complex_float80)',
+    DW_ATE.HP_float128: '(HP_float128)',
+    DW_ATE.HP_complex_float128: '(HP_complex_float128)',
+    DW_ATE.HP_floathpintel: '(HP_floathpintel)',
+    DW_ATE.HP_imaginary_float80: '(HP_imaginary_float80)',
+    DW_ATE.HP_imaginary_float128: '(HP_imaginary_float128)',
 }
 
 _DESCR_DW_ACCESS = {
-    DW_ACCESS_public: '(public)',
-    DW_ACCESS_protected: '(protected)',
-    DW_ACCESS_private: '(private)',
+    DW_ACCESS.public: '(public)',
+    DW_ACCESS.protected: '(protected)',
+    DW_ACCESS.private: '(private)',
 }
 
 _DESCR_DW_VIS = {
-    DW_VIS_local: '(local)',
-    DW_VIS_exported: '(exported)',
-    DW_VIS_qualified: '(qualified)',
+    DW_VIS.local: '(local)',
+    DW_VIS.exported: '(exported)',
+    DW_VIS.qualified: '(qualified)',
 }
 
 _DESCR_DW_VIRTUALITY = {
-    DW_VIRTUALITY_none: '(none)',
-    DW_VIRTUALITY_virtual: '(virtual)',
-    DW_VIRTUALITY_pure_virtual: '(pure virtual)',
+    DW_VIRTUALITY.none: '(none)',
+    DW_VIRTUALITY.virtual: '(virtual)',
+    DW_VIRTUALITY.pure_virtual: '(pure virtual)',
 }
 
 _DESCR_DW_ID_CASE = {
-    DW_ID_case_sensitive: '(case_sensitive)',
-    DW_ID_up_case: '(up_case)',
-    DW_ID_down_case: '(down_case)',
-    DW_ID_case_insensitive: '(case_insensitive)',
+    DW_ID.case_sensitive: '(case_sensitive)',
+    DW_ID.up_case: '(up_case)',
+    DW_ID.down_case: '(down_case)',
+    DW_ID.case_insensitive: '(case_insensitive)',
 }
 
 _DESCR_DW_CC = {
-    DW_CC_normal: '(normal)',
-    DW_CC_program: '(program)',
-    DW_CC_nocall: '(nocall)',
-    DW_CC_pass_by_reference: '(pass by ref)',
-    DW_CC_pass_by_valuee: '(pass by value)',
+    DW_CC.normal: '(normal)',
+    DW_CC.program: '(program)',
+    DW_CC.nocall: '(nocall)',
+    DW_CC.pass_by_reference: '(pass by ref)',
+    DW_CC.pass_by_valuee: '(pass by value)',
 }
 
 _DESCR_DW_ORD = {
-    DW_ORD_row_major: '(row major)',
-    DW_ORD_col_major: '(column major)',
+    DW_ORD.row_major: '(row major)',
+    DW_ORD.col_major: '(column major)',
 }
 
 _DESCR_CFI_REGISTER_RULE_TYPE = dict(
@@ -451,7 +453,7 @@ _DWARF_EXPR_DUMPER_CACHE = {}
 def _location_list_extra(attr, die, section_offset):
     # According to section 2.6 of the DWARF spec v3, class loclistptr means
     # a location list, and class block means a location expression.
-    # DW_FORM_sec_offset is new in DWARFv4 as a section offset.
+    # DW_FORM.sec_offset is new in DWARFv4 as a section offset.
     if attr.form in ('DW_FORM_data4', 'DW_FORM_data8', 'DW_FORM_sec_offset'):
         return '(location list)'
     else:

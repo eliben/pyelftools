@@ -14,7 +14,7 @@ from ..common.utils import (
 from ..construct import Struct, Switch
 from .enums import DW_EH_encoding_flags
 from .structs import DWARFStructs
-from .constants import *
+from .constants import DW_CFA
 
 
 class CallFrameInfo:
@@ -188,52 +188,52 @@ class CallFrameInfo:
 
             primary = opcode & _PRIMARY_MASK
             primary_arg = opcode & _PRIMARY_ARG_MASK
-            if primary == DW_CFA_advance_loc:
+            if primary == DW_CFA.advance_loc:
                 args = [primary_arg]
-            elif primary == DW_CFA_offset:
+            elif primary == DW_CFA.offset:
                 args = [
                     primary_arg,
                     struct_parse(structs.the_Dwarf_uleb128, self.stream)]
-            elif primary == DW_CFA_restore:
+            elif primary == DW_CFA.restore:
                 args = [primary_arg]
             # primary == 0 and real opcode is extended
-            elif opcode in (DW_CFA_nop, DW_CFA_remember_state,
-                            DW_CFA_restore_state, DW_CFA_AARCH64_negate_ra_state):
+            elif opcode in (DW_CFA.nop, DW_CFA.remember_state,
+                            DW_CFA.restore_state, DW_CFA.AARCH64_negate_ra_state):
                 args = []
-            elif opcode == DW_CFA_set_loc:
+            elif opcode == DW_CFA.set_loc:
                 args = [
                     struct_parse(structs.the_Dwarf_target_addr, self.stream)]
-            elif opcode == DW_CFA_advance_loc1:
+            elif opcode == DW_CFA.advance_loc1:
                 args = [struct_parse(structs.the_Dwarf_uint8, self.stream)]
-            elif opcode == DW_CFA_advance_loc2:
+            elif opcode == DW_CFA.advance_loc2:
                 args = [struct_parse(structs.the_Dwarf_uint16, self.stream)]
-            elif opcode == DW_CFA_advance_loc4:
+            elif opcode == DW_CFA.advance_loc4:
                 args = [struct_parse(structs.the_Dwarf_uint32, self.stream)]
-            elif opcode in (DW_CFA_offset_extended, DW_CFA_register,
-                            DW_CFA_def_cfa, DW_CFA_val_offset):
+            elif opcode in (DW_CFA.offset_extended, DW_CFA.register,
+                            DW_CFA.def_cfa, DW_CFA.val_offset):
                 args = [
                     struct_parse(structs.the_Dwarf_uleb128, self.stream),
                     struct_parse(structs.the_Dwarf_uleb128, self.stream)]
-            elif opcode in (DW_CFA_restore_extended, DW_CFA_undefined,
-                            DW_CFA_same_value, DW_CFA_def_cfa_register,
-                            DW_CFA_def_cfa_offset):
+            elif opcode in (DW_CFA.restore_extended, DW_CFA.undefined,
+                            DW_CFA.same_value, DW_CFA.def_cfa_register,
+                            DW_CFA.def_cfa_offset):
                 args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
-            elif opcode == DW_CFA_def_cfa_offset_sf:
+            elif opcode == DW_CFA.def_cfa_offset_sf:
                 args = [struct_parse(structs.the_Dwarf_sleb128, self.stream)]
-            elif opcode == DW_CFA_def_cfa_expression:
+            elif opcode == DW_CFA.def_cfa_expression:
                 args = [struct_parse(
                     structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
-            elif opcode in (DW_CFA_expression, DW_CFA_val_expression):
+            elif opcode in (DW_CFA.expression, DW_CFA.val_expression):
                 args = [
                     struct_parse(structs.the_Dwarf_uleb128, self.stream),
                     struct_parse(
                         structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
-            elif opcode in (DW_CFA_offset_extended_sf,
-                            DW_CFA_def_cfa_sf, DW_CFA_val_offset_sf):
+            elif opcode in (DW_CFA.offset_extended_sf,
+                            DW_CFA.def_cfa_sf, DW_CFA.val_offset_sf):
                 args = [
                     struct_parse(structs.the_Dwarf_uleb128, self.stream),
                     struct_parse(structs.the_Dwarf_sleb128, self.stream)]
-            elif opcode == DW_CFA_GNU_args_size:
+            elif opcode == DW_CFA.GNU_args_size:
                 args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
 
             else:
@@ -531,12 +531,12 @@ class CFIEntry:
 
         table = []
 
-        # Keeps a stack for the use of DW_CFA_{remember|restore}_state
+        # Keeps a stack for the use of DW_CFA.{remember|restore}_state
         # instructions.
         line_stack = []
 
         def _add_to_order(regnum):
-            # DW_CFA_restore and others remove registers from cur_line,
+            # DW_CFA.restore and others remove registers from cur_line,
             #  but they stay in reg_order. Avoid duplicates.
             if regnum not in reg_order:
                 reg_order.append(regnum)
@@ -724,10 +724,8 @@ _PRIMARY_MASK = 0b11000000
 _PRIMARY_ARG_MASK = 0b00111111
 
 # This dictionary is filled by automatically scanning the constants module
-# for DW_CFA_* instructions, and mapping their values to names. Since all
-# names were imported from constants with `import *`, we look in globals()
+# for DW_CFA instructions, and mapping their values to names.
 _OPCODE_NAME_MAP = {
-    value: name
-    for name, value in globals().items()
-    if name.startswith('DW_CFA')
+    member.value: f"DW_CFA_{member.name}"
+    for member in DW_CFA.__members__.values()
 }
