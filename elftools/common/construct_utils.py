@@ -20,7 +20,7 @@ class RepeatUntilExcluding(Subconstruct):
 
         P.S. removed some code duplication
     """
-    __slots__ = ["predicate"]
+    __slots__ = ("predicate",)
     def __init__(self, predicate, subcon):
         Subconstruct.__init__(self, subcon)
         self.predicate = predicate
@@ -88,7 +88,7 @@ class StreamOffset(Construct):
     Example:
     StreamOffset("item_offset")
     """
-    __slots__ = []
+    __slots__ = ()
     def __init__(self, name):
         Construct.__init__(self, name)
         self._set_flag(self.FLAG_DYNAMIC)

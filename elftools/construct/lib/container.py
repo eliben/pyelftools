@@ -4,14 +4,15 @@ Various containers.
 from __future__ import annotations
 
 from collections.abc import MutableMapping
+from functools import wraps
 from pprint import pformat
-from typing import IO, TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
-    from typing import Self  # 3.11+
+    from typing import Concatenate, ParamSpec, TypeVar
 
-    from typing_extensions import Concatenate, ParamSpec  # 3.10+
+    from typing_extensions import Self  # 3.11+
 
     from ..core import Construct
     from .hex import HexString
@@ -35,6 +36,7 @@ def recursion_lock(
     def decorator(
         func: Callable[Concatenate[Any, _P], _T],
     ) -> Callable[Concatenate[Any, _P], _T | _R]:
+        @wraps(func)
         def wrapper(self: Any, *args: _P.args, **kw: _P.kwargs) -> _T | _R:
             if getattr(self, lock_name, False):
                 return retval
@@ -43,7 +45,6 @@ def recursion_lock(
                 return func(self, *args, **kw)
             finally:
                 setattr(self, lock_name, False)
-        wrapper.__name__ = func.__name__
         return wrapper
     return decorator
 
@@ -65,7 +66,7 @@ class Container(MutableMapping[str, Any]):
         "length",
         "n_descsz", "n_offset", "n_namesz",
         "sh_addralign", "sh_flags", "sh_size",
-        "bloom_size", "nbuckets",
+        "bloom_size", "nbuckets", "nchains",
     ]) -> int: ...
     @overload
     def __getitem__(self, name: Literal[
@@ -74,6 +75,10 @@ class Container(MutableMapping[str, Any]):
         "n_name", "n_type",
         "tag", "vendor_name",
     ]) -> str: ...
+    @overload
+    def __getitem__(self, name: Literal[
+        "buckets", "chains",
+    ]) -> list[int]: ...
     @overload
     def __getitem__(self, name: str) -> Any: ...
     def __getitem__(self, name: str) -> Any:
@@ -150,10 +155,7 @@ class LazyContainer:
         self._value = NotImplemented
 
     def __eq__(self, other: object) -> bool:
-        try:
-            return self._value == other._value  # type: ignore[attr-defined]
-        except AttributeError:
-            return False
+        return isinstance(other, LazyContainer) and self._value == other._value
 
     def __ne__(self, other: object) -> bool:
         return not (self == other)

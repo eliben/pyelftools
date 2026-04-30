@@ -416,7 +416,7 @@ class ELFStructs:
         self.Elf_Prop = Struct('Elf_Prop',
             Enum(self.Elf_word('pr_type'), **ENUM_NOTE_GNU_PROPERTY_TYPE),
             self.Elf_word('pr_datasz'),
-            Switch('pr_data', classify_pr_data, {
+            Switch[tuple[str, int, int] | None]('pr_data', classify_pr_data, {
                     ('GNU_PROPERTY_STACK_SIZE', 4, 32): self.Elf_word('pr_data'),
                     ('GNU_PROPERTY_STACK_SIZE', 8, 64): self.Elf_word64('pr_data'),
                     ('GNU_PROPERTY_X86_*', 4, 0): self.Elf_word('pr_data'),

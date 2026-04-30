@@ -3,12 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Self  # 3.11+
+    from typing_extensions import Self  # 3.11+
 
 
 # Map an integer in the inclusive range 0-255 to its string byte representation
-_printable = dict((i, ".") for i in range(256))
-_printable.update((i, chr(i)) for i in range(32, 128))
+_printable = {i: chr(i) if 32 <= i < 128 else "." for i in range(256)}
 
 
 def hexdump(data: bytes, linesize: int) -> list[str]:

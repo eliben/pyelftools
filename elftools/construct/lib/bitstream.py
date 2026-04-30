@@ -6,15 +6,13 @@ from typing import IO, TYPE_CHECKING
 from .binary import encode_bin, decode_bin
 
 if TYPE_CHECKING:
-    # Py3.12+ # from collections.abc import Buffer
-    from typing import Self  # 3.11+
-
-    from typing_extensions import Buffer
+    from typing_extensions import Buffer  # 3.12+
+    from typing_extensions import Self  # 3.11+
 
 
 class BitStream(io.RawIOBase, IO[bytes]):
 
-    __slots__: list[str] = ["substream"]
+    __slots__ = ("substream",)
 
     def __init__(self, substream: IO[bytes]) -> None:
         self.substream = substream
@@ -25,7 +23,7 @@ class BitStream(io.RawIOBase, IO[bytes]):
 
 class BitStreamReader(BitStream):
 
-    __slots__: list[str] = ["buffer", "total_size"]
+    __slots__ = ("buffer", "total_size")
 
     def __init__(self, substream: IO[bytes]) -> None:
         super().__init__(substream)
@@ -71,7 +69,7 @@ class BitStreamReader(BitStream):
 
 class BitStreamWriter(BitStream):
 
-    __slots__: list[str] = ["buffer", "pos"]
+    __slots__ = ("buffer", "pos")
 
     def __init__(self, substream: IO[bytes]) -> None:
         super().__init__(substream)

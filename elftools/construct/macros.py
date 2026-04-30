@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from sys import maxsize
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
-from typing import Union as TUnion
 
 from .lib import (BitStreamReader, BitStreamWriter, Container, encode_bin,
     decode_bin)
@@ -15,13 +13,14 @@ from .adapters import (BitIntegerAdapter, PaddingAdapter,
     PaddedStringAdapter, FlagsAdapter, StringAdapter, MappingAdapter)
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable, Mapping
-    from typing import Unpack  # Py3.11+
+    from collections.abc import Callable, Hashable, Mapping
+
+    from typing_extensions import Unpack  # Py3.11+
 
     from .adapters import Adapter
     from .core import Construct, Subconstruct, _Pass
 
-Length = TUnion[int, Callable[[Container], int]]
+    Length = int | Callable[[Container], int]
 
 
 __all__ = [
@@ -57,10 +56,10 @@ def Field(name: str | None, length: Length) -> MetaField | StaticField:
       (StaticField), or a function that takes the context as an argument and
       returns the length (MetaField)
     """
-    if callable(length):
-        return MetaField(name, length)
-    else:
+    if isinstance(length, int):
         return StaticField(name, length)
+    else:
+        return MetaField(name, length)
 
 def BitField(name: str, length: Length, swapped: bool = False, signed: bool = False, bytesize: int = 8) -> BitIntegerAdapter:
     r"""
@@ -279,11 +278,11 @@ def Array(count: Length, subcon: Construct) -> MetaArray:
     ArrayError: expected 4, found 5
     """
 
-    if callable(count):
-        con = MetaArray(count, subcon)
-    else:
+    if isinstance(count, int):
         con = MetaArray(lambda ctx: count, subcon)
         con._clear_flag(con.FLAG_DYNAMIC)
+    else:
+        con = MetaArray(count, subcon)
     return con
 
 def PrefixedArray(subcon: Construct, length_field: Construct = UBInt8("length")) -> LengthValueAdapter:
