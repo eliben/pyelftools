@@ -187,6 +187,8 @@ class Dynamic:
                 self._num_tags = n + 1
                 return self._num_tags
 
+        return None
+
     def get_relocation_tables(self):
         """ Load all available relocation tables from DYNAMIC tags.
 

@@ -139,7 +139,9 @@ class ELFFile:
         # sh_size field of the section header at index 0 (otherwise, the sh_size
         # member of the initial entry contains 0)."
         if self['e_shnum'] == 0:
-            return self._get_section_header(0)['sh_size']
+            section_header = self._get_section_header(0)
+            assert section_header is not None
+            return section_header['sh_size']
         return self['e_shnum']
 
     def get_section(self, n, type=None):
@@ -159,7 +161,9 @@ class ELFFile:
         section_header = self._get_section_header(n)
         if section_header['sh_type'] not in ('SHT_SYMTAB', 'SHT_DYNSYM'):
             raise ELFError("Section points at section %d of type %s, expected SHT_SYMTAB/SHT_DYNSYM" % (n, section_header['sh_type']))
-        return self._make_section(section_header)
+        section = self._make_section(section_header)
+        assert isinstance(section, SymbolTableSection)
+        return section
 
     def _get_linked_strtab_section(self, n):
         """ Get the section at index #n from the file, throws
@@ -169,7 +173,9 @@ class ELFFile:
         section_header = self._get_section_header(n)
         if section_header['sh_type'] != 'SHT_STRTAB':
             raise ELFError("SHT_SYMTAB section points at section %d of type %s, expected SHT_STRTAB" % (n, section_header['sh_type']))
-        return self._make_section(section_header)
+        section = self._make_section(section_header)
+        assert isinstance(section, StringTableSection)
+        return section
 
     def get_section_by_name(self, name):
         """ Get a section from the file, by name. Return None if no such
@@ -623,7 +629,9 @@ class ELFFile:
         if self['e_shstrndx'] != SHN_INDICES.SHN_XINDEX:
             return self['e_shstrndx']
         else:
-            return self._get_section_header(0)['sh_link']
+            section_header = self._get_section_header(0)
+            assert section_header is not None
+            return section_header['sh_link']
 
     #-------------------------------- PRIVATE --------------------------------#
 
