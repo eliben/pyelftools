@@ -1,15 +1,17 @@
-#------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # elftools tests
 #
 # Gabriele Digregorio - Io_no
 # This code is in the public domain
-#------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
 import os
 import tempfile
 import unittest
+
+from typing import IO
 
 
 class TestDebuglink(unittest.TestCase):
@@ -19,7 +21,7 @@ class TestDebuglink(unittest.TestCase):
         We verify that the subprograms are correctly retrieved from the debug file.
     """
 
-    def stream_loader(self, external_filename: str) -> 'IO[bytes]':
+    def stream_loader(self, external_filename: str) -> IO[bytes]:
         """
         This function takes an external filename to load a supplementary object file,
         and returns a stream suitable for creating a new ELFFile.
