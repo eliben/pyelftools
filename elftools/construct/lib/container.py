@@ -137,7 +137,7 @@ class ListContainer(list[Any]):
     A container for lists.
     """
 
-    __slots__ = ["__recursion_lock__"]
+    __slots__ = ("__recursion_lock__",)
 
     @recursion_lock("[...]")
     def __str__(self) -> str:
@@ -145,7 +145,7 @@ class ListContainer(list[Any]):
 
 class LazyContainer:
 
-    __slots__ = ["subcon", "stream", "pos", "context", "_value"]
+    __slots__ = ("subcon", "stream", "pos", "context", "_value")
 
     def __init__(self, subcon: Construct, stream: IO[bytes], pos: int, context: Container) -> None:
         self.subcon = subcon

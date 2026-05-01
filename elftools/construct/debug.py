@@ -36,10 +36,10 @@ class Probe(Construct):
         UBInt8("b"),
     )
     """
-    __slots__ = [
+    __slots__ = (
         "printname", "show_stream", "show_context", "show_stack",
         "stream_lookahead"
-    ]
+    )
     counter = 0
 
     def __init__(self, name: str | None = None, show_stream: bool = True,
@@ -108,7 +108,7 @@ class Debugger(Subconstruct):
         )
     )
     """
-    __slots__ = ["retval"]
+    __slots__ = ("retval",)
     def _parse(self, stream: IO[bytes], context: Container) -> Any:
         try:
             return self.subcon._parse(stream, context)
