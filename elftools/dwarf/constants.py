@@ -6,225 +6,266 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-
-# Inline codes
-#
-DW_INL_not_inlined = 0
-DW_INL_inlined = 1
-DW_INL_declared_not_inlined = 2
-DW_INL_declared_inlined = 3
+from enum import Enum
 
 
-# Source languages
-#
-DW_LANG_C89 = 0x0001
-DW_LANG_C = 0x0002
-DW_LANG_Ada83 = 0x0003
-DW_LANG_C_plus_plus = 0x0004
-DW_LANG_Cobol74 = 0x0005
-DW_LANG_Cobol85 = 0x0006
-DW_LANG_Fortran77 = 0x0007
-DW_LANG_Fortran90 = 0x0008
-DW_LANG_Pascal83 = 0x0009
-DW_LANG_Modula2 = 0x000a
-DW_LANG_Java = 0x000b
-DW_LANG_C99 = 0x000c
-DW_LANG_Ada95 = 0x000d
-DW_LANG_Fortran95 = 0x000e
-DW_LANG_PLI = 0x000f
-DW_LANG_ObjC = 0x0010
-DW_LANG_ObjC_plus_plus = 0x0011
-DW_LANG_UPC = 0x0012
-DW_LANG_D = 0x0013
-DW_LANG_Python = 0x0014
-DW_LANG_OpenCL = 0x0015
-DW_LANG_Go = 0x0016
-DW_LANG_Modula3 = 0x0017
-DW_LANG_Haskell = 0x0018
-DW_LANG_C_plus_plus_03 = 0x0019
-DW_LANG_C_plus_plus_11 = 0x001a
-DW_LANG_OCaml = 0x001b
-DW_LANG_Rust = 0x001c
-DW_LANG_C11 = 0x001d
-DW_LANG_Swift = 0x001e
-DW_LANG_Julia = 0x001f
-DW_LANG_Dylan = 0x0020
-DW_LANG_C_plus_plus_14 = 0x0021
-DW_LANG_Fortran03 = 0x0022
-DW_LANG_Fortran08 = 0x0023
-DW_LANG_RenderScript = 0x0024
-DW_LANG_BLISS = 0x0025
-DW_LANG_Mips_Assembler = 0x8001
-DW_LANG_Upc = 0x8765
-DW_LANG_HP_Bliss = 0x8003
-DW_LANG_HP_Basic91 = 0x8004
-DW_LANG_HP_Pascal91 = 0x8005
-DW_LANG_HP_IMacro = 0x8006
-DW_LANG_HP_Assembler = 0x8007
-DW_LANG_GOOGLE_RenderScript = 0x8e57
-DW_LANG_BORLAND_Delphi = 0xb000
+class _IntEnum(int, Enum):  # Py3.11: enum.ReprEnum
+    def __repr__(self):
+        return int.__str__(self.value)
+
+    @property  # Py3.11+: enum.property
+    def FQN(self):
+        return f"{self.__class__.__name__}_{self.name}"
 
 
-# Encoding
-#
-DW_ATE_void = 0x0
-DW_ATE_address = 0x1
-DW_ATE_boolean = 0x2
-DW_ATE_complex_float = 0x3
-DW_ATE_float = 0x4
-DW_ATE_signed = 0x5
-DW_ATE_signed_char = 0x6
-DW_ATE_unsigned = 0x7
-DW_ATE_unsigned_char = 0x8
-DW_ATE_imaginary_float = 0x9
-DW_ATE_packed_decimal = 0xa
-DW_ATE_numeric_string = 0xb
-DW_ATE_edited = 0xc
-DW_ATE_signed_fixed = 0xd
-DW_ATE_unsigned_fixed = 0xe
-DW_ATE_decimal_float = 0xf
-DW_ATE_UTF = 0x10
-DW_ATE_UCS = 0x11
-DW_ATE_ASCII = 0x12
-DW_ATE_lo_user = 0x80
-DW_ATE_hi_user = 0xff
-DW_ATE_HP_float80 = 0x80
-DW_ATE_HP_complex_float80 = 0x81
-DW_ATE_HP_float128 = 0x82
-DW_ATE_HP_complex_float128 = 0x83
-DW_ATE_HP_floathpintel = 0x84
-DW_ATE_HP_imaginary_float80 = 0x85
-DW_ATE_HP_imaginary_float128 = 0x86
+class DW_INL(_IntEnum):
+    """Inline codes."""
+    not_inlined = 0
+    inlined = 1
+    declared_not_inlined = 2
+    declared_inlined = 3
 
 
-# Access
-#
-DW_ACCESS_public = 1
-DW_ACCESS_protected = 2
-DW_ACCESS_private = 3
+class DW_LANG(_IntEnum):
+    """Source languages."""
+    C89 = 0x0001
+    C = 0x0002
+    Ada83 = 0x0003
+    C_plus_plus = 0x0004
+    Cobol74 = 0x0005
+    Cobol85 = 0x0006
+    Fortran77 = 0x0007
+    Fortran90 = 0x0008
+    Pascal83 = 0x0009
+    Modula2 = 0x000a
+    Java = 0x000b
+    C99 = 0x000c
+    Ada95 = 0x000d
+    Fortran95 = 0x000e
+    PLI = 0x000f
+    ObjC = 0x0010
+    ObjC_plus_plus = 0x0011
+    UPC = 0x0012
+    D = 0x0013
+    Python = 0x0014
+    OpenCL = 0x0015
+    Go = 0x0016
+    Modula3 = 0x0017
+    Haskell = 0x0018
+    C_plus_plus_03 = 0x0019
+    C_plus_plus_11 = 0x001a
+    OCaml = 0x001b
+    Rust = 0x001c
+    C11 = 0x001d
+    Swift = 0x001e
+    Julia = 0x001f
+    Dylan = 0x0020
+    C_plus_plus_14 = 0x0021
+    Fortran03 = 0x0022
+    Fortran08 = 0x0023
+    RenderScript = 0x0024
+    BLISS = 0x0025
+    Mips_Assembler = 0x8001
+    Upc = 0x8765
+    HP_Bliss = 0x8003
+    HP_Basic91 = 0x8004
+    HP_Pascal91 = 0x8005
+    HP_IMacro = 0x8006
+    HP_Assembler = 0x8007
+    GOOGLE_RenderScript = 0x8e57
+    BORLAND_Delphi = 0xb000
 
 
-# Visibility
-#
-DW_VIS_local = 1
-DW_VIS_exported = 2
-DW_VIS_qualified = 3
+class DW_ATE(_IntEnum):
+    """Encodings."""
+    void = 0x0
+    address = 0x1
+    boolean = 0x2
+    complex_float = 0x3
+    float = 0x4
+    signed = 0x5
+    signed_char = 0x6
+    unsigned = 0x7
+    unsigned_char = 0x8
+    imaginary_float = 0x9
+    packed_decimal = 0xa
+    numeric_string = 0xb
+    edited = 0xc
+    signed_fixed = 0xd
+    unsigned_fixed = 0xe
+    decimal_float = 0xf
+    UTF = 0x10
+    UCS = 0x11
+    ASCII = 0x12
+    lo_user = 0x80
+    hi_user = 0xff
+    HP_float80 = 0x80
+    HP_complex_float80 = 0x81
+    HP_float128 = 0x82
+    HP_complex_float128 = 0x83
+    HP_floathpintel = 0x84
+    HP_imaginary_float80 = 0x85
+    HP_imaginary_float128 = 0x86
 
 
-# Virtuality
-#
-DW_VIRTUALITY_none = 0
-DW_VIRTUALITY_virtual = 1
-DW_VIRTUALITY_pure_virtual = 2
+class DW_ACCESS(_IntEnum):
+    """Access."""
+    public = 1
+    protected = 2
+    private = 3
 
 
-# ID case
-#
-DW_ID_case_sensitive = 0
-DW_ID_up_case = 1
-DW_ID_down_case = 2
-DW_ID_case_insensitive = 3
+class DW_VIS(_IntEnum):
+    """Visibility."""
+    local = 1
+    exported = 2
+    qualified = 3
 
 
-# Calling convention
-#
-DW_CC_normal = 0x1
-DW_CC_program = 0x2
-DW_CC_nocall = 0x3
-DW_CC_pass_by_reference = 0x4
-DW_CC_pass_by_valuee = 0x5
+class DW_VIRTUALITY(_IntEnum):
+    """Virtuality."""
+    none = 0
+    virtual = 1
+    pure_virtual = 2
 
 
-# Ordering
-#
-DW_ORD_row_major = 0
-DW_ORD_col_major = 1
+class DW_ID(_IntEnum):
+    """ID cases."""
+    case_sensitive = 0
+    up_case = 1
+    down_case = 2
+    case_insensitive = 3
 
 
-# Line program opcodes
-#
-DW_LNS_copy = 0x01
-DW_LNS_advance_pc = 0x02
-DW_LNS_advance_line = 0x03
-DW_LNS_set_file = 0x04
-DW_LNS_set_column = 0x05
-DW_LNS_negate_stmt = 0x06
-DW_LNS_set_basic_block = 0x07
-DW_LNS_const_add_pc = 0x08
-DW_LNS_fixed_advance_pc = 0x09
-DW_LNS_set_prologue_end = 0x0a
-DW_LNS_set_epilogue_begin = 0x0b
-DW_LNS_set_isa = 0x0c
-DW_LNE_end_sequence = 0x01
-DW_LNE_set_address = 0x02
-DW_LNE_define_file = 0x03
-DW_LNE_set_discriminator = 0x04
-DW_LNE_lo_user = 0x80
-DW_LNE_hi_user = 0xff
-
-# Line program header content types
-#
-DW_LNCT_path = 0x01
-DW_LNCT_directory_index = 0x02
-DW_LNCT_timestamp = 0x03
-DW_LNCT_size = 0x04
-DW_LNCT_MD5 = 0x05
-DW_LNCT_lo_user = 0x2000
-DW_LNCT_LLVM_source = 0x2001
-DW_LNCT_LLVM_is_MD5 = 0x2002
-DW_LNCT_hi_user = 0x3fff
-
-# Call frame instructions
-#
-# Note that the first 3 instructions have the so-called "primary opcode"
-# (as described in DWARFv3 7.23), so only their highest 2 bits take part
-# in the opcode decoding. They are kept as constants with the low bits masked
-# out, and the callframe module knows how to handle this.
-# The other instructions use an "extended opcode" encoded just in the low 6
-# bits, with the high 2 bits, so these constants are exactly as they would
-# appear in an actual file.
-#
-DW_CFA_advance_loc = 0b01000000
-DW_CFA_offset = 0b10000000
-DW_CFA_restore = 0b11000000
-DW_CFA_nop = 0x00
-DW_CFA_set_loc = 0x01
-DW_CFA_advance_loc1 = 0x02
-DW_CFA_advance_loc2 = 0x03
-DW_CFA_advance_loc4 = 0x04
-DW_CFA_offset_extended = 0x05
-DW_CFA_restore_extended = 0x06
-DW_CFA_undefined = 0x07
-DW_CFA_same_value = 0x08
-DW_CFA_register = 0x09
-DW_CFA_remember_state = 0x0a
-DW_CFA_restore_state = 0x0b
-DW_CFA_def_cfa = 0x0c
-DW_CFA_def_cfa_register = 0x0d
-DW_CFA_def_cfa_offset = 0x0e
-DW_CFA_def_cfa_expression = 0x0f
-DW_CFA_expression = 0x10
-DW_CFA_offset_extended_sf = 0x11
-DW_CFA_def_cfa_sf = 0x12
-DW_CFA_def_cfa_offset_sf = 0x13
-DW_CFA_val_offset = 0x14
-DW_CFA_val_offset_sf = 0x15
-DW_CFA_val_expression = 0x16
-DW_CFA_GNU_window_save = 0x2d # Used on SPARC, not in the corpus
-DW_CFA_AARCH64_negate_ra_state = 0x2d
-DW_CFA_GNU_args_size = 0x2e
+class DW_CC(_IntEnum):
+    """Calling conventions."""
+    normal = 0x1
+    program = 0x2
+    nocall = 0x3
+    pass_by_reference = 0x4
+    pass_by_valuee = 0x5
 
 
-# Compilation unit types
-#
-# DWARFv5 introduces the "unit_type" field to each CU header, allowing
-# individual CUs to indicate whether they're complete, partial, and so forth.
-# See DWARFv5 3.1 ("Unit Entries") and 7.5.1 ("Unit Headers").
-DW_UT_compile = 0x01
-DW_UT_type = 0x02
-DW_UT_partial = 0x03
-DW_UT_skeleton = 0x04
-DW_UT_split_compile = 0x05
-DW_UT_split_type = 0x06
-DW_UT_lo_user = 0x80
-DW_UT_hi_user = 0xff
+class DW_ORD(_IntEnum):
+    """Orderings."""
+    row_major = 0
+    col_major = 1
+
+
+class DW_LNS(_IntEnum):
+    """Line program opcodes."""
+    copy = 0x01
+    advance_pc = 0x02
+    advance_line = 0x03
+    set_file = 0x04
+    set_column = 0x05
+    negate_stmt = 0x06
+    set_basic_block = 0x07
+    const_add_pc = 0x08
+    fixed_advance_pc = 0x09
+    set_prologue_end = 0x0a
+    set_epilogue_begin = 0x0b
+    set_isa = 0x0c
+
+
+class DW_LNE(_IntEnum):
+    """Line program extended opcodes."""
+    end_sequence = 0x01
+    set_address = 0x02
+    define_file = 0x03
+    set_discriminator = 0x04
+    lo_user = 0x80
+    hi_user = 0xff
+
+
+class DW_LNCT(_IntEnum):
+    """Line program header content types."""
+    path = 0x01
+    directory_index = 0x02
+    timestamp = 0x03
+    size = 0x04
+    MD5 = 0x05
+    lo_user = 0x2000
+    LLVM_source = 0x2001
+    LLVM_is_MD5 = 0x2002
+    hi_user = 0x3fff
+
+
+class DW_CFA(_IntEnum):
+    """
+    Call frame instructions.
+
+    Note that the first 3 instructions have the so-called "primary opcode"
+    (as described in DWARFv3 7.23), so only their highest 2 bits take part
+    in the opcode decoding. They are kept as constants with the low bits masked
+    out, and the callframe module knows how to handle this.
+    The other instructions use an "extended opcode" encoded just in the low 6
+    bits, with the high 2 bits, so these constants are exactly as they would
+    appear in an actual file.
+    """
+    advance_loc = 0b01000000
+    offset = 0b10000000
+    restore = 0b11000000
+
+    nop = 0x00
+    set_loc = 0x01
+    advance_loc1 = 0x02
+    advance_loc2 = 0x03
+    advance_loc4 = 0x04
+    offset_extended = 0x05
+    restore_extended = 0x06
+    undefined = 0x07
+    same_value = 0x08
+    register = 0x09
+    remember_state = 0x0a
+    restore_state = 0x0b
+    def_cfa = 0x0c
+    def_cfa_register = 0x0d
+    def_cfa_offset = 0x0e
+    def_cfa_expression = 0x0f
+    expression = 0x10
+    offset_extended_sf = 0x11
+    def_cfa_sf = 0x12
+    def_cfa_offset_sf = 0x13
+    val_offset = 0x14
+    val_offset_sf = 0x15
+    val_expression = 0x16
+    AARCH64_negate_ra_state = 0x2d
+    GNU_window_save = 0x2d  # Used on SPARC, not in the corpus
+    GNU_args_size = 0x2e
+
+    @classmethod
+    def parse_raw_opcode(cls, /, opcode, *, __MASK = 0b11_00_0000):
+        """Extract primary or extended opcode from raw byte."""
+        if primary := opcode & __MASK:
+            return (cls(primary), opcode & ~__MASK)
+        return (cls(opcode),)
+
+
+class DW_UT(_IntEnum):
+    """
+    Compilation unit types.
+
+    DWARFv5 introduces the "unit_type" field to each CU header, allowing
+    individual CUs to indicate whether they're complete, partial, and so forth.
+    See DWARFv5 3.1 ("Unit Entries") and 7.5.1 ("Unit Headers").
+    """
+    compile = 0x01
+    type = 0x02
+    partial = 0x03
+    skeleton = 0x04
+    split_compile = 0x05
+    split_type = 0x06
+    lo_user = 0x80
+    hi_user = 0xff
+
+
+# Add back legacy names `DW_UT_type = DW_UT.type` for `from .constants import *`.
+# These are invisible to typing as the members are added dynamically by code!
+# Use __members__ to also add aliases like DW_CFA.{AARCH64_negate_ra_state,GNU_window_save}.
+globals().update({
+    f"{enum_name}_{member_name}": member.value
+    for enum_name, enum in globals().items()
+    if enum_name.startswith("DW_") and issubclass(enum, _IntEnum)
+    for member_name, member in enum.__members__.items()
+})

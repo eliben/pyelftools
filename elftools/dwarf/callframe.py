@@ -9,12 +9,14 @@
 import copy
 import os
 from collections import namedtuple
+from warnings import warn
+
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos, iterbytes)
 from ..construct import Struct, Switch
 from .enums import DW_EH_encoding_flags
 from .structs import DWARFStructs
-from .constants import *
+from .constants import DW_CFA
 
 
 class CallFrameInfo:
@@ -183,61 +185,48 @@ class CallFrameInfo:
         """
         instructions = []
         while offset < end_offset:
-            opcode = struct_parse(structs.the_Dwarf_uint8, self.stream, offset)
-            args = []
+            raw_opcode = struct_parse(structs.the_Dwarf_uint8, self.stream, offset)
 
-            primary = opcode & _PRIMARY_MASK
-            primary_arg = opcode & _PRIMARY_ARG_MASK
-            if primary == DW_CFA_advance_loc:
-                args = [primary_arg]
-            elif primary == DW_CFA_offset:
-                args = [
-                    primary_arg,
-                    struct_parse(structs.the_Dwarf_uleb128, self.stream)]
-            elif primary == DW_CFA_restore:
-                args = [primary_arg]
-            # primary == 0 and real opcode is extended
-            elif opcode in (DW_CFA_nop, DW_CFA_remember_state,
-                            DW_CFA_restore_state, DW_CFA_AARCH64_negate_ra_state):
-                args = []
-            elif opcode == DW_CFA_set_loc:
-                args = [
-                    struct_parse(structs.the_Dwarf_target_addr, self.stream)]
-            elif opcode == DW_CFA_advance_loc1:
-                args = [struct_parse(structs.the_Dwarf_uint8, self.stream)]
-            elif opcode == DW_CFA_advance_loc2:
-                args = [struct_parse(structs.the_Dwarf_uint16, self.stream)]
-            elif opcode == DW_CFA_advance_loc4:
-                args = [struct_parse(structs.the_Dwarf_uint32, self.stream)]
-            elif opcode in (DW_CFA_offset_extended, DW_CFA_register,
-                            DW_CFA_def_cfa, DW_CFA_val_offset):
-                args = [
-                    struct_parse(structs.the_Dwarf_uleb128, self.stream),
-                    struct_parse(structs.the_Dwarf_uleb128, self.stream)]
-            elif opcode in (DW_CFA_restore_extended, DW_CFA_undefined,
-                            DW_CFA_same_value, DW_CFA_def_cfa_register,
-                            DW_CFA_def_cfa_offset):
-                args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
-            elif opcode == DW_CFA_def_cfa_offset_sf:
-                args = [struct_parse(structs.the_Dwarf_sleb128, self.stream)]
-            elif opcode == DW_CFA_def_cfa_expression:
-                args = [struct_parse(
-                    structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
-            elif opcode in (DW_CFA_expression, DW_CFA_val_expression):
-                args = [
-                    struct_parse(structs.the_Dwarf_uleb128, self.stream),
-                    struct_parse(
-                        structs.Dwarf_dw_form['DW_FORM_block'], self.stream)]
-            elif opcode in (DW_CFA_offset_extended_sf,
-                            DW_CFA_def_cfa_sf, DW_CFA_val_offset_sf):
-                args = [
-                    struct_parse(structs.the_Dwarf_uleb128, self.stream),
-                    struct_parse(structs.the_Dwarf_sleb128, self.stream)]
-            elif opcode == DW_CFA_GNU_args_size:
-                args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
-
-            else:
-                dwarf_assert(False, 'Unknown CFI opcode: 0x%x' % opcode)
+            opcode, *args = DW_CFA.parse_raw_opcode(raw_opcode)
+            match opcode:
+                case DW_CFA.advance_loc | DW_CFA.restore | DW_CFA.nop | DW_CFA.remember_state | DW_CFA.restore_state | DW_CFA.AARCH64_negate_ra_state:
+                    pass
+                case DW_CFA.offset:
+                    args += [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
+                case DW_CFA.set_loc:
+                    args = [struct_parse(structs.the_Dwarf_target_addr, self.stream)]
+                case DW_CFA.advance_loc1:
+                    args = [struct_parse(structs.the_Dwarf_uint8, self.stream)]
+                case DW_CFA.advance_loc2:
+                    args = [struct_parse(structs.the_Dwarf_uint16, self.stream)]
+                case DW_CFA.advance_loc4:
+                    args = [struct_parse(structs.the_Dwarf_uint32, self.stream)]
+                case DW_CFA.offset_extended | DW_CFA.register | DW_CFA.def_cfa | DW_CFA.val_offset:
+                    args = [
+                        struct_parse(structs.the_Dwarf_uleb128, self.stream),
+                        struct_parse(structs.the_Dwarf_uleb128, self.stream)]
+                case DW_CFA.restore_extended | DW_CFA.undefined | DW_CFA.same_value | DW_CFA.def_cfa_register | DW_CFA.def_cfa_offset:
+                    args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
+                case DW_CFA.def_cfa_offset_sf:
+                    args = [struct_parse(structs.the_Dwarf_sleb128, self.stream)]
+                case DW_CFA.def_cfa_expression:
+                    struct = structs.Dwarf_dw_form['DW_FORM_block']
+                    assert struct is not None
+                    args = [struct_parse(struct, self.stream)]
+                case DW_CFA.expression | DW_CFA.val_expression:
+                    struct = structs.Dwarf_dw_form['DW_FORM_block']
+                    assert struct is not None
+                    args = [
+                        struct_parse(structs.the_Dwarf_uleb128, self.stream),
+                        struct_parse(struct, self.stream)]
+                case DW_CFA.offset_extended_sf | DW_CFA.def_cfa_sf | DW_CFA.val_offset_sf:
+                    args = [
+                        struct_parse(structs.the_Dwarf_uleb128, self.stream),
+                        struct_parse(structs.the_Dwarf_sleb128, self.stream)]
+                case DW_CFA.GNU_args_size:
+                    args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
+                case _:
+                    dwarf_assert(False, f'Unknown CFI opcode: {raw_opcode:#04x}')
 
             instructions.append(CallFrameInstruction(opcode=opcode, args=args))
             offset = self.stream.tell()
@@ -447,11 +436,8 @@ class CallFrameInfo:
 def instruction_name(opcode):
     """ Given an opcode, return the instruction name.
     """
-    primary = opcode & _PRIMARY_MASK
-    if primary == 0:
-        return _OPCODE_NAME_MAP[opcode]
-    else:
-        return _OPCODE_NAME_MAP[primary]
+    warn("Switch to DW_CFA.FQN", DeprecationWarning, stacklevel=2)
+    return opcode.FQN
 
 
 class CallFrameInstruction:
@@ -465,8 +451,7 @@ class CallFrameInstruction:
         self.args = args
 
     def __repr__(self):
-        return '%s (0x%x): %s' % (
-            instruction_name(self.opcode), self.opcode, self.args)
+        return f"{self.opcode.FQN} ({self.opcode.value:#02x}): {self.args}"
 
 
 class CFIEntry:
@@ -531,12 +516,12 @@ class CFIEntry:
 
         table = []
 
-        # Keeps a stack for the use of DW_CFA_{remember|restore}_state
+        # Keeps a stack for the use of DW_CFA.{remember|restore}_state
         # instructions.
         line_stack = []
 
         def _add_to_order(regnum):
-            # DW_CFA_restore and others remove registers from cur_line,
+            # DW_CFA.restore and others remove registers from cur_line,
             #  but they stay in reg_order. Avoid duplicates.
             if regnum not in reg_order:
                 reg_order.append(regnum)
@@ -545,85 +530,86 @@ class CFIEntry:
             # Throughout this loop, cur_line is the current line. Some
             # instructions add it to the table, but most instructions just
             # update it without adding it to the table.
-
-            name = instruction_name(instr.opcode)
-
-            if name == 'DW_CFA_set_loc':
-                table.append(copy.copy(cur_line))
-                cur_line['pc'] = instr.args[0]
-            elif name in (  'DW_CFA_advance_loc1', 'DW_CFA_advance_loc2',
-                            'DW_CFA_advance_loc4', 'DW_CFA_advance_loc'):
-                table.append(copy.copy(cur_line))
-                cur_line['pc'] += instr.args[0] * cie['code_alignment_factor']
-            elif name == 'DW_CFA_def_cfa':
-                cur_line['cfa'] = CFARule(
-                    reg=instr.args[0],
-                    offset=instr.args[1])
-            elif name == 'DW_CFA_def_cfa_sf':
-                cur_line['cfa'] = CFARule(
-                    reg=instr.args[0],
-                    offset=instr.args[1] * cie['code_alignment_factor'])
-            elif name == 'DW_CFA_def_cfa_register':
-                cur_line['cfa'] = CFARule(
-                    reg=instr.args[0],
-                    offset=cur_line['cfa'].offset)
-            elif name == 'DW_CFA_def_cfa_offset':
-                cur_line['cfa'] = CFARule(
-                    reg=cur_line['cfa'].reg,
-                    offset=instr.args[0])
-            elif name == 'DW_CFA_def_cfa_offset_sf':
-                cur_line['cfa'] = CFARule(
-                    reg=cur_line['cfa'].reg,
-                    offset=instr.args[0] * cie['data_alignment_factor'])
-            elif name == 'DW_CFA_def_cfa_expression':
-                cur_line['cfa'] = CFARule(expr=instr.args[0])
-            elif name == 'DW_CFA_undefined':
-                _add_to_order(instr.args[0])
-                cur_line[instr.args[0]] = RegisterRule(RegisterRule.UNDEFINED)
-            elif name == 'DW_CFA_same_value':
-                _add_to_order(instr.args[0])
-                cur_line[instr.args[0]] = RegisterRule(RegisterRule.SAME_VALUE)
-            elif name in (  'DW_CFA_offset', 'DW_CFA_offset_extended',
-                            'DW_CFA_offset_extended_sf'):
-                _add_to_order(instr.args[0])
-                cur_line[instr.args[0]] = RegisterRule(
-                    RegisterRule.OFFSET,
-                    instr.args[1] * cie['data_alignment_factor'])
-            elif name in ('DW_CFA_val_offset', 'DW_CFA_val_offset_sf'):
-                _add_to_order(instr.args[0])
-                cur_line[instr.args[0]] = RegisterRule(
-                    RegisterRule.VAL_OFFSET,
-                    instr.args[1] * cie['data_alignment_factor'])
-            elif name == 'DW_CFA_register':
-                _add_to_order(instr.args[0])
-                cur_line[instr.args[0]] = RegisterRule(
-                    RegisterRule.REGISTER,
-                    instr.args[1])
-            elif name == 'DW_CFA_expression':
-                _add_to_order(instr.args[0])
-                cur_line[instr.args[0]] = RegisterRule(
-                    RegisterRule.EXPRESSION,
-                    instr.args[1])
-            elif name == 'DW_CFA_val_expression':
-                _add_to_order(instr.args[0])
-                cur_line[instr.args[0]] = RegisterRule(
-                    RegisterRule.VAL_EXPRESSION,
-                    instr.args[1])
-            elif name in ('DW_CFA_restore', 'DW_CFA_restore_extended'):
-                _add_to_order(instr.args[0])
-                dwarf_assert(
-                    isinstance(self, FDE),
-                    '%s instruction must be in a FDE' % name)
-                if instr.args[0] in last_line_in_CIE:
-                    cur_line[instr.args[0]] = last_line_in_CIE[instr.args[0]]
-                else:
-                    cur_line.pop(instr.args[0], None)
-            elif name == 'DW_CFA_remember_state':
-                line_stack.append(copy.deepcopy(cur_line))
-            elif name == 'DW_CFA_restore_state':
-                pc = cur_line['pc']
-                cur_line = line_stack.pop()
-                cur_line['pc'] = pc
+            match instr.opcode:
+                case DW_CFA.set_loc:
+                    table.append(copy.copy(cur_line))
+                    cur_line['pc'] = instr.args[0]
+                case DW_CFA.advance_loc1 | DW_CFA.advance_loc2 | DW_CFA.advance_loc4 | DW_CFA.advance_loc:
+                    table.append(copy.copy(cur_line))
+                    cur_line['pc'] += instr.args[0] * cie['code_alignment_factor']
+                case DW_CFA.def_cfa:
+                    cur_line['cfa'] = CFARule(
+                        reg=instr.args[0],
+                        offset=instr.args[1])
+                case DW_CFA.def_cfa_sf:
+                    cur_line['cfa'] = CFARule(
+                        reg=instr.args[0],
+                        offset=instr.args[1] * cie['code_alignment_factor'])
+                case DW_CFA.def_cfa_register:
+                    cur_line['cfa'] = CFARule(
+                        reg=instr.args[0],
+                        offset=cur_line['cfa'].offset)
+                case DW_CFA.def_cfa_offset:
+                    cur_line['cfa'] = CFARule(
+                        reg=cur_line['cfa'].reg,
+                        offset=instr.args[0])
+                case DW_CFA.def_cfa_offset_sf:
+                    cur_line['cfa'] = CFARule(
+                        reg=cur_line['cfa'].reg,
+                        offset=instr.args[0] * cie['data_alignment_factor'])
+                case DW_CFA.def_cfa_expression:
+                    cur_line['cfa'] = CFARule(expr=instr.args[0])
+                case DW_CFA.undefined:
+                    _add_to_order(instr.args[0])
+                    cur_line[instr.args[0]] = RegisterRule(RegisterRule.UNDEFINED)
+                case DW_CFA.same_value:
+                    _add_to_order(instr.args[0])
+                    cur_line[instr.args[0]] = RegisterRule(RegisterRule.SAME_VALUE)
+                case DW_CFA.offset | DW_CFA.offset_extended | DW_CFA.offset_extended_sf:
+                    _add_to_order(instr.args[0])
+                    cur_line[instr.args[0]] = RegisterRule(
+                        RegisterRule.OFFSET,
+                        instr.args[1] * cie['data_alignment_factor'])
+                case DW_CFA.val_offset | DW_CFA.val_offset_sf:
+                    _add_to_order(instr.args[0])
+                    cur_line[instr.args[0]] = RegisterRule(
+                        RegisterRule.VAL_OFFSET,
+                        instr.args[1] * cie['data_alignment_factor'])
+                case DW_CFA.register:
+                    _add_to_order(instr.args[0])
+                    cur_line[instr.args[0]] = RegisterRule(
+                        RegisterRule.REGISTER,
+                        instr.args[1])
+                case DW_CFA.expression:
+                    _add_to_order(instr.args[0])
+                    cur_line[instr.args[0]] = RegisterRule(
+                        RegisterRule.EXPRESSION,
+                        instr.args[1])
+                case DW_CFA.val_expression:
+                    _add_to_order(instr.args[0])
+                    cur_line[instr.args[0]] = RegisterRule(
+                        RegisterRule.VAL_EXPRESSION,
+                        instr.args[1])
+                case DW_CFA.restore | DW_CFA.restore_extended as cfa:
+                    _add_to_order(instr.args[0])
+                    dwarf_assert(
+                        isinstance(self, FDE),
+                        f'{cfa.FQN} instruction must be in a FDE')
+                    assert last_line_in_CIE is not None
+                    if instr.args[0] in last_line_in_CIE:
+                        cur_line[instr.args[0]] = last_line_in_CIE[instr.args[0]]
+                    else:
+                        cur_line.pop(instr.args[0], None)
+                case DW_CFA.remember_state:
+                    line_stack.append(copy.deepcopy(cur_line))
+                case DW_CFA.restore_state:
+                    pc: int = cur_line['pc']
+                    cur_line = line_stack.pop()
+                    cur_line['pc'] = pc
+                case DW_CFA.nop | DW_CFA.AARCH64_negate_ra_state:
+                    pass
+                case _:
+                    dwarf_assert(False, f"Unknown CFI opcode: {instr.opcode:#02x}")
 
         # The current line is appended to the table after all instructions
         # have ended, if there were instructions.
@@ -716,18 +702,3 @@ class CFARule:
 #
 DecodedCallFrameTable = namedtuple(
     'DecodedCallFrameTable', 'table reg_order')
-
-
-#---------------- PRIVATE ----------------#
-
-_PRIMARY_MASK = 0b11000000
-_PRIMARY_ARG_MASK = 0b00111111
-
-# This dictionary is filled by automatically scanning the constants module
-# for DW_CFA_* instructions, and mapping their values to names. Since all
-# names were imported from constants with `import *`, we look in globals()
-_OPCODE_NAME_MAP = {
-    value: name
-    for name, value in globals().items()
-    if name.startswith('DW_CFA')
-}

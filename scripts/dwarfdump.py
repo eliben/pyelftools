@@ -29,7 +29,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.dwarf.locationlists import LocationParser, LocationEntry, LocationExpr, BaseAddressEntry as LocBaseAddressEntry
 from elftools.dwarf.ranges import RangeEntry # ranges.BaseAddressEntry collides with the one above
 import elftools.dwarf.ranges
-from elftools.dwarf.enums import *
+import elftools.dwarf.enums as e
 from elftools.dwarf.dwarf_expr import DWARFExprParser, DWARFExprOp
 from elftools.dwarf.datatype_cpp import describe_cpp_datatype
 from elftools.dwarf.descriptions import describe_reg_name
@@ -318,11 +318,11 @@ def _desc_value(attr, die):
     return str(attr.value)
 
 ATTR_DESCRIPTIONS = dict(
-    DW_AT_language=lambda attr, die: _desc_enum(attr, ENUM_DW_LANG),
-    DW_AT_encoding=lambda attr, die: _desc_enum(attr, ENUM_DW_ATE),
-    DW_AT_accessibility=lambda attr, die: _desc_enum(attr, ENUM_DW_ACCESS),
-    DW_AT_inline=lambda attr, die: _desc_enum(attr, ENUM_DW_INL),
-    DW_AT_calling_convention=lambda attr, die: _desc_enum(attr, ENUM_DW_CC),
+    DW_AT_language=lambda attr, die: _desc_enum(attr, e.ENUM_DW_LANG),
+    DW_AT_encoding=lambda attr, die: _desc_enum(attr, e.ENUM_DW_ATE),
+    DW_AT_accessibility=lambda attr, die: _desc_enum(attr, e.ENUM_DW_ACCESS),
+    DW_AT_inline=lambda attr, die: _desc_enum(attr, e.ENUM_DW_INL),
+    DW_AT_calling_convention=lambda attr, die: _desc_enum(attr, e.ENUM_DW_CC),
     DW_AT_decl_file=_desc_decl_file,
     DW_AT_decl_line=_desc_value,
     DW_AT_ranges=_desc_ranges,
@@ -542,11 +542,11 @@ def main(stream=None):
         sys.exit(0)
 
     # A compatibility hack on top of a compatibility hack :(
-    del ENUM_DW_TAG["DW_TAG_template_type_param"]
-    del ENUM_DW_TAG["DW_TAG_template_value_param"]
-    ENUM_DW_TAG['DW_TAG_template_type_parameter'] = 0x2f
-    ENUM_DW_TAG['DW_TAG_template_value_parameter'] = 0x30
-    del ENUM_DW_TAG['DW_TAG_lo_user'] # dwarfdump dumps it as unknown
+    del e.ENUM_DW_TAG["DW_TAG_template_type_param"]
+    del e.ENUM_DW_TAG["DW_TAG_template_value_param"]
+    e.ENUM_DW_TAG['DW_TAG_template_type_parameter'] = 0x2f
+    e.ENUM_DW_TAG['DW_TAG_template_value_parameter'] = 0x30
+    del e.ENUM_DW_TAG['DW_TAG_lo_user'] # dwarfdump dumps it as unknown
 
     with open(args.file, 'rb') as file:
         try:

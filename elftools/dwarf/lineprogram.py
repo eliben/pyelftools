@@ -11,7 +11,7 @@ import copy
 from collections import namedtuple
 
 from ..common.utils import struct_parse, dwarf_assert
-from .constants import *
+from .constants import DW_LNE, DW_LNS
 
 
 # LineProgramEntry - an entry in the line program.
@@ -20,8 +20,8 @@ from .constants import *
 #
 # command:
 #   The command/opcode - always numeric. For standard commands - it's the opcode
-#   that can be matched with one of the DW_LNS_* constants. For extended commands
-#   it's the extended opcode that can be matched with one of the DW_LNE_*
+#   that can be matched with one of the DW_LNS constants. For extended commands
+#   it's the extended opcode that can be matched with one of the DW_LNE
 #   constants. For special commands, it's the opcode itself.
 #
 # args:
@@ -85,7 +85,7 @@ class LineProgram:
         """
             header:
                 The header of this line program. Note: LineProgram may modify
-                its header by appending file entries if DW_LNE_define_file
+                its header by appending file entries if DW_LNE.define_file
                 instructions are encountered.
 
             stream:
@@ -180,23 +180,23 @@ class LineProgram:
                 ex_opcode = struct_parse(self.structs.the_Dwarf_uint8,
                                          self.stream)
 
-                if ex_opcode == DW_LNE_end_sequence:
+                if ex_opcode == DW_LNE.end_sequence:
                     state.end_sequence = True
                     state.is_stmt = 0
                     add_entry_new_state(ex_opcode, [], is_extended=True)
                     # reset state
                     state = LineState(self.header['default_is_stmt'])
-                elif ex_opcode == DW_LNE_set_address:
+                elif ex_opcode == DW_LNE.set_address:
                     operand = struct_parse(self.structs.the_Dwarf_target_addr,
                                            self.stream)
                     state.address = operand
                     add_entry_old_state(ex_opcode, [operand], is_extended=True)
-                elif ex_opcode == DW_LNE_define_file:
+                elif ex_opcode == DW_LNE.define_file:
                     operand = struct_parse(
                         self.structs.Dwarf_lineprog_file_entry, self.stream)
                     self['file_entry'].append(operand)
                     add_entry_old_state(ex_opcode, [operand], is_extended=True)
-                elif ex_opcode == DW_LNE_set_discriminator:
+                elif ex_opcode == DW_LNE.set_discriminator:
                     operand = struct_parse(self.structs.the_Dwarf_uleb128,
                                            self.stream)
                     state.discriminator = operand
@@ -208,53 +208,53 @@ class LineProgram:
                     self.stream.seek(inst_len - 1, os.SEEK_CUR)
             else: # 0 < opcode < opcode_base
                 # Standard opcode
-                if opcode == DW_LNS_copy:
+                if opcode == DW_LNS.copy:
                     add_entry_new_state(opcode, [])
-                elif opcode == DW_LNS_advance_pc:
+                elif opcode == DW_LNS.advance_pc:
                     operand = struct_parse(self.structs.the_Dwarf_uleb128,
                                            self.stream)
                     address_addend = (
                         operand * self.header['minimum_instruction_length'])
                     state.address += address_addend
                     add_entry_old_state(opcode, [address_addend])
-                elif opcode == DW_LNS_advance_line:
+                elif opcode == DW_LNS.advance_line:
                     operand = struct_parse(self.structs.the_Dwarf_sleb128,
                                            self.stream)
                     state.line += operand
-                elif opcode == DW_LNS_set_file:
+                elif opcode == DW_LNS.set_file:
                     operand = struct_parse(self.structs.the_Dwarf_uleb128,
                                            self.stream)
                     state.file = operand
                     add_entry_old_state(opcode, [operand])
-                elif opcode == DW_LNS_set_column:
+                elif opcode == DW_LNS.set_column:
                     operand = struct_parse(self.structs.the_Dwarf_uleb128,
                                            self.stream)
                     state.column = operand
                     add_entry_old_state(opcode, [operand])
-                elif opcode == DW_LNS_negate_stmt:
+                elif opcode == DW_LNS.negate_stmt:
                     state.is_stmt = not state.is_stmt
                     add_entry_old_state(opcode, [])
-                elif opcode == DW_LNS_set_basic_block:
+                elif opcode == DW_LNS.set_basic_block:
                     state.basic_block = True
                     add_entry_old_state(opcode, [])
-                elif opcode == DW_LNS_const_add_pc:
+                elif opcode == DW_LNS.const_add_pc:
                     adjusted_opcode = 255 - self['opcode_base']
                     address_addend = ((adjusted_opcode // self['line_range']) *
                                       self['minimum_instruction_length'])
                     state.address += address_addend
                     add_entry_old_state(opcode, [address_addend])
-                elif opcode == DW_LNS_fixed_advance_pc:
+                elif opcode == DW_LNS.fixed_advance_pc:
                     operand = struct_parse(self.structs.the_Dwarf_uint16,
                                            self.stream)
                     state.address += operand
                     add_entry_old_state(opcode, [operand])
-                elif opcode == DW_LNS_set_prologue_end:
+                elif opcode == DW_LNS.set_prologue_end:
                     state.prologue_end = True
                     add_entry_old_state(opcode, [])
-                elif opcode == DW_LNS_set_epilogue_begin:
+                elif opcode == DW_LNS.set_epilogue_begin:
                     state.epilogue_begin = True
                     add_entry_old_state(opcode, [])
-                elif opcode == DW_LNS_set_isa:
+                elif opcode == DW_LNS.set_isa:
                     operand = struct_parse(self.structs.the_Dwarf_uleb128,
                                            self.stream)
                     state.isa = operand

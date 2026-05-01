@@ -642,10 +642,11 @@ ENUMMAP_EXTRA_D_TAG_MACHINE = dict(
 
 # Here is the full combined mapping from tag name to value
 
-ENUM_D_TAG = dict(ENUM_D_TAG_COMMON)
-ENUM_D_TAG.update(ENUM_D_TAG_SOLARIS)
-for k in ENUMMAP_EXTRA_D_TAG_MACHINE:
-    ENUM_D_TAG.update(ENUMMAP_EXTRA_D_TAG_MACHINE[k])
+ENUM_D_TAG = merge_dicts(
+    ENUM_D_TAG_COMMON,
+    ENUM_D_TAG_SOLARIS,
+    *ENUMMAP_EXTRA_D_TAG_MACHINE.values(),
+)
 
 ENUM_DT_FLAGS = dict(
     DF_ORIGIN=0x1,

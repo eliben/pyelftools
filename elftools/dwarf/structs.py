@@ -7,6 +7,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import elftools.dwarf.enums as e
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
     SBInt8, SBInt16, SBInt32, SBInt64, SLInt8, SLInt16, SLInt32, SLInt64,
@@ -15,7 +16,6 @@ from ..construct import (
     )
 from ..common.construct_utils import (RepeatUntilExcluding, ULEB128, SLEB128,
     StreamOffset, ULInt24, UBInt24)
-from .enums import *
 
 
 class DWARFStructs:
@@ -220,7 +220,7 @@ class DWARFStructs:
             self.Dwarf_offset('type_offset')
         )
         dwarfv5_CU_header = Struct('',
-            Enum(self.Dwarf_uint8('unit_type'), **ENUM_DW_UT),
+            Enum(self.Dwarf_uint8('unit_type'), **e.ENUM_DW_UT),
             Embed(Switch('', lambda ctx: ctx.unit_type,
             {
                 'DW_UT_compile'       : dwarfv5_CP_CU_header,
@@ -249,14 +249,14 @@ class DWARFStructs:
 
     def _create_abbrev_declaration(self):
         self.Dwarf_abbrev_declaration = Struct('Dwarf_abbrev_entry',
-            Enum(self.Dwarf_uleb128('tag'), **ENUM_DW_TAG),
-            Enum(self.Dwarf_uint8('children_flag'), **ENUM_DW_CHILDREN),
+            Enum(self.Dwarf_uleb128('tag'), **e.ENUM_DW_TAG),
+            Enum(self.Dwarf_uint8('children_flag'), **e.ENUM_DW_CHILDREN),
             RepeatUntilExcluding(
                 lambda obj, ctx:
                     obj.name == 'DW_AT_null' and obj.form == 'DW_FORM_null',
                 Struct('attr_spec',
-                    Enum(self.Dwarf_uleb128('name'), **ENUM_DW_AT),
-                    Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM),
+                    Enum(self.Dwarf_uleb128('name'), **e.ENUM_DW_AT),
+                    Enum(self.Dwarf_uleb128('form'), **e.ENUM_DW_FORM),
                     If(lambda ctx: ctx['form'] == 'DW_FORM_implicit_const',
                         self.Dwarf_sleb128('value')))))
 
@@ -427,8 +427,8 @@ class DWARFStructs:
             If(ver5,
                 PrefixedArray(
                     Struct('directory_entry_format',
-                        Enum(self.Dwarf_uleb128('content_type'), **ENUM_DW_LNCT),
-                        Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM)),
+                        Enum(self.Dwarf_uleb128('content_type'), **e.ENUM_DW_LNCT),
+                        Enum(self.Dwarf_uleb128('form'), **e.ENUM_DW_FORM)),
                     self.Dwarf_uint8("directory_entry_format_count"))),
             If(ver5, # Name deliberately doesn't match the legacy object, since the format can't be made compatible
                 PrefixedArray(
@@ -437,8 +437,8 @@ class DWARFStructs:
             If(ver5,
                 PrefixedArray(
                     Struct('file_name_entry_format',
-                        Enum(self.Dwarf_uleb128('content_type'), **ENUM_DW_LNCT),
-                        Enum(self.Dwarf_uleb128('form'), **ENUM_DW_FORM)),
+                        Enum(self.Dwarf_uleb128('content_type'), **e.ENUM_DW_LNCT),
+                        Enum(self.Dwarf_uleb128('form'), **e.ENUM_DW_FORM)),
                     self.Dwarf_uint8("file_name_entry_format_count"))),
             If(ver5,
                 PrefixedArray(
@@ -508,7 +508,7 @@ class DWARFStructs:
             lambda obj, ctx: obj.entry_type == 'DW_LLE_end_of_list',
             Struct('entry',
                 StreamOffset('entry_offset'),
-                Enum(self.Dwarf_uint8('entry_type'), **ENUM_DW_LLE),
+                Enum(self.Dwarf_uint8('entry_type'), **e.ENUM_DW_LLE),
                 Embed(Switch('', lambda ctx: ctx.entry_type,
                 {
                     'DW_LLE_end_of_list'      : Struct('end_of_list'),
@@ -543,7 +543,7 @@ class DWARFStructs:
             lambda obj, ctx: obj.entry_type == 'DW_RLE_end_of_list',
             Struct('entry',
                 StreamOffset('entry_offset'),
-                Enum(self.Dwarf_uint8('entry_type'), **ENUM_DW_RLE),
+                Enum(self.Dwarf_uint8('entry_type'), **e.ENUM_DW_RLE),
                 Embed(Switch('', lambda ctx: ctx.entry_type,
                 {
                     'DW_RLE_end_of_list'      : Struct('end_of_list'),
