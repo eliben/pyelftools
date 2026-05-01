@@ -234,6 +234,13 @@ class DW_CFA(_IntEnum):
     GNU_window_save = 0x2d  # Used on SPARC, not in the corpus
     GNU_args_size = 0x2e
 
+    @classmethod
+    def parse_raw_opcode(cls, /, opcode, *, __MASK = 0b11_00_0000):
+        """Extract primary or extended opcode from raw byte."""
+        if primary := opcode & __MASK:
+            return (cls(primary), opcode & ~__MASK)
+        return (cls(opcode),)
+
 
 class DW_UT(_IntEnum):
     """

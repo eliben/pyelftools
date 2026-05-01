@@ -14,7 +14,7 @@ from .constants import (
 from .dwarf_expr import DWARFExprParser
 from .die import DIE
 from ..common.utils import preserve_stream_pos, dwarf_assert, bytes2str
-from .callframe import instruction_name, CIE, FDE
+from .callframe import CIE, FDE
 
 
 def set_global_machine_arch(machine_arch):
@@ -64,7 +64,7 @@ def describe_CFI_instructions(entry):
 
     s = ''
     for instr in entry.instructions:
-        name = instruction_name(instr.opcode)
+        name = instr.opcode.FQN
 
         if name in ('DW_CFA_offset',
                     'DW_CFA_offset_extended', 'DW_CFA_offset_extended_sf',

@@ -8,8 +8,9 @@ import unittest
 from io import BytesIO
 
 from elftools.dwarf.callframe import (
-    CallFrameInfo, CIE, FDE, instruction_name, CallFrameInstruction,
+    CallFrameInfo, CIE, FDE, CallFrameInstruction,
     RegisterRule, DecodedCallFrameTable, CFARule)
+from elftools.dwarf.constants import DW_CFA
 from elftools.dwarf.structs import DWARFStructs
 from elftools.dwarf.descriptions import (describe_CFI_instructions,
     set_global_machine_arch)
@@ -19,9 +20,9 @@ from os.path import join
 
 
 class TestCallFrame(unittest.TestCase):
-    def assertInstruction(self, instr, name, args):
+    def assertInstruction(self, instr, op, args):
         self.assertIsInstance(instr, CallFrameInstruction)
-        self.assertEqual(instruction_name(instr.opcode), name)
+        self.assertEqual(instr.opcode, op)
         self.assertEqual(instr.args, args)
 
     def test_spec_sample_d6(self):
@@ -74,11 +75,11 @@ class TestCallFrame(unittest.TestCase):
         self.assertEqual(entries[0]['return_address_register'], 8)
         self.assertEqual(len(entries[0].instructions), 11)
         self.assertInstruction(entries[0].instructions[0],
-            'DW_CFA_def_cfa', [7, 0])
+            DW_CFA.def_cfa, [7, 0])
         self.assertInstruction(entries[0].instructions[8],
-            'DW_CFA_same_value', [7])
+            DW_CFA.same_value, [7])
         self.assertInstruction(entries[0].instructions[9],
-            'DW_CFA_register', [8, 1])
+            DW_CFA.register, [8, 1])
 
         self.assertTrue(isinstance(entries[1], FDE))
         self.assertEqual(entries[1]['length'], 40)
@@ -88,15 +89,15 @@ class TestCallFrame(unittest.TestCase):
         self.assertIs(entries[1].cie, entries[0])
         self.assertEqual(len(entries[1].instructions), 21)
         self.assertInstruction(entries[1].instructions[0],
-            'DW_CFA_advance_loc', [1])
+            DW_CFA.advance_loc, [1])
         self.assertInstruction(entries[1].instructions[1],
-            'DW_CFA_def_cfa_offset', [12])
+            DW_CFA.def_cfa_offset, [12])
         self.assertInstruction(entries[1].instructions[9],
-            'DW_CFA_offset', [4, 3])
+            DW_CFA.offset, [4, 3])
         self.assertInstruction(entries[1].instructions[18],
-            'DW_CFA_def_cfa_offset', [0])
+            DW_CFA.def_cfa_offset, [0])
         self.assertInstruction(entries[1].instructions[20],
-            'DW_CFA_nop', [])
+            DW_CFA.nop, [])
 
         # Now let's decode it...
         decoded_CIE = entries[0].get_decoded()

@@ -9,6 +9,8 @@
 import copy
 import os
 from collections import namedtuple
+from warnings import warn
+
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos, iterbytes)
 from ..construct import Struct, Switch
@@ -183,23 +185,19 @@ class CallFrameInfo:
         """
         instructions = []
         while offset < end_offset:
-            opcode = struct_parse(structs.the_Dwarf_uint8, self.stream, offset)
-            args = []
+            raw_opcode = struct_parse(structs.the_Dwarf_uint8, self.stream, offset)
 
-            primary = opcode & _PRIMARY_MASK
-            primary_arg = opcode & _PRIMARY_ARG_MASK
-            if primary == DW_CFA.advance_loc:
-                args = [primary_arg]
-            elif primary == DW_CFA.offset:
-                args = [
-                    primary_arg,
-                    struct_parse(structs.the_Dwarf_uleb128, self.stream)]
-            elif primary == DW_CFA.restore:
-                args = [primary_arg]
+            opcode, *args = DW_CFA.parse_raw_opcode(raw_opcode)
+            if opcode == DW_CFA.advance_loc:
+                pass
+            elif opcode == DW_CFA.offset:
+                args += [ struct_parse(structs.the_Dwarf_uleb128, self.stream)]
+            elif opcode == DW_CFA.restore:
+                pass
             # primary == 0 and real opcode is extended
             elif opcode in (DW_CFA.nop, DW_CFA.remember_state,
                             DW_CFA.restore_state, DW_CFA.AARCH64_negate_ra_state):
-                args = []
+                pass
             elif opcode == DW_CFA.set_loc:
                 args = [
                     struct_parse(structs.the_Dwarf_target_addr, self.stream)]
@@ -447,11 +445,8 @@ class CallFrameInfo:
 def instruction_name(opcode):
     """ Given an opcode, return the instruction name.
     """
-    primary = opcode & _PRIMARY_MASK
-    if primary == 0:
-        return _OPCODE_NAME_MAP[opcode]
-    else:
-        return _OPCODE_NAME_MAP[primary]
+    warn("Switch to DW_CFA.FQN", DeprecationWarning, stacklevel=2)
+    return opcode.FQN
 
 
 class CallFrameInstruction:
@@ -465,8 +460,7 @@ class CallFrameInstruction:
         self.args = args
 
     def __repr__(self):
-        return '%s (0x%x): %s' % (
-            instruction_name(self.opcode), self.opcode, self.args)
+        return f"{self.opcode.FQN} ({self.opcode.value:#02x}): {self.args}"
 
 
 class CFIEntry:
@@ -716,16 +710,3 @@ class CFARule:
 #
 DecodedCallFrameTable = namedtuple(
     'DecodedCallFrameTable', 'table reg_order')
-
-
-#---------------- PRIVATE ----------------#
-
-_PRIMARY_MASK = 0b11000000
-_PRIMARY_ARG_MASK = 0b00111111
-
-# This dictionary is filled by automatically scanning the constants module
-# for DW_CFA instructions, and mapping their values to names.
-_OPCODE_NAME_MAP = {
-    member.value: f"DW_CFA_{member.name}"
-    for member in DW_CFA.__members__.values()
-}
