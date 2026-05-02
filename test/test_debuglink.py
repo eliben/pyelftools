@@ -4,14 +4,21 @@
 # Gabriele Digregorio - Io_no
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
 
-from elftools.elf.elffile import ELFFile
-from elftools.common.exceptions import ELFError
 import os
 import tempfile
 import unittest
-
 from typing import IO
+
+from elftools.elf.elffile import ELFFile
+from elftools.common.exceptions import ELFError
+
+try:
+    from typeguard import suppress_type_checks
+except ImportError:
+    def suppress_type_checks(f):  # type: ignore[no-redef]
+        return f
 
 
 class TestDebuglink(unittest.TestCase):
@@ -35,7 +42,7 @@ class TestDebuglink(unittest.TestCase):
         stream = open('test/testfiles_for_unittests/' + external_filename, 'rb')
         return stream
 
-    def subprograms_from_debuglink(self, elf: ELFFile) -> dict[str, (int, int)]:
+    def subprograms_from_debuglink(self, elf: ELFFile) -> dict[str, tuple[int, int]]:
         """Returns a dictionary containing the subprograms of the specified ELF file from the linked
         debug file.
         Args:
@@ -112,6 +119,7 @@ class TestDebuglink(unittest.TestCase):
             with self.assertRaisesRegex(ELFError, 'must be relative'):
                 loader(os.path.abspath(os.path.join(tmpdir, 'outside.debug')))
 
+    @suppress_type_checks
     def test_relative_loader_rejects_bytes_paths(self):
         with self.assertRaisesRegex(TypeError, 'base_path must be str'):
             ELFFile.make_relative_loader(b'sample.elf')
