@@ -8,15 +8,35 @@
 #-------------------------------------------------------------------------------
 import copy
 import os
-from typing import Any, NamedTuple
+from collections.abc import Iterator
+from typing import Any, Literal, NamedTuple
 from warnings import warn
 
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos)
 from ..construct import Struct, Switch
+from ..construct.lib.container import Container
 from .enums import DW_EH_encoding_flags
 from .structs import DWARFStructs
 from .constants import DW_CFA
+
+
+Line = dict[Any, Any]
+# TypedDict only supprts `str` as key, but "Line" mixes str|int.
+# class Line(TypedDict, total=False):
+#     pc: int
+#     cfa: CFARule
+#     "int": RegisterRule
+
+
+Augmentation = dict[str | bool, int | Container | Literal[True]]
+# TypedDict only supprts `str` as key, but "Stack Frame" is signaled as `True: True`.
+# class Augmentation(TypedDict, total=False):
+#     length: int
+#     LSDA_encoding: int
+#     FDE_encoding: int
+#     personality: Container
+#     "True": Literal[True]
 
 
 class CallFrameInfo:
