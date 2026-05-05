@@ -6,6 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Final
+
 from .enums import (
     ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE_BASE, ENUM_SH_TYPE_BASE,
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64,
@@ -15,6 +19,12 @@ from .enums import (
     ENUM_DT_FLAGS_1, ENUM_RELOC_TYPE_PPC)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from ..construct.lib.container import Container
+    from .elffile import ELFFile
 
 
 def describe_ei_class(x: str) -> str:
@@ -36,7 +46,7 @@ def describe_ei_osabi(x: str) -> str:
     return _DESCR_EI_OSABI.get(x, _unknown)
 
 
-def describe_e_type(x, elffile=None):
+def describe_e_type(x: str, elffile: ELFFile | None = None) -> str:
     if elffile is not None and x == 'ET_DYN':
         # Detect whether this is a normal SO or a PIE executable
         dynamic = elffile.get_section_by_name('.dynamic')
@@ -56,9 +66,9 @@ def describe_e_version_numeric(x: str) -> str:
 
 
 def describe_p_type(x: int | str) -> str:
-    if x in _DESCR_P_TYPE:
+    if isinstance(x, str) and x in _DESCR_P_TYPE:
         return _DESCR_P_TYPE[x]
-    elif x >= ENUM_P_TYPE_BASE['PT_LOOS'] and x <= ENUM_P_TYPE_BASE['PT_HIOS']:
+    elif isinstance(x, int) and ENUM_P_TYPE_BASE['PT_LOOS'] <= x <= ENUM_P_TYPE_BASE['PT_HIOS']:
         return 'LOOS+%lx' % (x - ENUM_P_TYPE_BASE['PT_LOOS'])
     else:
         return _unknown
@@ -88,10 +98,9 @@ def describe_rh_flags(x: int) -> str:
 
 
 def describe_sh_type(x: int | str) -> str:
-    if x in _DESCR_SH_TYPE:
+    if isinstance(x, str) and x in _DESCR_SH_TYPE:
         return _DESCR_SH_TYPE[x]
-    elif (x >= ENUM_SH_TYPE_BASE['SHT_LOOS'] and
-          x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']):
+    elif isinstance(x, int) and ENUM_SH_TYPE_BASE['SHT_LOOS'] <= x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']:
         return 'loos+0x%lx' % (x - ENUM_SH_TYPE_BASE['SHT_LOOS'])
     else:
         return _unknown
@@ -128,7 +137,7 @@ def describe_symbol_local(x: int) -> str:
     return '[<localentry>: ' + str(1 << x) + ']'
 
 
-def describe_symbol_other(x):
+def describe_symbol_other(x: Container) -> str:
     vis = describe_symbol_visibility(x['visibility'])
     if 1 < x['local'] < 7:
         return vis + ' ' + describe_symbol_local(x['local'])
@@ -136,10 +145,10 @@ def describe_symbol_other(x):
 
 
 def describe_symbol_shndx(x: int | str) -> str:
-    return _DESCR_ST_SHNDX.get(x, '%3s' % x)
+    return _DESCR_ST_SHNDX.get(x, f'{x:3}')  # type: ignore[arg-type] # ty: ignore[no-matching-overload]
 
 
-def describe_reloc_type(x, elffile):
+def describe_reloc_type(x: int, elffile: ELFFile) -> str:
     arch = elffile.get_machine_arch()
     if arch == 'x86':
         return _DESCR_RELOC_TYPE_i386.get(x, _unknown)
@@ -202,7 +211,7 @@ def describe_ver_flags(x: int) -> str:
         VER_FLAGS.VER_FLG_INFO) if x & flag)
 
 
-def describe_note(x, machine):
+def describe_note(x: Container, machine: str) -> str:
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
@@ -236,7 +245,7 @@ def describe_note(x, machine):
     return '%s (%s)%s' % (note_type, note_type_desc, desc)
 
 
-def describe_attr_tag_arm(tag, val, extra):
+def describe_attr_tag_arm(tag: str, val: Any, extra: str | None) -> str:
     s = _DESCR_ATTR_TAG_ARM.get(tag, '"%s"' % tag)
     idx = ENUM_ATTR_TAG_ARM[tag] - 1
     d_entry = _DESCR_ATTR_VAL_ARM[idx]
@@ -248,7 +257,7 @@ def describe_attr_tag_arm(tag, val, extra):
         elif tag == 'TAG_ALSO_COMPATIBLE_WITH':
             if val.tag == 'TAG_CPU_ARCH':
                 d_entry = _DESCR_ATTR_VAL_ARM[5]  # TAG_CPU_ARCH
-                return s + d_entry.get(val.value, '??? (%d)' % val.value)
+                return s + (d_entry.get(val.value) or f'??? ({val.value})')
 
             else:
                 return s + '??? (%d)' % val.tag
@@ -262,7 +271,7 @@ def describe_attr_tag_arm(tag, val, extra):
     else:
         return s + d_entry[val]
 
-def describe_attr_tag_riscv(tag, val, extra):
+def describe_attr_tag_riscv(tag: str, val: Any, extra: str) -> str:
     idx = ENUM_ATTR_TAG_RISCV[tag] - 1
     d_entry = _DESCR_ATTR_VAL_RISCV[idx]
 
@@ -274,19 +283,25 @@ def describe_attr_tag_riscv(tag, val, extra):
     else:
         return _DESCR_ATTR_TAG_RISCV[tag] + d_entry[val]
 
-def describe_note_gnu_property_bitmap_and(values, prefix, value):
+def describe_note_gnu_property_bitmap_and(
+    values: Iterable[tuple[int, str]],
+    prefix: str,
+    value: int,
+) -> str:
     descs = []
     for mask, desc in values:
         if value & mask:
             descs.append(desc)
     return '%s: %s' % (prefix, ', '.join(descs))
 
-def describe_note_gnu_properties(properties, machine):
+def describe_note_gnu_properties(properties: list[Container], machine: str) -> str:
     descriptions = []
     for prop in properties:
-        t, d, sz = prop.pr_type, prop.pr_data, prop.pr_datasz
+        t: str | int = prop.pr_type
+        d = prop.pr_data
+        sz: int = prop.pr_datasz
         if t == 'GNU_PROPERTY_STACK_SIZE':
-            if type(d) is int:
+            if isinstance(d, int):
                 prop_desc = 'stack size: 0x%x' % d
             else:
                 prop_desc = 'stack size: <corrupt length: 0x%x>' % sz
@@ -773,7 +788,7 @@ _DESCR_ATTR_TAG_ARM = dict(
     TAG_MPEXTENSION_USE_OLD='Tag_MPextension_use_old: ',
 )
 
-_DESCR_ATTR_VAL_ARM = [
+_DESCR_ATTR_VAL_ARM: Final = (
     None, #1
     None, #2
     None, #3
@@ -1021,7 +1036,7 @@ _DESCR_ATTR_VAL_ARM = [
         0: 'Not Allowed',
         1: 'Allowed',
     },
-]
+)
 
 _DESCR_ATTR_TAG_RISCV = dict(
     TAG_FILE='File Attributes',
@@ -1037,7 +1052,7 @@ _DESCR_ATTR_TAG_RISCV = dict(
     TAG_X3_REG_USAGE='Tag_RISCV_x3_reg_usage: ',
 )
 
-_DESCR_ATTR_VAL_RISCV = [
+_DESCR_ATTR_VAL_RISCV: Final = (
     None, #1
     None, #2
     None, #3
@@ -1065,4 +1080,4 @@ _DESCR_ATTR_VAL_RISCV = [
         2: 'This object uses x3 as the shadow stack pointer.',
         3: 'This object uses X3 as a temporary register.',
     },
-]
+)

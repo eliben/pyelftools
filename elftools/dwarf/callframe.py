@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import copy
 import os
-from collections.abc import Iterator
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, Literal, NamedTuple, cast
 from warnings import warn

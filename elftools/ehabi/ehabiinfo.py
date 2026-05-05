@@ -142,13 +142,15 @@ class EHABIEntry:
 
     """
 
-    def __init__(self,
-                 function_offset: int | None,
-                 personality: int | None,
-                 bytecode_array: list[int] | None,
-                 eh_table_offset: int | None = None,
-                 unwindable: bool = True,
-                 corrupt: bool = False) -> None:
+    def __init__(
+        self,
+        function_offset: int | None,
+        personality: int | None,
+        bytecode_array: list[int] | None,
+        eh_table_offset: int | None = None,
+        unwindable: bool = True,
+        corrupt: bool = False,
+    ) -> None:
         self.function_offset = function_offset
         self.personality = personality
         self.bytecode_array = bytecode_array

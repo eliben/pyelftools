@@ -6,11 +6,18 @@
 # Andreas Ziegler (andreas.ziegler@fau.de)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
 
 import struct
+from typing import TYPE_CHECKING
 
 from ..common.utils import struct_parse
+from ..construct.lib.container import Container
 from .sections import Section
+
+if TYPE_CHECKING:
+    from .elffile import ELFFile
+    from .sections import Symbol
 
 
 class ELFHashTable:
@@ -27,7 +34,13 @@ class ELFHashTable:
         supports symbol lookup without access to a symbol table section.
     """
 
-    def __init__(self, elffile, start_offset, size, symboltable):
+    def __init__(
+        self,
+        elffile: ELFFile,
+        start_offset: int,
+        size: int | None,
+        symboltable,
+    ) -> None:
         """
         Args:
             elffile (ELFFile): The ELF file.
@@ -38,12 +51,12 @@ class ELFHashTable:
         self.elffile = elffile
         self._symboltable = symboltable
         if size == 0:  # size may also be None if its unknown
-            self.params = {
+            self.params = Container(**{
                 'nbuckets': 0,
                 'nchains': 0,
                 'buckets': [],
                 'chains': [],
-            }
+            })
         else:
             self.params = struct_parse(self.elffile.structs.Elf_Hash,
                                        self.elffile.stream,
@@ -54,7 +67,7 @@ class ELFHashTable:
         """
         return self.params['nchains']
 
-    def get_symbol(self, name):
+    def get_symbol(self, name: str) -> Symbol | None:
         """ Look up a symbol from this hash table with the given name.
         """
         if self.params['nbuckets'] == 0:
@@ -90,7 +103,13 @@ class ELFHashSection(Section, ELFHashTable):
         allows us to use the common functions defined on Section objects when
         dealing with the hash table.
     """
-    def __init__(self, header, name, elffile, symboltable):
+    def __init__(
+        self,
+        header: Container,
+        name: str,
+        elffile: ELFFile,
+        symboltable,
+    ) -> None:
         Section.__init__(self, header, name, elffile)
         ELFHashTable.__init__(self, elffile, self['sh_offset'], self['sh_size'], symboltable)
 
@@ -108,10 +127,15 @@ class GNUHashTable:
         one should use the DynamicSegment object as the symboltable as it
         supports symbol lookup without access to a symbol table section.
     """
-    def __init__(self, elffile, start_offset, symboltable):
+    def __init__(
+        self,
+        elffile: ELFFile,
+        start_offset: int,
+        symboltable,
+    ) -> None:
         self.elffile = elffile
         self._symboltable = symboltable
-        self.params = struct_parse(self.elffile.structs.Gnu_Hash,
+        self.params: Container = struct_parse(self.elffile.structs.Gnu_Hash,
                                    self.elffile.stream,
                                    start_offset)
         # Element sizes in the hash table
@@ -154,7 +178,7 @@ class GNUHashTable:
         BITMASK = (1 << (H1 % arch_bits)) | (1 << (H2 % arch_bits))
         return (self.params['bloom'][word_idx] & BITMASK) == BITMASK
 
-    def get_symbol(self, name):
+    def get_symbol(self, name: str) -> Symbol | None:
         """ Look up a symbol from this hash table with the given name.
         """
         namehash = self.gnu_hash(name)
@@ -196,6 +220,12 @@ class GNUHashSection(Section, GNUHashTable):
         allows us to use the common functions defined on Section objects when
         dealing with the hash table.
     """
-    def __init__(self, header, name, elffile, symboltable):
+    def __init__(
+        self,
+        header: Container,
+        name: str,
+        elffile: ELFFile,
+        symboltable,
+    ) -> None:
         Section.__init__(self, header, name, elffile)
         GNUHashTable.__init__(self, elffile, self['sh_offset'], symboltable)
