@@ -90,9 +90,13 @@ class Section:
 
                 decomp = zlib.decompressobj()
                 result = decomp.decompress(compressed, self.data_size)
-            else:
+            elif isinstance(c_type, int):
                 raise ELFCompressionError(
                     'Unknown compression type: {:#0x}'.format(c_type)
+                )
+            else:
+                raise ELFCompressionError(
+                    'Unknown compression type: {!r}'.format(c_type)
                 )
 
             if len(result) != self._decompressed_size:
