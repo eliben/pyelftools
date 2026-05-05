@@ -302,9 +302,14 @@ class StabSection(Section):
 class Attribute:
     """ Attribute object - representing a build attribute of ELF files.
     """
-    def __init__(self, tag):
-        self._tag = tag
+
+    def __init__(self, structs, stream):
+        self._tag = self._parse(structs, stream)
         self.extra = None
+
+    @classmethod
+    def _parse(cls, structs, stream):
+        raise NotImplementedError
 
     @property
     def tag(self):
@@ -320,11 +325,10 @@ class Attribute:
 class AttributesSubsubsection(Section):
     """ Subsubsection of an ELF attribute section's subsection.
     """
-    def __init__(self, stream, structs, offset, attribute):
+    def __init__(self, stream, structs, offset):
         self.stream = stream
         self.offset = offset
         self.structs = structs
-        self.attribute = attribute
 
         self.header = self.attribute(self.structs, self.stream)
 
@@ -369,13 +373,14 @@ class AttributesSubsubsection(Section):
 class AttributesSubsection(Section):
     """ Subsection of an ELF attributes section.
     """
-    def __init__(self, stream, structs, offset, header, subsubsection):
+    subsubsection = AttributesSubsubsection
+
+    def __init__(self, stream, structs, offset):
         self.stream = stream
         self.offset = offset
         self.structs = structs
-        self.subsubsection = subsubsection
 
-        self.header = struct_parse(header, self.stream, self.offset)
+        self.header = struct_parse(structs.Elf_Attr_Subsection_Header, self.stream, self.offset)
 
         self.subsubsec_start = self.stream.tell()
 
@@ -426,9 +431,10 @@ class AttributesSubsection(Section):
 class AttributesSection(Section):
     """ ELF attributes section.
     """
-    def __init__(self, header, name, elffile, subsection):
+    subsection = AttributesSubsection
+
+    def __init__(self, header, name, elffile):
         super().__init__(header, name, elffile)
-        self.subsection = subsection
 
         fv = struct_parse(self.structs.Elf_byte('format_version'),
                           self.stream,
@@ -476,9 +482,13 @@ class AttributesSection(Section):
 class ARMAttribute(Attribute):
     """ ARM attribute object - representing a build attribute of ARM ELF files.
     """
+
+    @classmethod
+    def _parse(cls, structs, stream):
+        return struct_parse(structs.Elf_Arm_Attribute_Tag, stream)
+
     def __init__(self, structs, stream):
-        super().__init__(
-            struct_parse(structs.Elf_Arm_Attribute_Tag, stream))
+        super().__init__(structs, stream)
 
         if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
             self.value = struct_parse(structs.Elf_word('value'), stream)
@@ -518,35 +528,31 @@ class ARMAttribute(Attribute):
 class ARMAttributesSubsubsection(AttributesSubsubsection):
     """ Subsubsection of an ELF .ARM.attributes section's subsection.
     """
-    def __init__(self, stream, structs, offset):
-        super().__init__(
-            stream, structs, offset, ARMAttribute)
+    attribute = ARMAttribute
 
 
 class ARMAttributesSubsection(AttributesSubsection):
     """ Subsection of an ELF .ARM.attributes section.
     """
-    def __init__(self, stream, structs, offset):
-        super().__init__(
-            stream, structs, offset,
-            structs.Elf_Attr_Subsection_Header,
-            ARMAttributesSubsubsection)
+    subsubsection = ARMAttributesSubsubsection
 
 
 class ARMAttributesSection(AttributesSection):
     """ ELF .ARM.attributes section.
     """
-    def __init__(self, header, name, elffile):
-        super().__init__(
-            header, name, elffile, ARMAttributesSubsection)
+    subsection = ARMAttributesSubsection
 
 
 class RISCVAttribute(Attribute):
     """ Attribute of an ELF .riscv.attributes section.
     """
+
+    @classmethod
+    def _parse(cls, structs, stream):
+        return struct_parse(structs.Elf_RiscV_Attribute_Tag, stream)
+
     def __init__(self, structs, stream):
-        super().__init__(
-            struct_parse(structs.Elf_RiscV_Attribute_Tag, stream))
+        super().__init__(structs, stream)
 
         if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
             self.value = struct_parse(structs.Elf_word('value'), stream)
@@ -572,24 +578,16 @@ class RISCVAttribute(Attribute):
 class RISCVAttributesSubsubsection(AttributesSubsubsection):
     """ Subsubsection of an ELF .riscv.attributes subsection.
     """
-    def __init__(self, stream, structs, offset):
-        super().__init__(
-            stream, structs, offset, RISCVAttribute)
+    attribute = RISCVAttribute
 
 
 class RISCVAttributesSubsection(AttributesSubsection):
     """ Subsection of an ELF .riscv.attributes section.
     """
-    def __init__(self, stream, structs, offset):
-        super().__init__(
-            stream, structs, offset,
-            structs.Elf_Attr_Subsection_Header,
-            RISCVAttributesSubsubsection)
+    subsubsection = RISCVAttributesSubsubsection
 
 
 class RISCVAttributesSection(AttributesSection):
     """ ELF .riscv.attributes section.
     """
-    def __init__(self, header, name, elffile):
-        super().__init__(
-            header, name, elffile, RISCVAttributesSubsection)
+    subsection = RISCVAttributesSubsection
