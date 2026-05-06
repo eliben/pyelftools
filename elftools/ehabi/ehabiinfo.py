@@ -154,11 +154,16 @@ class EHABIEntry:
             return None
 
     def __repr__(self):
-        return "<EHABIEntry function_offset=0x%x, personality=%d, %sbytecode=%s>" % (
-            self.function_offset,
-            self.personality,
-            "eh_table_offset=0x%x, " % self.eh_table_offset if self.eh_table_offset else "",
-            self.bytecode_array)
+        fo = self.function_offset
+        to = self.eh_table_offset
+        return (
+	    "<EHABIEntry"
+            f" function_offset={'' if fo is None else '{fo:#x}'}"
+            f", personaality={self.personality}"
+            f"{', eh_table_offset={to:#x}' if to else ''}"
+            f", bytecode={self.bytecode_array}"
+            ">"
+        )
 
 
 class CorruptEHABIEntry(EHABIEntry):

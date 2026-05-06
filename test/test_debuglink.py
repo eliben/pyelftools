@@ -4,14 +4,15 @@
 # Gabriele Digregorio - Io_no
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
 
-from elftools.elf.elffile import ELFFile
-from elftools.common.exceptions import ELFError
 import os
 import tempfile
 import unittest
-
 from typing import IO
+
+from elftools.common.exceptions import ELFError
+from elftools.elf.elffile import ELFFile
 
 
 class TestDebuglink(unittest.TestCase):
@@ -35,7 +36,7 @@ class TestDebuglink(unittest.TestCase):
         stream = open('test/testfiles_for_unittests/' + external_filename, 'rb')
         return stream
 
-    def subprograms_from_debuglink(self, elf: ELFFile) -> dict[str, (int, int)]:
+    def subprograms_from_debuglink(self, elf: ELFFile) -> dict[str, tuple[int, int]]:
         """Returns a dictionary containing the subprograms of the specified ELF file from the linked
         debug file.
         Args:
