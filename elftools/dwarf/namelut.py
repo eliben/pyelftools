@@ -6,12 +6,17 @@
 # Vijay Ramasami (rvijayc@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import collections
 from collections.abc import Mapping
+from typing import NamedTuple
+
 from ..common.utils import struct_parse
 from ..construct import CString, Struct, If
 
-NameLUTEntry = collections.namedtuple('NameLUTEntry', 'cu_ofs die_ofs')
+
+class NameLUTEntry(NamedTuple):
+    cu_ofs: int
+    die_ofs: int
+
 
 class NameLUT(Mapping):
     """
