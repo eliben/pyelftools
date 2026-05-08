@@ -69,13 +69,13 @@ def run_test_on_file(filename, verbose=False, opt=None):
         stdouts = []
         for exe_path in [DWARFDUMP_PATH, 'scripts/dwarfdump.py']:
             args = [option, '--verbose', filename]
-            if verbose: testlog.info("....executing: '%s %s'" % (
-                exe_path, ' '.join(args)))
+            cmd = " ".join((exe_path, *args))
+            if verbose: testlog.info(f"....executing: '{cmd}'")
             t1 = time.time()
             rc, stdout = run_exe(exe_path, args)
             if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
             if rc != 0:
-                testlog.error("@@ aborting - '%s %s' returned '%s'" % (exe_path, option, rc))
+                testlog.error(f"@@ aborting - '{cmd}' returned {rc}")
                 return False
             stdouts.append(stdout)
         if verbose: testlog.info('....comparing output...')

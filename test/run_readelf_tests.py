@@ -117,12 +117,12 @@ def run_test_on_file(filename, verbose=False, opt=None):
         for exe_path in [READELF_PATH, 'scripts/readelf.py']:
             args = [option, filename]
             cmd = " ".join((exe_path, *args))
-            if verbose: testlog.info("....executing: '%s'" % (cmd,))
+            if verbose: testlog.info(f"....executing: '{cmd}'")
             t1 = time.time()
             rc, stdout = run_exe(exe_path, args)
             if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
             if rc != 0:
-                testlog.error("@@ aborting - '%s' returned '%s'" % (cmd, rc))
+                testlog.error(f"@@ aborting - '{cmd}' returned {rc}")
                 return False
             stdouts.append(stdout)
         if verbose: testlog.info('....comparing output...')
