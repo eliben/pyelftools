@@ -73,19 +73,13 @@ def parse_cstring_from_stream(stream: IO[bytes], stream_pos: int | None = None) 
         stream.seek(stream_pos)
     CHUNKSIZE = 64
     chunks = []
-    found = False
     while True:
-        chunk = stream.read(CHUNKSIZE)
-        end_index = chunk.find(b'\x00')
-        if end_index >= 0:
-            chunks.append(chunk[:end_index])
-            found = True
-            break
-        else:
-            chunks.append(chunk)
+        chunk, sep, _tail = stream.read(CHUNKSIZE).partition(b'\x00')
+        chunks.append(chunk)
+        if sep:
+            return b''.join(chunks)
         if len(chunk) < CHUNKSIZE:
-            break
-    return b''.join(chunks) if found else None
+            return None
 
 
 def elf_assert(cond: object, msg: str = '') -> None:
