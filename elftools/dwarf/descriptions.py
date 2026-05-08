@@ -592,8 +592,9 @@ class ExprDumper:
         self._init_lookups()
 
     def dump_expr(self, expr, cu_offset=None):
-        """ Parse and dump a DWARF expression. expr should be a list of
-            (integer) byte values. cu_offset is the cu_offset
+        """ Parse and dump a DWARF expression.
+            expr should be bytes or a list of (integer) byte values.
+            cu_offset is the cu_offset
             value from the CU object where the expression resides.
             Only affects a handful of GNU opcodes, if None is provided,
             that's not a crash condition, only the expression dump will
@@ -601,7 +602,7 @@ class ExprDumper:
 
             Returns a string representing the expression.
         """
-        parsed = self.expr_parser.parse_expr(expr)
+        parsed = self.expr_parser.parse_expr(bytes(expr))
         return '; '.join(
             self._dump_to_string(deo.op, deo.op_name, deo.args, cu_offset)
             for deo in parsed

@@ -9,7 +9,7 @@
 from io import BytesIO
 from typing import Any, NamedTuple
 
-from ..common.utils import struct_parse, read_blob
+from ..common.utils import struct_parse
 from ..common.exceptions import DWARFError
 
 
@@ -138,7 +138,7 @@ class DWARFExprParser:
         self._dispatch_table = _init_dispatch_table(structs)
 
     def parse_expr(self, expr):
-        """ Parses expr (a list of integers) into a list of DWARFExprOp.
+        """ Parses expr (bytes or a list of integers) into a list of DWARFExprOp.
 
         The list can potentially be nested.
         """
@@ -195,17 +195,17 @@ def _init_dispatch_table(structs):
     def parse_nestedexpr():
         def parse(stream):
             size = struct_parse(structs.the_Dwarf_uleb128, stream)
-            nested_expr_blob = read_blob(stream, size)
+            nested_expr_blob = stream.read(size)
             return [DWARFExprParser(structs).parse_expr(nested_expr_blob)]
         return parse
 
     # ULEB128, then a blob of that size
     def parse_blob():
-        return lambda stream: [read_blob(stream, struct_parse(structs.the_Dwarf_uleb128, stream))]
+        return lambda stream: [list(stream.read(struct_parse(structs.the_Dwarf_uleb128, stream)))]
 
     # ULEB128 with datatype DIE offset, then byte, then a blob of that size
     def parse_typedblob():
-        return lambda stream: [struct_parse(structs.the_Dwarf_uleb128, stream), read_blob(stream, struct_parse(structs.the_Dwarf_uint8, stream))]
+        return lambda stream: [struct_parse(structs.the_Dwarf_uleb128, stream), list(stream.read(struct_parse(structs.the_Dwarf_uint8, stream)))]
 
     # https://yurydelendik.github.io/webassembly-dwarf/
     # Byte, then variant: 0, 1, 2 => uleb128, 3 => uint32

@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from typing import IO, TYPE_CHECKING, Any, TypeVar, overload
 
 from .exceptions import ELFParseError, ELFError, DWARFError
-from ..construct import ConstructError, ULInt8
+from ..construct import ConstructError
 import os
 
 if TYPE_CHECKING:
@@ -113,10 +113,6 @@ def roundup(num: int, bits: int) -> int:
     """
     return (num - 1 | (1 << bits) - 1) + 1
 
-def read_blob(stream: IO[bytes], length: int) -> list[int]:
-    """Read length bytes from stream, return a list of ints
-    """
-    return [struct_parse(ULInt8(''), stream) for i in range(length)]
 
 def save_dwarf_section(section: DebugSectionDescriptor, filename: str) -> None:
     """Debug helper: dump section contents into a file
