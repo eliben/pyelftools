@@ -85,7 +85,26 @@ packages = "elftools"
 # junit_xml = "mypy.junit.xml"
 junit_format = "per_file"
 
+[[tool.mypy.overrides]]
+module = "elftools.construct.*"
+follow_imports = "skip"
+ignore_errors = true
+
 [tool.pyright]
 include = [
     "elftools",
+]
+
+[tool.pyrefly]
+project-includes = [
+	"elftools",
+]
+ignore-missing-imports = [
+	"elftools.construct.*",
+]
+errors.bad-override-mutable-attribute = "ignore"
+
+[tool.ty.src]
+include = [
+	"elftools",
 ]
