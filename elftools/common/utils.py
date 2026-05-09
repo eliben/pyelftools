@@ -132,10 +132,6 @@ def iterbytes(b: bytes) -> Iterator[bytes]:
     for i in range(len(b)):
         yield b[i:i+1]
 
-def bytes2hex(b: bytes, sep: str = '') -> str:
-    if not sep:
-        return b.hex()
-    return sep.join(f'{o:02x}' for o in b)
 
 #------------------------- PRIVATE -------------------------
 

@@ -22,9 +22,9 @@ def hexdump(data: bytes, linesize: int) -> list[str]:
     fmt = fmt % (3 * linesize - 1,)
     for i in range(0, len(data), linesize):
         line = data[i : i + linesize]
-        hextext = " ".join('%02x' % b for b in line)
+        hextext = line.hex(" ")
         rawtext = "".join(_printable[b] for b in line)
-        prettylines.append(fmt % (i, str(hextext), str(rawtext)))
+        prettylines.append(fmt % (i, hextext, rawtext))
     return prettylines
 
 
