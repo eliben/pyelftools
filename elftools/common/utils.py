@@ -124,14 +124,6 @@ def save_dwarf_section(section: DebugSectionDescriptor, filename: str) -> None:
         data = stream.read(section.size)
         file.write(data)
 
-def iterbytes(b: bytes) -> Iterator[bytes]:
-    """Return an iterator over the elements of a bytes object.
-
-    For example, for b'abc' yields b'a', b'b' and then b'c'.
-    """
-    for i in range(len(b)):
-        yield b[i:i+1]
-
 
 #------------------------- PRIVATE -------------------------
 

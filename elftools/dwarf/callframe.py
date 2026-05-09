@@ -12,7 +12,7 @@ from typing import Any, NamedTuple
 from warnings import warn
 
 from ..common.utils import (
-    struct_parse, dwarf_assert, preserve_stream_pos, iterbytes)
+    struct_parse, dwarf_assert, preserve_stream_pos)
 from ..construct import Struct, Switch
 from .enums import DW_EH_encoding_flags
 from .structs import DWARFStructs
@@ -270,11 +270,11 @@ class CallFrameInfo:
             'Unhandled augmentation string: {}'.format(repr(augmentation)))
 
         available_fields = {
-            b'z': entry_structs.Dwarf_uleb128('length'),
-            b'L': entry_structs.Dwarf_uint8('LSDA_encoding'),
-            b'R': entry_structs.Dwarf_uint8('FDE_encoding'),
-            b'S': True,
-            b'P': Struct(
+            'z': entry_structs.Dwarf_uleb128('length'),
+            'L': entry_structs.Dwarf_uint8('LSDA_encoding'),
+            'R': entry_structs.Dwarf_uint8('FDE_encoding'),
+            'S': True,
+            'P': Struct(
                 'personality',
                 entry_structs.Dwarf_uint8('encoding'),
                 Switch('function', lambda ctx: ctx.encoding & 0x0f, {
@@ -288,9 +288,9 @@ class CallFrameInfo:
         fields = []
         aug_dict = {}
 
-        for b in iterbytes(augmentation):
+        for b in augmentation:
             try:
-                fld = available_fields[b]
+                fld = available_fields[chr(b)]
             except KeyError:
                 break
 
