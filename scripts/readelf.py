@@ -21,7 +21,7 @@ sys.path.insert(0, '.')
 
 from elftools import __version__
 from elftools.common.exceptions import ELFError
-from elftools.common.utils import bytes2str, iterbytes
+from elftools.common.utils import bytes2str
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection
 from elftools.elf.enums import ENUM_D_TAG
@@ -1332,10 +1332,7 @@ class ReadElf:
                 self._emitline('  Data alignment factor: %d' % entry['data_alignment_factor'])
                 self._emitline('  Return address column: %d' % entry['return_address_register'])
                 if entry.augmentation_bytes:
-                    self._emitline('  Augmentation data:     {}'.format(' '.join(
-                        '{:02x}'.format(ord(b))
-                        for b in iterbytes(entry.augmentation_bytes)
-                    )))
+                    self._emitline(f'  Augmentation data:     {entry.augmentation_bytes.hex(" ")}')
                 self._emitline()
 
             elif isinstance(entry, FDE):
@@ -1351,10 +1348,7 @@ class ReadElf:
                         entry['initial_location'] + entry['address_range'],
                         fullhex=True, lead0x=False)))
                 if entry.augmentation_bytes:
-                    self._emitline('  Augmentation data:     {}'.format(' '.join(
-                        '{:02x}'.format(ord(b))
-                        for b in iterbytes(entry.augmentation_bytes)
-                    )))
+                    self._emitline(f'  Augmentation data:     {entry.augmentation_bytes.hex(" ")}')
 
             else: # ZERO terminator
                 assert isinstance(entry, ZERO)

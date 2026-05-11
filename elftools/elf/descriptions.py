@@ -15,7 +15,6 @@ from .enums import (
     ENUM_DT_FLAGS_1, ENUM_RELOC_TYPE_PPC)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
-from ..common.utils import bytes2hex
 
 
 def describe_ei_class(x):
@@ -212,7 +211,7 @@ def describe_note(x, machine):
                 _DESCR_NOTE_ABI_TAG_OS.get(n_desc['abi_os'], _unknown),
                 n_desc['abi_major'], n_desc['abi_minor'], n_desc['abi_tiny'])
         else:
-            desc = '\n   description data: %s ' % bytes2hex(x['n_descdata'])
+            desc = f'\n   description data: {bytes(x["n_descdata"]).hex()} '
     elif x['n_type'] == 'NT_GNU_BUILD_ID':
         desc = '\n    Build ID: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
@@ -221,9 +220,9 @@ def describe_note(x, machine):
         if x['n_name'] == 'GNU':
             desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'], machine)
         else:
-            desc = '\n   description data: %s ' % bytes2hex(x['n_descdata'])
+            desc = f'\n   description data: {bytes(x["n_descdata"]).hex()} '
     else:
-        desc = '\n      description data: {}'.format(bytes2hex(n_desc))
+        desc = f'\n      description data: {bytes(n_desc).hex()}'
 
     if x['n_type'] == 'NT_GNU_ABI_TAG' and x['n_name'] == 'Android':
         note_type = 'NT_VERSION'
@@ -329,13 +328,13 @@ def describe_note_gnu_properties(properties, machine):
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND, 'RISC-V AND feature', d)
         elif isinstance(t, int):
             if _DESCR_NOTE_GNU_PROPERTY_TYPE_LOPROC <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIPROC:
-                prop_desc = f"<processor-specific type {t:#x} data: {bytes2hex(d, sep=' ')} >"
+                prop_desc = f"<processor-specific type {t:#x} data: {bytes(d).hex(' ')} >"
             elif _DESCR_NOTE_GNU_PROPERTY_TYPE_LOUSER <= t <= _DESCR_NOTE_GNU_PROPERTY_TYPE_HIUSER:
-                prop_desc = f"<application-specific type {t:#x} data: {bytes2hex(d, sep=' ')} >"
+                prop_desc = f"<application-specific type {t:#x} data: {bytes(d).hex(' ')} >"
             else:
-                prop_desc = f"<unknown type {t:#x} data: {bytes2hex(d, sep=' ')} >"
+                prop_desc = f"<unknown type {t:#x} data: {bytes(d).hex(' ')} >"
         else:
-            prop_desc = "<unknown type {t:r} data: {bytes2hex(d, sep=' ')} >"
+            prop_desc = f"<unknown type {t:r} data: {bytes(d).hex(' ')} >"
         descriptions.append(prop_desc)
     return '\n        '.join(descriptions)
 

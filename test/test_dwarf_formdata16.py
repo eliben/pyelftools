@@ -25,7 +25,7 @@ class TestFormData16(unittest.TestCase):
             self.assertEqual(lp.header.file_name_entry_format[2].content_type, 'DW_LNCT_MD5')
             # The correct hash value was taken from llvm-dwarfdump output
             hash = lp.header.file_names[0]['DW_LNCT_MD5']
-            hash = ''.join("%02x" % b for b in hash)
+            hash = bytes(hash).hex()
             self.assertEqual(hash, '00dbc7f4edc56417c80f1aa512c4c051')
 
 

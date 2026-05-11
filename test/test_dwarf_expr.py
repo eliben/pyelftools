@@ -72,13 +72,13 @@ class TestParseExpr(unittest.TestCase):
 
     def test_single(self):
         p = DWARFExprParser(self.structs32)
-        lst = p.parse_expr([0x1b])
+        lst = p.parse_expr(b'\x1b')
         self.assertEqual(lst, [DWARFExprOp(op=0x1B, op_name='DW_OP_div', args=[], offset=0)])
 
-        lst = p.parse_expr([0x90, 16])
+        lst = p.parse_expr(b'\x90\x10')
         self.assertEqual(lst, [DWARFExprOp(op=0x90, op_name='DW_OP_regx', args=[16], offset=0)])
 
-        lst = p.parse_expr([0xe0])
+        lst = p.parse_expr(b'\xe0')
         self.assertEqual(len(lst), 1)
         # 0xe0 maps to both DW_OP_GNU_push_tls_address and DW_OP_lo_user, so
         # check for both to prevent non-determinism.
@@ -96,7 +96,7 @@ class TestParseExpr(unittest.TestCase):
         # lit4
         # minus
         # deref
-        lst = p.parse_expr([0x97,0x6,0x12,0x28,0x4,0x0,0x30,0x2F,0x3,0x0,0x34,0x1C,0x6])
+        lst = p.parse_expr(b'\x97\x06\x12\x28\x04\x00\x30\x2F\x03\x00\x34\x1C\x06')
         self.assertEqual(len(lst), 9)
         self.assertEqual(lst, [
             DWARFExprOp(op=0x97, op_name='DW_OP_push_object_address', args=[], offset=0),
@@ -111,7 +111,7 @@ class TestParseExpr(unittest.TestCase):
 
         # This expression blob came from the test binary in issue 508,
         # DT_TAG_variable at 0x2a48C, DW_AT_location
-        lst = p.parse_expr([0x5f, 0xf0])
+        lst = p.parse_expr(b'\x5f\xf0')
         self.assertEqual(len(lst), 2)
         self.assertEqual(lst, [
             DWARFExprOp(op=0x5f, op_name='DW_OP_reg15', args=[], offset=0),

@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from typing import IO, TYPE_CHECKING, Any, TypeVar, overload
 
 from .exceptions import ELFParseError, ELFError, DWARFError
-from ..construct import ConstructError, ULInt8
+from ..construct import ConstructError
 import os
 
 if TYPE_CHECKING:
@@ -73,19 +73,13 @@ def parse_cstring_from_stream(stream: IO[bytes], stream_pos: int | None = None) 
         stream.seek(stream_pos)
     CHUNKSIZE = 64
     chunks = []
-    found = False
     while True:
-        chunk = stream.read(CHUNKSIZE)
-        end_index = chunk.find(b'\x00')
-        if end_index >= 0:
-            chunks.append(chunk[:end_index])
-            found = True
-            break
-        else:
-            chunks.append(chunk)
+        chunk, sep, _tail = stream.read(CHUNKSIZE).partition(b'\x00')
+        chunks.append(chunk)
+        if sep:
+            return b''.join(chunks)
         if len(chunk) < CHUNKSIZE:
-            break
-    return b''.join(chunks) if found else None
+            return None
 
 
 def elf_assert(cond: object, msg: str = '') -> None:
@@ -119,36 +113,17 @@ def roundup(num: int, bits: int) -> int:
     """
     return (num - 1 | (1 << bits) - 1) + 1
 
-def read_blob(stream: IO[bytes], length: int) -> list[int]:
-    """Read length bytes from stream, return a list of ints
-    """
-    return [struct_parse(ULInt8(''), stream) for i in range(length)]
 
 def save_dwarf_section(section: DebugSectionDescriptor, filename: str) -> None:
     """Debug helper: dump section contents into a file
     Section is expected to be one of the debug_xxx_sec elements of DWARFInfo
     """
     stream = section.stream
-    pos = stream.tell()
-    stream.seek(0, os.SEEK_SET)
-    section.stream.seek(0)
-    with open(filename, 'wb') as file:
+    with preserve_stream_pos(stream), open(filename, 'wb') as file:
+        stream.seek(0, os.SEEK_SET)
         data = stream.read(section.size)
         file.write(data)
-    stream.seek(pos, os.SEEK_SET)
 
-def iterbytes(b: bytes) -> Iterator[bytes]:
-    """Return an iterator over the elements of a bytes object.
-
-    For example, for b'abc' yields b'a', b'b' and then b'c'.
-    """
-    for i in range(len(b)):
-        yield b[i:i+1]
-
-def bytes2hex(b: bytes, sep: str = '') -> str:
-    if not sep:
-        return b.hex()
-    return sep.join(f'{o:02x}' for o in b)
 
 #------------------------- PRIVATE -------------------------
 
