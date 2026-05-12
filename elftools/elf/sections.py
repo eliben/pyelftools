@@ -120,10 +120,10 @@ class Section:
         """
         return self.header[name]
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, Section) and self.header == other.header
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.header)
 
 
@@ -315,7 +315,7 @@ class Attribute:
     def tag(self):
         return self._tag['tag']
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = '<%s (%s): %r>' % \
             (self.__class__.__name__, self.tag, self.value)
         s += ' %s' % self.extra if self.extra is not None else ''
@@ -364,7 +364,7 @@ class AttributesSubsubsection(Section):
         while self.stream.tell() != end:
             yield self.attribute(self.structs, self.stream)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = "<%s (%s): %d bytes>"
         return s % (self.__class__.__name__,
                     self.header.tag[4:], self.header.value)
@@ -422,7 +422,7 @@ class AttributesSubsection(Section):
         """
         return self.header[name]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = "<%s (%s): %d bytes>"
         return s  % (self.__class__.__name__,
                      self.header['vendor_name'], self.header['length'])

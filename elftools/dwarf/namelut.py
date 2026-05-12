@@ -99,7 +99,7 @@ class NameLUT(Mapping):
         self._entries = entries
         self._cu_headers = cu_headers
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Returns the number of entries in the NameLUT.
         """

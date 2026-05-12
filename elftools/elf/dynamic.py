@@ -59,10 +59,10 @@ class DynamicTag:
         """
         return self.entry[name]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<DynamicTag (%s): %r>' % (self.entry.d_tag, self.entry)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.entry.d_tag in self._HANDLED_TAGS:
             s = '"%s"' % getattr(self, self.entry.d_tag[3:].lower())
         else:

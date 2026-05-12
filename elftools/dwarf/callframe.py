@@ -450,7 +450,7 @@ class CallFrameInstruction:
         self.opcode = opcode
         self.args = args
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.opcode.FQN} ({self.opcode.value:#02x}): {self.args}"
 
 
@@ -664,7 +664,7 @@ class RegisterRule:
         self.type = type
         self.arg = arg
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'RegisterRule(%s, %s)' % (self.type, self.arg)
 
 
@@ -677,7 +677,7 @@ class CFARule:
         self.offset = offset
         self.expr = expr
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'CFARule(reg=%s, offset=%s, expr=%s)' % (
             self.reg, self.offset, self.expr)
 

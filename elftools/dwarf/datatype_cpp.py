@@ -140,7 +140,7 @@ class TypeDesc:
         self.tag = None
         self.dimensions = None
 
-    def __str__(self):
+    def __str__(self) -> str:
         # Some reference points from dwarfdump:
         # const->pointer->const->char = const char *const
         # const->reference->const->int = const const int &

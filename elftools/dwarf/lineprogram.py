@@ -65,7 +65,7 @@ class LineState:
         self.isa = 0
         self.discriminator = 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '\n'.join((
             '<LineState %x:' % id(self),
             '  address = 0x%x' % self.address,

@@ -215,14 +215,14 @@ class DIE:
 
             search = prev
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         s = 'DIE %s, size=%s, has_children=%s\n' % (
             self.tag, self.size, self.has_children)
         for attrname, attrval in self.attributes.items():
             s += '    |%-18s:  %s\n' % (attrname, attrval)
         return s
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__repr__()
 
     def _parse_DIE(self):

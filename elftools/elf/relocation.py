@@ -38,12 +38,12 @@ class Relocation:
         """
         return self.entry[name]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Relocation (%s): %s>' % (
                 'RELA' if self.is_RELA() else 'REL',
                 self.entry)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__repr__()
 
 
