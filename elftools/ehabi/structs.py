@@ -21,11 +21,11 @@ class EHABIStructs:
                 Struct of item in section .ARM.extab.
     """
 
-    def __init__(self, little_endian):
+    def __init__(self, little_endian: bool) -> None:
         self._little_endian = little_endian
         self._create_structs()
 
-    def _create_structs(self):
+    def _create_structs(self) -> None:
         if self._little_endian:
             self.EHABI_uint32 = ULInt32
         else:
@@ -33,14 +33,14 @@ class EHABIStructs:
         self._create_exception_handler_index()
         self._create_exception_handler_table()
 
-    def _create_exception_handler_index(self):
+    def _create_exception_handler_index(self) -> None:
         self.EH_index_struct = Struct(
             'EH_index',
             self.EHABI_uint32('word0'),
             self.EHABI_uint32('word1')
         )
 
-    def _create_exception_handler_table(self):
+    def _create_exception_handler_table(self) -> None:
         self.EH_table_struct = Struct(
             'EH_table',
             self.EHABI_uint32('word0'),
