@@ -125,7 +125,7 @@ class ELFFile:
             return open(rel_path, 'rb')
         return loader
 
-    def num_sections(self):
+    def num_sections(self) -> int:
         """ Number of sections in the file
         """
         if self['e_shoff'] == 0:
@@ -189,7 +189,7 @@ class ELFFile:
         secnum = self._section_name_map.get(name, None)
         return None if secnum is None else self.get_section(secnum)
 
-    def get_section_index(self, section_name):
+    def get_section_index(self, section_name: str) -> int | None:
         """ Gets the index of the section by name. Return None if no such
             section name exists.
         """
@@ -200,7 +200,7 @@ class ELFFile:
             self._make_section_name_map()
         return self._section_name_map.get(section_name, None)
 
-    def has_section(self, section_name):
+    def has_section(self, section_name: str) -> bool:
         """ Section existence check by name, without the overhead of parsing if found.
         """
         if self._section_name_map is None:
@@ -219,7 +219,7 @@ class ELFFile:
             if type is None or section['sh_type'] == type:
                 yield section
 
-    def num_segments(self):
+    def num_segments(self) -> int:
         """ Number of segments in the file
         """
         # From: https://github.com/hjl-tools/x86-psABI/wiki/X86-psABI
@@ -265,7 +265,7 @@ class ELFFile:
                 end <= seg['p_vaddr'] + seg['p_filesz']):
                 yield start - seg['p_vaddr'] + seg['p_offset']
 
-    def has_dwarf_info(self, strict=False):
+    def has_dwarf_info(self, strict: bool = False) -> bool:
         """ Check whether this file appears to have debugging information.
             We assume that if it has the .debug_info or .zdebug_info section, it
             has all the other required sections as well.
@@ -379,7 +379,7 @@ class ELFFile:
             dwarfinfo.supplementary_dwarfinfo = self.get_supplementary_dwarfinfo(dwarfinfo)
         return dwarfinfo
 
-    def has_dwarf_link(self):
+    def has_dwarf_link(self) -> bool:
         """ Whether the binary's debug info is in an
             external file. Use get_dwarf_link to retrieve the path to it.
         """
@@ -406,7 +406,7 @@ class ELFFile:
         return None
 
 
-    def has_ehabi_info(self):
+    def has_ehabi_info(self) -> bool:
         """ Check whether this file appears to have arm exception handler index table.
         """
         return any(self.iter_sections(type='SHT_ARM_EXIDX'))
@@ -425,7 +425,7 @@ class ELFFile:
         ]
         return _ret if _ret else None
 
-    def get_machine_arch(self):
+    def get_machine_arch(self) -> str:
         """ Return the machine architecture, as detected from the ELF header.
         """
         architectures = {
@@ -619,7 +619,7 @@ class ELFFile:
 
         return architectures.get(self['e_machine'], '<unknown>')
 
-    def get_shstrndx(self):
+    def get_shstrndx(self) -> int:
         """ Find the string table section index for the section header table
         """
         # From https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.eheader.html:
@@ -667,7 +667,7 @@ class ELFFile:
         else:
             raise ELFError('Invalid EI_DATA %s' % repr(ei_data))
 
-    def _section_offset(self, n):
+    def _section_offset(self, n: int) -> int:
         """ Compute the offset of section #n in the file
         """
         shentsize = self['e_shentsize']
@@ -675,7 +675,7 @@ class ELFFile:
             raise ELFError('Too small e_shentsize: %s' % shentsize)
         return self['e_shoff'] + n * shentsize
 
-    def _segment_offset(self, n):
+    def _segment_offset(self, n: int) -> int:
         """ Compute the offset of segment #n in the file
         """
         phentsize = self['e_phentsize']
@@ -942,7 +942,7 @@ class ELFFile:
     def __exit__(self, type, value, traceback):
         self.close()
 
-    def has_phantom_bytes(self):
+    def has_phantom_bytes(self) -> bool:
         """The XC16 compiler for the PIC microcontrollers emits DWARF where all odd bytes in all DWARF sections
            are to be discarded ("phantom").
 

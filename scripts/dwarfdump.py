@@ -131,7 +131,7 @@ FORM_DESCRIPTIONS = dict(
     DW_FORM_exprloc=lambda attr, die: _desc_expression(attr.value, die)
 )
 
-def _desc_enum(attr, enum):
+def _desc_enum(attr, enum: dict[str, int]) -> str:
     """For attributes like DW_AT_language, physically
     int, logically an enum
     """

@@ -103,7 +103,7 @@ class DIE:
 
         self._parse_DIE()
 
-    def is_null(self):
+    def is_null(self) -> bool:
         """ Is this a null entry?
         """
         return self.tag is None
@@ -140,7 +140,7 @@ class DIE:
             self._search_ancestor_offspring()
         return self._parent
 
-    def get_full_path(self):
+    def get_full_path(self) -> str:
         """ Return the full path filename for the DIE.
 
             The filename is the join of 'DW_AT_comp_dir' and 'DW_AT_name',
@@ -282,7 +282,7 @@ class DIE:
         except ConstructError as e:
             raise ELFParseError(str(e))
 
-    def _resolve_indirect(self):
+    def _resolve_indirect(self) -> tuple[str, int, int]:
         # Supports arbitrary indirection nesting (the standard doesn't prohibit that).
         # Expects the stream to be at the real form.
         # Returns (form, raw_value, length).
@@ -307,7 +307,7 @@ class DIE:
                 # And continue parsing
             # No explicit infinite loop guard because the stream will end eventually
 
-    def _translate_attr_value(self, form, raw_value):
+    def _translate_attr_value(self, form: str, raw_value: Any) -> Any:
         """ Translate a raw attr value according to the form
         """
         # Indirect forms can only be parsed if the top DIE of this CU has already been parsed

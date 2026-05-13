@@ -51,7 +51,7 @@ class ARanges:
         self.keys = [entry.begin_addr for entry in self.entries]
 
 
-    def cu_offset_at_addr(self, addr):
+    def cu_offset_at_addr(self, addr: int) -> int | None:
         """ Given an address, get the offset of the CU it belongs to, where
             'offset' refers to the offset in the .debug_info section.
         """

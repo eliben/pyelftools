@@ -72,18 +72,18 @@ class TypeUnit:
         self._diemap = []
 
     @property
-    def cu_offset(self):
+    def cu_offset(self) -> int:
         """Simulates the cu_offset attribute required by the DIE by returning the tu_offset instead
         """
         return self.tu_offset
 
     @property
-    def cu_die_offset(self):
+    def cu_die_offset(self) -> int:
         """Simulates the cu_die_offset attribute required by the DIE by returning the tu_offset instead
         """
         return self.tu_die_offset
 
-    def dwarf_format(self):
+    def dwarf_format(self) -> int:
         """ Get the DWARF format (32 or 64) for this TU
         """
         return self.structs.dwarf_format
@@ -117,14 +117,14 @@ class TypeUnit:
 
         return top
 
-    def has_top_DIE(self):
+    def has_top_DIE(self) -> bool:
         """ Returns whether the top DIE in this TU has already been parsed and cached.
             No parsing on demand!
         """
         return bool(self._diemap)
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self['unit_length'] + self.structs.initial_length_field_size()
 
     def iter_DIEs(self):

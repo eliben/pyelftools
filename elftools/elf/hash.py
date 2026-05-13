@@ -49,7 +49,7 @@ class ELFHashTable:
                                        self.elffile.stream,
                                        start_offset)
 
-    def get_number_of_symbols(self):
+    def get_number_of_symbols(self) -> int:
         """ Get the number of symbols from the hash table parameters.
         """
         return self.params['nchains']
@@ -69,7 +69,7 @@ class ELFHashTable:
         return None
 
     @staticmethod
-    def elf_hash(name):
+    def elf_hash(name: bytes | str) -> int:
         """ Compute the hash value for a given symbol name.
         """
         if not isinstance(name, bytes):
@@ -121,7 +121,7 @@ class GNUHashTable:
             self.params['bloom_size'] * self._xwordsize + \
             self.params['nbuckets'] * self._wordsize
 
-    def get_number_of_symbols(self):
+    def get_number_of_symbols(self) -> int:
         """ Get the number of symbols in the hash table by finding the bucket
             with the highest symbol index and walking to the end of its chain.
         """
@@ -144,7 +144,7 @@ class GNUHashTable:
 
             max_idx += 1
 
-    def _matches_bloom(self, H1):
+    def _matches_bloom(self, H1: int) -> bool:
         """ Helper function to check if the given hash could be in the hash
             table by testing it against the bloom filter.
         """
@@ -180,7 +180,7 @@ class GNUHashTable:
         return None
 
     @staticmethod
-    def gnu_hash(key):
+    def gnu_hash(key: bytes | str) -> int:
         """ Compute the GNU-style hash value for a given symbol name.
         """
         if not isinstance(key, bytes):

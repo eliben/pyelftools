@@ -63,7 +63,7 @@ class GNUVersionSection(Section):
         self.version_struct = version_struct
         self.version_auxiliaries_struct = version_auxiliaries_struct
 
-    def num_versions(self):
+    def num_versions(self) -> int:
         """ Number of version entries in the section
         """
         return self['sh_info']
@@ -134,7 +134,7 @@ class GNUVerNeedSection(GNUVersionSection):
                 elffile.structs.Elf_Verneed, elffile.structs.Elf_Vernaux)
         self._has_indexes = None
 
-    def has_indexes(self):
+    def has_indexes(self) -> bool:
         """ Return True if at least one version definition entry has an index
             that is stored in the vna_other field.
             This information is used for symbol versioning
@@ -197,7 +197,7 @@ class GNUVerSymSection(Section):
         super().__init__(header, name, elffile)
         self.symboltable = symboltable
 
-    def num_symbols(self):
+    def num_symbols(self) -> int:
         """ Number of symbols in the table
         """
         return self['sh_size'] // self['sh_entsize']

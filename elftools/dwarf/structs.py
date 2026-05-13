@@ -113,7 +113,7 @@ class DWARFStructs:
         cls._structs_cache[key] = self
         return self
 
-    def initial_length_field_size(self):
+    def initial_length_field_size(self) -> int:
         """ Size of an initial length field.
         """
         return 4 if self.dwarf_format == 32 else 12

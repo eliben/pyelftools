@@ -17,7 +17,7 @@ class Segment:
         self.header = header
         self.stream = stream
 
-    def data(self):
+    def data(self) -> bytes:
         """ The segment data from the file.
         """
         self.stream.seek(self['p_offset'])
@@ -101,7 +101,7 @@ class InterpSegment(Segment):
     def __init__(self, header, stream):
         super().__init__(header, stream)
 
-    def get_interp_name(self):
+    def get_interp_name(self) -> str:
         """ Obtain the interpreter path used for this ELF file.
         """
         path_offset = self['p_offset']

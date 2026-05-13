@@ -66,7 +66,7 @@ class CompileUnit:
         # as DIEs are iterated over.
         self._diemap = []
 
-    def dwarf_format(self):
+    def dwarf_format(self) -> int:
         """ Get the DWARF format (32 or 64) for this CU
         """
         return self.structs.dwarf_format
@@ -101,14 +101,14 @@ class CompileUnit:
 
         return top
 
-    def has_top_DIE(self):
+    def has_top_DIE(self) -> bool:
         """ Returns whether the top DIE in this CU has already been parsed and cached.
             No parsing on demand!
         """
         return bool(self._diemap)
 
     @property
-    def size(self):
+    def size(self) -> int:
         return self['unit_length'] + self.structs.initial_length_field_size()
 
     def get_DIE_from_refaddr(self, refaddr):

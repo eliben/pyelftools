@@ -92,7 +92,7 @@ def _get_cu_base(cu):
 # formatting symbol names for display.
 _CONTROL_CHAR_RE = re.compile(r'[\x01-\x1f]')
 
-def _format_symbol_name(s):
+def _format_symbol_name(s: str) -> str:
     return _CONTROL_CHAR_RE.sub(lambda match: '^' + chr(0x40 + ord(match[0])), s)
 
 class ReadElf:
@@ -173,7 +173,7 @@ class ReadElf:
         else:
             self._emitline('')
 
-    def decode_flags(self, flags):
+    def decode_flags(self, flags: int) -> str:
         description = ""
         if self.elffile['e_machine'] == "EM_ARM":
             eabi = flags & E_FLAGS.EF_ARM_EABIMASK
@@ -924,8 +924,14 @@ class ReadElf:
         else:
             self._emitline('debug dump not yet supported for "%s"' % dump_what)
 
-    def _format_hex(self, addr, fieldsize=None, fullhex=False, lead0x=True,
-                    alternate=False):
+    def _format_hex(
+        self,
+        addr: int,
+        fieldsize: int | None = None,
+        fullhex: bool = False,
+        lead0x: bool = True,
+        alternate: bool = False,
+    ) -> str:
         """ Format an address into a hexadecimal string.
 
             fieldsize:

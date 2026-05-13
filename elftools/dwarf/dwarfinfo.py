@@ -146,7 +146,7 @@ class DWARFInfo:
         self._type_units_by_sig = None
 
     @property
-    def has_debug_info(self):
+    def has_debug_info(self) -> bool:
         """ Return whether this contains debug information.
 
         It can be not the case when the ELF only contains .eh_frame, which is
@@ -154,7 +154,7 @@ class DWARFInfo:
         """
         return bool(self.debug_info_sec)
 
-    def has_debug_types(self):
+    def has_debug_types(self) -> bool:
         """ Return whether this contains debug types information.
         """
         return bool(self.debug_types_sec)
@@ -311,13 +311,13 @@ class DWARFInfo:
                 offset=offset)
         return self._abbrevtable_cache[offset]
 
-    def get_string_from_table(self, offset):
+    def get_string_from_table(self, offset: int) -> bytes | None:
         """ Obtain a string from the string table section, given an offset
             relative to the section.
         """
         return parse_cstring_from_stream(self.debug_str_sec.stream, offset)
 
-    def get_string_from_linetable(self, offset):
+    def get_string_from_linetable(self, offset: int) -> bytes | None:
         """ Obtain a string from the string table section, given an offset
             relative to the section.
         """
@@ -345,7 +345,7 @@ class DWARFInfo:
         else:
             return None
 
-    def has_CFI(self):
+    def has_CFI(self) -> bool:
         """ Does this dwarf info have a dwarf_frame CFI section?
         """
         return self.debug_frame_sec is not None
@@ -360,7 +360,7 @@ class DWARFInfo:
             base_structs=self.structs)
         return cfi.get_entries()
 
-    def has_EH_CFI(self):
+    def has_EH_CFI(self) -> bool:
         """ Does this dwarf info have a eh_frame CFI section?
         """
         return self.eh_frame_sec is not None
@@ -648,7 +648,7 @@ class DWARFInfo:
             tu_offset=offset,
             tu_die_offset=tu_die_offset)
 
-    def _is_supported_version(self, version):
+    def _is_supported_version(self, version: int) -> bool:
         """ DWARF version supported by this parser
         """
         return 2 <= version <= 5
@@ -717,7 +717,7 @@ class DWARFInfo:
         self._linetable_cache[offset] = lineprogram
         return lineprogram
 
-    def parse_debugsupinfo(self):
+    def parse_debugsupinfo(self) -> bytes | None:
         """
         Extract a filename from .debug_sup, .gnu_debualtlink sections.
         """

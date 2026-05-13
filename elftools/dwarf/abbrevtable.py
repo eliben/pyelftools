@@ -66,7 +66,7 @@ class AbbrevDecl:
         self.decl = decl
         self._has_children = decl['children_flag'] == 'DW_CHILDREN_yes'
 
-    def has_children(self):
+    def has_children(self) -> bool:
         return self._has_children
 
     def iter_attr_specs(self):

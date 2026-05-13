@@ -45,13 +45,13 @@ class Section:
             self._decompressed_align = header['sh_addralign']
 
     @property
-    def compressed(self):
+    def compressed(self) -> int:
         """ Is this section compressed?
         """
         return self._compressed
 
     @property
-    def data_size(self):
+    def data_size(self) -> int:
         """ Return the logical size for this section's data.
 
         This can be different from the .sh_size header field when the section
@@ -60,7 +60,7 @@ class Section:
         return self._decompressed_size
 
     @property
-    def data_alignment(self):
+    def data_alignment(self) -> int:
         """ Return the logical alignment for this section's data.
 
         This can be different from the .sh_addralign header field when the
@@ -68,7 +68,7 @@ class Section:
         """
         return self._decompressed_align
 
-    def data(self):
+    def data(self) -> bytes:
         """ The section data from the file.
 
         Note that data is decompressed if the stored section data is
@@ -110,7 +110,7 @@ class Section:
 
         return result
 
-    def is_null(self):
+    def is_null(self) -> bool:
         """ Is this a null section?
         """
         return False
@@ -130,14 +130,14 @@ class Section:
 class NullSection(Section):
     """ ELF NULL section
     """
-    def is_null(self):
+    def is_null(self) -> bool:
         return True
 
 
 class StringTableSection(Section):
     """ ELF string table section.
     """
-    def get_string(self, offset):
+    def get_string(self, offset: int) -> str:
         """ Get the string stored at the given offset in this string table.
         """
         table_offset = self['sh_offset']
@@ -156,7 +156,7 @@ class SymbolTableIndexSection(Section):
         super().__init__(header, name, elffile)
         self.symboltable = symboltable
 
-    def get_section_index(self, n):
+    def get_section_index(self, n: int) -> int:
         """ Get the section header table index for the symbol with index #n.
             The section contains an array of Elf32_word values with one entry
             for every symbol in the associated symbol table.
@@ -178,7 +178,7 @@ class SymbolTableSection(Section):
                 'Expected section size to be a multiple of entry size in section %r' % name)
         self._symbol_name_map = None
 
-    def num_symbols(self):
+    def num_symbols(self) -> int:
         """ Number of symbols in the table
         """
         return self['sh_size'] // self['sh_entsize']
@@ -242,7 +242,7 @@ class SUNWSyminfoTableSection(Section):
         super().__init__(header, name, elffile)
         self.symboltable = symboltable
 
-    def num_symbols(self):
+    def num_symbols(self) -> int:
         """ Number of symbols in the table
         """
         return self['sh_size'] // self['sh_entsize'] - 1
@@ -312,7 +312,7 @@ class Attribute:
         raise NotImplementedError
 
     @property
-    def tag(self):
+    def tag(self) -> str:
         return self._tag['tag']
 
     def __repr__(self) -> str:
@@ -342,7 +342,7 @@ class AttributesSubsubsection(Section):
                 yield attribute
 
     @property
-    def num_attributes(self):
+    def num_attributes(self) -> int:
         """ Number of attributes in the subsubsection.
         """
         return sum(1 for _ in self.iter_attributes()) + 1
@@ -392,7 +392,7 @@ class AttributesSubsection(Section):
                 yield subsubsec
 
     @property
-    def num_subsubsections(self):
+    def num_subsubsections(self) -> int:
         """ Number of subsubsections in the subsection.
         """
         return sum(1 for _ in self.iter_subsubsections())
@@ -453,7 +453,7 @@ class AttributesSection(Section):
                 yield subsec
 
     @property
-    def num_subsections(self):
+    def num_subsections(self) -> int:
         """ Number of subsections in the section.
         """
         return sum(1 for _ in self.iter_subsections())
