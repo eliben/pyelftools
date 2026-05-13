@@ -100,7 +100,7 @@ DW_OP_name2opcode = dict(
     DW_OP_hi_user=0xff,
 )
 
-def _generate_dynamic_values(map, prefix, index_start, index_end, value_start):
+def _generate_dynamic_values(map: dict[str, int], prefix: str, index_start: int, index_end: int, value_start: int) -> None:
     """ Generate values in a map (dict) dynamically. Each key starts with
         a (string) prefix, followed by an index in the inclusive range
         [index_start, index_end]. The values start at value_start.
@@ -194,7 +194,7 @@ def _init_dispatch_table(structs):
     # ULEB128, then an expression of that length
     def parse_nestedexpr():
         def parse(stream):
-            size = struct_parse(structs.the_Dwarf_uleb128, stream)
+            size: int = struct_parse(structs.the_Dwarf_uleb128, stream)
             nested_expr_blob = stream.read(size)
             return [DWARFExprParser(structs).parse_expr(nested_expr_blob)]
         return parse
@@ -211,7 +211,7 @@ def _init_dispatch_table(structs):
     # Byte, then variant: 0, 1, 2 => uleb128, 3 => uint32
     def parse_wasmloc():
         def parse(stream):
-            op = struct_parse(structs.the_Dwarf_uint8, stream)
+            op: int = struct_parse(structs.the_Dwarf_uint8, stream)
             if 0 <= op <= 2:
                 return [op, struct_parse(structs.the_Dwarf_uleb128, stream)]
             elif op == 3:

@@ -131,7 +131,7 @@ FORM_DESCRIPTIONS = dict(
     DW_FORM_exprloc=lambda attr, die: _desc_expression(attr.value, die)
 )
 
-def _desc_enum(attr, enum):
+def _desc_enum(attr, enum: dict[str, int]) -> str:
     """For attributes like DW_AT_language, physically
     int, logically an enum
     """
@@ -357,17 +357,17 @@ class ReadElf:
         bits = self.elffile.elfclass
         self._emitline("%s:	file format elf%d-%s" % (filename, bits, arch))
 
-    def _emit(self, s=''):
+    def _emit(self, s: str = '') -> None:
         """ Emit an object to output
         """
         self.output.write(str(s))
 
-    def _emitline(self, s=''):
+    def _emitline(self, s: str = '') -> None:
         """ Emit an object to output, followed by a newline
         """
         self.output.write(str(s).rstrip() + '\n')
 
-    def dump_info(self):
+    def dump_info(self) -> None:
         # TODO: DWARF64 will cause discrepancies in hex offset sizes
         self._emitline(".debug_info contents:")
         for cu in self._dwarfinfo.iter_CUs():
@@ -419,13 +419,13 @@ class ReadElf:
         else:
             return str(attr.value)
 
-    def dump_loc(self):
+    def dump_loc(self) -> None:
         pass
 
-    def dump_loclists(self):
+    def dump_loclists(self) -> None:
         pass
 
-    def dump_ranges(self):
+    def dump_ranges(self) -> None:
         pass
 
     def dump_v4_rangelist(self, rangelist, cu_map):
@@ -444,7 +444,7 @@ class ReadElf:
             else:
                 raise NotImplementedError("Unknown object in a range list")
 
-    def dump_rnglists(self):
+    def dump_rnglists(self) -> None:
         self._emitline(".debug_rnglists contents:")
         ranges_sec = self._dwarfinfo.range_lists()
         if ranges_sec.version < 5:

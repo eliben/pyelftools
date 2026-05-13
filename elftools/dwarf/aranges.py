@@ -51,7 +51,7 @@ class ARanges:
         self.keys = [entry.begin_addr for entry in self.entries]
 
 
-    def cu_offset_at_addr(self, addr):
+    def cu_offset_at_addr(self, addr: int) -> int | None:
         """ Given an address, get the offset of the CU it belongs to, where
             'offset' refers to the offset in the .debug_info section.
         """
@@ -84,7 +84,7 @@ class ARanges:
             # No segmentation
             if aranges_header["segment_size"] == 0:
                 # pad to nearest multiple of tuple size
-                tuple_size = aranges_header["address_size"] * 2
+                tuple_size: int = aranges_header["address_size"] * 2
                 fp = self.stream.tell()
                 seek_to = int(math.ceil(fp/float(tuple_size)) * tuple_size)
                 self.stream.seek(seek_to)
@@ -95,8 +95,8 @@ class ARanges:
                 got_entries = False
 
                 # entries in this set/CU
-                addr = struct_parse(addr_size('addr'), self.stream)
-                length = struct_parse(addr_size('length'), self.stream)
+                addr: int = struct_parse(addr_size('addr'), self.stream)
+                length: int = struct_parse(addr_size('length'), self.stream)
                 while addr != 0 or length != 0 or (not got_entries and need_empty):
                     # 'begin_addr length info_offset version address_size segment_size'
                     entries.append(

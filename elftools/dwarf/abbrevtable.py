@@ -42,7 +42,7 @@ class AbbrevTable:
         map = {}
         self.stream.seek(self.offset)
         while True:
-            decl_code = struct_parse(
+            decl_code: int = struct_parse(
                 struct=self.structs.the_Dwarf_uleb128,
                 stream=self.stream)
             if decl_code == 0:
@@ -66,7 +66,7 @@ class AbbrevDecl:
         self.decl = decl
         self._has_children = decl['children_flag'] == 'DW_CHILDREN_yes'
 
-    def has_children(self):
+    def has_children(self) -> bool:
         return self._has_children
 
     def iter_attr_specs(self):

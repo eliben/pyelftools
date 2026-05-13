@@ -17,22 +17,22 @@ from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
 
 
-def describe_ei_class(x):
+def describe_ei_class(x: str) -> str:
     return _DESCR_EI_CLASS.get(x, _unknown)
 
 
-def describe_ei_data(x):
+def describe_ei_data(x: str) -> str:
     return _DESCR_EI_DATA.get(x, _unknown)
 
 
-def describe_ei_version(x):
+def describe_ei_version(x: str) -> str:
     s = str(ENUM_E_VERSION.get(x, f"{x} <unknown>"))
     if x == 'EV_CURRENT':
         s += ' (current)'
     return s
 
 
-def describe_ei_osabi(x):
+def describe_ei_osabi(x: str) -> str:
     return _DESCR_EI_OSABI.get(x, _unknown)
 
 
@@ -47,15 +47,15 @@ def describe_e_type(x, elffile=None):
     return _DESCR_E_TYPE.get(x, _unknown)
 
 
-def describe_e_machine(x):
+def describe_e_machine(x: str) -> str:
     return _DESCR_E_MACHINE.get(x, _unknown)
 
 
-def describe_e_version_numeric(x):
+def describe_e_version_numeric(x: str) -> str:
     return f"{ENUM_E_VERSION.get(x, x):#x}"
 
 
-def describe_p_type(x):
+def describe_p_type(x: int | str) -> str:
     if x in _DESCR_P_TYPE:
         return _DESCR_P_TYPE[x]
     elif x >= ENUM_P_TYPE_BASE['PT_LOOS'] and x <= ENUM_P_TYPE_BASE['PT_HIOS']:
@@ -64,14 +64,14 @@ def describe_p_type(x):
         return _unknown
 
 
-def describe_p_flags(x):
+def describe_p_flags(x: int) -> str:
     s = ''
     for flag in (P_FLAGS.PF_R, P_FLAGS.PF_W, P_FLAGS.PF_X):
         s += _DESCR_P_FLAGS[flag] if (x & flag) else ' '
     return s
 
 
-def describe_rh_flags(x):
+def describe_rh_flags(x: int) -> str:
     return ' '.join(
         _DESCR_RH_FLAGS[flag]
         for flag in (RH_FLAGS.RHF_NONE, RH_FLAGS.RHF_QUICKSTART,
@@ -87,7 +87,7 @@ def describe_rh_flags(x):
         if x & flag)
 
 
-def describe_sh_type(x):
+def describe_sh_type(x: int | str) -> str:
     if x in _DESCR_SH_TYPE:
         return _DESCR_SH_TYPE[x]
     elif (x >= ENUM_SH_TYPE_BASE['SHT_LOOS'] and
@@ -97,7 +97,7 @@ def describe_sh_type(x):
         return _unknown
 
 
-def describe_sh_flags(x):
+def describe_sh_flags(x: int) -> str:
     s = ''
     for flag in (
             SH_FLAGS.SHF_WRITE, SH_FLAGS.SHF_ALLOC, SH_FLAGS.SHF_EXECINSTR,
@@ -112,19 +112,19 @@ def describe_sh_flags(x):
     return s
 
 
-def describe_symbol_type(x):
+def describe_symbol_type(x: str) -> str:
     return _DESCR_ST_INFO_TYPE.get(x, _unknown)
 
 
-def describe_symbol_bind(x):
+def describe_symbol_bind(x: str) -> str:
     return _DESCR_ST_INFO_BIND.get(x, _unknown)
 
 
-def describe_symbol_visibility(x):
+def describe_symbol_visibility(x: str) -> str:
     return _DESCR_ST_VISIBILITY.get(x, _unknown)
 
 
-def describe_symbol_local(x):
+def describe_symbol_local(x: int) -> str:
     return '[<localentry>: ' + str(1 << x) + ']'
 
 
@@ -135,7 +135,7 @@ def describe_symbol_other(x):
     return vis
 
 
-def describe_symbol_shndx(x):
+def describe_symbol_shndx(x: int | str) -> str:
     return _DESCR_ST_SHNDX.get(x, '%3s' % x)
 
 
@@ -163,21 +163,21 @@ def describe_reloc_type(x, elffile):
         return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
 
 
-def describe_dyn_tag(x):
+def describe_dyn_tag(x: int) -> str:
     return _DESCR_D_TAG.get(x, _unknown)
 
 
-def describe_dt_flags(x):
+def describe_dt_flags(x: int) -> str:
     return ' '.join(key[3:] for key, val in
         sorted(ENUM_DT_FLAGS.items(), key=lambda t: t[1]) if x & val)
 
 
-def describe_dt_flags_1(x):
+def describe_dt_flags_1(x: int) -> str:
     return ' '.join(key[5:] for key, val in
         sorted(ENUM_DT_FLAGS_1.items(), key=lambda t: t[1]) if x & val)
 
 
-def describe_syminfo_flags(x):
+def describe_syminfo_flags(x: int) -> str:
     return ''.join(_DESCR_SYMINFO_FLAGS[flag] for flag in (
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_CAP,
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DIRECT,
@@ -191,11 +191,11 @@ def describe_syminfo_flags(x):
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED) if x & flag)
 
 
-def describe_symbol_boundto(x):
+def describe_symbol_boundto(x: str) -> str:
     return _DESCR_SYMINFO_BOUNDTO.get(x, '%3s' % x)
 
 
-def describe_ver_flags(x):
+def describe_ver_flags(x: int) -> str:
     return ' | '.join(_DESCR_VER_FLAGS[flag] for flag in (
         VER_FLAGS.VER_FLG_WEAK,
         VER_FLAGS.VER_FLG_BASE,
@@ -339,7 +339,7 @@ def describe_note_gnu_properties(properties, machine):
     return '\n        '.join(descriptions)
 
 #-------------------------------------------------------------------------------
-_unknown = '<unknown>'
+_unknown: str = '<unknown>'
 
 
 _DESCR_EI_CLASS = dict(

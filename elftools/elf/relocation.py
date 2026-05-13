@@ -28,7 +28,7 @@ class Relocation:
         self.entry = entry
         self.elffile = elffile
 
-    def is_RELA(self):
+    def is_RELA(self) -> bool:
         """ Is this a RELA relocation? If not, it's REL.
         """
         return 'r_addend' in self.entry
@@ -38,12 +38,12 @@ class Relocation:
         """
         return self.entry[name]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Relocation (%s): %s>' % (
                 'RELA' if self.is_RELA() else 'REL',
                 self.entry)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__repr__()
 
 
@@ -66,12 +66,12 @@ class RelocationTable:
 
         self.entry_size = self.entry_struct.sizeof()
 
-    def is_RELA(self):
+    def is_RELA(self) -> bool:
         """ Is this a RELA relocation section? If not, it's REL.
         """
         return self._is_rela
 
-    def num_relocations(self):
+    def num_relocations(self) -> int:
         """ Number of relocations in the section
         """
         return self._size // self.entry_size
@@ -142,12 +142,12 @@ class RelrRelocationTable:
         relr = self._offset
         # The addresses of relocations in a bitmap are calculated from a base
         # value provided in an initial 'anchor' relocation.
-        base = None
+        base: int | None = None
         while relr < limit:
             entry = struct_parse(self._relr_struct,
                                  self._elffile.stream,
                                  stream_pos=relr)
-            entry_offset = entry['r_offset']
+            entry_offset: int = entry['r_offset']
             if (entry_offset & 1) == 0:
                 # We found an anchor, take the current value as the base address
                 # for the following bitmaps and move the 'where' pointer to the
@@ -179,7 +179,7 @@ class RelrRelocationTable:
             # Advance to the next entry
             relr += self._entrysize
 
-    def num_relocations(self):
+    def num_relocations(self) -> int:
         """ Number of relocations in the section
         """
         if self._cached_relocations is None:
@@ -203,35 +203,35 @@ class RelrRelocationSection(Section, RelrRelocationTable):
             self['sh_offset'], self['sh_size'], self['sh_entsize'])
 
 
-def _reloc_calc_identity(value, sym_value, offset, addend=0):
+def _reloc_calc_identity(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
     return value
 
 
-def _reloc_calc_sym_plus_value(value, sym_value, offset, addend=0):
+def _reloc_calc_sym_plus_value(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
     return sym_value + value + addend
 
 
-def _reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
+def _reloc_calc_sym_plus_value_pcrel(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
     return sym_value + value - offset
 
 
-def _reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
+def _reloc_calc_sym_plus_addend(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
     return sym_value + addend
 
 
-def _reloc_calc_sym_plus_addend_pcrel(value, sym_value, offset, addend=0):
+def _reloc_calc_sym_plus_addend_pcrel(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
     return sym_value + addend - offset
 
 
-def _reloc_calc_value_minus_sym_addend(value, sym_value, offset, addend=0):
+def _reloc_calc_value_minus_sym_addend(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
     return value - sym_value - addend
 
 
-def _arm_reloc_calc_sym_plus_value_pcrel(value, sym_value, offset, addend=0):
+def _arm_reloc_calc_sym_plus_value_pcrel(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
     return sym_value // 4 + value - offset // 4
 
 
-def _bpf_64_32_reloc_calc_sym_plus_addend(value, sym_value, offset, addend=0):
+def _bpf_64_32_reloc_calc_sym_plus_addend(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
     return (sym_value + addend) // 8 - 1
 
 

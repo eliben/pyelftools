@@ -17,7 +17,7 @@ from ..common.utils import preserve_stream_pos, dwarf_assert, bytes2str
 from .callframe import CIE, FDE
 
 
-def set_global_machine_arch(machine_arch):
+def set_global_machine_arch(machine_arch: str) -> None:
     global _MACHINE_ARCH
     _MACHINE_ARCH = machine_arch
 
@@ -49,7 +49,7 @@ def describe_CFI_instructions(entry):
             isinstance(entry, FDE),
             'Unexpected instruction "%s" for a CIE' % instr)
 
-    def _full_reg_name(regnum):
+    def _full_reg_name(regnum: int) -> str:
         regname = describe_reg_name(regnum, _MACHINE_ARCH, False)
         if regname:
             return 'r%s (%s)' % (regnum, regname)
@@ -148,7 +148,7 @@ def describe_DWARF_expr(expr, structs, cu_offset=None):
     return '(' + dwarf_expr_dumper.dump_expr(expr, cu_offset) + ')'
 
 
-def describe_reg_name(regnum, machine_arch=None, default=True):
+def describe_reg_name(regnum: int, machine_arch: str | None = None, default: bool = True) -> str | None:
     """ Provide a textual description for a register name, given its serial
         number. The number is expected to be valid.
     """
@@ -166,7 +166,7 @@ def describe_reg_name(regnum, machine_arch=None, default=True):
     else:
         return None
 
-def describe_form_class(form):
+def describe_form_class(form: str) -> str | None:
     """For a given form name, determine its value class.
 
     For example, given 'DW_FORM.data1' returns 'constant'.
@@ -182,10 +182,10 @@ def describe_form_class(form):
 
 # The machine architecture. Set globally via set_global_machine_arch
 #
-_MACHINE_ARCH = None
+_MACHINE_ARCH: str | None = None
 
 # Implements the alternative format of readelf: lowercase hex, prefixed with 0x unless 0
-def _format_hex(n):
+def _format_hex(n: int) -> str:
     return '0x%x' % n if n != 0 else '0'
 
 def _describe_attr_ref(attr, die, section_offset):
@@ -608,7 +608,7 @@ class ExprDumper:
             for deo in parsed
         )
 
-    def _init_lookups(self):
+    def _init_lookups(self) -> None:
         self._ops_with_decimal_arg = {
             'DW_OP_const1u', 'DW_OP_const1s', 'DW_OP_const2u', 'DW_OP_const2s',
             'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_const8u', 'DW_OP_const8s',

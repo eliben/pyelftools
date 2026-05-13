@@ -17,7 +17,7 @@ class Segment:
         self.header = header
         self.stream = stream
 
-    def data(self):
+    def data(self) -> bytes:
         """ The segment data from the file.
         """
         self.stream.seek(self['p_offset'])
@@ -36,9 +36,9 @@ class Segment:
             elf/include/internal.h in the source of binutils.
         """
         # Only the 'strict' checks from ELF_SECTION_IN_SEGMENT_1 are included
-        segtype = self['p_type']
-        sectype = section['sh_type']
-        secflags = section['sh_flags']
+        segtype: str = self['p_type']
+        sectype: str = section['sh_type']
+        secflags: int = section['sh_flags']
 
         # Only PT_LOAD, PT_GNU_RELRO and PT_TLS segments can contain SHF_TLS
         # sections
@@ -62,8 +62,8 @@ class Segment:
         # In ELF_SECTION_IN_SEGMENT_STRICT the flag check_vma is on, so if
         # this is an alloc section, check whether its VMA is in bounds.
         if secflags & SH_FLAGS.SHF_ALLOC:
-            secaddr = section['sh_addr']
-            vaddr = self['p_vaddr']
+            secaddr: int = section['sh_addr']
+            vaddr: int = self['p_vaddr']
 
             # This checks that the section is wholly contained in the segment.
             # The third condition is the 'strict' one - an empty section will
@@ -83,8 +83,8 @@ class Segment:
         if sectype == 'SHT_NOBITS':
             return True
 
-        secoffset = section['sh_offset']
-        poffset = self['p_offset']
+        secoffset: int = section['sh_offset']
+        poffset: int = self['p_offset']
 
         # Same logic as with secaddr vs. vaddr checks above, just on offsets in
         # the file
@@ -101,10 +101,10 @@ class InterpSegment(Segment):
     def __init__(self, header, stream):
         super().__init__(header, stream)
 
-    def get_interp_name(self):
+    def get_interp_name(self) -> str:
         """ Obtain the interpreter path used for this ELF file.
         """
-        path_offset = self['p_offset']
+        path_offset: int = self['p_offset']
         return struct_parse(
             CString('', encoding='utf-8'),
             self.stream,

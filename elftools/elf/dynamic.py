@@ -26,7 +26,7 @@ class _DynamicStringTable:
         self._stream = stream
         self._table_offset = table_offset
 
-    def get_string(self, offset):
+    def get_string(self, offset: int) -> str:
         """ Get the string stored at the given offset in this string table.
         """
         s = parse_cstring_from_stream(self._stream, self._table_offset + offset)
@@ -59,10 +59,10 @@ class DynamicTag:
         """
         return self.entry[name]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<DynamicTag (%s): %r>' % (self.entry.d_tag, self.entry)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.entry.d_tag in self._HANDLED_TAGS:
             s = '"%s"' % getattr(self, self.entry.d_tag[3:].lower())
         else:
@@ -103,17 +103,17 @@ class Dynamic:
         # Do not access this directly yourself; use _get_stringtable() instead.
         self._stringtable = stringtable
 
-    def get_table_offset(self, tag_name):
+    def get_table_offset(self, tag_name: str) -> tuple[int | None, int | None]:
         """ Return the virtual address and file offset of a dynamic table.
         """
-        ptr = None
+        ptr: int | None = None
         for tag in self._iter_tags(type=tag_name):
             ptr = tag['d_ptr']
             break
 
         # If we found a virtual address, locate the offset in the file
         # by using the program headers.
-        offset = None
+        offset: int | None = None
         if ptr:
             offset = next(self.elffile.address_offsets(ptr), None)
 
@@ -175,7 +175,7 @@ class Dynamic:
         """
         return DynamicTag(self._get_tag(n), self._get_stringtable())
 
-    def num_tags(self):
+    def num_tags(self) -> int | None:
         """ Number of dynamic tags in the file, including the DT_NULL tag
         """
         if self._num_tags != -1:
@@ -261,10 +261,10 @@ class DynamicSegment(Segment, Dynamic):
         Dynamic.__init__(self, stream, elffile, stringtable, self['p_offset'],
              self['p_filesz'] == 0)
         self._symbol_size = self.elfstructs.Elf_Sym.sizeof()
-        self._num_symbols = None
-        self._symbol_name_map = None
+        self._num_symbols: int | None = None
+        self._symbol_name_map: dict[str, list[int]] | None = None
 
-    def num_symbols(self):
+    def num_symbols(self) -> int:
         """ Number of symbols in the table recovered from DT_SYMTAB
         """
         if self._num_symbols is not None:
@@ -291,7 +291,7 @@ class DynamicSegment(Segment, Dynamic):
             tab_ptr, tab_offset = self.get_table_offset('DT_SYMTAB')
             if tab_ptr is None or tab_offset is None:
                 raise ELFError('Segment does not contain DT_SYMTAB.')
-            nearest_ptr = None
+            nearest_ptr: int | None = None
             for tag in self.iter_tags():
                 tag_ptr = tag['d_ptr']
                 if tag['d_tag'] == 'DT_SYMENT':
