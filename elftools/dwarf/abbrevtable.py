@@ -42,7 +42,7 @@ class AbbrevTable:
         map = {}
         self.stream.seek(self.offset)
         while True:
-            decl_code = struct_parse(
+            decl_code: int = struct_parse(
                 struct=self.structs.the_Dwarf_uleb128,
                 stream=self.stream)
             if decl_code == 0:

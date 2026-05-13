@@ -339,7 +339,7 @@ def describe_note_gnu_properties(properties, machine):
     return '\n        '.join(descriptions)
 
 #-------------------------------------------------------------------------------
-_unknown = '<unknown>'
+_unknown: str = '<unknown>'
 
 
 _DESCR_EI_CLASS = dict(

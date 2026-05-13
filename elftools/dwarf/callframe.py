@@ -95,7 +95,7 @@ class CallFrameInfo:
                 entry.structs.initial_length_field_size(), os.SEEK_CUR)
             return entry
 
-        entry_length = struct_parse(
+        entry_length: int = struct_parse(
             self.base_structs.the_Dwarf_uint32, self.stream, offset)
 
         if self.for_eh_frame and entry_length == 0:
@@ -112,7 +112,7 @@ class CallFrameInfo:
             address_size=self.base_structs.address_size)
 
         # Read the next field to see whether this is a CIE or FDE
-        CIE_id = struct_parse(
+        CIE_id: int = struct_parse(
             entry_structs.the_Dwarf_offset, self.stream)
 
         if self.for_eh_frame:
@@ -135,7 +135,7 @@ class CallFrameInfo:
 
         # If the augmentation string is not empty, hope to find a length field
         # in order to skip the data specified augmentation.
-        lsda_pointer = None
+        lsda_pointer: int | None = None
         aug_dict = None
         if is_CIE:
             aug_bytes, aug_dict = self._parse_cie_augmentation(
@@ -151,7 +151,7 @@ class CallFrameInfo:
                                                         lsda_encoding)
 
         # For convenience, compute the end offset for this entry
-        end_offset = (
+        end_offset: int = (
             offset + header.length +
             entry_structs.initial_length_field_size())
 
@@ -185,7 +185,7 @@ class CallFrameInfo:
         """
         instructions = []
         while offset < end_offset:
-            raw_opcode = struct_parse(structs.the_Dwarf_uint8, self.stream, offset)
+            raw_opcode: int = struct_parse(structs.the_Dwarf_uint8, self.stream, offset)
 
             opcode, *args = DW_CFA.parse_raw_opcode(raw_opcode)
             match opcode:
@@ -240,8 +240,8 @@ class CallFrameInfo:
             # CIE_pointer contains the offset for a reverse displacement from
             # the section offset of the CIE_pointer field itself (not from the
             # FDE header offset).
-            cie_displacement = fde_header['CIE_pointer']
-            cie_offset = (fde_offset + entry_structs.dwarf_format // 8
+            cie_displacement: int = fde_header['CIE_pointer']
+            cie_offset: int = (fde_offset + entry_structs.dwarf_format // 8
                           - cie_displacement)
         else:
             cie_offset = fde_header['CIE_pointer']
@@ -256,7 +256,7 @@ class CallFrameInfo:
         Return a tuple that contains 1) the augmentation data as a string
         (without the length field) and 2) the augmentation data as a dict.
         """
-        augmentation = header.get('augmentation')
+        augmentation: bytes | None = header.get('augmentation')
         if not augmentation:
             return (b'', {})
 
@@ -320,7 +320,7 @@ class CallFrameInfo:
         if not self.for_eh_frame:
             return b''
 
-        augmentation_data_length = struct_parse(
+        augmentation_data_length: int = struct_parse(
             Struct('Dummy_Augmentation_Data',
                    entry_structs.Dwarf_uleb128('length')),
             self.stream)['length']
@@ -341,7 +341,7 @@ class CallFrameInfo:
 
         formats = self._eh_encoding_to_field(structs)
 
-        ptr = struct_parse(
+        ptr: int = struct_parse(
             Struct('Augmentation_Data',
                    formats[basic_encoding]('LSDA_pointer')),
             self.stream, stream_pos=stream_offset)['LSDA_pointer']

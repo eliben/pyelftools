@@ -40,7 +40,7 @@ class LocationViewPair(NamedTuple):
 
 
 def _translate_startx_length(e, cu):
-    start_offset = cu.dwarfinfo.get_addr(cu, e.start_index)
+    start_offset: int = cu.dwarfinfo.get_addr(cu, e.start_index)
     return LocationEntry(e.entry_offset, e.entry_length, start_offset, start_offset + e.length, e.loc_expr, True)
 
 # Maps parsed entries to the tuples above; LocationViewPair is mapped elsewhere
@@ -107,7 +107,7 @@ class LocationLists:
         self.structs = structs
         self.dwarfinfo = dwarfinfo
         self.version = version
-        self._max_addr = 2 ** (self.structs.address_size * 8) - 1
+        self._max_addr: int = 2 ** (self.structs.address_size * 8) - 1
 
     def get_location_list_at_offset(self, offset, die=None):
         """ Get a location list at the given offset in the section.
@@ -152,7 +152,7 @@ class LocationLists:
         locviews = dict() # Map of locview offset to the respective loclist offset
         cu_map = dict() # Map of loclist offsets to CUs
         for cu in self.dwarfinfo.iter_CUs():
-            cu_ver = cu['version']
+            cu_ver: int = cu['version']
             if (cu_ver >= 5) == ver5:
                 for die in cu.iter_DIEs():
                     # A combination of location and locviews means there is a location list
@@ -160,8 +160,8 @@ class LocationLists:
                     if 'DW_AT_GNU_locviews' in die.attributes:
                         assert('DW_AT_location' in die.attributes and
                             LocationParser._attribute_has_loc_list(die.attributes['DW_AT_location'], cu_ver))
-                        views_offset = die.attributes['DW_AT_GNU_locviews'].value
-                        list_offset = die.attributes['DW_AT_location'].value
+                        views_offset: int = die.attributes['DW_AT_GNU_locviews'].value
+                        list_offset: int = die.attributes['DW_AT_location'].value
                         locviews[views_offset] = list_offset
                         cu_map[list_offset] = cu
                         all_offsets.add(views_offset)
@@ -190,7 +190,7 @@ class LocationLists:
                 # We don't have a binary for the former yet. On an off chance that we one day might,
                 # let's parse the header anyway.
 
-                cu_end_offset = cu_header.offset_after_length + cu_header.unit_length
+                cu_end_offset: int = cu_header.offset_after_length + cu_header.unit_length
                 # Unit_length includes the header but doesn't include the length
 
                 while stream.tell() < cu_end_offset:
@@ -229,9 +229,9 @@ class LocationLists:
         lst = []
         while True:
             entry_offset = self.stream.tell()
-            begin_offset = struct_parse(
+            begin_offset: int = struct_parse(
                 self.structs.the_Dwarf_target_addr, self.stream)
-            end_offset = struct_parse(
+            end_offset: int = struct_parse(
                 self.structs.the_Dwarf_target_addr, self.stream)
             if begin_offset == 0 and end_offset == 0:
                 # End of list - we're done.
@@ -242,9 +242,9 @@ class LocationLists:
                 lst.append(BaseAddressEntry(entry_offset=entry_offset, entry_length=entry_length, base_address=end_offset))
             else:
                 # Location list entry
-                expr_len = struct_parse(
+                expr_len: int = struct_parse(
                     self.structs.the_Dwarf_uint16, self.stream)
-                loc_expr = [struct_parse(self.structs.the_Dwarf_uint8,
+                loc_expr: list[int] = [struct_parse(self.structs.the_Dwarf_uint8,
                                          self.stream)
                                 for i in range(expr_len)]
                 entry_length = self.stream.tell() - entry_offset
@@ -271,9 +271,9 @@ class LocationLists:
 
     # From V5 style entries to a LocationEntry/BaseAddressEntry
     def _translate_entry_v5(self, entry, die):
-        off = entry.entry_offset
-        len = entry.entry_end_offset - off
-        type = entry.entry_type
+        off: int = entry.entry_offset
+        len: int = entry.entry_end_offset - off
+        type: str = entry.entry_type
         if type == 'DW_LLE_base_address':
             return BaseAddressEntry(off, len, entry.address)
         elif type == 'DW_LLE_offset_pair':
@@ -294,7 +294,7 @@ class LocationLists:
     # Locviews is the dict, mapping locview offsets to corresponding loclist offsets
     def _parse_locview_pairs(self, locviews):
         stream = self.stream
-        list_offset = locviews.get(stream.tell(), None)
+        list_offset: int | None = locviews.get(stream.tell(), None)
         pairs = []
         if list_offset is not None:
             while stream.tell() < list_offset:

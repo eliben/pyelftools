@@ -132,7 +132,7 @@ class GNUVerNeedSection(GNUVersionSection):
         super().__init__(
                 header, name, elffile, stringtable, 'vn',
                 elffile.structs.Elf_Verneed, elffile.structs.Elf_Vernaux)
-        self._has_indexes = None
+        self._has_indexes: bool | None = None
 
     def has_indexes(self) -> bool:
         """ Return True if at least one version definition entry has an index

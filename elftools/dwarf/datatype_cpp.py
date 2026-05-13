@@ -35,7 +35,7 @@ def parse_cpp_datatype(var_die):
 
     type_die = var_die.get_DIE_from_attribute('DW_AT_type')
 
-    mods = []
+    mods: list[str] = []
     # Unlike readelf, dwarfdump doesn't chase typedefs
     while type_die.tag in ('DW_TAG_const_type', 'DW_TAG_volatile_type', 'DW_TAG_pointer_type', 'DW_TAG_reference_type'):
         modifier = _strip_type_tag(type_die) # const/volatile/reference/pointer
@@ -101,7 +101,7 @@ def parse_cpp_datatype(var_die):
 
     # Check the nesting - important for parameters
     parent = type_die.get_parent()
-    scopes = []
+    scopes: list[str] = []
     while parent and parent.tag in ('DW_TAG_class_type', 'DW_TAG_structure_type', 'DW_TAG_union_type', 'DW_TAG_namespace'):
         scopes.insert(0, safe_DIE_name(parent, _strip_type_tag(parent) + " "))
         # If unnamed scope, fall back to scope type - like "structure "
@@ -135,10 +135,10 @@ class TypeDesc:
     """
     def __init__(self) -> None:
         self.name = None
-        self.modifiers = () # Reads left to right
-        self.scopes = () # Reads left to right
-        self.tag = None
-        self.dimensions = None
+        self.modifiers: tuple[str, ...] = () # Reads left to right
+        self.scopes: tuple[str, ...] = () # Reads left to right
+        self.tag: str | None = None
+        self.dimensions: tuple[int, ...] | None = None
 
     def __str__(self) -> str:
         # Some reference points from dwarfdump:
@@ -185,8 +185,8 @@ def DIE_type(die):
 
 class ClassDesc:
     def __init__(self) -> None:
-        self.scopes = ()
-        self.const_member = False
+        self.scopes: tuple[str, ...] = ()
+        self.const_member: bool = False
 
 def get_class_spec_if_member(func_spec, the_func):
     if 'DW_AT_object_pointer' in the_func.attributes:
@@ -201,7 +201,7 @@ def get_class_spec_if_member(func_spec, the_func):
     # Check the parent element chain - could be a class
     parent = func_spec.get_parent()
 
-    scopes = []
+    scopes: list[str] = []
     while parent and parent.tag in ("DW_TAG_class_type", "DW_TAG_structure_type", "DW_TAG_namespace"):
         scopes.insert(0, DIE_name(parent))
         parent = parent.get_parent()

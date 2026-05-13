@@ -29,7 +29,7 @@ class Section:
         self.elffile = elffile
         self.stream = self.elffile.stream
         self.structs = self.elffile.structs
-        self._compressed = header['sh_flags'] & SH_FLAGS.SHF_COMPRESSED
+        self._compressed: int = header['sh_flags'] & SH_FLAGS.SHF_COMPRESSED
 
         if self.compressed:
             # Read the compression header now to know about the size/alignment
@@ -37,9 +37,9 @@ class Section:
             header = struct_parse(self.structs.Elf_Chdr,
                                   self.stream,
                                   stream_pos=self['sh_offset'])
-            self._compression_type = header['ch_type']
-            self._decompressed_size = header['ch_size']
-            self._decompressed_align = header['ch_addralign']
+            self._compression_type: str = header['ch_type']
+            self._decompressed_size: int = header['ch_size']
+            self._decompressed_align: int = header['ch_addralign']
         else:
             self._decompressed_size = header['sh_size']
             self._decompressed_align = header['sh_addralign']
@@ -84,9 +84,9 @@ class Section:
             if c_type == 'ELFCOMPRESS_ZLIB':
                 # Read the data to decompress starting right after the
                 # compression header until the end of the section.
-                hdr_size = self.structs.Elf_Chdr.sizeof()
+                hdr_size: int = self.structs.Elf_Chdr.sizeof()
                 self.stream.seek(self['sh_offset'] + hdr_size)
-                compressed = self.stream.read(self['sh_size'] - hdr_size)
+                compressed: bytes = self.stream.read(self['sh_size'] - hdr_size)
 
                 decomp = zlib.decompressobj()
                 result = decomp.decompress(compressed, self.data_size)
@@ -176,7 +176,7 @@ class SymbolTableSection(Section):
                 'Expected entry size of section %r to be > 0' % name)
         elf_assert(self['sh_size'] % self['sh_entsize'] == 0,
                 'Expected section size to be a multiple of entry size in section %r' % name)
-        self._symbol_name_map = None
+        self._symbol_name_map: dict[str, list[int]] | None = None
 
     def num_symbols(self) -> int:
         """ Number of symbols in the table
@@ -286,8 +286,8 @@ class StabSection(Section):
     def iter_stabs(self):
         """ Yield all stab entries.  Result type is ELFStructs.Elf_Stabs.
         """
-        offset = self['sh_offset']
-        size = self['sh_size']
+        offset: int = self['sh_offset']
+        size: int = self['sh_size']
         end = offset + size
         while offset < end:
             stabs = struct_parse(
@@ -436,7 +436,7 @@ class AttributesSection(Section):
     def __init__(self, header, name, elffile):
         super().__init__(header, name, elffile)
 
-        fv = struct_parse(self.structs.Elf_byte('format_version'),
+        fv: int = struct_parse(self.structs.Elf_byte('format_version'),
                           self.stream,
                           self['sh_offset'])
 
@@ -494,8 +494,8 @@ class ARMAttribute(Attribute):
             self.value = struct_parse(structs.Elf_word('value'), stream)
 
             if self.tag != 'TAG_FILE':
-                self.extra = []
-                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
+                self.extra: list[int] = []
+                s_number: int = struct_parse(structs.Elf_uleb128('s_number'), stream)
 
                 while s_number != 0:
                     self.extra.append(s_number)
@@ -517,7 +517,7 @@ class ARMAttribute(Attribute):
             self.value = ARMAttribute(structs, stream)
 
             if type(self.value.value) is not str:
-                nul = struct_parse(structs.Elf_byte('nul'), stream)
+                nul: int = struct_parse(structs.Elf_byte('nul'), stream)
                 elf_assert(nul == 0,
                            "Invalid terminating byte %r, expecting NUL." % nul)
 
@@ -558,8 +558,8 @@ class RISCVAttribute(Attribute):
             self.value = struct_parse(structs.Elf_word('value'), stream)
 
             if self.tag != 'TAG_FILE':
-                self.extra = []
-                s_number = struct_parse(structs.Elf_uleb128('s_number'), stream)
+                self.extra: list[int] = []
+                s_number: int = struct_parse(structs.Elf_uleb128('s_number'), stream)
 
                 while s_number != 0:
                     self.extra.append(s_number)

@@ -142,12 +142,12 @@ class RelrRelocationTable:
         relr = self._offset
         # The addresses of relocations in a bitmap are calculated from a base
         # value provided in an initial 'anchor' relocation.
-        base = None
+        base: int | None = None
         while relr < limit:
             entry = struct_parse(self._relr_struct,
                                  self._elffile.stream,
                                  stream_pos=relr)
-            entry_offset = entry['r_offset']
+            entry_offset: int = entry['r_offset']
             if (entry_offset & 1) == 0:
                 # We found an anchor, take the current value as the base address
                 # for the following bitmaps and move the 'where' pointer to the

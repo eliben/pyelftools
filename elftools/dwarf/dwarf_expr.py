@@ -194,7 +194,7 @@ def _init_dispatch_table(structs):
     # ULEB128, then an expression of that length
     def parse_nestedexpr():
         def parse(stream):
-            size = struct_parse(structs.the_Dwarf_uleb128, stream)
+            size: int = struct_parse(structs.the_Dwarf_uleb128, stream)
             nested_expr_blob = stream.read(size)
             return [DWARFExprParser(structs).parse_expr(nested_expr_blob)]
         return parse
@@ -211,7 +211,7 @@ def _init_dispatch_table(structs):
     # Byte, then variant: 0, 1, 2 => uleb128, 3 => uint32
     def parse_wasmloc():
         def parse(stream):
-            op = struct_parse(structs.the_Dwarf_uint8, stream)
+            op: int = struct_parse(structs.the_Dwarf_uint8, stream)
             if 0 <= op <= 2:
                 return [op, struct_parse(structs.the_Dwarf_uleb128, stream)]
             elif op == 3:

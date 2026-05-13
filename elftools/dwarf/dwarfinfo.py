@@ -140,7 +140,7 @@ class DWARFInfo:
         # Cache of compile units and map of their offsets for bisect lookup.
         # Access with .iter_CUs(), .get_CU_containing(), and/or .get_CU_at().
         self._cu_cache = []
-        self._cu_offsets_map = []
+        self._cu_offsets_map: list[int] = []
 
         # DWARF v4 type units by sig8 - ordered dict created when needed
         self._type_units_by_sig = None

@@ -182,7 +182,7 @@ def describe_form_class(form: str) -> str | None:
 
 # The machine architecture. Set globally via set_global_machine_arch
 #
-_MACHINE_ARCH = None
+_MACHINE_ARCH: str | None = None
 
 # Implements the alternative format of readelf: lowercase hex, prefixed with 0x unless 0
 def _format_hex(n: int) -> str:

@@ -91,10 +91,10 @@ class DIE:
         self.stream = stream
         self.offset = offset
 
-        self.attributes = {}
-        self.tag = None
-        self.has_children = None
-        self.abbrev_code = None
+        self.attributes: dict[str, Any] = {}
+        self.tag: str | int | None = None
+        self.has_children: bool | None = None
+        self.abbrev_code: int | None = None
         self.size = 0
         # Null DIE terminator. It can be used to obtain offset range occupied
         # by this DIE including its whole subtree.
@@ -288,7 +288,7 @@ class DIE:
         # Returns (form, raw_value, length).
         structs = self.cu.structs
         length = 1
-        real_form_code = struct_parse(structs.the_Dwarf_uleb128, self.stream) # Numeric form code
+        real_form_code: int = struct_parse(structs.the_Dwarf_uleb128, self.stream) # Numeric form code
         while True:
             try:
                 real_form = DW_FORM_raw2name[real_form_code] # Form name or exception if bogus code

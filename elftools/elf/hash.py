@@ -115,9 +115,9 @@ class GNUHashTable:
                                    self.elffile.stream,
                                    start_offset)
         # Element sizes in the hash table
-        self._wordsize = self.elffile.structs.Elf_word('').sizeof()
-        self._xwordsize = self.elffile.structs.Elf_xword('').sizeof()
-        self._chain_pos = start_offset + 4 * self._wordsize + \
+        self._wordsize: int = self.elffile.structs.Elf_word('').sizeof()
+        self._xwordsize: int = self.elffile.structs.Elf_xword('').sizeof()
+        self._chain_pos: int = start_offset + 4 * self._wordsize + \
             self.params['bloom_size'] * self._xwordsize + \
             self.params['nbuckets'] * self._wordsize
 

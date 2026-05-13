@@ -27,14 +27,14 @@ def iter_notes(elffile, offset, size):
         elffile.stream.seek(offset)
         if note['n_namesz']:
             # n_namesz is 4-byte aligned.
-            disk_namesz = roundup(note['n_namesz'], 2)
+            disk_namesz: int = roundup(note['n_namesz'], 2)
             note['n_name'] = bytes2str(
                 CString('').parse(elffile.stream.read(disk_namesz)))
             offset += disk_namesz
         else:
             note['n_name'] = None
 
-        desc_data = elffile.stream.read(note['n_descsz'])
+        desc_data: bytes = elffile.stream.read(note['n_descsz'])
         note['n_descdata'] = desc_data
         if note['n_type'] == 'NT_GNU_ABI_TAG' and note['n_name'] == 'GNU':
             note['n_desc'] = struct_parse(elffile.structs.Elf_abi,
@@ -57,7 +57,7 @@ def iter_notes(elffile, offset, size):
             props = []
             # n_descsz contains the size of the note "descriptor" (the data payload),
             # excluding padding. See "Note Section" in https://refspecs.linuxfoundation.org/elf/elf.pdf
-            current_note_end = offset + note['n_descsz']
+            current_note_end: int = offset + note['n_descsz']
             while off < current_note_end:
                 p = struct_parse(elffile.structs.Elf_Prop, elffile.stream, off)
                 off += roundup(p.pr_datasz + 8, 2 if elffile.elfclass == 32 else 3)

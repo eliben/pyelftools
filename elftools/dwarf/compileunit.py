@@ -64,7 +64,7 @@ class CompileUnit:
         # DIE population strategy used in `iter_DIE_children`.
         # Like `self._dielist`, this list is lazily constructed
         # as DIEs are iterated over.
-        self._diemap = []
+        self._diemap: list[int] = []
 
     def dwarf_format(self) -> int:
         """ Get the DWARF format (32 or 64) for this CU

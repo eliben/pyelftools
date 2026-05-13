@@ -45,9 +45,9 @@ class ELFStructs:
         assert elfclass == 32 or elfclass == 64
         self.little_endian = little_endian
         self.elfclass = elfclass
-        self.e_type = None
-        self.e_machine = None
-        self.e_ident_osabi = None
+        self.e_type: str | None = None  # e.ENUM_E_TYPE
+        self.e_machine: str | None = None  # e.ENUM_E_MACHINE
+        self.e_ident_osabi: str | None = None  # e.ENUM_E_VERSION
 
     def __getstate__(self) -> tuple[bool, int, str | None, str | None, str | None]:
         return self.little_endian, self.elfclass, self.e_type, self.e_machine, self.e_ident_osabi

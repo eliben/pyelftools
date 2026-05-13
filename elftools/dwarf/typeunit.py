@@ -69,7 +69,7 @@ class TypeUnit:
         # DIE population strategy used in `iter_DIE_children`.
         # Like `self._dielist`, this list is lazily constructed
         # as DIEs are iterated over.
-        self._diemap = []
+        self._diemap: list[int] = []
 
     @property
     def cu_offset(self) -> int:

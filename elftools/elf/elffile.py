@@ -85,7 +85,7 @@ class ELFFile:
         self.e_ident_raw = self.stream.read(16)
 
         self._section_header_stringtable = None # Lazy load
-        self._section_name_map = None
+        self._section_name_map: dict[str, int] | None = None
         self.stream_loader = stream_loader
 
     @classmethod
