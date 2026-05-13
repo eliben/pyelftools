@@ -17,7 +17,7 @@ from ..common.utils import preserve_stream_pos, dwarf_assert, bytes2str
 from .callframe import CIE, FDE
 
 
-def set_global_machine_arch(machine_arch):
+def set_global_machine_arch(machine_arch: str) -> None:
     global _MACHINE_ARCH
     _MACHINE_ARCH = machine_arch
 
@@ -608,7 +608,7 @@ class ExprDumper:
             for deo in parsed
         )
 
-    def _init_lookups(self):
+    def _init_lookups(self) -> None:
         self._ops_with_decimal_arg = {
             'DW_OP_const1u', 'DW_OP_const1s', 'DW_OP_const2u', 'DW_OP_const2s',
             'DW_OP_const4u', 'DW_OP_const4s', 'DW_OP_const8u', 'DW_OP_const8s',

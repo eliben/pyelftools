@@ -641,7 +641,7 @@ class ELFFile:
         """
         return self.header[name]
 
-    def _identify_file(self):
+    def _identify_file(self) -> None:
         """ Verify the ELF file and identify its class and endianness.
         """
         # Note: this code reads the stream directly, without using ELFStructs,
@@ -764,7 +764,7 @@ class ELFFile:
         else:
             return Section(section_header, name, self)
 
-    def _make_section_name_map(self):
+    def _make_section_name_map(self) -> None:
         self._section_name_map = {}
         for i, sec in enumerate(self.iter_sections()):
             self._section_name_map[sec.name] = i
@@ -933,7 +933,7 @@ class ELFFile:
 
         return section._replace(stream=uncompressed_stream, size=size)
 
-    def close(self):
+    def close(self) -> None:
         self.stream.close()
 
     def __enter__(self):

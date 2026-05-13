@@ -100,7 +100,7 @@ DW_OP_name2opcode = dict(
     DW_OP_hi_user=0xff,
 )
 
-def _generate_dynamic_values(map, prefix, index_start, index_end, value_start):
+def _generate_dynamic_values(map: dict[str, int], prefix: str, index_start: int, index_end: int, value_start: int) -> None:
     """ Generate values in a map (dict) dynamically. Each key starts with
         a (string) prefix, followed by an index in the inclusive range
         [index_start, index_end]. The values start at value_start.

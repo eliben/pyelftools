@@ -179,7 +179,7 @@ class DIE:
 
     #------ PRIVATE ------#
 
-    def _search_ancestor_offspring(self):
+    def _search_ancestor_offspring(self) -> None:
         """ Search our ancestors identifying their offspring to find our parent.
 
             DIEs are stored as a flattened tree.  The top DIE is the ancestor
@@ -225,7 +225,7 @@ class DIE:
     def __str__(self) -> str:
         return self.__repr__()
 
-    def _parse_DIE(self):
+    def _parse_DIE(self) -> None:
         """ Parses the DIE info from the section, based on the abbreviation
             table of the CU
         """
@@ -340,7 +340,7 @@ class DIE:
             return _resolve_via_offset_table(self.dwarfinfo.debug_rnglists_sec.stream, self.cu, raw_value, 'DW_AT_rnglists_base')
         return raw_value
 
-    def _translate_indirect_attributes(self):
+    def _translate_indirect_attributes(self) -> None:
         """ This is a hook to translate the DW_FORM_...x values in the top DIE
             once the top DIE is parsed to the end. They can't be translated
             while the top DIE is being parsed, because they implicitly make a

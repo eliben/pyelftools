@@ -136,7 +136,7 @@ class LineProgram:
         entries = []
         state = LineState(self.header['default_is_stmt'])
 
-        def add_entry_new_state(cmd, args, is_extended=False):
+        def add_entry_new_state(cmd: int, args: list[int], is_extended: bool = False) -> None:
             # Add an entry that sets a new state.
             # After adding, clear some state registers.
             entries.append(LineProgramEntry(
@@ -146,7 +146,7 @@ class LineProgram:
             state.prologue_end = False
             state.epilogue_begin = False
 
-        def add_entry_old_state(cmd, args, is_extended=False):
+        def add_entry_old_state(cmd: int, args: list[int], is_extended: bool = False) -> None:
             # Add an entry that doesn't visibly set a new state
             entries.append(LineProgramEntry(cmd, is_extended, args, None))
 

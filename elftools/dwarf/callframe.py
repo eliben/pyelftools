@@ -521,7 +521,7 @@ class CFIEntry:
         # instructions.
         line_stack = []
 
-        def _add_to_order(regnum):
+        def _add_to_order(regnum: int) -> None:
             # DW_CFA.restore and others remove registers from cur_line,
             #  but they stay in reg_order. Avoid duplicates.
             if regnum not in reg_order:
