@@ -486,7 +486,7 @@ class CFIEntry:
             self._decoded_table = self._decode_CFI_table()
         return self._decoded_table
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """
         return self.header[name]
