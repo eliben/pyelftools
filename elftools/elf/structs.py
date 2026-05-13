@@ -49,10 +49,10 @@ class ELFStructs:
         self.e_machine = None
         self.e_ident_osabi = None
 
-    def __getstate__(self):
+    def __getstate__(self) -> tuple[bool, int, str | None, str | None, str | None]:
         return self.little_endian, self.elfclass, self.e_type, self.e_machine, self.e_ident_osabi
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: tuple[bool, int, str | None, str | None, str | None]) -> None:
         self.little_endian, self.elfclass, e_type, e_machine, e_osabi = state
         self.create_basic_structs()
         self.create_advanced_structs(e_type, e_machine, e_osabi)
