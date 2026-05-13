@@ -6,15 +6,21 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing_extensions import Self  # 3.11+
 
 
 class _IntEnum(int, Enum):  # Py3.11: enum.ReprEnum
-    def __repr__(self):
+    def __repr__(self) -> str:
         return int.__str__(self.value)
 
     @property  # Py3.11+: enum.property
-    def FQN(self):
+    def FQN(self) -> str:
         return f"{self.__class__.__name__}_{self.name}"
 
 
@@ -235,7 +241,7 @@ class DW_CFA(_IntEnum):
     GNU_args_size = 0x2e
 
     @classmethod
-    def parse_raw_opcode(cls, /, opcode, *, __MASK = 0b11_00_0000):
+    def parse_raw_opcode(cls, /, opcode: int, *, __MASK: int = 0b11_00_0000) -> tuple[Self, int] | tuple[Self]:
         """Extract primary or extended opcode from raw byte."""
         if primary := opcode & __MASK:
             return (cls(primary), opcode & ~__MASK)
