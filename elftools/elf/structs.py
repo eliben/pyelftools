@@ -41,7 +41,7 @@ class ELFStructs:
             Elf_Rel, Elf_Rela:
                 Entries in relocation sections
     """
-    def __init__(self, little_endian=True, elfclass=32):
+    def __init__(self, little_endian: bool = True, elfclass: int = 32) -> None:
         assert elfclass == 32 or elfclass == 64
         self.little_endian = little_endian
         self.elfclass = elfclass

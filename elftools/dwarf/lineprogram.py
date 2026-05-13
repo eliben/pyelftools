@@ -51,7 +51,7 @@ class LineState:
         The instance variables of this class are the "state machine registers"
         described in section 6.2.2 of DWARFv3
     """
-    def __init__(self, default_is_stmt):
+    def __init__(self, default_is_stmt: int) -> None:
         self.address = 0
         self.file = 1
         self.line = 1

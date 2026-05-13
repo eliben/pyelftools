@@ -133,7 +133,7 @@ class TypeDesc:
             array. -1 means an array of unknown dimension.
 
     """
-    def __init__(self):
+    def __init__(self) -> None:
         self.name = None
         self.modifiers = () # Reads left to right
         self.scopes = () # Reads left to right
@@ -184,7 +184,7 @@ def DIE_type(die):
     return die.get_DIE_from_attribute("DW_AT_type")
 
 class ClassDesc:
-    def __init__(self):
+    def __init__(self) -> None:
         self.scopes = ()
         self.const_member = False
 

@@ -642,7 +642,7 @@ class ZERO:
     in pure DWARF. `readelf` displays these as "ZERO terminator", hence the
     class name.
     """
-    def __init__(self, offset):
+    def __init__(self, offset: int) -> None:
         self.offset = offset
 
 
