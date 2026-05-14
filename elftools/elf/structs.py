@@ -7,6 +7,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import elftools.elf .enums as e
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64,
@@ -17,6 +21,12 @@ from ..construct import (
     )
 from ..common.construct_utils import ULEB128
 from ..common.utils import roundup
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ..construct.core import FormatField
+    from ..construct.lib.container import Container
 
 
 class ELFStructs:
@@ -41,6 +51,24 @@ class ELFStructs:
             Elf_Rel, Elf_Rela:
                 Entries in relocation sections
     """
+    if TYPE_CHECKING:
+        # type hints for dynamically defined instance variables
+        Elf_byte: Callable[[str], FormatField[int]]
+        Elf_half: Callable[[str], FormatField[int]]
+        Elf_word: Callable[[str], FormatField[int]]
+        Elf_word64: Callable[[str], FormatField[int]]
+        Elf_addr: Callable[[str], FormatField[int]]
+        Elf_offset: Callable[[str], FormatField[int]]
+        Elf_sword: Callable[[str], FormatField[int]]
+        Elf_sxword: Callable[[str], FormatField[int]]
+        Elf_xsword: Callable[[str], FormatField[int]]
+        Elf_Ehdr: Struct
+        Elf_Phdr: Struct
+        Elf_Shdr: Struct
+        Elf_Sym: Struct
+        Elf_Rel: Struct
+        Elf_Rela: Struct
+
     def __init__(self, little_endian: bool = True, elfclass: int = 32) -> None:
         assert elfclass == 32 or elfclass == 64
         self.little_endian = little_endian
@@ -288,6 +316,7 @@ class ELFStructs:
     def _create_dyn(self) -> None:
         d_tag_dict = dict(e.ENUM_D_TAG_COMMON)
         if self.e_machine in e.ENUMMAP_EXTRA_D_TAG_MACHINE:
+            assert self.e_machine is not None
             d_tag_dict.update(e.ENUMMAP_EXTRA_D_TAG_MACHINE[self.e_machine])
         elif self.e_ident_osabi == 'ELFOSABI_SOLARIS':
             d_tag_dict.update(e.ENUM_D_TAG_SOLARIS)
@@ -397,12 +426,12 @@ class ELFStructs:
     def _create_gnu_property(self) -> None:
         # Structure of GNU property notes is documented in
         # https://github.com/hjl-tools/linux-abi/wiki/linux-abi-draft.pdf
-        def roundup_padding(ctx):
+        def roundup_padding(ctx: Container) -> int:
             if self.elfclass == 32:
                 return roundup(ctx.pr_datasz, 2) - ctx.pr_datasz
             return roundup(ctx.pr_datasz, 3) - ctx.pr_datasz
 
-        def classify_pr_data(ctx):
+        def classify_pr_data(ctx: Container) -> tuple[str, int, int] | None:
             if type(ctx.pr_type) is not str:
                 return None
             if ctx.pr_type.startswith('GNU_PROPERTY_X86_'):

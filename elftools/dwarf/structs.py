@@ -7,6 +7,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import IO, TYPE_CHECKING, Any, ClassVar
+
 import elftools.dwarf.enums as e
 from ..construct import (
     UBInt8, UBInt16, UBInt32, UBInt64, ULInt8, ULInt16, ULInt32, ULInt64,
@@ -16,6 +20,14 @@ from ..construct import (
     )
 from ..common.construct_utils import (RepeatUntilExcluding, ULEB128, SLEB128,
     StreamOffset, ULInt24, UBInt24)
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from typing_extensions import Self  # 3.11+
+
+    from ..construct.adapters import LengthValueAdapter
+    from ..construct.lib.container import Container
 
 
 class DWARFStructs:
@@ -78,12 +90,25 @@ class DWARFStructs:
         See also the documentation of public methods.
     """
 
+    if TYPE_CHECKING:
+        # type hints for dynamically defined class variables
+        little_endian: bool
+        dwarf_format: int
+        address_size: int
+        dwarf_version: int
+
     # Cache for structs instances based on creation parameters. Structs
     # initialization is expensive and we don't won't to repeat it
     # unnecessarily.
-    _structs_cache = {}
+    _structs_cache: ClassVar[dict[tuple[bool, int, int, int], Self]] = {}
 
-    def __new__(cls, little_endian, dwarf_format, address_size, dwarf_version=2):
+    def __new__(
+        cls,
+        little_endian: bool,
+        dwarf_format: int,
+        address_size: int,
+        dwarf_version: int = 2,
+    ) -> Self:
         """ dwarf_version:
                 Numeric DWARF version
 
@@ -122,7 +147,7 @@ class DWARFStructs:
         if self.little_endian:
             self.Dwarf_uint8 = ULInt8
             self.Dwarf_uint16 = ULInt16
-            self.Dwarf_uint24 = ULInt24
+            self.Dwarf_uint24: type[ULInt24 | UBInt24] = ULInt24
             self.Dwarf_uint32 = ULInt32
             self.Dwarf_uint64 = ULInt64
             self.Dwarf_offset = ULInt32 if self.dwarf_format == 32 else ULInt64
@@ -177,7 +202,7 @@ class DWARFStructs:
         self._create_gnu_debugaltlink()
 
     def _create_initial_length(self) -> None:
-        def _InitialLength(name):
+        def _InitialLength(name: str) -> _InitialLengthAdapter:
             # Adapts a Struct that parses forward a full initial length field.
             # Only if the first word is the continuation value, the second
             # word is parsed from the stream.
@@ -385,18 +410,18 @@ class DWARFStructs:
             # similar to deprecared Dynamic.
             # Strings are resolved later, since it potentially requires
             # looking at another section.
-            def __init__(self, name, structs, format_field):
+            def __init__(self, name: str, structs: DWARFStructs, format_field: str) -> None:
                 Construct.__init__(self, name)
                 self.structs = structs
                 self.format_field = format_field
 
-            def _parse(self, stream, context):
+            def _parse(self, stream: IO[bytes], context: Container) -> Any:
                 # Somewhat tricky technique here, explicitly writing back to the context
                 if self.format_field + "_parser" in context:
                     parser = context[self.format_field + "_parser"]
                 else:
                     fields = tuple(
-                        Rename(f.content_type, self.structs.Dwarf_dw_form[f.form])
+                        Rename(f.content_type, self.structs.Dwarf_dw_form[f.form])  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
                         for f in context[self.format_field])
                     parser = Struct('formatted_entry', *fields)
                     context[self.format_field + "_parser"] = parser
@@ -481,7 +506,7 @@ class DWARFStructs:
             self.Dwarf_target_addr('initial_location'),
             self.Dwarf_target_addr('address_range'))
 
-    def _make_block_struct(self, length_field):
+    def _make_block_struct(self, length_field: Callable[[str], Construct]) -> LengthValueAdapter:
         """ Create a struct for DW_FORM_block<size>
         """
         return PrefixedArray(
@@ -563,7 +588,7 @@ class _InitialLengthAdapter(Adapter):
     """ A standard Construct adapter that expects a sub-construct
         as a struct with one or two values (first, second).
     """
-    def _decode(self, obj, context):
+    def _decode(self, obj: Container, context: Container) -> int:
         if obj.first < 0xFFFFFF00:
             context['is64'] = False
             return obj.first
