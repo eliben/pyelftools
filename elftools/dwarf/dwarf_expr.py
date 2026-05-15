@@ -15,14 +15,14 @@ from ..common.utils import struct_parse
 from ..common.exceptions import DWARFError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping
 
     from ..construct.core import Construct
     from .structs import DWARFStructs
 
 
 # DWARF expression opcodes. name -> opcode mapping
-DW_OP_name2opcode = dict(
+DW_OP_name2opcode: Mapping[str, int] = dict(
     DW_OP_addr=0x03,
     DW_OP_deref=0x06,
     DW_OP_const1u=0x08,
@@ -106,24 +106,13 @@ DW_OP_name2opcode = dict(
     DW_OP_GNU_const_index=0xfc,
     DW_OP_GNU_variable_value=0xfd,
     DW_OP_hi_user=0xff,
+    **{f"DW_OP_lit{val}": 0x30 + val for val in range(0, 32)},
+    **{f"DW_OP_reg{val}": 0x50 + val for val in range(0, 32)},
+    **{f"DW_OP_breg{val}": 0x70 + val for val in range(0, 32)},
 )
 
-def _generate_dynamic_values(map: dict[str, int], prefix: str, index_start: int, index_end: int, value_start: int) -> None:
-    """ Generate values in a map (dict) dynamically. Each key starts with
-        a (string) prefix, followed by an index in the inclusive range
-        [index_start, index_end]. The values start at value_start.
-    """
-    for index in range(index_start, index_end + 1):
-        name = '%s%s' % (prefix, index)
-        value = value_start + index - index_start
-        map[name] = value
-
-_generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_lit', 0, 31, 0x30)
-_generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_reg', 0, 31, 0x50)
-_generate_dynamic_values(DW_OP_name2opcode, 'DW_OP_breg', 0, 31, 0x70)
-
 # opcode -> name mapping
-DW_OP_opcode2name = {v: k for k, v in DW_OP_name2opcode.items()}
+DW_OP_opcode2name: Mapping[int, str] = {v: k for k, v in DW_OP_name2opcode.items()}
 
 
 # Each parsed DWARF expression is returned as this type with its numeric opcode,
