@@ -10,10 +10,14 @@ from __future__ import annotations
 
 import os
 import copy
-from typing import NamedTuple
+from typing import IO, TYPE_CHECKING, Any, NamedTuple
 
 from ..common.utils import struct_parse, dwarf_assert
 from .constants import DW_LNE, DW_LNS
+
+if TYPE_CHECKING:
+    from ..construct.lib.container import Container
+    from .structs import DWARFStructs
 
 
 # LineProgramEntry - an entry in the line program.
@@ -85,8 +89,14 @@ class LineProgram:
         sorted by increasing address, so it can be used to obtain the
         state information for each address.
     """
-    def __init__(self, header, stream, structs,
-                 program_start_offset, program_end_offset):
+    def __init__(
+        self,
+        header: Container,
+        stream: IO[bytes],
+        structs: DWARFStructs,
+        program_start_offset: int,
+            program_end_offset: int,
+    ) -> None:
         """
             header:
                 The header of this line program. Note: LineProgram may modify
@@ -110,9 +120,9 @@ class LineProgram:
         self.structs = structs
         self.program_start_offset = program_start_offset
         self.program_end_offset = program_end_offset
-        self._decoded_entries = None
+        self._decoded_entries: list[LineProgramEntry] | None = None
 
-    def get_entries(self):
+    def get_entries(self) -> list[LineProgramEntry]:
         """ Get the decoded entries for this line program. Return a list of
             LineProgramEntry objects.
             Note that this contains more information than absolutely required
@@ -127,12 +137,12 @@ class LineProgram:
 
     #------ PRIVATE ------#
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """
         return self.header[name]
 
-    def _decode_line_program(self):
+    def _decode_line_program(self) -> list[LineProgramEntry]:
         entries = []
         state = LineState(self.header['default_is_stmt'])
 
