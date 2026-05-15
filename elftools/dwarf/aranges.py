@@ -6,11 +6,20 @@
 # Dorothy Chen (dorothchen@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from typing import NamedTuple
+from __future__ import annotations
+
+from typing import IO, TYPE_CHECKING, NamedTuple
 
 from ..common.utils import struct_parse
 from bisect import bisect_right
 import math
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ..construct.core import Construct
+    from .structs import DWARFStructs
+
 
 # An entry in the aranges table;
 # begin_addr: The beginning address in the CU
@@ -36,7 +45,7 @@ class ARanges:
         structs:
             A DWARFStructs instance for parsing the data
     """
-    def __init__(self, stream, size, structs):
+    def __init__(self, stream: IO[bytes], size: int, structs: DWARFStructs) -> None:
         self.stream = stream
         self.size = size
         self.structs = structs
@@ -63,7 +72,7 @@ class ARanges:
 
 
     #------ PRIVATE ------#
-    def _get_entries(self, need_empty=False):
+    def _get_entries(self, need_empty: bool = False) -> list[ARangeEntry]:
         """ Populate self.entries with ARangeEntry tuples for each range of addresses
 
             Terminating null entries of CU blocks are not returned, unless
@@ -72,7 +81,7 @@ class ARanges:
             set to 0.
         """
         self.stream.seek(0)
-        entries = []
+        entries: list[ARangeEntry] = []
         offset = 0
 
         # one loop == one "set" == one CU
@@ -122,7 +131,7 @@ class ARanges:
 
         return entries
 
-    def _get_addr_size_struct(self, addr_header_value):
+    def _get_addr_size_struct(self, addr_header_value: int) -> Callable[[str], Construct]:
         """ Given this set's header value (int) for the address size,
             get the Construct representation of that size
         """

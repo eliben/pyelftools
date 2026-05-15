@@ -6,11 +6,19 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 from io import BytesIO
-from typing import Any, NamedTuple
+from typing import IO, TYPE_CHECKING, Any, NamedTuple
 
 from ..common.utils import struct_parse
 from ..common.exceptions import DWARFError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+
+    from ..construct.core import Construct
+    from .structs import DWARFStructs
 
 
 # DWARF expression opcodes. name -> opcode mapping
@@ -134,16 +142,16 @@ class DWARFExprParser:
     parse_expr can be called repeatedly - it's stateless.
     """
 
-    def __init__(self, structs):
+    def __init__(self, structs: DWARFStructs) -> None:
         self._dispatch_table = _init_dispatch_table(structs)
 
-    def parse_expr(self, expr):
+    def parse_expr(self, expr: bytes | Iterable[int]) -> list[DWARFExprOp]:
         """ Parses expr (bytes or a list of integers) into a list of DWARFExprOp.
 
         The list can potentially be nested.
         """
         stream = BytesIO(bytes(expr))
-        parsed = []
+        parsed: list[DWARFExprOp] = []
 
         while True:
             # Get the next opcode from the stream. If nothing is left in the
@@ -166,51 +174,56 @@ class DWARFExprParser:
         return parsed
 
 
-def _init_dispatch_table(structs):
+def _init_dispatch_table(structs: DWARFStructs) -> dict[int, Callable[[IO[bytes]], list[Any]]]:
     """Creates a dispatch table for parsing args of an op.
 
     Returns a dict mapping opcode to a function. The function accepts a stream
     and return a list of parsed arguments for the opcode from the stream;
     the stream is advanced by the function as needed.
     """
-    table = {}
-    def add(opcode_name, func):
+    table: dict[int, Callable[[IO[bytes]], list[Any]]] = {}
+    def add(opcode_name: str, func: Callable[[IO[bytes]], list[Any]]) -> None:
         table[DW_OP_name2opcode[opcode_name]] = func
 
-    def parse_noargs():
+    def parse_noargs() -> Callable[[IO[bytes]], list[None]]:
         return lambda stream: []
 
-    def parse_op_addr():
+    def parse_op_addr() -> Callable[[IO[bytes]], list[int]]:
         return lambda stream: [struct_parse(structs.the_Dwarf_target_addr,
                                             stream)]
 
-    def parse_arg_struct(arg_struct):
+    def parse_arg_struct(arg_struct: Construct) -> Callable[[IO[bytes]], list[Any]]:
         return lambda stream: [struct_parse(arg_struct, stream)]
 
-    def parse_arg_struct2(arg1_struct, arg2_struct):
+    def parse_arg_struct2(
+        arg1_struct: Construct,
+        arg2_struct: Construct,
+    ) -> Callable[[IO[bytes]], list[Any]]:
         return lambda stream: [struct_parse(arg1_struct, stream),
                                struct_parse(arg2_struct, stream)]
 
     # ULEB128, then an expression of that length
-    def parse_nestedexpr():
-        def parse(stream):
+    def parse_nestedexpr() -> Callable[[IO[bytes]], list[list[DWARFExprOp]]]:
+
+        def parse(stream: IO[bytes]) -> list[list[DWARFExprOp]]:
             size: int = struct_parse(structs.the_Dwarf_uleb128, stream)
             nested_expr_blob = stream.read(size)
             return [DWARFExprParser(structs).parse_expr(nested_expr_blob)]
         return parse
 
     # ULEB128, then a blob of that size
-    def parse_blob():
+    def parse_blob() -> Callable[[IO[bytes]], list[list[int]]]:
         return lambda stream: [list(stream.read(struct_parse(structs.the_Dwarf_uleb128, stream)))]
 
     # ULEB128 with datatype DIE offset, then byte, then a blob of that size
-    def parse_typedblob():
+    def parse_typedblob() -> Callable[[IO[bytes]], list[int | list[int]]]:
         return lambda stream: [struct_parse(structs.the_Dwarf_uleb128, stream), list(stream.read(struct_parse(structs.the_Dwarf_uint8, stream)))]
 
     # https://yurydelendik.github.io/webassembly-dwarf/
     # Byte, then variant: 0, 1, 2 => uleb128, 3 => uint32
-    def parse_wasmloc():
-        def parse(stream):
+    def parse_wasmloc() -> Callable[[IO[bytes]], list[int]]:
+
+        def parse(stream: IO[bytes]) -> list[int]:
             op: int = struct_parse(structs.the_Dwarf_uint8, stream)
             if 0 <= op <= 2:
                 return [op, struct_parse(structs.the_Dwarf_uleb128, stream)]

@@ -202,6 +202,7 @@ class DWARFStructs:
         self._create_gnu_debugaltlink()
 
     def _create_initial_length(self) -> None:
+
         def _InitialLength(name: str) -> _InitialLengthAdapter:
             # Adapts a Struct that parses forward a full initial length field.
             # Only if the first word is the continuation value, the second
@@ -212,6 +213,7 @@ class DWARFStructs:
                     If(lambda ctx: ctx.first == 0xFFFFFFFF,
                         self.Dwarf_uint64('second'),
                         elsevalue=None)))
+
         self.Dwarf_initial_length = _InitialLength
 
     def _create_leb128(self) -> None:
