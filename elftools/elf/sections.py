@@ -8,14 +8,24 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
+import struct
 import zlib
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
-from ..common.exceptions import ELFCompressionError
+from ..common.exceptions import ELFCompressionError, ELFParseError
 from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
+from ..construct.lib import Container
 from collections import defaultdict
+from collections.abc import Iterator
 from .constants import SH_FLAGS
+from .enums import (
+    ST_INFO_BIND_raw2name,
+    ST_INFO_TYPE_raw2name,
+    ST_VISIBILITY_raw2name,
+    ST_LOCAL_raw2name,
+    ST_SHNDX_raw2name,
+)
 from .notes import iter_notes
 from elftools.construct.lib.container import Container
 
@@ -24,6 +34,16 @@ if TYPE_CHECKING:
 
     from .elffile import ELFFile
     from .structs import ELFStructs
+
+# Fixed Elf_Sym layout per (elfclass, little_endian), matching the construct
+# definition in elftools.elf.structs. 32-bit: name, value, size, info, other,
+# shndx; 64-bit reorders info/other/shndx ahead of value/size.
+_ELF_SYM_STRUCT = {
+    (32, True): struct.Struct("<IIIBBH"),
+    (32, False): struct.Struct(">IIIBBH"),
+    (64, True): struct.Struct("<IBBHQQ"),
+    (64, False): struct.Struct(">IBBHQQ"),
+}
 
 
 class Section:
@@ -202,6 +222,12 @@ class SymbolTableSection(Section):
                 'Expected entry size of section %r to be > 0' % name)
         elf_assert(self['sh_size'] % self['sh_entsize'] == 0,
                 'Expected section size to be a multiple of entry size in section %r' % name)
+        # st_info / st_other each decode from a single byte, so there are at
+        # most 256 distinct sub-Containers per table. Interning them turns
+        # 2*N allocations into <=512 and drops 4*N enum lookups. Scoped to
+        # this section: parsed entries are read-only by contract.
+        self._st_info_cache: dict[int, Container] = {}
+        self._st_other_cache: dict[int, Container] = {}
 
     def num_symbols(self) -> int:
         """ Number of symbols in the table
@@ -211,15 +237,7 @@ class SymbolTableSection(Section):
     def get_symbol(self, n: int) -> Symbol:
         """ Get the symbol at index #n from the table (Symbol object)
         """
-        # Grab the symbol's entry from the stream
-        entry_offset = self['sh_offset'] + n * self['sh_entsize']
-        entry = struct_parse(
-            self.structs.Elf_Sym,
-            self.stream,
-            stream_pos=entry_offset)
-        # Find the symbol name in the associated string table
-        name = self.stringtable.get_string(entry['st_name'])
-        return Symbol(entry, name)
+        return self._symbols[n]
 
     def get_symbol_by_name(self, name: str) -> list[Symbol] | None:
         """ Get a symbol(s) by name. Return None if no symbol by the given name
@@ -238,8 +256,94 @@ class SymbolTableSection(Section):
     def iter_symbols(self) -> Iterator[Symbol]:
         """ Yield all the symbols in the table
         """
-        for i in range(self.num_symbols()):
-            yield self.get_symbol(i)
+        return iter(self._symbols)
+
+    @cached_property
+    def _symbols(self) -> list["Symbol"]:
+        return self._parse_symbols()
+
+    def _st_info(self, b: int) -> Container:
+        """Decoded (and interned) st_info Container for raw info byte ``b``."""
+        c = self._st_info_cache.get(b)
+        if c is None:
+            c = Container(
+                bind=ST_INFO_BIND_raw2name.get(b >> 4, b >> 4),
+                type=ST_INFO_TYPE_raw2name.get(b & 0x0F, b & 0x0F),
+            )
+            self._st_info_cache[b] = c
+        return c
+
+    def _st_other(self, b: int) -> Container:
+        """Decoded (and interned) st_other Container for raw other byte ``b``."""
+        c = self._st_other_cache.get(b)
+        if c is None:
+            c = Container(
+                local=ST_LOCAL_raw2name.get((b >> 5) & 0x07, (b >> 5) & 0x07),
+                visibility=ST_VISIBILITY_raw2name.get(b & 0x07, b & 0x07),
+            )
+            self._st_other_cache[b] = c
+        return c
+
+    def _assemble_symbol(self, fields: tuple[int, ...], name: str) -> "Symbol":
+        """Build a Symbol from a struct-unpacked Elf_Sym tuple, decoding the
+        enum/bitfield members exactly as the construct definition does so
+        the resulting Symbol is indistinguishable from the slow path.
+        """
+        if self.structs.elfclass == 32:
+            st_name, st_value, st_size, st_info, st_other, st_shndx = fields
+        else:
+            st_name, st_info, st_other, st_shndx, st_value, st_size = fields
+
+        entry = Container.__new__(Container)
+        entry.__dict__ = {
+            "st_name": st_name,
+            "st_value": st_value,
+            "st_size": st_size,
+            "st_info": self._st_info(st_info),
+            "st_other": self._st_other(st_other),
+            "st_shndx": ST_SHNDX_raw2name.get(st_shndx, st_shndx),
+        }
+
+        return Symbol(entry, name)
+
+    def _parse_symbols(self) -> list["Symbol"]:
+        """Parse the whole symbol table at once.
+
+        The table is a fixed-stride array of trivial fixed-width fields, so
+        a single bulk read + struct decode replaces ~N recursive construct
+        parses, and slicing names out of one string-table read replaces ~N
+        per-name stream cstring parses. This is the dominant cost when
+        loading a binary with many symbols.
+        """
+        num = self.num_symbols()
+        sfmt = _ELF_SYM_STRUCT[(self.structs.elfclass, self.structs.little_endian)]
+        entsize = self["sh_entsize"]
+
+        self.stream.seek(self["sh_offset"])
+        data = self.stream.read(num * entsize)
+        if len(data) != num * entsize:
+            raise ELFParseError("Truncated symbol table %r" % self.name)
+
+        strtab = self.stringtable
+        strtab.stream.seek(strtab["sh_offset"])
+        strdata = strtab.stream.read(strtab["sh_size"])
+        symbols = []
+
+        try:
+            for fields in sfmt.iter_unpack(data):
+                st_name = fields[0]
+
+                if st_name:
+                    name = strdata[st_name : strdata.find(b"\x00", st_name)].decode(
+                        "utf-8", errors="replace"
+                    )
+                else:
+                    name = ""
+
+                symbols.append(self._assemble_symbol(fields, name))
+        except struct.error as e:
+            raise ELFParseError(str(e))
+        return symbols
 
 
 class Symbol:
