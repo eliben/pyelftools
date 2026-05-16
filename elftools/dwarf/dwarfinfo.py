@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 from bisect import bisect_right
+from functools import cached_property
 from typing import IO, NamedTuple
 
 from ..construct.lib.container import Container
@@ -142,9 +143,6 @@ class DWARFInfo:
         self._cu_cache = []
         self._cu_offsets_map: list[int] = []
 
-        # DWARF v4 type units by sig8 - ordered dict created when needed
-        self._type_units_by_sig = None
-
     @property
     def has_debug_info(self) -> bool:
         """ Return whether this contains debug information.
@@ -203,7 +201,6 @@ class DWARFInfo:
             In DWARF v4 type units are identified by their appearance in the
             .debug_types section.
         """
-        self._parse_debug_types()
         tu = self._type_units_by_sig.get(sig8)
         if tu is None:
             raise KeyError("Signature %016x not found in .debug_types" % sig8)
@@ -273,7 +270,6 @@ class DWARFInfo:
             .debug_types section.
 
         """
-        self._parse_debug_types()
         tu = self._type_units_by_sig.get(sig8)
         if tu is None:
             raise KeyError("Signature %016x not found in .debug_types" % sig8)
@@ -505,31 +501,29 @@ class DWARFInfo:
 
             yield tu
 
-    def _parse_debug_types(self):
+    @cached_property
+    def _type_units_by_sig(self) -> dict[int, TypeUnit]:
         """ Check if the .debug_types section is previously parsed. If not,
             parse all TUs and store them in an ordered dict using their unique
             64-bit signature as the key.
 
             See .get_TU_by_sig8().
         """
-        if self._type_units_by_sig is not None:
-            return
-        self._type_units_by_sig = {}
-
         if self.debug_types_sec is None:
-            return
+            return {}
 
         # Parse all the Type Units in the types section for access by sig8
+        units = {}
         offset = 0
         while offset < self.debug_types_sec.size:
             tu = self._parse_TU_at_offset(offset)
             # Compute the offset of the next TU in the section. The unit_length
             # field of the TU header contains its size not including the length
             # field itself.
-            offset = (offset +
-                      tu['unit_length'] +
-                      tu.structs.initial_length_field_size())
-            self._type_units_by_sig[tu['signature']] = tu
+            offset += tu['unit_length'] + tu.structs.initial_length_field_size()
+            units[tu['signature']] = tu
+
+        return units
 
     def _cached_CU_at_offset(self, offset):
         """ Return the CU with unit header at the given offset into the

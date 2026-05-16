@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import itertools
+from functools import cached_property
 
 from collections import defaultdict
 from .hash import ELFHashTable, GNUHashTable
@@ -261,65 +262,61 @@ class DynamicSegment(Segment, Dynamic):
         Dynamic.__init__(self, stream, elffile, stringtable, self['p_offset'],
              self['p_filesz'] == 0)
         self._symbol_size = self.elfstructs.Elf_Sym.sizeof()
-        self._num_symbols: int | None = None
-        self._symbol_name_map: dict[str, list[int]] | None = None
 
     def num_symbols(self) -> int:
         """ Number of symbols in the table recovered from DT_SYMTAB
         """
-        if self._num_symbols is not None:
-            return self._num_symbols
+        return self._num_symbols
 
+    @cached_property
+    def _num_symbols(self) -> int:
         # Check if a DT_GNU_HASH tag exists and recover the number of symbols
         # from the corresponding hash table
         _, gnu_hash_offset = self.get_table_offset('DT_GNU_HASH')
         if gnu_hash_offset is not None:
             hash_section = GNUHashTable(self.elffile, gnu_hash_offset, self)
-            self._num_symbols = hash_section.get_number_of_symbols()
+            return hash_section.get_number_of_symbols()
 
         # If DT_GNU_HASH did not exist, maybe we can use DT_HASH
-        if self._num_symbols is None:
-            _, hash_offset = self.get_table_offset('DT_HASH')
-            if hash_offset is not None:
-                # Get the hash table from the DT_HASH offset
-                hash_section = ELFHashTable(self.elffile, hash_offset, None, self)
-                self._num_symbols = hash_section.get_number_of_symbols()
+        _, hash_offset = self.get_table_offset('DT_HASH')
+        if hash_offset is not None:
+            # Get the hash table from the DT_HASH offset
+            hash_section = ELFHashTable(self.elffile, hash_offset, None, self)
+            return hash_section.get_number_of_symbols()
 
-        if self._num_symbols is None:
-            # Find closest higher pointer than tab_ptr. We'll use that to mark
-            # the end of the symbol table.
-            tab_ptr, tab_offset = self.get_table_offset('DT_SYMTAB')
-            if tab_ptr is None or tab_offset is None:
-                raise ELFError('Segment does not contain DT_SYMTAB.')
+        # Find closest higher pointer than tab_ptr. We'll use that to mark
+        # the end of the symbol table.
+        tab_ptr, tab_offset = self.get_table_offset('DT_SYMTAB')
+        if tab_ptr is None or tab_offset is None:
+            raise ELFError('Segment does not contain DT_SYMTAB.')
 
-            nearest_ptr: int | None = None
-            for tag in self.iter_tags():
-                tag_ptr = tag['d_ptr']
-                if tag['d_tag'] == 'DT_SYMENT':
-                    if self._symbol_size != tag['d_val']:
-                        # DT_SYMENT is the size of one symbol entry. It must be
-                        # the same as returned by Elf_Sym.sizeof.
-                        raise ELFError('DT_SYMENT (%d) != Elf_Sym (%d).' %
-                                       (tag['d_val'], self._symbol_size))
-                if (tag_ptr > tab_ptr and
-                        (nearest_ptr is None or nearest_ptr > tag_ptr)):
-                    nearest_ptr = tag_ptr
+        nearest_ptr: int | None = None
+        for tag in self.iter_tags():
+            tag_ptr = tag['d_ptr']
+            if tag['d_tag'] == 'DT_SYMENT':
+                if self._symbol_size != tag['d_val']:
+                    # DT_SYMENT is the size of one symbol entry. It must be
+                    # the same as returned by Elf_Sym.sizeof.
+                    raise ELFError('DT_SYMENT (%d) != Elf_Sym (%d).' %
+                                   (tag['d_val'], self._symbol_size))
+            if (tag_ptr > tab_ptr and
+                    (nearest_ptr is None or nearest_ptr > tag_ptr)):
+                nearest_ptr = tag_ptr
 
-            if nearest_ptr is None:
-                # Use the end of last segment that contains DT_SYMTAB (or ends on it)
-                for segment in self.elffile.iter_segments(type='PT_LOAD'):
-                    start = segment['p_vaddr']
-                    end = start + segment['p_filesz']
-                    if start <= tab_ptr <= end:
-                        nearest_ptr = end
+        if nearest_ptr is not None:
+            return (nearest_ptr - tab_ptr) // self._symbol_size
 
-            if nearest_ptr is not None:
-                self._num_symbols = (nearest_ptr - tab_ptr) // self._symbol_size
+        # Use the end of last segment that contains DT_SYMTAB (or ends on it)
+        for segment in self.elffile.iter_segments(type='PT_LOAD'):
+            start = segment['p_vaddr']
+            end = start + segment['p_filesz']
+            if start <= tab_ptr <= end:
+                nearest_ptr = end
 
-        if self._num_symbols is None:
-            raise ELFError('Cannot determine the end of DT_SYMTAB.')
+        if nearest_ptr is not None:
+            return (nearest_ptr - tab_ptr) // self._symbol_size
 
-        return self._num_symbols
+        raise ELFError('Cannot determine the end of DT_SYMTAB.')
 
     def get_symbol(self, index):
         """ Get the symbol at index #index from the table (Symbol object)
@@ -342,15 +339,15 @@ class DynamicSegment(Segment, Dynamic):
         """ Get a symbol(s) by name. Return None if no symbol by the given name
             exists.
         """
-        # The first time this method is called, construct a name to number
-        # mapping
-        #
-        if self._symbol_name_map is None:
-            self._symbol_name_map = defaultdict(list)
-            for i, sym in enumerate(self.iter_symbols()):
-                self._symbol_name_map[sym.name].append(i)
         symnums = self._symbol_name_map.get(name)
         return [self.get_symbol(i) for i in symnums] if symnums else None
+
+    @cached_property
+    def _symbol_name_map(self) -> dict[str, list[int]]:
+        smap = defaultdict(list)
+        for i, sym in enumerate(self.iter_symbols()):
+            smap[sym.name].append(i)
+        return smap
 
     def iter_symbols(self):
         """ Yield all symbols in this dynamic segment. The symbols are usually

@@ -41,8 +41,6 @@ class TestGetSectionIndex(unittest.TestCase):
                                'simple_gcc.elf.arm'), 'rb') as f:
             elf = ELFFile(f)
 
-            elf._section_name_map = None
-
             # Find the symbol table.
             data_section_index = elf.get_section_index('.data')
             self.assertIsNotNone(data_section_index)

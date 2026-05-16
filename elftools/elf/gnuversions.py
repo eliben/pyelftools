@@ -6,6 +6,8 @@
 # Yann Rouillard (yann@pleiades.fr.eu.org)
 # This code is in the public domain
 #------------------------------------------------------------------------------
+from functools import cached_property
+
 from ..common.utils import struct_parse, elf_assert
 from .sections import Section, Symbol
 
@@ -132,22 +134,21 @@ class GNUVerNeedSection(GNUVersionSection):
         super().__init__(
                 header, name, elffile, stringtable, 'vn',
                 elffile.structs.Elf_Verneed, elffile.structs.Elf_Vernaux)
-        self._has_indexes: bool | None = None
 
     def has_indexes(self) -> bool:
         """ Return True if at least one version definition entry has an index
             that is stored in the vna_other field.
             This information is used for symbol versioning
         """
-        if self._has_indexes is None:
-            self._has_indexes = False
-            for _, vernaux_iter in self.iter_versions():
-                for vernaux in vernaux_iter:
-                    if vernaux['vna_other']:
-                        self._has_indexes = True
-                        break
-
         return self._has_indexes
+
+    @cached_property
+    def _has_indexes(self) -> bool:
+        return any(
+            vernaux['vna_other']
+            for _, vernaux_iter in self.iter_versions()
+            for vernaux in vernaux_iter
+        )
 
     def iter_versions(self):
         for verneed, vernaux in super().iter_versions():

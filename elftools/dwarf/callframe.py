@@ -11,6 +11,7 @@ from __future__ import annotations
 import copy
 import os
 from collections.abc import Iterator
+from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, Literal, NamedTuple, cast
 from warnings import warn
 
@@ -534,7 +535,6 @@ class CFIEntry:
         self.instructions = instructions
         self.offset = offset
         self.cie = cie
-        self._decoded_table: DecodedCallFrameTable | None = None
         self.augmentation_dict = augmentation_dict or {}
         self.augmentation_bytes = augmentation_bytes
 
@@ -543,15 +543,14 @@ class CFIEntry:
             DecodedCallFrameTable object representing it. See the documentation
             of that class to understand how to interpret the decoded table.
         """
-        if self._decoded_table is None:
-            self._decoded_table = self._decode_CFI_table()
-        return self._decoded_table
+        return self._decode_CFI_table
 
     def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """
         return self.header[name]
 
+    @cached_property
     def _decode_CFI_table(self) -> DecodedCallFrameTable:
         """ Decode the instructions contained in the given CFI entry and return
             a DecodedCallFrameTable.
