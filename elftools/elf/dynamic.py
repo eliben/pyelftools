@@ -127,16 +127,17 @@ class Dynamic:
     def get_table_offset(self, tag_name: str) -> tuple[int | None, int | None]:
         """ Return the virtual address and file offset of a dynamic table.
         """
-        ptr: int | None = None
-        for tag in self._iter_tags(type=tag_name):
-            ptr = tag['d_ptr']
-            break
+        try:
+            ptr: int = next(
+                tag['d_ptr']
+                for tag in self._iter_tags(type=tag_name)
+            )
+        except StopIteration:
+            return (None, None)
 
         # If we found a virtual address, locate the offset in the file
         # by using the program headers.
-        offset: int | None = None
-        if ptr:
-            offset = next(self.elffile.address_offsets(ptr), None)
+        offset = next(self.elffile.address_offsets(ptr), None)
 
         return ptr, offset
 
