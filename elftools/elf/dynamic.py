@@ -357,4 +357,4 @@ class DynamicSegment(Segment, Dynamic):
             This method reads from the mandatory dynamic tag DT_SYMTAB.
         """
         for i in range(self.num_symbols()):
-            yield(self.get_symbol(i))
+            yield self.get_symbol(i)
