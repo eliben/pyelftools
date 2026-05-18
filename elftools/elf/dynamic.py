@@ -311,8 +311,8 @@ class DynamicSegment(Segment, Dynamic):
                             tab_ptr <= (segment['p_vaddr'] + segment['p_filesz'])):
                         nearest_ptr = segment['p_vaddr'] + segment['p_filesz']
 
-            end_ptr = nearest_ptr
-            self._num_symbols = (end_ptr - tab_ptr) // self._symbol_size
+            if nearest_ptr is not None:
+                self._num_symbols = (nearest_ptr - tab_ptr) // self._symbol_size
 
         if self._num_symbols is None:
             raise ELFError('Cannot determine the end of DT_SYMTAB.')
