@@ -291,6 +291,7 @@ class DynamicSegment(Segment, Dynamic):
             tab_ptr, tab_offset = self.get_table_offset('DT_SYMTAB')
             if tab_ptr is None or tab_offset is None:
                 raise ELFError('Segment does not contain DT_SYMTAB.')
+
             nearest_ptr: int | None = None
             for tag in self.iter_tags():
                 tag_ptr = tag['d_ptr']
@@ -305,14 +306,15 @@ class DynamicSegment(Segment, Dynamic):
                     nearest_ptr = tag_ptr
 
             if nearest_ptr is None:
-                # Use the end of segment that contains DT_SYMTAB.
-                for segment in self.elffile.iter_segments():
-                    if (segment['p_vaddr'] <= tab_ptr and
-                            tab_ptr <= (segment['p_vaddr'] + segment['p_filesz'])):
-                        nearest_ptr = segment['p_vaddr'] + segment['p_filesz']
+                # Use the end of last segment that contains DT_SYMTAB (or ends on it)
+                for segment in self.elffile.iter_segments(type='PT_LOAD'):
+                    start = segment['p_vaddr']
+                    end = start + segment['p_filesz']
+                    if start <= tab_ptr <= end:
+                        nearest_ptr = end
 
-            end_ptr = nearest_ptr
-            self._num_symbols = (end_ptr - tab_ptr) // self._symbol_size
+            if nearest_ptr is not None:
+                self._num_symbols = (nearest_ptr - tab_ptr) // self._symbol_size
 
         if self._num_symbols is None:
             raise ELFError('Cannot determine the end of DT_SYMTAB.')
@@ -357,4 +359,4 @@ class DynamicSegment(Segment, Dynamic):
             This method reads from the mandatory dynamic tag DT_SYMTAB.
         """
         for i in range(self.num_symbols()):
-            yield(self.get_symbol(i))
+            yield self.get_symbol(i)
