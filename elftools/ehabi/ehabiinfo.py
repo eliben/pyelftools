@@ -8,6 +8,7 @@
 # -------------------------------------------------------------------------------
 from __future__ import annotations
 
+from functools import cached_property
 from typing import TYPE_CHECKING
 
 from ..common.utils import struct_parse
@@ -36,7 +37,6 @@ class EHABIInfo:
     def __init__(self, arm_idx_section: Section, little_endian: bool) -> None:
         self._arm_idx_section = arm_idx_section
         self._struct = EHABIStructs(little_endian)
-        self._num_entry: int | None = None
 
     def section_name(self) -> str:
         return self._arm_idx_section.name
@@ -47,9 +47,11 @@ class EHABIInfo:
     def num_entry(self) -> int:
         """ Number of exception handler entry in the section.
         """
-        if self._num_entry is None:
-            self._num_entry = self._arm_idx_section['sh_size'] // EHABI_INDEX_ENTRY_SIZE
         return self._num_entry
+
+    @cached_property
+    def _num_entry(self) -> int:
+        return self._arm_idx_section['sh_size'] // EHABI_INDEX_ENTRY_SIZE
 
     def get_entry(self, n: int) -> EHABIEntry:
         """ Get the exception handler entry at index #n. (EHABIEntry object or a subclass)

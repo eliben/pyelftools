@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import copy
+from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, NamedTuple
 
 from ..common.utils import struct_parse, dwarf_assert
@@ -120,7 +121,6 @@ class LineProgram:
         self.structs = structs
         self.program_start_offset = program_start_offset
         self.program_end_offset = program_end_offset
-        self._decoded_entries: list[LineProgramEntry] | None = None
 
     def get_entries(self) -> list[LineProgramEntry]:
         """ Get the decoded entries for this line program. Return a list of
@@ -131,9 +131,7 @@ class LineProgram:
             state. The extra information is mainly for the purposes of display
             with readelf and debugging.
         """
-        if self._decoded_entries is None:
-            self._decoded_entries = self._decode_line_program()
-        return self._decoded_entries
+        return self._decode_line_program
 
     #------ PRIVATE ------#
 
@@ -142,6 +140,7 @@ class LineProgram:
         """
         return self.header[name]
 
+    @cached_property
     def _decode_line_program(self) -> list[LineProgramEntry]:
         entries = []
         state = LineState(self.header['default_is_stmt'])

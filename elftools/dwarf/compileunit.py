@@ -6,9 +6,17 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 from bisect import bisect_right
+from functools import cached_property
+from typing import TYPE_CHECKING
+
 from .die import DIE
 from ..common.utils import dwarf_assert
+
+if TYPE_CHECKING:
+    from .abbrevtable import AbbrevTable
 
 
 class CompileUnit:
@@ -51,10 +59,6 @@ class CompileUnit:
         self.cu_offset = cu_offset
         self.cu_die_offset = cu_die_offset
 
-        # The abbreviation table for this CU. Filled lazily when DIEs are
-        # requested.
-        self._abbrev_table = None
-
         # A list of DIEs belonging to this CU.
         # This list is lazily constructed as DIEs are iterated over.
         self._dielist = []
@@ -74,10 +78,11 @@ class CompileUnit:
     def get_abbrev_table(self):
         """ Get the abbreviation table (AbbrevTable object) for this CU
         """
-        if self._abbrev_table is None:
-            self._abbrev_table = self.dwarfinfo.get_abbrev_table(
-                self['debug_abbrev_offset'])
         return self._abbrev_table
+
+    @cached_property
+    def _abbrev_table(self) -> AbbrevTable:
+        return self.dwarfinfo.get_abbrev_table(self['debug_abbrev_offset'])
 
     def get_top_DIE(self):
         """ Get the top DIE (which is either a DW_TAG_compile_unit or

@@ -6,6 +6,7 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from functools import cached_property
 from typing import Callable, NamedTuple
 
 from ..common.exceptions import ELFRelocationError
@@ -124,7 +125,6 @@ class RelrRelocationTable:
         self._size = size
         self._relr_struct = self._elffile.structs.Elf_Relr
         self._entrysize = self._relr_struct.sizeof()
-        self._cached_relocations = None
 
         elf_assert(self._entrysize == entrysize,
             'Expected RELR entry size to be %s, got %s' % (
@@ -182,16 +182,16 @@ class RelrRelocationTable:
     def num_relocations(self) -> int:
         """ Number of relocations in the section
         """
-        if self._cached_relocations is None:
-            self._cached_relocations = list(self.iter_relocations())
         return len(self._cached_relocations)
 
     def get_relocation(self, n):
         """ Get the relocation at index #n from the section (Relocation object)
         """
-        if self._cached_relocations is None:
-            self._cached_relocations = list(self.iter_relocations())
         return self._cached_relocations[n]
+
+    @cached_property
+    def _cached_relocations(self) -> list[Relocation]:
+        return list(self.iter_relocations())
 
 
 class RelrRelocationSection(Section, RelrRelocationTable):

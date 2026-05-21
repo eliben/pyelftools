@@ -6,13 +6,14 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from functools import cached_property
+import zlib
+
 from ..common.exceptions import ELFCompressionError
 from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
 from collections import defaultdict
 from .constants import SH_FLAGS
 from .notes import iter_notes
-
-import zlib
 
 
 class Section:
@@ -176,7 +177,6 @@ class SymbolTableSection(Section):
                 'Expected entry size of section %r to be > 0' % name)
         elf_assert(self['sh_size'] % self['sh_entsize'] == 0,
                 'Expected section size to be a multiple of entry size in section %r' % name)
-        self._symbol_name_map: dict[str, list[int]] | None = None
 
     def num_symbols(self) -> int:
         """ Number of symbols in the table
@@ -200,15 +200,15 @@ class SymbolTableSection(Section):
         """ Get a symbol(s) by name. Return None if no symbol by the given name
             exists.
         """
-        # The first time this method is called, construct a name to number
-        # mapping
-        #
-        if self._symbol_name_map is None:
-            self._symbol_name_map = defaultdict(list)
-            for i, sym in enumerate(self.iter_symbols()):
-                self._symbol_name_map[sym.name].append(i)
         symnums = self._symbol_name_map.get(name)
         return [self.get_symbol(i) for i in symnums] if symnums else None
+
+    @cached_property
+    def _symbol_name_map(self) -> dict[str, list[int]]:
+        smap = defaultdict(list)
+        for i, sym in enumerate(self.iter_symbols()):
+            smap[sym.name].append(i)
+        return smap
 
     def iter_symbols(self):
         """ Yield all the symbols in the table

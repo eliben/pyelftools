@@ -7,10 +7,11 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import io
-from io import BytesIO
 import os
 import struct
 import zlib
+from functools import cached_property
+from io import BytesIO
 
 from ..common.exceptions import ELFError, ELFParseError
 from ..common.utils import struct_parse, elf_assert
@@ -84,8 +85,6 @@ class ELFFile:
         self.stream.seek(0)
         self.e_ident_raw = self.stream.read(16)
 
-        self._section_header_stringtable = None # Lazy load
-        self._section_name_map: dict[str, int] | None = None
         self.stream_loader = stream_loader
 
     @classmethod
@@ -181,11 +180,6 @@ class ELFFile:
         """ Get a section from the file, by name. Return None if no such
             section exists.
         """
-        # The first time this method is called, construct a name to number
-        # mapping
-        #
-        if self._section_name_map is None:
-            self._make_section_name_map()
         secnum = self._section_name_map.get(name, None)
         return None if secnum is None else self.get_section(secnum)
 
@@ -193,18 +187,11 @@ class ELFFile:
         """ Gets the index of the section by name. Return None if no such
             section name exists.
         """
-        # The first time this method is called, construct a name to number
-        # mapping
-        #
-        if self._section_name_map is None:
-            self._make_section_name_map()
         return self._section_name_map.get(section_name, None)
 
     def has_section(self, section_name: str) -> bool:
         """ Section existence check by name, without the overhead of parsing if found.
         """
-        if self._section_name_map is None:
-            self._make_section_name_map()
         return section_name in self._section_name_map
 
     def iter_sections(self, type=None):
@@ -713,11 +700,6 @@ class ELFFile:
         """ Given a section header, find this section's name in the file's
             string table
         """
-        if self._section_header_stringtable is None: # Try to lazy load
-            self._section_header_stringtable = self._get_section_header_stringtable()
-            if self._section_header_stringtable is None: # If absent (or badly malformed)
-                raise ELFParseError("String Table not found")
-
         name_offset = section_header['sh_name']
         return self._section_header_stringtable.get_string(name_offset)
 
@@ -764,10 +746,12 @@ class ELFFile:
         else:
             return Section(section_header, name, self)
 
-    def _make_section_name_map(self) -> None:
-        self._section_name_map = {}
-        for i, sec in enumerate(self.iter_sections()):
-            self._section_name_map[sec.name] = i
+    @cached_property
+    def _section_name_map(self) -> dict[str, int]:
+        return {
+            sec.name: i
+            for i, sec in enumerate(self.iter_sections())
+        }
 
     def _make_symbol_table_section(self, section_header, name):
         """ Create a SymbolTableSection
@@ -849,7 +833,8 @@ class ELFFile:
             self.stream,
             stream_pos=self._segment_offset(n))
 
-    def _get_section_header_stringtable(self):
+    @cached_property
+    def _section_header_stringtable(self) -> StringTableSection:
         """ Get the string table section corresponding to the section header
             table.
         """
@@ -857,7 +842,7 @@ class ELFFile:
 
         stringtable_section_header = self._get_section_header(stringtable_section_num)
         if stringtable_section_header is None:
-            return None
+            raise ELFParseError("String Table not found")
 
         return StringTableSection(
                 header=stringtable_section_header,

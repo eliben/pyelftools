@@ -7,12 +7,16 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 import argparse
 import os
 import sys
 import re
 import traceback
 import itertools
+from functools import cached_property
+from typing import TYPE_CHECKING, TypedDict
 
 # For running from development directory. It should take precedence over the
 # installed pyelftools.
@@ -59,6 +63,17 @@ from elftools.dwarf.ranges import RangeEntry, BaseAddressEntry as RangeBaseAddre
 from elftools.dwarf.callframe import CIE, FDE, ZERO
 from elftools.ehabi.ehabiinfo import CorruptEHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry
 from elftools.dwarf.enums import ENUM_DW_UT
+
+if TYPE_CHECKING:
+    from elftools.construct.lib.container import Container
+    from elftools.dwarf.dwarfinfo import DWARFInfo
+
+    class VersionInfo(TypedDict):
+        versym: GNUVerSymSection | None
+        verdef: GNUVerDefSection | None
+        verneed: GNUVerNeedSection | None
+        type: str | None
+
 
 def _get_cu_base(cu):
     top_die = cu.get_top_DIE()
@@ -107,13 +122,6 @@ class ReadElf:
         """
         self.elffile = ELFFile(file)
         self.output = output
-
-        # Lazily initialized if a debug dump is requested
-        self._dwarfinfo = None
-
-        self._versioninfo = None
-
-        self._shndx_sections = None
 
     def display_file_header(self) -> None:
         """ Display the ELF file header
@@ -428,8 +436,6 @@ class ReadElf:
     def display_symbol_tables(self) -> None:
         """ Display the symbol tables contained in the file
         """
-        self._init_versioninfo()
-
         symbol_tables = [(idx, s) for idx, s in enumerate(self.elffile.iter_sections())
                          if isinstance(s, SymbolTableSection)]
 
@@ -694,8 +700,6 @@ class ReadElf:
     def display_version_info(self) -> None:
         """ Display the version info contained in the file
         """
-        self._init_versioninfo()
-
         if not self._versioninfo['type']:
             self._emitline("\nNo version information found in this file.")
             return
@@ -898,7 +902,6 @@ class ReadElf:
     def display_debug_dump(self, dump_what: str) -> None:
         """ Dump a DWARF section
         """
-        self._init_dwarfinfo()
         if self._dwarfinfo is None:
             return
 
@@ -996,39 +999,36 @@ class ReadElf:
             )
         )
 
-    def _init_versioninfo(self) -> None:
+    @cached_property
+    def _versioninfo(self) -> VersionInfo:
         """ Search and initialize informations about version related sections
             and the kind of versioning used (GNU or Solaris).
         """
-        if self._versioninfo is not None:
-            return
-
-        self._versioninfo = {'versym': None, 'verdef': None,
+        info = {'versym': None, 'verdef': None,
                              'verneed': None, 'type': None}
 
         for section in self.elffile.iter_sections():
             if isinstance(section, GNUVerSymSection):
-                self._versioninfo['versym'] = section
+                info['versym'] = section
             elif isinstance(section, GNUVerDefSection):
-                self._versioninfo['verdef'] = section
+                info['verdef'] = section
             elif isinstance(section, GNUVerNeedSection):
-                self._versioninfo['verneed'] = section
+                info['verneed'] = section
             elif isinstance(section, DynamicSection):
                 for tag in section.iter_tags():
                     if tag['d_tag'] == 'DT_VERSYM':
-                        self._versioninfo['type'] = 'GNU'
+                        info['type'] = 'GNU'
                         break
 
-        if not self._versioninfo['type'] and (
-                self._versioninfo['verneed'] or self._versioninfo['verdef']):
-            self._versioninfo['type'] = 'Solaris'
+        if not info['type'] and (info['verneed'] or info['verdef']):
+            info['type'] = 'Solaris'
+
+        return info
 
     def _symbol_version(self, nsym):
         """ Return a dict containing information on the
             or None if no version information is available
         """
-        self._init_versioninfo()
-
         symbol_version = dict.fromkeys(('index', 'name', 'filename', 'hidden'))
 
         if (not self._versioninfo['versym'] or
@@ -1084,12 +1084,15 @@ class ReadElf:
         if symbol_shndx != SHN_INDICES.SHN_XINDEX:
             return symbol_shndx
 
-        # Check for or lazily construct index section mapping (symbol table
-        # index -> corresponding symbol table index section object)
-        if self._shndx_sections is None:
-            self._shndx_sections = {sec.symboltable: sec for sec in self.elffile.iter_sections()
-                                    if isinstance(sec, SymbolTableIndexSection)}
         return self._shndx_sections[symtab_index].get_section_index(symbol_index)
+
+    @cached_property
+    def _shndx_sections(self) -> dict[Container, SymbolTableIndexSection]:
+        return  {
+            sec.symboltable: sec
+            for sec in self.elffile.iter_sections()
+            if isinstance(sec, SymbolTableIndexSection)
+        }
 
     def _note_relocs_for_section(self, section):
         """ If there are relocation sections pointing to the givne section,
@@ -1102,18 +1105,12 @@ class ReadElf:
                     self._emitline('  Note: This section has relocations against it, but these have NOT been applied to this dump.')
                     return
 
-    def _init_dwarfinfo(self) -> None:
-        """ Initialize the DWARF info contained in the file and assign it to
-            self._dwarfinfo.
+    @cached_property
+    def _dwarfinfo(self) -> DWARFInfo | None:
+        """ Initialize the DWARF info contained in the file.
             Leave self._dwarfinfo at None if no DWARF info was found in the file
         """
-        if self._dwarfinfo is not None:
-            return
-
-        if self.elffile.has_dwarf_info():
-            self._dwarfinfo = self.elffile.get_dwarf_info()
-        else:
-            self._dwarfinfo = None
+        return self.elffile.get_dwarf_info() if self.elffile.has_dwarf_info() else None
 
     def _dump_debug_info(self) -> None:
         """ Dump the debugging info section.

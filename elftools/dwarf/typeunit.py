@@ -6,9 +6,17 @@
 # Dinkar Khandalekar (contact@dinkar.dev)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 from bisect import bisect_right
+from functools import cached_property
+from typing import TYPE_CHECKING
+
 from .die import DIE
 from ..common.utils import dwarf_assert
+
+if TYPE_CHECKING:
+    from .abbrevtable import AbbrevTable
 
 
 class TypeUnit:
@@ -56,10 +64,6 @@ class TypeUnit:
         self.tu_offset = tu_offset
         self.tu_die_offset = tu_die_offset
 
-        # The abbreviation table for this TU. Filled lazily when DIEs are
-        # requested.
-        self._abbrev_table = None
-
         # A list of DIEs belonging to this TU.
         # This list is lazily constructed as DIEs are iterated over.
         self._dielist = []
@@ -91,10 +95,11 @@ class TypeUnit:
     def get_abbrev_table(self):
         """ Get the abbreviation table (AbbrevTable object) for this TU
         """
-        if self._abbrev_table is None:
-            self._abbrev_table = self.dwarfinfo.get_abbrev_table(
-                self['debug_abbrev_offset'])
         return self._abbrev_table
+
+    @cached_property
+    def _abbrev_table(self) -> AbbrevTable:
+        return self.dwarfinfo.get_abbrev_table(self['debug_abbrev_offset'])
 
     def get_top_DIE(self):
         """ Get the top DIE (which is DW_TAG_type_unit entry) of this TU
