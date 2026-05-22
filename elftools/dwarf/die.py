@@ -6,14 +6,22 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 import os
-from typing import Any, NamedTuple
+from typing import IO, TYPE_CHECKING, Any, NamedTuple
 
 from ..common.exceptions import DWARFError, ELFParseError
 from ..common.utils import bytes2str, struct_parse
 from .enums import DW_FORM_raw2name
 from .dwarf_util import _resolve_via_offset_table, _get_base_offset
 from ..construct import ConstructError
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from .compileunit import CompileUnit
+    from .typeunit import TypeUnit
 
 
 # AttributeValue - describes an attribute value in the DIE:
@@ -78,7 +86,7 @@ class DIE:
 
         See also the public methods.
     """
-    def __init__(self, cu, stream, offset):
+    def __init__(self, cu: CompileUnit | TypeUnit, stream: IO[bytes], offset: int) -> None:
         """ cu:
                 CompileUnit object this DIE belongs to. Used to obtain context
                 information (structs, abbrev table, etc.)
@@ -98,8 +106,8 @@ class DIE:
         self.size = 0
         # Null DIE terminator. It can be used to obtain offset range occupied
         # by this DIE including its whole subtree.
-        self._terminator = None
-        self._parent = None
+        self._terminator: DIE | None = None
+        self._parent: DIE | None = None
 
         self._parse_DIE()
 
@@ -108,7 +116,7 @@ class DIE:
         """
         return self.tag is None
 
-    def get_DIE_from_attribute(self, name):
+    def get_DIE_from_attribute(self, name: str) -> DIE:
         """ Return the DIE referenced by the named attribute of this DIE.
             The attribute must be in the reference attribute class.
 
@@ -132,7 +140,7 @@ class DIE:
         else:
             raise DWARFError('%s is not a reference class form attribute' % attr)
 
-    def get_parent(self):
+    def get_parent(self) -> DIE | None:
         """ Return the parent DIE of this DIE, or None if the DIE has no
             parent (i.e. is a top-level DIE).
         """
@@ -154,12 +162,12 @@ class DIE:
         fname = bytes2str(fname_attr.value) if fname_attr else ''
         return os.path.join(comp_dir, fname)
 
-    def iter_children(self):
+    def iter_children(self) -> Iterator[DIE]:
         """ Iterates all children of this DIE
         """
         return self.cu.iter_DIE_children(self)
 
-    def iter_siblings(self):
+    def iter_siblings(self) -> Iterator[DIE]:
         """ Yield all siblings of this DIE
         """
         parent = self.get_parent()
@@ -174,7 +182,7 @@ class DIE:
     # interesting to consumers
     #
 
-    def set_parent(self, die):
+    def set_parent(self, die: DIE) -> None:
         self._parent = die
 
     #------ PRIVATE ------#
@@ -194,7 +202,7 @@ class DIE:
         # called for siblings, it is more efficient if siblings references are
         # provided and no worse than a single walk if they are missing, while
         # stopping iteration early could result in O(n^2) walks.
-        search = self.cu.get_top_DIE()
+        search: DIE = self.cu.get_top_DIE()
         while search.offset < self.offset:
             prev = search
             for child in search.iter_children():
@@ -239,6 +247,7 @@ class DIE:
             # that manipulate the stream by reading data from it.
             stream.seek(self.offset)
             self.abbrev_code = structs.the_Dwarf_uleb128.parse_stream(stream)
+            assert self.abbrev_code is not None
 
             # This may be a null entry
             if self.abbrev_code == 0:
@@ -329,14 +338,17 @@ class DIE:
         elif form in ('DW_FORM_addrx', 'DW_FORM_addrx1', 'DW_FORM_addrx2', 'DW_FORM_addrx3', 'DW_FORM_addrx4') and translate_indirect:
             return self.cu.dwarfinfo.get_addr(self.cu, raw_value)
         elif form in ('DW_FORM_strx', 'DW_FORM_strx1', 'DW_FORM_strx2', 'DW_FORM_strx3', 'DW_FORM_strx4') and translate_indirect:
+            assert self.dwarfinfo.debug_str_offsets_sec is not None
             stream = self.dwarfinfo.debug_str_offsets_sec.stream
             base_offset = _get_base_offset(self.cu, 'DW_AT_str_offsets_base')
             offset_size = 4 if self.cu.structs.dwarf_format == 32 else 8
             str_offset = struct_parse(self.cu.structs.the_Dwarf_offset, stream, base_offset + raw_value*offset_size)
             return self.dwarfinfo.get_string_from_table(str_offset)
         elif form == 'DW_FORM_loclistx' and translate_indirect:
+            assert self.dwarfinfo.debug_loclists_sec is not None
             return _resolve_via_offset_table(self.dwarfinfo.debug_loclists_sec.stream, self.cu, raw_value, 'DW_AT_loclists_base')
         elif form == 'DW_FORM_rnglistx' and translate_indirect:
+            assert self.dwarfinfo.debug_rnglists_sec is not None
             return _resolve_via_offset_table(self.dwarfinfo.debug_rnglists_sec.stream, self.cu, raw_value, 'DW_AT_rnglists_base')
         return raw_value
 
