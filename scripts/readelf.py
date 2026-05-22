@@ -16,7 +16,7 @@ import re
 import traceback
 import itertools
 from functools import cached_property
-from typing import TYPE_CHECKING, TypedDict
+from typing import IO, TYPE_CHECKING, TypedDict
 
 # For running from development directory. It should take precedence over the
 # installed pyelftools.
@@ -66,7 +66,9 @@ from elftools.dwarf.enums import ENUM_DW_UT
 
 if TYPE_CHECKING:
     from elftools.construct.lib.container import Container
+    from elftools.dwarf.compileunit import CompileUnit
     from elftools.dwarf.dwarfinfo import DWARFInfo
+    from elftools.elf.sections import Section
 
     class VersionInfo(TypedDict):
         versym: GNUVerSymSection | None
@@ -74,8 +76,14 @@ if TYPE_CHECKING:
         verneed: GNUVerNeedSection | None
         type: str | None
 
+    class SymbolVersion(TypedDict):
+        index: str | int | None
+        name: str | None
+        filename: str | None
+        hidden: bool | None
 
-def _get_cu_base(cu):
+
+def _get_cu_base(cu: CompileUnit):
     top_die = cu.get_top_DIE()
     attr = top_die.attributes
     if 'DW_AT_low_pc' in attr:
@@ -113,7 +121,7 @@ def _format_symbol_name(s: str) -> str:
 class ReadElf:
     """ display_* methods are used to emit output into the output stream
     """
-    def __init__(self, file, output):
+    def __init__(self, file: IO[bytes], output: IO[str]) -> None:
         """ file:
                 stream object with the ELF file to read
 
@@ -806,7 +814,7 @@ class ReadElf:
         elif self.elffile['e_machine'] == 'EM_RISCV':
             self._display_arch_specific_riscv()
 
-    def display_hex_dump(self, section_spec) -> None:
+    def display_hex_dump(self, section_spec: int | str) -> None:
         """ Display a hex dump of a section. section_spec is either a section
             number or a name.
         """
@@ -854,7 +862,7 @@ class ReadElf:
 
         self._emitline()
 
-    def display_string_dump(self, section_spec) -> None:
+    def display_string_dump(self, section_spec: int | str) -> None:
         """ Display a strings dump of a section. section_spec is either a
             section number or a name.
         """
@@ -973,8 +981,13 @@ class ReadElf:
             field = '%' + '0%sx' % fieldsize
         return s + field % addr
 
-    def _print_version_section_header(self, version_section, name, lead0x=True,
-                                      indent=1):
+    def _print_version_section_header(
+        self,
+        version_section,
+        name: str,
+        lead0x: bool = True,
+        indent: int = 1,
+    ) -> None:
         """ Print a section header of one version related section (versym,
             verneed or verdef) with some options to accomodate readelf
             little differences between each header (e.g. indentation
@@ -1025,7 +1038,7 @@ class ReadElf:
 
         return info
 
-    def _symbol_version(self, nsym):
+    def _symbol_version(self, nsym: int) -> SymbolVersion | None:
         """ Return a dict containing information on the
             or None if no version information is available
         """
@@ -1061,7 +1074,7 @@ class ReadElf:
         symbol_version['index'] = index
         return symbol_version
 
-    def _section_from_spec(self, spec):
+    def _section_from_spec(self, spec: int | str) -> Section | None:
         """ Retrieve a section given a "spec" (either number or name).
             Return None if no such section exists in the file.
         """
@@ -1094,7 +1107,7 @@ class ReadElf:
             if isinstance(sec, SymbolTableIndexSection)
         }
 
-    def _note_relocs_for_section(self, section):
+    def _note_relocs_for_section(self, section: Section) -> None:
         """ If there are relocation sections pointing to the givne section,
             emit a note about it.
         """
@@ -1451,7 +1464,7 @@ class ReadElf:
                 self._format_hex(0, fullhex=True, lead0x=False),
                 self._format_hex(0, fullhex=True, lead0x=False)))
 
-    def _dump_frames_interp_info(self, section, cfi_entries):
+    def _dump_frames_interp_info(self, section, cfi_entries) -> None:
         """ Dump interpreted (decoded) frame information in a section.
 
         `section` is the Section instance that contains the call frame info
@@ -1571,7 +1584,7 @@ class ReadElf:
         else:
             self._dump_debug_locsection(di, loc_lists_sec)
 
-    def _dump_debug_locsection(self, di, loc_lists_sec):
+    def _dump_debug_locsection(self, di: DWARFInfo, loc_lists_sec) -> None:
         """ Dump the location lists from .debug_loc/.debug_loclists section
         """
         ver5 = loc_lists_sec.version >= 5
@@ -1626,7 +1639,7 @@ class ReadElf:
                 self._emitline('    Offset   Begin            End              Expression')
             self._dump_loclist(loc_list, line_template, cu_map)
 
-    def _dump_loclist(self, loc_list, line_template, cu_map):
+    def _dump_loclist(self, loc_list, line_template: str, cu_map: dict) -> None:
         in_views = False
         has_views = False
         base_ip = None
@@ -1688,7 +1701,7 @@ class ReadElf:
         last = loc_list[-1]
         self._emitline("    %08x <End of list>" % (last.entry_offset + last.entry_length))
 
-    def _dump_debug_loclists_CU_header(self, cu):
+    def _dump_debug_loclists_CU_header(self, cu: Container) -> None:
         # Header slightly different from that of v5 rangelist in-section CU header dump
         self._emitline('Table at Offset %s' % self._format_hex(cu.cu_offset, alternate=True))
         self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
@@ -1714,7 +1727,7 @@ class ReadElf:
         else:
             self._dump_debug_rangesection(di, range_lists_sec)
 
-    def _dump_debug_rnglists_CU_header(self, cu):
+    def _dump_debug_rnglists_CU_header(self, cu: CompileUnit) -> None:
         self._emitline(' Table at Offset: %s:' % self._format_hex(cu.cu_offset, alternate=True))
         self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
         self._emitline('  DWARF version:   %d' % cu.version)
@@ -1726,7 +1739,7 @@ class ReadElf:
             for i_offset in enumerate(cu.offsets):
                 self._emitline('    [%6d] 0x%x' % i_offset)
 
-    def _dump_debug_rangesection(self, di, range_lists_sec):
+    def _dump_debug_rangesection(self, di: DWARFInfo, range_lists_sec) -> None:
         # Last amended to match readelf 2.41
         ver5 = range_lists_sec.version >= 5
         section_name = (di.debug_rnglists_sec if ver5 else di.debug_ranges_sec).name
@@ -1770,7 +1783,16 @@ class ReadElf:
 
         # TODO: trailing empty CUs, if any?
 
-    def _dump_rangelist(self, range_list, cu_map, ver5, line_template, base_template, base_template_indexed, range_lists_sec):
+    def _dump_rangelist(
+        self,
+        range_list: list,
+        cu_map: dict,
+        ver5: bool,
+        line_template: str,
+        base_template: str,
+        base_template_indexed: str,
+        range_lists_sec,
+    ) -> None:
         # Weird discrepancy in binutils: for DWARFv5 it outputs entry offset,
         # for DWARF<=4 list offset.
         first = range_list[0]
@@ -1807,7 +1829,7 @@ class ReadElf:
         last = range_list[-1]
         self._emitline('    %08x <End of list>' % (last.entry_offset + last.entry_length if ver5 else first.entry_offset))
 
-    def _display_attributes(self, attr_sec, descriptor):
+    def _display_attributes(self, attr_sec, descriptor) -> None:
         """ Display the attributes contained in the section.
         """
         for s in attr_sec.iter_subsections():
@@ -1849,7 +1871,7 @@ SCRIPT_DESCRIPTION = 'Display information about the contents of ELF format files
 VERSION_STRING = '%%(prog)s: based on pyelftools %s' % __version__
 
 
-def main(stream=None):
+def main(stream: IO[str] | None = None) -> None:
     # parse the command-line arguments and invoke ReadElf
     argparser = argparse.ArgumentParser(
             usage='usage: %(prog)s [options] <elf-file>',
