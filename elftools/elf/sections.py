@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import zlib
 from functools import cached_property
-from typing import IO, TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
 from ..common.exceptions import ELFCompressionError
 from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
@@ -126,6 +126,12 @@ class Section:
         """
         return False
 
+    @overload
+    def __getitem__(self, name: Literal["sh_addr", "sh_entsize", "sh_flags", "sh_offset", "sh_size"]) -> int: ...
+    @overload
+    def __getitem__(self, name: Literal["st_name", "sh_type"]) -> str: ...
+    @overload
+    def __getitem__(self, name: str) -> Any: ...
     def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """
