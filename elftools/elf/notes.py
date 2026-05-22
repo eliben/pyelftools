@@ -6,11 +6,21 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from ..common.utils import struct_parse, roundup, bytes2str
 from ..construct import CString
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
-def iter_notes(elffile, offset, size):
+    from ..construct.lib.container import Container
+    from .elffile import ELFFile
+
+
+def iter_notes(elffile: ELFFile, offset: int, size: int) -> Iterator[Container]:
     """ Yield all the notes in a section or segment.
     """
     end = offset + size
@@ -18,7 +28,7 @@ def iter_notes(elffile, offset, size):
     # Note: a note's name and data are 4-byte aligned, but it's possible there's
     # additional padding at the end to satisfy the alignment requirement of the segment.
     while offset + nhdr_size < end:
-        note = struct_parse(
+        note: Container = struct_parse(
             elffile.structs.Elf_Nhdr,
             elffile.stream,
             stream_pos=offset)
@@ -54,12 +64,12 @@ def iter_notes(elffile, offset, size):
                                           offset)
         elif note['n_type'] == 'NT_GNU_PROPERTY_TYPE_0' and note['n_name'] == 'GNU':
             off = offset
-            props = []
+            props: list[Container] = []
             # n_descsz contains the size of the note "descriptor" (the data payload),
             # excluding padding. See "Note Section" in https://refspecs.linuxfoundation.org/elf/elf.pdf
             current_note_end: int = offset + note['n_descsz']
             while off < current_note_end:
-                p = struct_parse(elffile.structs.Elf_Prop, elffile.stream, off)
+                p: Container = struct_parse(elffile.structs.Elf_Prop, elffile.stream, off)
                 off += roundup(p.pr_datasz + 8, 2 if elffile.elfclass == 32 else 3)
                 props.append(p)
             note['n_desc'] = props

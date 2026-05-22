@@ -6,17 +6,24 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
 from functools import cached_property
-from typing import Callable, NamedTuple
+from typing import IO, TYPE_CHECKING, Any, Callable, NamedTuple
 
 from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
-from .sections import Section
+from .sections import Section, SymbolTableSection
 from .enums import (
     ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
     ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
     ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_BPF, ENUM_RELOC_TYPE_LOONGARCH)
 from ..construct import Container
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from .elffile import ELFFile
 
 
 class Relocation:
@@ -25,7 +32,7 @@ class Relocation:
 
         Can be either a REL or RELA relocation.
     """
-    def __init__(self, entry, elffile):
+    def __init__(self, entry: Container, elffile: ELFFile) -> None:
         self.entry = entry
         self.elffile = elffile
 
@@ -34,7 +41,7 @@ class Relocation:
         """
         return 'r_addend' in self.entry
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """ Dict-like access to entries
         """
         return self.entry[name]
@@ -52,7 +59,13 @@ class RelocationTable:
     """ Shared functionality between relocation sections and relocation tables
     """
 
-    def __init__(self, elffile, offset, size, is_rela):
+    def __init__(
+        self,
+        elffile: ELFFile,
+        offset: int,
+        size: int,
+        is_rela: bool,
+    ) -> None:
         self._stream = elffile.stream
         self._elffile = elffile
         self._elfstructs = elffile.structs
@@ -77,7 +90,7 @@ class RelocationTable:
         """
         return self._size // self.entry_size
 
-    def get_relocation(self, n):
+    def get_relocation(self, n: int) -> Relocation:
         """ Get the relocation at index #n from the section (Relocation object)
         """
         entry_offset = self._offset + n * self.entry_size
@@ -87,7 +100,7 @@ class RelocationTable:
             stream_pos=entry_offset)
         return Relocation(entry, self._elffile)
 
-    def iter_relocations(self):
+    def iter_relocations(self) -> Iterator[Relocation]:
         """ Yield all the relocations in the section
         """
         for i in range(self.num_relocations()):
@@ -97,7 +110,7 @@ class RelocationTable:
 class RelocationSection(Section, RelocationTable):
     """ ELF relocation section. Serves as a collection of Relocation entries.
     """
-    def __init__(self, header, name, elffile):
+    def __init__(self, header: Container, name: str, elffile: ELFFile) -> None:
         Section.__init__(self, header, name, elffile)
         RelocationTable.__init__(self, self.elffile,
             self['sh_offset'], self['sh_size'], header['sh_type'] == 'SHT_RELA')
@@ -119,7 +132,7 @@ class RelrRelocationTable:
         relocations).
     """
 
-    def __init__(self, elffile, offset, size, entrysize):
+    def __init__(self, elffile: ELFFile, offset: int, size: int, entrysize: int) -> None:
         self._elffile = elffile
         self._offset = offset
         self._size = size
@@ -130,7 +143,7 @@ class RelrRelocationTable:
             'Expected RELR entry size to be %s, got %s' % (
                 self._entrysize, entrysize))
 
-    def iter_relocations(self):
+    def iter_relocations(self) -> Iterator[Relocation]:
         """ Yield all the relocations in the section
         """
 
@@ -184,7 +197,7 @@ class RelrRelocationTable:
         """
         return len(self._cached_relocations)
 
-    def get_relocation(self, n):
+    def get_relocation(self, n: int) -> Relocation:
         """ Get the relocation at index #n from the section (Relocation object)
         """
         return self._cached_relocations[n]
@@ -197,7 +210,7 @@ class RelrRelocationTable:
 class RelrRelocationSection(Section, RelrRelocationTable):
     """ ELF RELR relocation section. Serves as a collection of RELR relocation entries.
     """
-    def __init__(self, header, name, elffile):
+    def __init__(self, header: Container, name: str, elffile: ELFFile) -> None:
         Section.__init__(self, header, name, elffile)
         RelrRelocationTable.__init__(self, self.elffile,
             self['sh_offset'], self['sh_size'], self['sh_entsize'])
@@ -238,10 +251,10 @@ def _bpf_64_32_reloc_calc_sym_plus_addend(value: int, sym_value: int, offset: in
 class RelocationHandler:
     """ Handles the logic of relocations in ELF files.
     """
-    def __init__(self, elffile):
+    def __init__(self, elffile: ELFFile) -> None:
         self.elffile = elffile
 
-    def find_relocations_for_section(self, section):
+    def find_relocations_for_section(self, section: Section) -> RelocationSection | None:
         """ Given a section, find the relocation section for it in the ELF
             file. Return a RelocationSection object, or None if none was
             found.
@@ -258,17 +271,27 @@ class RelocationHandler:
                 return relsection
         return None
 
-    def apply_section_relocations(self, stream, reloc_section):
+    def apply_section_relocations(
+        self,
+        stream: IO[bytes],
+        reloc_section: RelocationSection,
+    ) -> None:
         """ Apply all relocations in reloc_section (a RelocationSection object)
             to the given stream, that contains the data of the section that is
             being relocated. The stream is modified as a result.
         """
         # The symbol table associated with this relocation section
         symtab = self.elffile.get_section(reloc_section['sh_link'])
+        assert isinstance(symtab, SymbolTableSection)
         for reloc in reloc_section.iter_relocations():
             self._do_apply_relocation(stream, reloc, symtab)
 
-    def _do_apply_relocation(self, stream, reloc, symtab):
+    def _do_apply_relocation(
+        self,
+        stream: IO[bytes],
+        reloc: Relocation,
+        symtab: SymbolTableSection,
+    ) -> None:
         # Preparations for performing the relocation: obtain the value of
         # the symbol mentioned in the relocation, as well as the relocation
         # recipe which tells us how to actually perform it.

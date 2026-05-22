@@ -6,24 +6,33 @@
 # Mike Frysinger (vapier@gentoo.org)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import itertools
-from functools import cached_property
+from __future__ import annotations
 
+import itertools
 from collections import defaultdict
-from .hash import ELFHashTable, GNUHashTable
-from .sections import Section, Symbol
-from .enums import ENUM_D_TAG
-from .segments import Segment
-from .relocation import RelocationTable, RelrRelocationTable
+from functools import cached_property
+from typing import IO, TYPE_CHECKING, Any
+
 from ..common.exceptions import ELFError
 from ..common.utils import elf_assert, struct_parse, parse_cstring_from_stream
+from .enums import ENUM_D_TAG
+from .hash import ELFHashTable, GNUHashTable
+from .relocation import RelocationTable, RelrRelocationTable
+from .sections import Section, Symbol
+from .segments import Segment
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from ..construct.lib.container import Container
+    from .elffile import ELFFile
 
 
 class _DynamicStringTable:
     """ Bare string table based on values found via ELF dynamic tags and
         loadable segments only.  Good enough for get_string() only.
     """
-    def __init__(self, stream, table_offset):
+    def __init__(self, stream: IO[bytes], table_offset: int) -> None:
         self._stream = stream
         self._table_offset = table_offset
 
@@ -47,7 +56,11 @@ class DynamicTag:
         ['DT_NEEDED', 'DT_RPATH', 'DT_RUNPATH', 'DT_SONAME',
          'DT_SUNW_FILTER'])
 
-    def __init__(self, entry, stringtable):
+    def __init__(
+        self,
+        entry: Container,
+        stringtable,
+    ) -> None:
         if stringtable is None:
             raise ELFError('Creating DynamicTag without string table')
         self.entry = entry
@@ -55,7 +68,7 @@ class DynamicTag:
             setattr(self, entry.d_tag[3:].lower(),
                     stringtable.get_string(self.entry.d_val))
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to entries
         """
         return self.entry[name]
@@ -74,7 +87,14 @@ class DynamicTag:
 class Dynamic:
     """ Shared functionality between dynamic sections and segments.
     """
-    def __init__(self, stream, elffile, stringtable, position, empty):
+    def __init__(
+        self,
+        stream: IO[bytes],
+        elffile: ELFFile,
+        stringtable,
+        position: int,
+        empty: bool,
+    ) -> None:
         """
         stream:
             The file-like object from which to load data
@@ -142,7 +162,7 @@ class Dynamic:
         self._stringtable = self.elffile.get_section_by_name('.dynstr')
         return self._stringtable
 
-    def _iter_tags(self, type=None):
+    def _iter_tags(self, type: str | None = None) -> Iterator[Container]:
         """ Yield all raw tags (limit to |type| if specified)
         """
         if self._empty:
@@ -154,13 +174,13 @@ class Dynamic:
             if tag['d_tag'] == 'DT_NULL':
                 break
 
-    def iter_tags(self, type=None):
+    def iter_tags(self, type: str | None = None) -> Iterator[DynamicTag]:
         """ Yield all tags (limit to |type| if specified)
         """
         for tag in self._iter_tags(type=type):
             yield DynamicTag(tag, self._get_stringtable())
 
-    def _get_tag(self, n):
+    def _get_tag(self, n: int) -> Container:
         """ Get the raw tag at index #n from the file
         """
         if self._num_tags != -1 and n >= self._num_tags:
@@ -171,7 +191,7 @@ class Dynamic:
             self._stream,
             stream_pos=offset)
 
-    def get_tag(self, n):
+    def get_tag(self, n: int) -> DynamicTag:
         """ Get the tag at index #n from the file (DynamicTag object)
         """
         return DynamicTag(self._get_tag(n), self._get_stringtable())
@@ -201,7 +221,7 @@ class Dynamic:
 
         if list(self.iter_tags('DT_REL')):
             result['REL'] = RelocationTable(self.elffile,
-                self.get_table_offset('DT_REL')[1],
+                self.get_table_offset('DT_REL')[1],  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
                 next(self.iter_tags('DT_RELSZ'))['d_val'], False)
 
             relentsz = next(self.iter_tags('DT_RELENT'))['d_val']
@@ -210,7 +230,7 @@ class Dynamic:
 
         if list(self.iter_tags('DT_RELA')):
             result['RELA'] = RelocationTable(self.elffile,
-                self.get_table_offset('DT_RELA')[1],
+                self.get_table_offset('DT_RELA')[1],  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
                 next(self.iter_tags('DT_RELASZ'))['d_val'], True)
 
             relentsz = next(self.iter_tags('DT_RELAENT'))['d_val']
@@ -219,13 +239,13 @@ class Dynamic:
 
         if list(self.iter_tags('DT_RELR')):
             result['RELR'] = RelrRelocationTable(self.elffile,
-                self.get_table_offset('DT_RELR')[1],
+                self.get_table_offset('DT_RELR')[1],  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
                 next(self.iter_tags('DT_RELRSZ'))['d_val'],
                 next(self.iter_tags('DT_RELRENT'))['d_val'])
 
         if list(self.iter_tags('DT_JMPREL')):
             result['JMPREL'] = RelocationTable(self.elffile,
-                self.get_table_offset('DT_JMPREL')[1],
+                self.get_table_offset('DT_JMPREL')[1],  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
                 next(self.iter_tags('DT_PLTRELSZ'))['d_val'],
                 next(self.iter_tags('DT_PLTREL'))['d_val'] == ENUM_D_TAG['DT_RELA'])
 
@@ -235,7 +255,7 @@ class Dynamic:
 class DynamicSection(Section, Dynamic):
     """ ELF dynamic table section.  Knows how to process the list of tags.
     """
-    def __init__(self, header, name, elffile):
+    def __init__(self, header: Container, name: str, elffile: ELFFile) -> None:
         Section.__init__(self, header, name, elffile)
         stringtable = elffile.get_section(header['sh_link'], ('SHT_STRTAB', 'SHT_NOBITS', 'SHT_NULL'))
         Dynamic.__init__(self, self.stream, self.elffile, stringtable,
@@ -245,7 +265,7 @@ class DynamicSection(Section, Dynamic):
 class DynamicSegment(Segment, Dynamic):
     """ ELF dynamic table segment.  Knows how to process the list of tags.
     """
-    def __init__(self, header, stream, elffile):
+    def __init__(self, header: Container, stream: IO[bytes], elffile: ELFFile) -> None:
         # The string table section to be used to resolve string names in
         # the dynamic tag array is the one pointed at by the sh_link field
         # of the dynamic section header.
@@ -318,7 +338,7 @@ class DynamicSegment(Segment, Dynamic):
 
         raise ELFError('Cannot determine the end of DT_SYMTAB.')
 
-    def get_symbol(self, index):
+    def get_symbol(self, index: int) -> Symbol:
         """ Get the symbol at index #index from the table (Symbol object)
         """
         tab_ptr, tab_offset = self.get_table_offset('DT_SYMTAB')
@@ -335,7 +355,7 @@ class DynamicSegment(Segment, Dynamic):
 
         return Symbol(symbol, symbol_name)
 
-    def get_symbol_by_name(self, name):
+    def get_symbol_by_name(self, name: str) -> list[Symbol] | None:
         """ Get a symbol(s) by name. Return None if no symbol by the given name
             exists.
         """
@@ -349,7 +369,7 @@ class DynamicSegment(Segment, Dynamic):
             smap[sym.name].append(i)
         return smap
 
-    def iter_symbols(self):
+    def iter_symbols(self) -> Iterator[Symbol]:
         """ Yield all symbols in this dynamic segment. The symbols are usually
             the same as returned by SymbolTableSection.iter_symbols. However,
             in stripped binaries, SymbolTableSection might have been removed.

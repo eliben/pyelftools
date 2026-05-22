@@ -6,14 +6,25 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+from __future__ import annotations
+
+from typing import IO, TYPE_CHECKING, Any
+
 from ..construct import CString
 from ..common.utils import struct_parse
 from .constants import SH_FLAGS
 from .notes import iter_notes
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from ..construct import Container
+    from .elffile import ELFFile
+    from .sections import Section
+
 
 class Segment:
-    def __init__(self, header, stream):
+    def __init__(self, header: Container, stream: IO[bytes]) -> None:
         self.header = header
         self.stream = stream
 
@@ -23,12 +34,12 @@ class Segment:
         self.stream.seek(self['p_offset'])
         return self.stream.read(self['p_filesz'])
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """
         return self.header[name]
 
-    def section_in_segment(self, section):
+    def section_in_segment(self, section: Section) -> bool:
         """ Is the given section contained in this segment?
 
             Note: this tries to reproduce the intricate rules of the
@@ -98,7 +109,7 @@ class InterpSegment(Segment):
     """ INTERP segment. Knows how to obtain the path to the interpreter used
         for this ELF file.
     """
-    def __init__(self, header, stream):
+    def __init__(self, header: Container, stream: IO[bytes]) -> None:
         super().__init__(header, stream)
 
     def get_interp_name(self) -> str:
@@ -114,12 +125,11 @@ class InterpSegment(Segment):
 class NoteSegment(Segment):
     """ NOTE segment. Knows how to parse notes.
     """
-    def __init__(self, header, stream, elffile):
+    def __init__(self, header: Container, stream: IO[bytes], elffile: ELFFile) -> None:
         super().__init__(header, stream)
         self.elffile = elffile
 
-    def iter_notes(self):
-
+    def iter_notes(self) -> Iterator[Container]:
         """ Yield all the notes in the segment.  Each result is a dictionary-
             like object with "n_name", "n_type", and "n_desc" fields, amongst
             others.
