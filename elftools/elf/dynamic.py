@@ -11,7 +11,7 @@ from __future__ import annotations
 import itertools
 from collections import defaultdict
 from functools import cached_property
-from typing import IO, TYPE_CHECKING, Any, TypedDict
+from typing import IO, TYPE_CHECKING, Any, Protocol, TypedDict, cast, runtime_checkable
 
 from ..common.exceptions import ELFError
 from ..common.utils import elf_assert, struct_parse, parse_cstring_from_stream
@@ -33,6 +33,16 @@ class RelocationTables(TypedDict, total=False):
     RELA: RelocationTable
     RELR: RelrRelocationTable
     JMPREL: RelocationTable
+
+
+@runtime_checkable
+class _StringTable(Protocol):
+    """Common base-class of elftools.elf.dynamic._DynamicStringTable and
+    elftools.elf.section.StringTableSection to be consumed by
+    DynamicTag|Dynamic.
+    Requires @runtime_checkable as `assert isinstance(…, _StringTable)` is
+    used."""
+    def get_string(self, offset: int, /) -> str: ...
 
 
 class _DynamicStringTable:
@@ -66,7 +76,7 @@ class DynamicTag:
     def __init__(
         self,
         entry: Container,
-        stringtable,
+        stringtable: _StringTable | None,
     ) -> None:
         if stringtable is None:
             raise ELFError('Creating DynamicTag without string table')
@@ -98,7 +108,7 @@ class Dynamic:
         self,
         stream: IO[bytes],
         elffile: ELFFile,
-        stringtable,
+        stringtable: _StringTable | Section | None,
         position: int,
         empty: bool,
     ) -> None:
@@ -129,7 +139,7 @@ class Dynamic:
         self._empty = empty
 
         # Do not access this directly yourself; use _get_stringtable() instead.
-        self._stringtable = stringtable
+        self._stringtable: _StringTable | Section | None = stringtable
 
     def get_table_offset(self, tag_name: str) -> tuple[int | None, int | None]:
         """ Return the virtual address and file offset of a dynamic table.
@@ -148,13 +158,14 @@ class Dynamic:
 
         return ptr, offset
 
-    def _get_stringtable(self):
+    def _get_stringtable(self) -> _StringTable:
         """ Return a string table for looking up dynamic tag related strings.
 
             This won't be a "full" string table object, but will at least
             support the get_string() function.
         """
         if self._stringtable:
+            assert isinstance(self._stringtable, _StringTable)
             return self._stringtable
 
         # If the ELF has stripped its section table (which is unusual, but
@@ -163,11 +174,13 @@ class Dynamic:
         _, table_offset = self.get_table_offset('DT_STRTAB')
         if table_offset is not None:
             self._stringtable = _DynamicStringTable(self._stream, table_offset)
+            assert isinstance(self._stringtable, _StringTable)
             return self._stringtable
 
         # That didn't work for some reason.  Let's use the section header
         # even though this ELF is super weird.
         self._stringtable = self.elffile.get_section_by_name('.dynstr')
+        assert isinstance(self._stringtable, _StringTable)
         return self._stringtable
 
     def _iter_tags(self, type: str | None = None) -> Iterator[Container]:
