@@ -11,7 +11,7 @@ from __future__ import annotations
 import itertools
 from collections import defaultdict
 from functools import cached_property
-from typing import IO, TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any, TypedDict
 
 from ..common.exceptions import ELFError
 from ..common.utils import elf_assert, struct_parse, parse_cstring_from_stream
@@ -26,6 +26,13 @@ if TYPE_CHECKING:
 
     from ..construct.lib.container import Container
     from .elffile import ELFFile
+
+
+class RelocationTables(TypedDict, total=False):
+    REL: RelocationTable
+    RELA: RelocationTable
+    RELR: RelrRelocationTable
+    JMPREL: RelocationTable
 
 
 class _DynamicStringTable:
@@ -211,14 +218,14 @@ class Dynamic:
 
         return None
 
-    def get_relocation_tables(self):
+    def get_relocation_tables(self) -> RelocationTables:
         """ Load all available relocation tables from DYNAMIC tags.
 
             Returns a dictionary mapping found table types (REL, RELA,
             RELR, JMPREL) to RelocationTable objects.
         """
 
-        result = {}
+        result: RelocationTables = {}
 
         if list(self.iter_tags('DT_REL')):
             result['REL'] = RelocationTable(self.elffile,
