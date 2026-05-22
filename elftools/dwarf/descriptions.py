@@ -27,6 +27,8 @@ if TYPE_CHECKING:
     from .die import AttributeValue
     from .structs import DWARFStructs
 
+    _INT = TypeVar("_INT", bound=int)
+
 
 def set_global_machine_arch(machine_arch: str) -> None:
     global _MACHINE_ARCH
@@ -447,7 +449,7 @@ _DESCR_CFI_REGISTER_RULE_TYPE = dict(
 )
 
 def _make_extra_mapper(
-    mapping,
+    mapping: Mapping[_INT, str],
     default: str,
     default_interpolate_value: bool = False,
 ) -> Callable[[AttributeValue, DIE, int], str]:
