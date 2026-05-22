@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from .constants import (
     DW_ACCESS, DW_ATE, DW_CC, DW_CFA, DW_ID, DW_INL, DW_LANG, DW_ORD, DW_VIRTUALITY, DW_VIS,
@@ -168,6 +168,10 @@ def describe_DWARF_expr(expr: Any, structs: DWARFStructs, cu_offset: int | None 
     return '(' + dwarf_expr_dumper.dump_expr(expr, cu_offset) + ')'
 
 
+@overload
+def describe_reg_name(regnum: int, machine_arch: str | None, default: Literal[False]) -> str | None: ...
+@overload
+def describe_reg_name(regnum: int, machine_arch: str | None = ..., default: Literal[True] = ...) -> str: ...
 def describe_reg_name(regnum: int, machine_arch: str | None = None, default: bool = True) -> str | None:
     """ Provide a textual description for a register name, given its serial
         number. The number is expected to be valid.
