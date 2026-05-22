@@ -14,6 +14,12 @@ from typing import IO
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 
+try:
+    from typeguard import suppress_type_checks
+except ImportError:
+    def suppress_type_checks(f):  # type: ignore[no-redef]
+        return f
+
 
 class TestDebuglink(unittest.TestCase):
     """ This test verifies that the .gnu_debuglink section is followed and parsed correctly.
@@ -113,6 +119,7 @@ class TestDebuglink(unittest.TestCase):
             with self.assertRaisesRegex(ELFError, 'must be relative'):
                 loader(os.path.abspath(os.path.join(tmpdir, 'outside.debug')))
 
+    @suppress_type_checks
     def test_relative_loader_rejects_bytes_paths(self):
         with self.assertRaisesRegex(TypeError, 'base_path must be str'):
             ELFFile.make_relative_loader(b'sample.elf')
