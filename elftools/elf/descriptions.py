@@ -19,6 +19,7 @@ from .enums import (
     ENUM_DT_FLAGS_1, ENUM_RELOC_TYPE_PPC)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
+from .dynamic import DynamicSection
 
 if TYPE_CHECKING:
     from collections.abc import Container as TContainer
@@ -55,6 +56,7 @@ def describe_e_type(x: str, elffile: ELFFile | None = None) -> str:
         # Detect whether this is a normal SO or a PIE executable
         dynamic = elffile.get_section_by_name('.dynamic')
         if dynamic:
+            assert isinstance(dynamic, DynamicSection)
             for t in dynamic.iter_tags('DT_FLAGS_1'):
                 if t.entry.d_val & ENUM_DT_FLAGS_1['DF_1_PIE']:
                     return 'DYN (Position-Independent Executable file)'
