@@ -317,8 +317,8 @@ class DynamicSegment(Segment, Dynamic):
         # from the corresponding hash table
         _, gnu_hash_offset = self.get_table_offset('DT_GNU_HASH')
         if gnu_hash_offset is not None:
-            hash_section = GNUHashTable(self.elffile, gnu_hash_offset, self)
-            return hash_section.get_number_of_symbols()
+            gnu_hash_section = GNUHashTable(self.elffile, gnu_hash_offset, self)
+            return gnu_hash_section.get_number_of_symbols()
 
         # If DT_GNU_HASH did not exist, maybe we can use DT_HASH
         _, hash_offset = self.get_table_offset('DT_HASH')
