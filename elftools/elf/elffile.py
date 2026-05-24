@@ -157,7 +157,6 @@ class ELFFile:
         # member of the initial entry contains 0)."
         if self['e_shnum'] == 0:
             section_header = self._get_section_header(0)
-            assert section_header is not None
             return section_header['sh_size']
         return self['e_shnum']
 
@@ -640,7 +639,6 @@ class ELFFile:
             return self['e_shstrndx']
         else:
             section_header = self._get_section_header(0)
-            assert section_header is not None
             return section_header['sh_link']
 
     #-------------------------------- PRIVATE --------------------------------#
@@ -705,13 +703,14 @@ class ELFFile:
         else:
             return Segment(segment_header, self.stream)
 
-    def _get_section_header(self, n: int) -> Container | None:
+    def _get_section_header(self, n: int) -> Container:
         """ Find the header of section #n, parse it and return the struct
         """
 
         stream_pos = self._section_offset(n)
         if stream_pos > self.stream_len:
-            return None
+            msg = f"Reading section {n} at offset {stream_pos} past EOF {self.stream_len}"
+            raise ELFParseError(msg)
 
         return struct_parse(
             self.structs.Elf_Shdr,
@@ -874,9 +873,10 @@ class ELFFile:
         """
         stringtable_section_num = self.get_shstrndx()
 
-        stringtable_section_header = self._get_section_header(stringtable_section_num)
-        if stringtable_section_header is None:
-            raise ELFParseError("String Table not found")
+        try:
+            stringtable_section_header = self._get_section_header(stringtable_section_num)
+        except ELFParseError as ex:
+            raise ELFParseError("String Table not found") from ex
 
         return StringTableSection(
                 header=stringtable_section_header,
