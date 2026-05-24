@@ -17,11 +17,11 @@ from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
 from collections import defaultdict
 from .constants import SH_FLAGS
 from .notes import iter_notes
+from elftools.construct.lib.container import Container
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from ..construct.lib.container import Container
     from .elffile import ELFFile
     from .structs import ELFStructs
 
@@ -333,6 +333,8 @@ class StabSection(Section):
 class Attribute:
     """ Attribute object - representing a build attribute of ELF files.
     """
+    if TYPE_CHECKING:
+        value: Any
 
     def __init__(self, structs: ELFStructs, stream: IO[bytes]) -> None:
         self._tag = self._parse(structs, stream)
@@ -356,12 +358,14 @@ class Attribute:
 class AttributesSubsubsection(Section):
     """ Subsubsection of an ELF attribute section's subsection.
     """
+    attribute: type[Attribute]
+
     def __init__(self, stream: IO[bytes], structs: ELFStructs, offset: int) -> None:
         self.stream = stream
         self.offset = offset
         self.structs = structs
 
-        self.header = self.attribute(self.structs, self.stream)
+        self.header: Attribute = self.attribute(self.structs, self.stream)  # type: ignore[assignment]
 
         self.attr_start = self.stream.tell()
 
@@ -411,7 +415,7 @@ class AttributesSubsection(Section):
         self.offset = offset
         self.structs = structs
 
-        self.header = struct_parse(structs.Elf_Attr_Subsection_Header, self.stream, self.offset)
+        self.header: Container = struct_parse(structs.Elf_Attr_Subsection_Header, self.stream, self.offset)
 
         self.subsubsec_start = self.stream.tell()
 
