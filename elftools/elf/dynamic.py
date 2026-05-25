@@ -127,16 +127,17 @@ class Dynamic:
     def get_table_offset(self, tag_name: str) -> tuple[int | None, int | None]:
         """ Return the virtual address and file offset of a dynamic table.
         """
-        ptr: int | None = None
-        for tag in self._iter_tags(type=tag_name):
-            ptr = tag['d_ptr']
-            break
+        try:
+            ptr: int = next(
+                tag['d_ptr']
+                for tag in self._iter_tags(type=tag_name)
+            )
+        except StopIteration:
+            return (None, None)
 
         # If we found a virtual address, locate the offset in the file
         # by using the program headers.
-        offset: int | None = None
-        if ptr:
-            offset = next(self.elffile.address_offsets(ptr), None)
+        offset = next(self.elffile.address_offsets(ptr), None)
 
         return ptr, offset
 
@@ -272,12 +273,14 @@ class DynamicSegment(Segment, Dynamic):
         # So we must look for the dynamic section contained in the dynamic
         # segment, we do so by searching for the dynamic section whose content
         # is located at the same offset as the dynamic segment
-        stringtable = None
-        for section in elffile.iter_sections():
-            if (isinstance(section, DynamicSection) and
-                    section['sh_offset'] == header['p_offset']):
-                stringtable = elffile.get_section(section['sh_link'])
-                break
+        stringtable = next(
+            (
+                elffile.get_section(section['sh_link'])
+                for section in elffile.iter_sections()
+                if isinstance(section, DynamicSection) and section['sh_offset'] == header['p_offset']
+            ),
+            None,
+        )
         Segment.__init__(self, header, stream)
         Dynamic.__init__(self, stream, elffile, stringtable, self['p_offset'],
              self['p_filesz'] == 0)

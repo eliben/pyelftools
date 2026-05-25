@@ -93,15 +93,11 @@ def show_loclist(loclist, dwarfinfo, indent, cu_offset):
     """ Display a location list nicely, decoding the DWARF expressions
         contained within.
     """
-    d = []
-    for loc_entity in loclist:
-        if isinstance(loc_entity, LocationEntry):
-            d.append('%s <<%s>>' % (
-                loc_entity,
-                describe_DWARF_expr(loc_entity.loc_expr, dwarfinfo.structs, cu_offset)))
-        else:
-            d.append(str(loc_entity))
-    return '\n'.join(indent + s for s in d)
+    return "\n".join(
+        f"{indent}{loc_entity}"
+        f"{f' <<{describe_DWARF_expr(loc_entity.loc_expr, dwarfinfo.structs, cu_offset)}>>' if isinstance(loc_entity, LocationEntry) else ''}"
+        for loc_entity in loclist
+    )
 
 if __name__ == '__main__':
     if sys.argv[1] == '--test':

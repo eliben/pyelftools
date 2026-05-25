@@ -1581,14 +1581,14 @@ class ReadElf:
         # Scroll through DIEs once, list the known location list offsets.
         # Don't need this CU/DIE scan if all entries are absolute or prefixed by base,
         # but let's not optimize for that yet.
-        cu_map = dict() # Loc list offset => CU
-        for cu in di.iter_CUs():
-            for die in cu.iter_DIEs():
-                for key in die.attributes:
-                    attr = die.attributes[key]
-                    if (LocationParser.attribute_has_location(attr, cu['version']) and
-                        LocationParser._attribute_has_loc_list(attr, cu['version'])):
-                        cu_map[attr.value] = cu
+        cu_map = {  # Loc list offset => CU
+            attr.value: cu
+            for cu in di.iter_CUs()
+            for die in cu.iter_DIEs()
+            for attr in die.attributes.values()
+            if (LocationParser.attribute_has_location(attr, cu['version']) and
+                LocationParser._attribute_has_loc_list(attr, cu['version']))
+        }
 
         addr_size = di.config.default_address_size # In bytes, 4 or 8
         addr_width = addr_size * 2 # In hex digits, 8 or 16

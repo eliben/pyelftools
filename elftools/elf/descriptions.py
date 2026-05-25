@@ -288,10 +288,11 @@ def describe_note_gnu_property_bitmap_and(
     prefix: str,
     value: int,
 ) -> str:
-    descs = []
-    for mask, desc in values:
-        if value & mask:
-            descs.append(desc)
+    descs = [
+        desc
+        for mask, desc in values
+        if value & mask
+    ]
     return '%s: %s' % (prefix, ', '.join(descs))
 
 def describe_note_gnu_properties(properties: list[Container], machine: str) -> str:

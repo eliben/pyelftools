@@ -96,7 +96,7 @@ class LineProgram:
         stream: IO[bytes],
         structs: DWARFStructs,
         program_start_offset: int,
-            program_end_offset: int,
+        program_end_offset: int,
     ) -> None:
         """
             header:
