@@ -1520,7 +1520,7 @@ class ReadElf:
                     if regnum == ra_regnum:
                         self._emit('ra      ')
                         continue
-                    self._emit('%-6s' % describe_reg_name(regnum))
+                    self._emit(' %-5s' % describe_reg_name(regnum))
             self._emitline()
 
             for line in decoded_table.table:
@@ -1538,7 +1538,7 @@ class ReadElf:
                         s = describe_CFI_register_rule(line[regnum])
                     else:
                         s = 'u'
-                    self._emit('%-6s' % s)
+                    self._emit(' %-5s' % s)
                 self._emitline()
         self._emitline()
 
