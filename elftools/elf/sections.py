@@ -134,9 +134,6 @@ class Section:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Section) and self.header == other.header
 
-    def __hash__(self) -> int:
-        return hash(self.header)
-
 
 class NullSection(Section):
     """ ELF NULL section
