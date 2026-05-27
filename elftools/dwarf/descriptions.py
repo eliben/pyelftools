@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from .constants import (
     DW_ACCESS, DW_ATE, DW_CC, DW_CFA, DW_ID, DW_INL, DW_LANG, DW_ORD, DW_VIRTUALITY, DW_VIS,
@@ -26,6 +26,8 @@ if TYPE_CHECKING:
     from .callframe import CallFrameInstruction, CFARule, CFIEntry, RegisterRule
     from .die import AttributeValue
     from .structs import DWARFStructs
+
+    _INT = TypeVar("_INT", bound=int)
 
 
 def set_global_machine_arch(machine_arch: str) -> None:
@@ -166,6 +168,10 @@ def describe_DWARF_expr(expr: Any, structs: DWARFStructs, cu_offset: int | None 
     return '(' + dwarf_expr_dumper.dump_expr(expr, cu_offset) + ')'
 
 
+@overload
+def describe_reg_name(regnum: int, machine_arch: str | None, default: Literal[False]) -> str | None: ...
+@overload
+def describe_reg_name(regnum: int, machine_arch: str | None = ..., default: Literal[True] = ...) -> str: ...
 def describe_reg_name(regnum: int, machine_arch: str | None = None, default: bool = True) -> str | None:
     """ Provide a textual description for a register name, given its serial
         number. The number is expected to be valid.
@@ -447,7 +453,7 @@ _DESCR_CFI_REGISTER_RULE_TYPE = dict(
 )
 
 def _make_extra_mapper(
-    mapping,
+    mapping: Mapping[_INT, str],
     default: str,
     default_interpolate_value: bool = False,
 ) -> Callable[[AttributeValue, DIE, int], str]:

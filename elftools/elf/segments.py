@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
-from typing import IO, TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
 from ..construct import CString
 from ..common.utils import struct_parse
@@ -34,6 +34,12 @@ class Segment:
         self.stream.seek(self['p_offset'])
         return self.stream.read(self['p_filesz'])
 
+    @overload
+    def __getitem__(self, name: Literal["p_filesz", "p_memsz", "p_offset", "p_vaddr"]) -> int: ...
+    @overload
+    def __getitem__(self, name: Literal["p_type"]) -> str: ...
+    @overload
+    def __getitem__(self, name: str) -> Any: ...
     def __getitem__(self, name: str) -> Any:
         """ Implement dict-like access to header entries
         """

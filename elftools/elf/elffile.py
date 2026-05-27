@@ -114,7 +114,7 @@ class ELFFile:
         return ELFFile(stream, ELFFile.make_relative_loader(os.fsdecode(path)))
 
     @staticmethod
-    def make_relative_loader(base_path) -> Callable[[str], IO[bytes]]:
+    def make_relative_loader(base_path: str) -> Callable[[str], IO[bytes]]:
         """ Return a function that takes a potentially relative path,
             resolves it against base_path (str), and opens a file at that.
 
@@ -126,7 +126,7 @@ class ELFFile:
             raise TypeError('base_path must be str')
         base_directory = os.path.realpath(os.path.dirname(base_path))
 
-        def loader(rel_path) -> IO[bytes]:
+        def loader(rel_path: str) -> IO[bytes]:
             if not isinstance(rel_path, str):
                 raise TypeError('rel_path must be str')
 

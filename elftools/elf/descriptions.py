@@ -8,7 +8,7 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, TypeVar
 
 from .enums import (
     ENUM_D_TAG, ENUM_E_VERSION, ENUM_P_TYPE_BASE, ENUM_SH_TYPE_BASE,
@@ -19,12 +19,17 @@ from .enums import (
     ENUM_DT_FLAGS_1, ENUM_RELOC_TYPE_PPC)
 from .constants import (
     P_FLAGS, RH_FLAGS, SH_FLAGS, SUNW_SYMINFO_FLAGS, VER_FLAGS)
+from .dynamic import DynamicSection
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Container as TContainer
+    from collections.abc import Iterable, Mapping
 
     from ..construct.lib.container import Container
     from .elffile import ELFFile
+
+    _K = TypeVar("_K")
+    _V = TypeVar("_V")
 
 
 def describe_ei_class(x: str) -> str:
@@ -51,6 +56,7 @@ def describe_e_type(x: str, elffile: ELFFile | None = None) -> str:
         # Detect whether this is a normal SO or a PIE executable
         dynamic = elffile.get_section_by_name('.dynamic')
         if dynamic:
+            assert isinstance(dynamic, DynamicSection)
             for t in dynamic.iter_tags('DT_FLAGS_1'):
                 if t.entry.d_val & ENUM_DT_FLAGS_1['DF_1_PIE']:
                     return 'DYN (Position-Independent Executable file)'
@@ -705,7 +711,7 @@ _DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND = (
     (2, 'ZICFISS'),
 )
 
-def _reverse_dict(d, low_priority=()):
+def _reverse_dict(d: Mapping[_K, _V], low_priority: TContainer[_K] = ()) -> dict[_V, _K]:
     """
     This is a tiny helper function to "reverse" the keys/values of a dictionary
     provided in the first argument, i.e. {k: v} becomes {v: k}.
@@ -714,7 +720,7 @@ def _reverse_dict(d, low_priority=()):
     the case of conflicting values - if a value is present in this list, it will
     not override any other entries of the same value.
     """
-    out = {}
+    out: dict[_V, _K] = {}
     for k, v in d.items():
         if v in out and k in low_priority:
             continue

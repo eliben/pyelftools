@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from ..common.utils import struct_parse
 from ..construct.lib.container import Container
@@ -18,6 +18,13 @@ from .sections import Section
 if TYPE_CHECKING:
     from .elffile import ELFFile
     from .sections import Symbol
+
+
+class _SymbolTable(Protocol):
+    """Common base-class of elftools.elf.sections.SymbolTableSection and
+    elftools.elf.dynamic.DynamicSegment to be consumed by
+    (ELF|GNU)Hash(Section|Table)."""
+    def get_symbol(self, index: int, /) -> Symbol | None: ...
 
 
 class ELFHashTable:
@@ -39,7 +46,7 @@ class ELFHashTable:
         elffile: ELFFile,
         start_offset: int,
         size: int | None,
-        symboltable,
+        symboltable: _SymbolTable,
     ) -> None:
         """
         Args:
@@ -108,7 +115,7 @@ class ELFHashSection(Section, ELFHashTable):
         header: Container,
         name: str,
         elffile: ELFFile,
-        symboltable,
+        symboltable: _SymbolTable,
     ) -> None:
         Section.__init__(self, header, name, elffile)
         ELFHashTable.__init__(self, elffile, self['sh_offset'], self['sh_size'], symboltable)
@@ -131,7 +138,7 @@ class GNUHashTable:
         self,
         elffile: ELFFile,
         start_offset: int,
-        symboltable,
+        symboltable: _SymbolTable,
     ) -> None:
         self.elffile = elffile
         self._symboltable = symboltable
@@ -225,7 +232,7 @@ class GNUHashSection(Section, GNUHashTable):
         header: Container,
         name: str,
         elffile: ELFFile,
-        symboltable,
+        symboltable: _SymbolTable,
     ) -> None:
         Section.__init__(self, header, name, elffile)
         GNUHashTable.__init__(self, elffile, self['sh_offset'], symboltable)
