@@ -1,21 +1,12 @@
----
-title: Hacking guide
----
+# Hacking guide
 
-# Introduction
-
-Although **pyelftools** is functional and very useful already, it still
-needs a lot of work. Some things are still missing (see the
-\"Limitations\" section in the [user guide](user-guide.rst), and there
-are surely some bugs left to smoke out.
-
-# Contributing
+## Contributing
 
 Contributing to **pyelftools** is really easy, since it\'s a completely
 open-source project, with the code being in the public domain and easily
 available on Github. The git repository can be cloned at any time with
 the latest code which hasn\'t made it into a release version yet. My
-methodology is to keep trunk `master` branch) stable, so it\'s quite
+methodology is to keep trunk `main` branch) stable, so it\'s quite
 usable (sometimes even more so than the released version, since it may
 contain bug fixes).
 
@@ -30,11 +21,11 @@ Finally, creating clones of other binutils tools (such as `nm`) with
 **pyelftools** will be really nice. In general, any additional work done
 using **pyelftools** helps refine and test the library.
 
-# Tests
+## Tests
 
 Tests must be run from the root development directory of **pyelftools**.
 
-## readelf comparison tests
+### readelf comparison tests
 
 Since **pyelftools** essentially clones the functionality of some
 existing tools in GNU binutils, it can be tested comprehensively by a
@@ -50,7 +41,7 @@ also depend on the system the tool is run on (I run it on 64-bit Ubuntu,
 x86-64). Take a look at the `READELF_PATH` variable in
 `test/run_readelf_tests.py` to get an idea of the binutils version used.
 
-## Unit tests
+### Unit tests
 
 While initially the `readelf` comparison tests were top priority because
 of the great coverage they provided relatively \"for free\", with time
@@ -63,7 +54,7 @@ back in the future.
 
 All unit tests can be executed by running `test/run_all_unittests.py`.
 
-## Testing the examples
+### Testing the examples
 
 **pyelftools** comes with a few usage examples. I consider them a very
 important part of the documentation, and therefore they should always be
@@ -74,34 +65,28 @@ To accomplish this, a special test script named
 compares the output to a saved \"reference\" output. This makes sure
 that the examples work correctly at all times.
 
-## Running all tests on supported Python versions
+### Running all tests on supported Python versions
 
-To run all of the tests for all Python versions supported by
-**pyelftools**, the `tox` test automation tool is used. The `tox.ini`
-file that can be found in the root directory of `pyelftools` defines the
-configuration needed for `tox` to run. A simple invocation of `tox` from
-the root directory will install **pyelftools** in virtual environments,
-and run all tests for all supported Python versions.
+Run `make test` to run all tests.
 
-# Performance
+## Performance
 
 While performance is important for reading large ELF files, it is not
 the main design goal of **pyelftools**. That said, performance is not
 neglected, and I do profile and optimize **pyelftools** occasionally
 when something is running slower than expected. I don\'t want to start
 growing C-extensions on top of it however. Pure Python *is* an important
-design goal. I prefer to make **pyelftools** run on PyPy for improving
-performance.
+design goal.
 
 If you think that **pyelftools** runs too slowly for some particular
 file, please open an issue and I\'ll see what can be done.
 
-# Coding conventions
+## Coding conventions
 
 **pyelftools** is written in Python, following the [PEP
 8](http://www.python.org/dev/peps/pep-0008/) style guide.
 
-# Type checking
+## Type checking
 
 **pyelftools** is using and providing Type Hints, following [PEP
 484](https://peps.python.org/pep-0484/). Please make sure new functions
