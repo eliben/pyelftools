@@ -31,11 +31,11 @@ use it without installing, by locally adjusting `PYTHONPATH`.
 
 **pyelftools** is a regular Python library: you import and invoke it
 from your own code. For a detailed usage guide and links to examples,
-please consult the [user\'s guide](doc/user-guide.rst).
+please consult the [user's guide](doc/user-guide.md).
 
 ## Contributing
 
-See the [Hacking Guide](doc/hacking-guide.rst).
+See the [Hacking Guide](doc/hacking-guide.md).
 
 ## License
 
