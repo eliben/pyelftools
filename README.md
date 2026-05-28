@@ -1,51 +1,43 @@
----
-title: pyelftools
----
+# pyelftools
 
-[![image](https://github.com/eliben/pyelftools/workflows/pyelftools-tests/badge.svg){.align-center}](https://github.com/eliben/pyelftools/actions)
+<p align="center">
+    <a href="https://github.com/eliben/pyelftools/actions">
+      <img alt="Logo" src="https://github.com/eliben/pyelftools/workflows/pyelftools-tests/badge.svg" />
+    </a>
+</p>
 
 **pyelftools** is a pure-Python library for parsing and analyzing ELF
 files and DWARF debugging information. See the [User\'s
 guide](doc/user-guide.rst) for more details.
 
-# Pre-requisites
+## Pre-requisites
 
 As a user of **pyelftools**, one only needs Python 3 to run. While there
 is no reason for the library to not work on earlier versions of Python,
 our CI tests are based on the official [Status of Python
 versions](https://devguide.python.org/versions/).
 
-# Installing
+## Installing
 
-**pyelftools** can be installed from PyPI (Python package index):
+The library is on PyPI as `pyelftools`; install it using your favorite
+Python package manager.
 
-    > pip install pyelftools
-
-Alternatively, you can download the source distribution for the most
-recent and historic versions from the *Downloads* tab on the [pyelftools
-project page](https://github.com/eliben/pyelftools) (by going to
-*Tags*). Then, you can install from source, as usual.
-
-Since **pyelftools** is a work in progress, it\'s recommended to have
-the most recent version of the code. This can be done by downloading the
-[master zip
-file](https://github.com/eliben/pyelftools/archive/master.zip) or just
-cloning the Git repository.
+For the source, clone this Git repository.
 
 Since **pyelftools** has no external dependencies, it\'s also easy to
 use it without installing, by locally adjusting `PYTHONPATH`.
 
-# How to use it?
+## How to use it?
 
 **pyelftools** is a regular Python library: you import and invoke it
 from your own code. For a detailed usage guide and links to examples,
 please consult the [user\'s guide](doc/user-guide.rst).
 
-# Contributing
+## Contributing
 
 See the [Hacking Guide](doc/hacking-guide.rst).
 
-# License
+## License
 
 **pyelftools** is open source software. Its code is in the public
 domain. See the `LICENSE` file for more details.
