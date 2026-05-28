@@ -1,10 +1,8 @@
----
-title: User\'s guide
----
+# User's guide
 
-This is a brief user\'s guide for **pyelftools**.
+This is a brief user's guide for **pyelftools**.
 
-# Getting started
+## Getting started
 
 The easiest way to get started with **pyelftools** is by examining the
 examples it comes with (in the `examples/` directory of the source
@@ -16,10 +14,9 @@ problem domain **pyelftools** aims to address (ELF and DWARF formats),
 you should be able to get going just from looking at the examples -
 reading this guide is not necessary.
 
-# Directory structure
+## Directory structure
 
-When you unzip (or untar) the source distribution package of
-**pyelftools**, these are the directories you\'ll see:
+Directories:
 
 -   `./`: root of the distribution, with a `README`, `LICENSE` and other
     informational files.
@@ -32,6 +29,7 @@ When you unzip (or untar) the source distribution package of
         parts.
     -   `./elftools/construct`: the \"construct\" library used by
         **pyelftools** for low-level binary stream parsing.
+-   `./examples`: examples.
 -   `./scripts`: some useful scripts and tools built on top of the
     `elftools` package. For example - a clone of `readelf`.
 -   `./test`: tests for **pyelftools**, of interest mainly to those who
@@ -42,7 +40,7 @@ From this point on, `elftools` is going to refer only to the Python
 library, and **pyelftools** to the whole source distribution which
 includes, in addition to the library, also examples, scripts and tests.
 
-## Running the examples
+### Running the examples
 
 Running the examples is very easy. After installing **pyelftools** you
 can run them from anywhere by executing:
@@ -50,22 +48,10 @@ can run them from anywhere by executing:
 ``` text
 > python <path_to_pyelftools>/examples/<example_name> --test <elf_filename>
 ```
-
-Even without installing **pyelftools**, you can run the examples from
-the root of the unzipped source distribution. So, for example, if
-you\'ve unzipped it into `$MYDIR`:
-
-``` text
-$MYDIR> python examples/examine_dwarf_info.py --test examples/sample_exe64.elf
-```
-
-Will run the `examine_dwarf_info.py` file on the sample ELF executable
-shipped with **pyelftools**.
-
-# Scripts and tools
+## Scripts and tools
 
 A variety of useful scripts and tools can be built on-top of the
-`elftools` library. For the time being, the only such script packaged
+`elftools` library. As an example, one such script packaged
 with **pyelftools** is `scripts/readelf.py`, which is a (fairly
 faithful) clone of the `readelf` program from GNU binutils. `readelf.py`
 serves at least these purposes:
@@ -79,9 +65,9 @@ serves at least these purposes:
     `elftools` to produce such output.
 3.  It\'s being used in the testing of `elftools`.
 
-# Detailed usage
+## Detailed usage
 
-## Basic concepts
+### Basic concepts
 
 All the classes mentioned in this and subsequent sections have
 comprehensive documentation strings that explain how to construct them
@@ -89,13 +75,13 @@ and to use their methods. For convenience, whenever this guide mentions
 a class for the first time, it will also specify the file in which it
 can be found relative to the source distribution directory of
 **pyelftools**. The user is expected to examine this documentation for
-the classes that are of interest to him.
+the classes that are of interest.
 
 If you find any part of the documentation lacking, don\'t hesitate to
 file a report in the issue tracker
 (<https://github.com/eliben/pyelftools/issues>).
 
-## API levels
+### API levels
 
 **pyelftools** can be seen as providing two different levels of APIs
 (although this isn\'t directly evident in the code). There\'s a
@@ -106,17 +92,17 @@ Python classes with attributes and behavior. This guide mostly focuses
 on the high-level API. For the low-level API take a look at the
 \"Structs and headers\" section and some of the examples.
 
-## Main entry point
+### Main entry point
 
 The main entry point to **pyelftools** is the `ELFFile` class (in file
 `elftools/elf/elffile.py`). It simply accepts a stream object (which can
-be an open file, an in-memory `StringIO` or any other stream-like Python
+be an open file or any other stream-like Python
 object), and does some basic analysis, such as verifying that the stream
 indeed contains a valid ELF object. Methods of this class allow you to
 enumerate the sections and segments it contains, as well as extracting
 the debug information contained within it.
 
-## ELF sections
+### ELF sections
 
 The main informational unit of an ELF file is a \"section\". The
 `ELFFile` entry point class has several methods for conveniently
@@ -140,7 +126,7 @@ interacting with the symbol table. There are other special sections
 the same file) and `RelocationSection` (in
 `elftools/elf/relocation.py`).
 
-## ELF segments
+### ELF segments
 
 Similarly to sections, an ELF segment has a class in **pyelftools** to
 represent it. This is `Segment` (in file `elftools/elf/segments.py`). To
@@ -149,7 +135,7 @@ count and enumerate them. There are also some special segment classes
 that have more information about well-known segments. Take a look at
 `elftools/elf/segments.py` for more details.
 
-## Structs and headers
+### Structs and headers
 
 Most objects in ELF and DWARF have \"headers\", and such objects usually
 provide dictionary-like access to attributes in these headers. The names
@@ -165,7 +151,7 @@ parts of **pyelftools** which define \"structs\". For ELF this is in
 `elftools/dwarf/structs.py`. A word of warning: these are parts of the
 low-level API, use them at your own peril.
 
-## DWARF information
+### DWARF information
 
 The main entry point for DWARF information in **pyelftools** is the
 class `DWARFInfo` in `elftools/dwarf/dwarfinfo.py`. Care was taken to
@@ -188,27 +174,3 @@ interpreted in a special manner. **pyelftools** attempts to provide a
 convenient Pythonic API for this information whenever possible. There\'s
 no way around it - to even understand the API one must have some grasp
 of the [DWARF standard](https://dwarfstd.org/).
-
-# Limitations
-
-**pyelftools** is a work in progress, and some things still aren\'t
-implemented. Following is the current list of known limitations.
-
-## ELF
-
--   Extended numbering of segment and section headers.
--   The current focus of the library is on Intel\'s x86 and x64
-    architectures, with some ARM support added recently.
--   Special handling of TBSS sections .
-
-## DWARF
-
-Some DWARF sections are not read and decoded yet:
-
--   `.debug_macinfo`
-
-While it would certainly be nice to support all DWARF sections from the
-start, don\'t be deterred by this limitation - the *really* important
-parts of DWARF debug info are the ones already supported. Most of the
-missing sections don\'t contain additional debugging information, but
-are accelerated lookup tables for parts of it.
