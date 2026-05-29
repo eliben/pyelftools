@@ -23,6 +23,11 @@ def run_exe(exe_path, args=[], echo=False):
     if echo:
       print('[cmd]', ' '.join(popen_cmd))
     env = dict(os.environ, LC_ALL="C")
+    pythonpath = env.get("PYTHONPATH")
+    if pythonpath:
+        env["PYTHONPATH"] = os.getcwd() + os.pathsep + pythonpath
+    else:
+        env["PYTHONPATH"] = os.getcwd()
     proc = subprocess.Popen(popen_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     proc_stdout = proc.communicate()[0]
     return proc.returncode, proc_stdout.decode('latin-1')

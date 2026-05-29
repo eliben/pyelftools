@@ -429,7 +429,8 @@ class DWARFStructs:
                     context[self.format_field + "_parser"] = parser
                 return parser._parse(stream, context)
 
-        ver5 = lambda ctx: ctx.version >= 5
+        def ver5(ctx):
+            return ctx.version >= 5
 
         self.Dwarf_lineprog_header = Struct('Dwarf_lineprog_header',
             self.Dwarf_initial_length('unit_length'),

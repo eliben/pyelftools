@@ -21,10 +21,6 @@
 #-------------------------------------------------------------------------------
 import sys
 
-# If pyelftools is not installed, the example can also run from the root or
-# examples/ dir of the source distribution.
-sys.path[0:0] = ['.', '..']
-
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf.descriptions import (
     describe_DWARF_expr, set_global_machine_arch)

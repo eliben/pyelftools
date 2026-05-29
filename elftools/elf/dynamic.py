@@ -11,7 +11,7 @@ from __future__ import annotations
 import itertools
 from collections import defaultdict
 from functools import cached_property
-from typing import IO, TYPE_CHECKING, Any, Protocol, TypedDict, cast, runtime_checkable
+from typing import IO, TYPE_CHECKING, Any, Protocol, TypedDict, runtime_checkable
 
 from ..common.exceptions import ELFError
 from ..common.utils import elf_assert, struct_parse, parse_cstring_from_stream

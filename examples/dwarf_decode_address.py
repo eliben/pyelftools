@@ -9,10 +9,6 @@
 #-------------------------------------------------------------------------------
 import sys
 
-# If pyelftools is not installed, the example can also run from the root or
-# examples/ dir of the source distribution.
-sys.path[0:0] = ['.', '..']
-
 from elftools.common.utils import bytes2str
 from elftools.dwarf.descriptions import describe_form_class
 from elftools.elf.elffile import ELFFile

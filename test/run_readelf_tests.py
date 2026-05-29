@@ -83,7 +83,8 @@ def run_test_on_file(filename, verbose=False, opt=None):
         options.remove('--debug-dump=aranges')
 
     for option in options:
-        if verbose: testlog.info("..option='%s'" % option)
+        if verbose:
+            testlog.info("..option='%s'" % option)
 
         # TODO(zlobober): this is a dirty hack to make tests work for ELF core
         # dump notes. Making it work properly requires a pretty deep
@@ -117,20 +118,25 @@ def run_test_on_file(filename, verbose=False, opt=None):
         for exe_path in [READELF_PATH, 'scripts/readelf.py']:
             args = [option, filename]
             cmd = " ".join((exe_path, *args))
-            if verbose: testlog.info(f"....executing: '{cmd}'")
+            if verbose:
+                testlog.info(f"....executing: '{cmd}'")
             t1 = time.time()
             rc, stdout = run_exe(exe_path, args)
-            if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
+            if verbose:
+                testlog.info("....elapsed: %s" % (time.time() - t1,))
             if rc != 0:
                 testlog.error(f"@@ aborting - '{cmd}' returned {rc}")
                 return False
             stdouts.append(stdout)
-        if verbose: testlog.info('....comparing output...')
+        if verbose:
+            testlog.info('....comparing output...')
         t1 = time.time()
         rc, errmsg = compare_output(*stdouts)
-        if verbose: testlog.info("....elapsed: %s" % (time.time() - t1,))
+        if verbose:
+            testlog.info("....elapsed: %s" % (time.time() - t1,))
         if rc:
-            if verbose: testlog.info('.......................SUCCESS')
+            if verbose:
+                testlog.info('.......................SUCCESS')
         else:
             success = False
             testlog.info('.......................FAIL')
