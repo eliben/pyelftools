@@ -48,7 +48,7 @@ class BitStreamReader(BitStream):
         if count < 0:
             raise ValueError("count cannot be negative")
 
-        l = len(self.buffer)
+        l = len(self.buffer)  # noqa: E741
         if count == 0:
             data = b""
         elif count <= l:
