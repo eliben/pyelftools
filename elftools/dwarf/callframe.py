@@ -14,6 +14,7 @@ from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, Literal, NamedTuple, cast
 from warnings import warn
 
+from ..common.exceptions import DWARFError
 from ..common.utils import (
     struct_parse, dwarf_assert, preserve_stream_pos)
 from ..construct import Struct, Switch
@@ -267,7 +268,7 @@ class CallFrameInfo:
                 case DW_CFA.GNU_args_size:
                     args = [struct_parse(structs.the_Dwarf_uleb128, self.stream)]
                 case _:
-                    dwarf_assert(False, f'Unknown CFI opcode: {raw_opcode:#04x}')
+                    raise DWARFError(f"Unknown CFI opcode: {raw_opcode:#04x}")
 
             instructions.append(CallFrameInstruction(opcode=opcode, args=args))
             offset = self.stream.tell()
@@ -670,7 +671,7 @@ class CFIEntry:
                 case DW_CFA.nop | DW_CFA.AARCH64_negate_ra_state:
                     pass
                 case _:
-                    dwarf_assert(False, f"Unknown CFI opcode: {instr.opcode:#02x}")
+                    raise DWARFError(f"Unknown CFI opcode: {instr.opcode:#02x}")
 
         # The current line is appended to the table after all instructions
         # have ended, if there were instructions.
