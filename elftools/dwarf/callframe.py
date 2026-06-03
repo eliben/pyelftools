@@ -526,7 +526,7 @@ class CFIEntry:
         instructions: list[CallFrameInstruction],
         offset: int,
         augmentation_dict: Augmentation | None = None,
-        augmentation_bytes: bytes | None = b'',
+        augmentation_bytes: bytes = b"",
         cie: CIE | None = None,
     ) -> None:
         self.header = header
@@ -696,7 +696,7 @@ class FDE(CFIEntry):
         structs: DWARFStructs,
         instructions: list[CallFrameInstruction],
         offset: int,
-        augmentation_bytes: bytes | None = None,
+        augmentation_bytes: bytes = b"",
         cie: CIE | None = None,
         lsda_pointer: int | None = None,
     ) -> None:
