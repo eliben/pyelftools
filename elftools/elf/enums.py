@@ -498,6 +498,16 @@ ENUM_ST_SHNDX: Mapping[str, int] = dict(
     _default_=Pass,
 )
 
+# Inverse mappings for the symbol-table enums above, used by the bulk
+# symbol-table parser in elf/sections.py. As with DW_FORM_raw2name, the
+# _default_=Pass sentinel is harmless here: lookups are by integer value
+# and Pass is never an integer key.
+ST_INFO_BIND_raw2name: Mapping[int, str] = dict((v, k) for k, v in ENUM_ST_INFO_BIND.items())
+ST_INFO_TYPE_raw2name: Mapping[int, str] = dict((v, k) for k, v in ENUM_ST_INFO_TYPE.items())
+ST_VISIBILITY_raw2name: Mapping[int, str] = dict((v, k) for k, v in ENUM_ST_VISIBILITY.items())
+ST_LOCAL_raw2name: Mapping[int, str] = dict((v, k) for k, v in ENUM_ST_LOCAL.items())
+ST_SHNDX_raw2name: Mapping[int, str] = dict((v, k) for k, v in ENUM_ST_SHNDX.items())
+
 # d_tag
 ENUM_D_TAG_COMMON: Mapping[str, int] = dict(
     DT_NULL=0,
