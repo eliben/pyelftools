@@ -13,7 +13,8 @@ import copy
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, NamedTuple
 
-from ..common.utils import struct_parse, dwarf_assert
+from ..common.exceptions import DWARFError
+from ..common.utils import struct_parse
 from .constants import DW_LNE, DW_LNS
 
 if TYPE_CHECKING:
@@ -274,7 +275,6 @@ class LineProgram:
                     state.isa = operand
                     add_entry_old_state(opcode, [operand])
                 else:
-                    dwarf_assert(False, 'Invalid standard line program opcode: %s' % (
-                        opcode,))
+                    raise DWARFError(f"Invalid standard line program opcode: {opcode}")
             offset = self.stream.tell()
         return entries
