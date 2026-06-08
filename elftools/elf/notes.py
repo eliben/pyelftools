@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import json
+
 from ..common.utils import struct_parse, roundup, bytes2str
 from ..construct import CString
 
@@ -62,6 +64,13 @@ def iter_notes(elffile: ELFFile, offset: int, size: int) -> Iterator[Container]:
             note['n_desc'] = struct_parse(elffile.structs.Elf_Nt_File,
                                           elffile.stream,
                                           offset)
+        elif note['n_type'] == 'NT_FDO_PACKAGING_METADATA' and note['n_name'] == 'FDO':
+            # see https://uapi-group.org/specifications/specs/package_metadata_for_executable_files/
+            try:
+                json_str = desc_data.rstrip(b'\x00').decode('utf-8')
+                note['n_desc'] = json.loads(json_str)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                note['n_desc'] = desc_data
         elif note['n_type'] == 'NT_GNU_PROPERTY_TYPE_0' and note['n_name'] == 'GNU':
             off = offset
             props: list[Container] = []

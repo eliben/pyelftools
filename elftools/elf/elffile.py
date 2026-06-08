@@ -211,6 +211,21 @@ class ELFFile:
         """
         return section_name in self._section_name_map
 
+    def get_fdo_packaging_metadata(self) -> dict | None:
+        """ Return parsed JSON from .note.package, or None if absent.
+
+            See https://uapi-group.org/specifications/specs/package_metadata_for_executable_files/
+        """
+        section = self.get_section_by_name('.note.package')
+        if section is None or not isinstance(section, NoteSection):
+            return None
+        for note in section.iter_notes():
+            if (note['n_type'] == 'NT_FDO_PACKAGING_METADATA'
+                    and note['n_name'] == 'FDO'
+                    and isinstance(note['n_desc'], dict)):
+                return note['n_desc']
+        return None
+
     def iter_sections(self, type: str | None = None) -> Iterator[Section]:
         """ Yield all the sections in the file. If the optional |type|
             parameter is passed, this method will only yield sections of the

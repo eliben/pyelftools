@@ -231,6 +231,11 @@ def describe_note(x: Container, machine: str) -> str:
         desc = '\n    Build ID: %s' % (n_desc)
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = '\n    Version: %s' % (n_desc)
+    elif x['n_type'] == 'NT_FDO_PACKAGING_METADATA':
+        if x['n_name'] == 'FDO' and isinstance(n_desc, dict):
+            desc = '\n      Packaging metadata: ' + describe_note_fdo_packaging_metadata(n_desc)
+        else:
+            desc = f'\n   description data: {bytes(x["n_descdata"]).hex()} '
     elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
         if x['n_name'] == 'GNU':
             desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'], machine)
@@ -359,6 +364,14 @@ def describe_note_gnu_properties(properties: list[Container], machine: str) -> s
             prop_desc = f"<unknown type {t:r} data: {bytes(d).hex(' ')} >"
         descriptions.append(prop_desc)
     return '\n        '.join(descriptions)
+
+def describe_note_fdo_packaging_metadata(metadata: dict[str, Any]) -> str:
+    if not metadata:
+        return '<empty>'
+    lines = []
+    for key, value in metadata.items():
+        lines.append('%s: %s' % (key, value))
+    return '\n        '.join(lines)
 
 #-------------------------------------------------------------------------------
 _unknown: str = '<unknown>'
@@ -651,7 +664,8 @@ _DESCR_NOTE_N_TYPE = dict(
     NT_GNU_HWCAP='DSO-supplied software HWCAP info',
     NT_GNU_BUILD_ID='unique build ID bitstring',
     NT_GNU_GOLD_VERSION='gold version',
-    NT_GNU_PROPERTY_TYPE_0='program properties'
+    NT_GNU_PROPERTY_TYPE_0='program properties',
+    NT_FDO_PACKAGING_METADATA='FDO packaging metadata',
 )
 
 

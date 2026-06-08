@@ -1040,6 +1040,7 @@ ENUM_NOTE_N_TYPE: Mapping[str, int] = dict(
     NT_GNU_BUILD_ID=3,
     NT_GNU_GOLD_VERSION=4,
     NT_GNU_PROPERTY_TYPE_0=5,
+    NT_FDO_PACKAGING_METADATA=0xcafe1a7e,
     _default_=Pass,
 )
 

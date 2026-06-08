@@ -33,6 +33,9 @@ def process_file(filename):
                         desc['abi_tiny']))
                 elif note['n_type'] in {'NT_GNU_BUILD_ID', 'NT_GNU_GOLD_VERSION'}:
                     print('    Desc:', desc)
+                elif note['n_type'] == 'NT_FDO_PACKAGING_METADATA':
+                    for key, value in desc.items():
+                        print('    %s: %s' % (key, value))
                 else:
                     print('    Desc:', bytes(desc).hex())
 
