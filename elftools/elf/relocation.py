@@ -54,7 +54,7 @@ class Relocation:
         return self.entry[name]
 
     def __repr__(self) -> str:
-        return '<Relocation (%s): %s>' % (
+        return '<Relocation ({}): {}>'.format(
                 'RELA' if self.is_RELA() else 'REL',
                 self.entry)
 
@@ -125,7 +125,7 @@ class RelocationSection(Section, RelocationTable):
         elf_assert(header['sh_type'] in ('SHT_REL', 'SHT_RELA'),
             'Unknown relocation type section')
         elf_assert(header['sh_entsize'] == self.entry_size,
-            'Expected sh_entsize of %s section to be %s' % (
+            'Expected sh_entsize of {} section to be {}'.format(
                 header['sh_type'], self.entry_size))
 
 
@@ -147,8 +147,7 @@ class RelrRelocationTable:
         self._entrysize = self._relr_struct.sizeof()
 
         elf_assert(self._entrysize == entrysize,
-            'Expected RELR entry size to be %s, got %s' % (
-                self._entrysize, entrysize))
+            f'Expected RELR entry size to be {self._entrysize}, got {entrysize}')
 
     def iter_relocations(self) -> Iterator[Relocation]:
         """ Yield all the relocations in the section
@@ -310,8 +309,7 @@ class RelocationHandler:
         # All peppered with some sanity checking.
         if reloc['r_info_sym'] >= symtab.num_symbols():
             raise ELFRelocationError(
-                'Invalid symbol reference in relocation: index %s' % (
-                    reloc['r_info_sym']))
+                'Invalid symbol reference in relocation: index {}'.format(reloc['r_info_sym']))
         sym_value = symtab.get_symbol(reloc['r_info_sym'])['st_value']
 
         reloc_type = reloc['r_info_type']
@@ -320,26 +318,32 @@ class RelocationHandler:
         if self.elffile.get_machine_arch() == 'x86':
             if reloc.is_RELA():
                 raise ELFRelocationError(
-                    'Unexpected RELA relocation for x86: %s' % reloc)
+                    f'Unexpected RELA relocation for x86: {reloc}')
             recipe = self._RELOCATION_RECIPES_X86.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'x64':
             if not reloc.is_RELA():
                 raise ELFRelocationError(
-                    'Unexpected REL relocation for x64: %s' % reloc)
+                    f'Unexpected REL relocation for x64: {reloc}')
             recipe = self._RELOCATION_RECIPES_X64.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'MIPS':
             if reloc.is_RELA():
-                if reloc_type == ENUM_RELOC_TYPE_MIPS['R_MIPS_64']:
-                    if reloc['r_type2'] != 0 or reloc['r_type3'] != 0 or reloc['r_ssym'] != 0:
-                        raise ELFRelocationError(
-                            'Multiple relocations in R_MIPS_64 are not implemented: %s' % reloc)
+                if (
+                    reloc_type == ENUM_RELOC_TYPE_MIPS['R_MIPS_64']
+                    and (
+                        reloc['r_type2'] != 0
+                        or reloc['r_type3'] != 0
+                        or reloc['r_ssym'] != 0
+                    )
+                ):
+                    raise ELFRelocationError(
+                        f'Multiple relocations in R_MIPS_64 are not implemented: {reloc}')
                 recipe = self._RELOCATION_RECIPES_MIPS_RELA.get(reloc_type, None)
             else:
                 recipe = self._RELOCATION_RECIPES_MIPS_REL.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'ARM':
             if reloc.is_RELA():
                 raise ELFRelocationError(
-                    'Unexpected RELA relocation for ARM: %s' % reloc)
+                    f'Unexpected RELA relocation for ARM: {reloc}')
             recipe = self._RELOCATION_RECIPES_ARM.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'AArch64':
             recipe = self._RELOCATION_RECIPES_AARCH64.get(reloc_type, None)
@@ -352,12 +356,12 @@ class RelocationHandler:
         elif self.elffile.get_machine_arch() == 'LoongArch':
             if not reloc.is_RELA():
                 raise ELFRelocationError(
-                    'Unexpected REL relocation for LoongArch: %s' % reloc)
+                    f'Unexpected REL relocation for LoongArch: {reloc}')
             recipe = self._RELOCATION_RECIPES_LOONGARCH.get(reloc_type, None)
 
         if recipe is None:
             raise ELFRelocationError(
-                    'Unsupported relocation type: %s' % reloc_type)
+                    f'Unsupported relocation type: {reloc_type}')
 
         # So now we have everything we need to actually perform the relocation.
         # Let's get to it:
@@ -373,8 +377,7 @@ class RelocationHandler:
         elif recipe.bytesize == 2:
             value_struct = self.elffile.structs.Elf_half('')
         else:
-            raise ELFRelocationError('Invalid bytesize %s for relocation' %
-                    recipe.bytesize)
+            raise ELFRelocationError(f'Invalid bytesize {recipe.bytesize} for relocation')
 
         # 1. Read the value from the stream (with correct size and endianness)
         original_value = struct_parse(
@@ -546,5 +549,4 @@ class RelocationHandler:
         ENUM_RELOC_TYPE_S390X['R_390_64']: _RELOCATION_RECIPE_TYPE(
             bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
     }
-
 

@@ -136,9 +136,9 @@ class DIE:
             if self.dwarfinfo.supplementary_dwarfinfo:
                 return self.dwarfinfo.supplementary_dwarfinfo.get_DIE_from_refaddr(attr.raw_value)
             # FIXME: how to distinguish supplementary files from dwo ?
-            raise NotImplementedError('%s to dwo' % attr.form)
+            raise NotImplementedError(f'{attr.form} to dwo')
         else:
-            raise DWARFError('%s is not a reference class form attribute' % attr)
+            raise DWARFError(f'{attr} is not a reference class form attribute')
 
     def get_parent(self) -> DIE | None:
         """ Return the parent DIE of this DIE, or None if the DIE has no
@@ -176,7 +176,7 @@ class DIE:
                 if sibling is not self:
                     yield sibling
         else:
-            raise StopIteration()
+            return
 
     # The following methods are used while creating the DIE and should not be
     # interesting to consumers
@@ -218,16 +218,14 @@ class DIE:
             # Either we mis-parsed an ancestor or someone created a DIE
             # by an offset that was not actually the start of a DIE.
             if prev is search:
-                raise ValueError("offset %s not in CU %s DIE tree" %
-                    (self.offset, self.cu.cu_offset))
+                raise ValueError(f"offset {self.offset} not in CU {self.cu.cu_offset} DIE tree")
 
             search = prev
 
     def __repr__(self) -> str:
-        s = 'DIE %s, size=%s, has_children=%s\n' % (
-            self.tag, self.size, self.has_children)
+        s = f'DIE {self.tag}, size={self.size}, has_children={self.has_children}\n'
         for attrname, attrval in self.attributes.items():
-            s += '    |%-18s:  %s\n' % (attrname, attrval)
+            s += f'    |{attrname:18}:  {attrval}\n'
         return s
 
     def __str__(self) -> str:
@@ -302,7 +300,7 @@ class DIE:
             try:
                 real_form = DW_FORM_raw2name[real_form_code] # Form name or exception if bogus code
             except KeyError:
-                raise DWARFError('Found DW_FORM_indirect with unknown real form 0x%x' % real_form_code)
+                raise DWARFError(f'Found DW_FORM_indirect with unknown real form 0x{real_form_code:x}')
 
             dw_form = structs.Dwarf_dw_form[real_form]
             assert dw_form is not None
@@ -332,7 +330,7 @@ class DIE:
         elif form in ('DW_FORM_GNU_strp_alt', 'DW_FORM_strp_sup') and self.dwarfinfo.supplementary_dwarfinfo:
             return self.dwarfinfo.supplementary_dwarfinfo.get_string_from_table(raw_value)
         elif form == 'DW_FORM_flag':
-            return not raw_value == 0
+            return raw_value != 0
         elif form == 'DW_FORM_flag_present':
             return True
         elif form in ('DW_FORM_addrx', 'DW_FORM_addrx1', 'DW_FORM_addrx2', 'DW_FORM_addrx3', 'DW_FORM_addrx4') and translate_indirect:

@@ -335,68 +335,68 @@ class DWARFStructs:
             String("sup_checksum", length=20))
 
     def _create_dw_form(self) -> None:
-        self.Dwarf_dw_form = dict(
-            DW_FORM_addr=self.the_Dwarf_target_addr,
-            DW_FORM_addrx=self.the_Dwarf_uleb128,
-            DW_FORM_addrx1=self.the_Dwarf_uint8,
-            DW_FORM_addrx2=self.the_Dwarf_uint16,
-            DW_FORM_addrx3=self.Dwarf_uint24(''),
-            DW_FORM_addrx4=self.the_Dwarf_uint32,
+        self.Dwarf_dw_form = {
+            'DW_FORM_addr': self.the_Dwarf_target_addr,
+            'DW_FORM_addrx': self.the_Dwarf_uleb128,
+            'DW_FORM_addrx1': self.the_Dwarf_uint8,
+            'DW_FORM_addrx2': self.the_Dwarf_uint16,
+            'DW_FORM_addrx3': self.Dwarf_uint24(''),
+            'DW_FORM_addrx4': self.the_Dwarf_uint32,
 
-            DW_FORM_block1=self._make_block_struct(self.Dwarf_uint8),
-            DW_FORM_block2=self._make_block_struct(self.Dwarf_uint16),
-            DW_FORM_block4=self._make_block_struct(self.Dwarf_uint32),
-            DW_FORM_block=self._make_block_struct(self.Dwarf_uleb128),
+            'DW_FORM_block1': self._make_block_struct(self.Dwarf_uint8),
+            'DW_FORM_block2': self._make_block_struct(self.Dwarf_uint16),
+            'DW_FORM_block4': self._make_block_struct(self.Dwarf_uint32),
+            'DW_FORM_block': self._make_block_struct(self.Dwarf_uleb128),
 
             # All DW_FORM_data<n> forms are assumed to be unsigned
-            DW_FORM_data1=self.the_Dwarf_uint8,
-            DW_FORM_data2=self.the_Dwarf_uint16,
-            DW_FORM_data4=self.the_Dwarf_uint32,
-            DW_FORM_data8=self.Dwarf_uint64(''),
-            DW_FORM_data16=Array(16, self.the_Dwarf_uint8), # Used for hashes and such, not for integers
-            DW_FORM_sdata=self.the_Dwarf_sleb128,
-            DW_FORM_udata=self.the_Dwarf_uleb128,
+            'DW_FORM_data1': self.the_Dwarf_uint8,
+            'DW_FORM_data2': self.the_Dwarf_uint16,
+            'DW_FORM_data4': self.the_Dwarf_uint32,
+            'DW_FORM_data8': self.Dwarf_uint64(''),
+            'DW_FORM_data16': Array(16, self.the_Dwarf_uint8), # Used for hashes and such, not for integers
+            'DW_FORM_sdata': self.the_Dwarf_sleb128,
+            'DW_FORM_udata': self.the_Dwarf_uleb128,
 
-            DW_FORM_string=CString(''),
-            DW_FORM_strp=self.the_Dwarf_offset,
-            DW_FORM_strp_sup=self.the_Dwarf_offset,
-            DW_FORM_line_strp=self.the_Dwarf_offset,
-            DW_FORM_strx=self.the_Dwarf_uleb128,
-            DW_FORM_strx1=self.the_Dwarf_uint8,
-            DW_FORM_strx2=self.the_Dwarf_uint16,
-            DW_FORM_strx3=self.Dwarf_uint24(''),
-            DW_FORM_strx4=self.Dwarf_uint64(''),
-            DW_FORM_flag=self.the_Dwarf_uint8,
+            'DW_FORM_string': CString(''),
+            'DW_FORM_strp': self.the_Dwarf_offset,
+            'DW_FORM_strp_sup': self.the_Dwarf_offset,
+            'DW_FORM_line_strp': self.the_Dwarf_offset,
+            'DW_FORM_strx': self.the_Dwarf_uleb128,
+            'DW_FORM_strx1': self.the_Dwarf_uint8,
+            'DW_FORM_strx2': self.the_Dwarf_uint16,
+            'DW_FORM_strx3': self.Dwarf_uint24(''),
+            'DW_FORM_strx4': self.Dwarf_uint64(''),
+            'DW_FORM_flag': self.the_Dwarf_uint8,
 
-            DW_FORM_ref=self.the_Dwarf_uint32,
-            DW_FORM_ref1=self.the_Dwarf_uint8,
-            DW_FORM_ref2=self.the_Dwarf_uint16,
-            DW_FORM_ref4=self.the_Dwarf_uint32,
-            DW_FORM_ref_sup4=self.the_Dwarf_uint32,
-            DW_FORM_ref8=self.Dwarf_uint64(''),
-            DW_FORM_ref_sup8=self.Dwarf_uint64(''),
-            DW_FORM_ref_udata=self.the_Dwarf_uleb128,
-            DW_FORM_ref_addr=self.the_Dwarf_target_addr if self.dwarf_version == 2 else self.the_Dwarf_offset,
+            'DW_FORM_ref': self.the_Dwarf_uint32,
+            'DW_FORM_ref1': self.the_Dwarf_uint8,
+            'DW_FORM_ref2': self.the_Dwarf_uint16,
+            'DW_FORM_ref4': self.the_Dwarf_uint32,
+            'DW_FORM_ref_sup4': self.the_Dwarf_uint32,
+            'DW_FORM_ref8': self.Dwarf_uint64(''),
+            'DW_FORM_ref_sup8': self.Dwarf_uint64(''),
+            'DW_FORM_ref_udata': self.the_Dwarf_uleb128,
+            'DW_FORM_ref_addr': self.the_Dwarf_target_addr if self.dwarf_version == 2 else self.the_Dwarf_offset,
 
-            DW_FORM_indirect=self.the_Dwarf_uleb128,
+            'DW_FORM_indirect': self.the_Dwarf_uleb128,
 
             # Treated separatedly while parsing, but here so that all forms resolve
-            DW_FORM_implicit_const=None,
+            'DW_FORM_implicit_const': None,
 
             # New forms in DWARFv4
-            DW_FORM_flag_present = StaticField('', 0),
-            DW_FORM_sec_offset = self.the_Dwarf_offset,
-            DW_FORM_exprloc = self._make_block_struct(self.Dwarf_uleb128),
-            DW_FORM_ref_sig8 = self.Dwarf_uint64(''),
+            'DW_FORM_flag_present': StaticField('', 0),
+            'DW_FORM_sec_offset': self.the_Dwarf_offset,
+            'DW_FORM_exprloc': self._make_block_struct(self.Dwarf_uleb128),
+            'DW_FORM_ref_sig8': self.Dwarf_uint64(''),
 
-            DW_FORM_GNU_strp_alt=self.the_Dwarf_offset,
-            DW_FORM_GNU_ref_alt=self.the_Dwarf_offset,
-            DW_AT_GNU_all_call_sites=self.the_Dwarf_uleb128,
+            'DW_FORM_GNU_strp_alt': self.the_Dwarf_offset,
+            'DW_FORM_GNU_ref_alt': self.the_Dwarf_offset,
+            'DW_AT_GNU_all_call_sites': self.the_Dwarf_uleb128,
 
             # New forms in DWARFv5
-            DW_FORM_loclistx=self.the_Dwarf_uleb128,
-            DW_FORM_rnglistx=self.the_Dwarf_uleb128
-        )
+            'DW_FORM_loclistx': self.the_Dwarf_uleb128,
+            'DW_FORM_rnglistx': self.the_Dwarf_uleb128
+        }
 
     def _create_aranges_header(self) -> None:
         self.Dwarf_aranges_header = Struct("Dwarf_aranges_header",
@@ -635,5 +635,4 @@ class _InitialLengthAdapter(Adapter):
                 context['is64'] = True
                 return obj.second
             else:
-                raise ConstructError("Failed decoding initial length for %X" % (
-                    obj.first))
+                raise ConstructError(f"Failed decoding initial length for {obj.first:X}")

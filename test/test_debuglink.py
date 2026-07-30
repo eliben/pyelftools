@@ -39,7 +39,10 @@ class TestDebuglink(unittest.TestCase):
             stream (IO[bytes]): A stream suitable for creating a new ELFFile.
         """
         self.assertEqual(external_filename, 'debuglink.debug')
-        stream = open('test/testfiles_for_unittests/' + external_filename, 'rb')
+        # The caller owns the returned stream.
+        stream = open(  # noqa: SIM115
+            'test/testfiles_for_unittests/' + external_filename, 'rb'
+        )
         return stream
 
     def subprograms_from_debuglink(self, elf: ELFFile) -> dict[str, tuple[int, int]]:

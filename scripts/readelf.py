@@ -167,56 +167,40 @@ class ReadElf:
         """
         self._emitline('ELF Header:')
         self._emit('  Magic:   ')
-        self._emit(' '.join('%2.2x' % b
+        self._emit(' '.join(f'{b:02x}'
                    for b in self.elffile.e_ident_raw))
         self._emitline('      ')
         header = self.elffile.header
         e_ident = header['e_ident']
-        self._emitline('  Class:                             %s' %
-                describe_ei_class(e_ident['EI_CLASS']))
-        self._emitline('  Data:                              %s' %
-                describe_ei_data(e_ident['EI_DATA']))
-        self._emitline('  Version:                           %s' %
-                describe_ei_version(e_ident['EI_VERSION']))
-        self._emitline('  OS/ABI:                            %s' %
-                describe_ei_osabi(e_ident['EI_OSABI']))
-        self._emitline('  ABI Version:                       %d' %
-                e_ident['EI_ABIVERSION'])
-        self._emitline('  Type:                              %s' %
-                describe_e_type(header['e_type'], self.elffile))
-        self._emitline('  Machine:                           %s' %
-                describe_e_machine(header['e_machine']))
-        self._emitline('  Version:                           %s' %
-                describe_e_version_numeric(header['e_version']))
-        self._emitline('  Entry point address:               %s' %
-                self._format_hex(header['e_entry']))
-        self._emit('  Start of program headers:          %s' %
-                header['e_phoff'])
+        self._emitline('  Class:                             {}'.format(describe_ei_class(e_ident['EI_CLASS'])))
+        self._emitline('  Data:                              {}'.format(describe_ei_data(e_ident['EI_DATA'])))
+        self._emitline('  Version:                           {}'.format(describe_ei_version(e_ident['EI_VERSION'])))
+        self._emitline('  OS/ABI:                            {}'.format(describe_ei_osabi(e_ident['EI_OSABI'])))
+        self._emitline(
+            f"  ABI Version:                       {e_ident['EI_ABIVERSION']:d}"
+        )
+        self._emitline('  Type:                              {}'.format(describe_e_type(header['e_type'], self.elffile)))
+        self._emitline('  Machine:                           {}'.format(describe_e_machine(header['e_machine'])))
+        self._emitline('  Version:                           {}'.format(describe_e_version_numeric(header['e_version'])))
+        self._emitline('  Entry point address:               {}'.format(self._format_hex(header['e_entry'])))
+        self._emit('  Start of program headers:          {}'.format(header['e_phoff']))
         self._emitline(' (bytes into file)')
-        self._emit('  Start of section headers:          %s' %
-                header['e_shoff'])
+        self._emit('  Start of section headers:          {}'.format(header['e_shoff']))
         self._emitline(' (bytes into file)')
-        self._emitline('  Flags:                             %s%s' %
-                (self._format_hex(header['e_flags']),
+        self._emitline('  Flags:                             {}{}'.format(self._format_hex(header['e_flags']),
                 self.decode_flags(header['e_flags'])))
-        self._emitline('  Size of this header:               %s (bytes)' %
-                header['e_ehsize'])
-        self._emitline('  Size of program headers:           %s (bytes)' %
-                header['e_phentsize'])
-        self._emitline('  Number of program headers:         %s' %
-                header['e_phnum'])
-        self._emitline('  Size of section headers:           %s (bytes)' %
-                header['e_shentsize'])
-        self._emit('  Number of section headers:         %s' %
-                header['e_shnum'])
+        self._emitline('  Size of this header:               {} (bytes)'.format(header['e_ehsize']))
+        self._emitline('  Size of program headers:           {} (bytes)'.format(header['e_phentsize']))
+        self._emitline('  Number of program headers:         {}'.format(header['e_phnum']))
+        self._emitline('  Size of section headers:           {} (bytes)'.format(header['e_shentsize']))
+        self._emit('  Number of section headers:         {}'.format(header['e_shnum']))
         if header['e_shnum'] == 0 and self.elffile.num_sections() != 0:
-            self._emitline(' (%d)' % self.elffile.num_sections())
+            self._emitline(f' ({int(self.elffile.num_sections())})')
         else:
             self._emitline('')
-        self._emit('  Section header string table index: %s' %
-                header['e_shstrndx'])
+        self._emit('  Section header string table index: {}'.format(header['e_shstrndx']))
         if header['e_shstrndx'] == SHN_INDICES.SHN_XINDEX:
-            self._emitline(' (%d)' % self.elffile.get_shstrndx())
+            self._emitline(f' ({int(self.elffile.get_shstrndx())})')
         else:
             self._emitline('')
 
@@ -332,13 +316,11 @@ class ReadElf:
 
         elfheader = self.elffile.header
         if show_heading:
-            self._emitline('Elf file type is %s' %
-                describe_e_type(elfheader['e_type'], self.elffile))
-            self._emitline('Entry point is %s' %
-                self._format_hex(elfheader['e_entry']))
+            self._emitline('Elf file type is {}'.format(describe_e_type(elfheader['e_type'], self.elffile)))
+            self._emitline('Entry point is {}'.format(self._format_hex(elfheader['e_entry'])))
             # readelf weirness - why isn't e_phoff printed as hex? (for section
             # headers, it is...)
-            self._emitline('There are %s program headers, starting at offset %s' % (
+            self._emitline('There are {} program headers, starting at offset {}'.format(
                 self.elffile.num_segments(), elfheader['e_phoff']))
             self._emitline()
 
@@ -359,33 +341,35 @@ class ReadElf:
         # Now the entries
         #
         for segment in self.elffile.iter_segments():
-            self._emit('  %-14s ' % describe_p_type(segment['p_type']))
+            self._emit(f"  {describe_p_type(segment['p_type']):14} ")
 
             if self.elffile.elfclass == 32:
-                self._emitline('%s %s %s %s %s %-3s %s' % (
-                    self._format_hex(segment['p_offset'], fieldsize=6),
-                    self._format_hex(segment['p_vaddr'], fullhex=True),
-                    self._format_hex(segment['p_paddr'], fullhex=True),
-                    self._format_hex(segment['p_filesz'], fieldsize=5),
-                    self._format_hex(segment['p_memsz'], fieldsize=5),
-                    describe_p_flags(segment['p_flags']),
-                    self._format_hex(segment['p_align'])))
+                self._emitline(
+                    f"{self._format_hex(segment['p_offset'], fieldsize=6)} "
+                    f"{self._format_hex(segment['p_vaddr'], fullhex=True)} "
+                    f"{self._format_hex(segment['p_paddr'], fullhex=True)} "
+                    f"{self._format_hex(segment['p_filesz'], fieldsize=5)} "
+                    f"{self._format_hex(segment['p_memsz'], fieldsize=5)} "
+                    f"{describe_p_flags(segment['p_flags']):<3} "
+                    f"{self._format_hex(segment['p_align'])}"
+                )
             else: # 64
-                self._emitline('%s %s %s' % (
+                self._emitline('{} {} {}'.format(
                     self._format_hex(segment['p_offset'], fullhex=True),
                     self._format_hex(segment['p_vaddr'], fullhex=True),
                     self._format_hex(segment['p_paddr'], fullhex=True)))
-                self._emitline('                 %s %s  %-3s    %s' % (
-                    self._format_hex(segment['p_filesz'], fullhex=True),
-                    self._format_hex(segment['p_memsz'], fullhex=True),
-                    describe_p_flags(segment['p_flags']),
-                    # lead0x set to False for p_align, to mimic readelf.
-                    # No idea why the difference from 32-bit mode :-|
-                    self._format_hex(segment['p_align'], lead0x=False)))
+                # lead0x is False for p_align to mimic readelf.
+                # No idea why the difference from 32-bit mode :-|
+                self._emitline(
+                    f"                 "
+                    f"{self._format_hex(segment['p_filesz'], fullhex=True)} "
+                    f"{self._format_hex(segment['p_memsz'], fullhex=True)}  "
+                    f"{describe_p_flags(segment['p_flags']):<3}    "
+                    f"{self._format_hex(segment['p_align'], lead0x=False)}"
+                )
 
             if isinstance(segment, InterpSegment):
-                self._emitline('      [Requesting program interpreter: %s]' %
-                    segment.get_interp_name())
+                self._emitline(f'      [Requesting program interpreter: {segment.get_interp_name()}]')
 
         # Sections to segments mapping
         #
@@ -397,7 +381,7 @@ class ReadElf:
         self._emitline('  Segment Sections...')
 
         for nseg, segment in enumerate(self.elffile.iter_segments()):
-            self._emit('   %2.2d     ' % nseg)
+            self._emit(f'   {int(nseg):02d}     ')
 
             for section in self.elffile.iter_sections():
                 if (    not section.is_null() and
@@ -405,7 +389,7 @@ class ReadElf:
                              section['sh_type'] == 'SHT_NOBITS' and
                              segment['p_type'] != 'PT_TLS') and
                         segment.section_in_segment(section)):
-                    self._emit('%s ' % section.name)
+                    self._emit(f'{section.name} ')
 
             self._emitline('')
 
@@ -414,7 +398,7 @@ class ReadElf:
         """
         elfheader = self.elffile.header
         if show_heading:
-            self._emitline('There are %s section headers, starting at offset %s' % (
+            self._emitline('There are {} section headers, starting at offset {}'.format(
                 elfheader['e_shnum'], self._format_hex(elfheader['e_shoff'])))
 
         if self.elffile.num_sections() == 0:
@@ -435,30 +419,35 @@ class ReadElf:
         # Now the entries
         #
         for nsec, section in enumerate(self.elffile.iter_sections()):
-            self._emit('  [%2u] %-17.17s %-15.15s ' % (
-                nsec, section.name, describe_sh_type(section['sh_type'])))
+            self._emit(
+                f"  [{nsec:2d}] {section.name:<17.17} "
+                f"{describe_sh_type(section['sh_type']):<15.15} "
+            )
 
             if self.elffile.elfclass == 32:
-                self._emitline('%s %s %s %s %3s %2s %3s %2s' % (
-                    self._format_hex(section['sh_addr'], fieldsize=8, lead0x=False),
-                    self._format_hex(section['sh_offset'], fieldsize=6, lead0x=False),
-                    self._format_hex(section['sh_size'], fieldsize=6, lead0x=False),
-                    self._format_hex(section['sh_entsize'], fieldsize=2, lead0x=False),
-                    describe_sh_flags(section['sh_flags']),
-                    section['sh_link'], section['sh_info'],
-                    section['sh_addralign']))
+                self._emitline(
+                    f"{self._format_hex(section['sh_addr'], fieldsize=8, lead0x=False)} "
+                    f"{self._format_hex(section['sh_offset'], fieldsize=6, lead0x=False)} "
+                    f"{self._format_hex(section['sh_size'], fieldsize=6, lead0x=False)} "
+                    f"{self._format_hex(section['sh_entsize'], fieldsize=2, lead0x=False)} "
+                    f"{describe_sh_flags(section['sh_flags']):>3} "
+                    f"{section['sh_link']:>2} {section['sh_info']:>3} "
+                    f"{section['sh_addralign']:>2}"
+                )
             else: # 64
-                self._emitline(' %s  %s' % (
+                self._emitline(' {}  {}'.format(
                     self._format_hex(section['sh_addr'], fullhex=True, lead0x=False),
                     self._format_hex(section['sh_offset'],
                         fieldsize=16 if section['sh_offset'] > 0xffffffff else 8,
                         lead0x=False)))
-                self._emitline('       %s  %s %3s      %2s   %3s     %s' % (
-                    self._format_hex(section['sh_size'], fullhex=True, lead0x=False),
-                    self._format_hex(section['sh_entsize'], fullhex=True, lead0x=False),
-                    describe_sh_flags(section['sh_flags']),
-                    section['sh_link'], section['sh_info'],
-                    section['sh_addralign']))
+                self._emitline(
+                    f"       "
+                    f"{self._format_hex(section['sh_size'], fullhex=True, lead0x=False)}  "
+                    f"{self._format_hex(section['sh_entsize'], fullhex=True, lead0x=False)} "
+                    f"{describe_sh_flags(section['sh_flags']):>3}      "
+                    f"{section['sh_link']:>2}   {section['sh_info']:>3}     "
+                    f"{section['sh_addralign']}"
+                )
 
         self._emitline('Key to Flags:')
         self._emitline('  W (write), A (alloc), X (execute), M (merge),'
@@ -488,14 +477,14 @@ class ReadElf:
                 continue
 
             if section['sh_entsize'] == 0:
-                self._emitline("\nSymbol table '%s' has a sh_entsize of zero!" % (
-                    section.name))
+                self._emitline(f"\nSymbol table '{section.name}' has a sh_entsize of zero!")
                 continue
 
-            self._emitline("\nSymbol table '%s' contains %d %s:" % (
-                section.name,
-                section.num_symbols(),
-                'entry' if section.num_symbols() == 1 else 'entries'))
+            symbol_count = section.num_symbols()
+            self._emitline(
+                f"\nSymbol table '{section.name}' contains {symbol_count:d} "
+                f"{'entry' if symbol_count == 1 else 'entries'}:"
+            )
 
             if self.elffile.elfclass == 32:
                 self._emitline('   Num:    Value  Size Type    Bind   Vis      Ndx Name')
@@ -513,13 +502,13 @@ class ReadElf:
                                                  'VER_NDX_GLOBAL')):
                         if version['filename']:
                             # external symbol
-                            version_info = '@%(name)s (%(index)i)' % version
+                            version_info = f"@{version['name']} ({int(version['index'])})"
                         else:
                             # internal symbol
                             if version['hidden']:
-                                version_info = '@%(name)s' % version
+                                version_info = '@{name}'.format(**version)
                             else:
-                                version_info = '@@%(name)s' % version
+                                version_info = '@@{name}'.format(**version)
 
                 symbol_name = symbol.name
                 # Print section names for STT_SECTION symbols as readelf does
@@ -530,19 +519,24 @@ class ReadElf:
                     symbol_name = self.elffile.get_section(symbol['st_shndx']).name
 
                 # symbol names are truncated to 25 chars, similarly to readelf
-                self._emitline('%6d: %s %s %-7s %-6s %-7s %4s %.25s%s' % (
-                    nsym,
-                    self._format_hex(
-                        symbol['st_value'], fullhex=True, lead0x=False),
-                    "%5d" % symbol['st_size'] if symbol['st_size'] < 100000 else hex(symbol['st_size']),
-                    describe_symbol_type(symbol['st_info']['type']),
-                    describe_symbol_bind(symbol['st_info']['bind']),
-                    describe_symbol_other(symbol['st_other']),
-                    describe_symbol_shndx(self._get_symbol_shndx(symbol,
-                                                                 nsym,
-                                                                 section_index)),
-                    _format_symbol_name(symbol_name),
-                    version_info))
+                symbol_size = (
+                    f"{symbol['st_size']:5d}"
+                    if symbol['st_size'] < 100000
+                    else hex(symbol['st_size'])
+                )
+                symbol_shndx = describe_symbol_shndx(
+                    self._get_symbol_shndx(symbol, nsym, section_index)
+                )
+                self._emitline(
+                    f"{nsym:6d}: "
+                    f"{self._format_hex(symbol['st_value'], fullhex=True, lead0x=False)} "
+                    f"{symbol_size} "
+                    f"{describe_symbol_type(symbol['st_info']['type']):<7} "
+                    f"{describe_symbol_bind(symbol['st_info']['bind']):<6} "
+                    f"{describe_symbol_other(symbol['st_other']):<7} "
+                    f"{symbol_shndx:>4} "
+                    f"{_format_symbol_name(symbol_name):.25}{version_info}"
+                )
 
     def display_dynamic_tags(self) -> None:
         """ Display the dynamic tags contained in the file
@@ -553,34 +547,36 @@ class ReadElf:
                 continue
 
             has_dynamic_sections = True
-            self._emitline("\nDynamic section at offset %s contains %d %s:" % (
-                self._format_hex(section['sh_offset']),
-                section.num_tags(),
-                'entry' if section.num_tags() == 1 else 'entries'))
+            tag_count = section.num_tags()
+            self._emitline(
+                f"\nDynamic section at offset "
+                f"{self._format_hex(section['sh_offset'])} contains {tag_count:d} "
+                f"{'entry' if tag_count == 1 else 'entries'}:"
+            )
             self._emitline("  Tag        Type                         Name/Value")
 
             padding = 20 + (8 if self.elffile.elfclass == 32 else 0)
             for tag in section.iter_tags():
                 if tag.entry.d_tag == 'DT_NEEDED':
-                    parsed = 'Shared library: [%s]' % tag.needed
+                    parsed = f'Shared library: [{tag.needed}]'
                 elif tag.entry.d_tag == 'DT_RPATH':
-                    parsed = 'Library rpath: [%s]' % tag.rpath
+                    parsed = f'Library rpath: [{tag.rpath}]'
                 elif tag.entry.d_tag == 'DT_RUNPATH':
-                    parsed = 'Library runpath: [%s]' % tag.runpath
+                    parsed = f'Library runpath: [{tag.runpath}]'
                 elif tag.entry.d_tag == 'DT_SONAME':
-                    parsed = 'Library soname: [%s]' % tag.soname
+                    parsed = f'Library soname: [{tag.soname}]'
                 elif tag.entry.d_tag.endswith(('SZ', 'ENT')):
-                    parsed = '%i (bytes)' % tag['d_val']
+                    parsed = f"{int(tag['d_val'])} (bytes)"
                 elif tag.entry.d_tag == 'DT_FLAGS':
                     parsed = describe_dt_flags(tag.entry.d_val)
                 elif tag.entry.d_tag == 'DT_FLAGS_1':
-                    parsed = 'Flags: %s' % describe_dt_flags_1(tag.entry.d_val)
+                    parsed = f'Flags: {describe_dt_flags_1(tag.entry.d_val)}'
                 elif tag.entry.d_tag.endswith(('NUM', 'COUNT')):
-                    parsed = '%i' % tag['d_val']
+                    parsed = f"{int(tag['d_val'])}"
                 elif tag.entry.d_tag == 'DT_PLTREL':
                     s = describe_dyn_tag(tag.entry.d_val)
                     s = s.removeprefix('DT_')
-                    parsed = '%s' % s
+                    parsed = f'{s}'
                 elif tag.entry.d_tag == 'DT_MIPS_FLAGS':
                     parsed = describe_rh_flags(tag.entry.d_val)
                 elif tag.entry.d_tag in ('DT_MIPS_SYMTABNO',
@@ -589,14 +585,16 @@ class ReadElf:
                 elif tag.entry.d_tag == 'DT_AARCH64_BTI_PLT':
                     parsed = ''
                 else:
-                    parsed = '%#x' % tag['d_val']
+                    parsed = '{:#x}'.format(tag['d_val'])
 
-                self._emitline(" %s %-*s %s" % (
-                    self._format_hex(ENUM_D_TAG.get(tag.entry.d_tag, tag.entry.d_tag),
-                        fullhex=True, lead0x=True),
-                    padding,
-                    '(%s)' % (tag.entry.d_tag[3:],),
-                    parsed))
+                tag_value = self._format_hex(
+                    ENUM_D_TAG.get(tag.entry.d_tag, tag.entry.d_tag),
+                    fullhex=True,
+                    lead0x=True,
+                )
+                self._emitline(
+                    f" {tag_value} {f'({tag.entry.d_tag[3:]})':<{padding}} {parsed}"
+                )
         if not has_dynamic_sections:
             self._emitline("\nThere is no dynamic section in this file.")
 
@@ -608,7 +606,7 @@ class ReadElf:
                 for note in section.iter_notes():
                       self._emitline(f"\nDisplaying notes found in: {section.name}")
                       self._emitline('  Owner                Data size        Description')
-                      self._emitline('  %s %s\t%s' % (
+                      self._emitline('  {} {}\t{}'.format(
                           note['n_name'].ljust(20),
                           self._format_hex(note['n_descsz'], fieldsize=8),
                           describe_note(note, self.elffile.header.e_machine)))
@@ -622,11 +620,13 @@ class ReadElf:
                 continue
 
             has_relocation_sections = True
-            self._emitline("\nRelocation section '%.128s' at offset %s contains %d %s:" % (
-                section.name,
-                self._format_hex(section['sh_offset']),
-                section.num_relocations(),
-                'entry' if section.num_relocations() == 1 else 'entries'))
+            relocation_count = section.num_relocations()
+            self._emitline(
+                f"\nRelocation section '{section.name:.128}' at offset "
+                f"{self._format_hex(section['sh_offset'])} contains "
+                f"{relocation_count:d} "
+                f"{'entry' if relocation_count == 1 else 'entries'}:"
+            )
             if section.is_RELA():
                 self._emitline("  Offset          Info           Type           Sym. Value    Sym. Name + Addend")
             else:
@@ -637,19 +637,17 @@ class ReadElf:
 
             for rel in section.iter_relocations():
                 hexwidth = 8 if self.elffile.elfclass == 32 else 12
-                self._emit('%s  %s %-17.17s' % (
-                    self._format_hex(rel['r_offset'],
-                        fieldsize=hexwidth, lead0x=False),
-                    self._format_hex(rel['r_info'],
-                        fieldsize=hexwidth, lead0x=False),
-                    describe_reloc_type(
-                        rel['r_info_type'], self.elffile)))
+                self._emit(
+                    f"{self._format_hex(rel['r_offset'], fieldsize=hexwidth, lead0x=False)}  "
+                    f"{self._format_hex(rel['r_info'], fieldsize=hexwidth, lead0x=False)} "
+                    f"{describe_reloc_type(rel['r_info_type'], self.elffile):<17.17}"
+                )
 
                 if rel['r_info_sym'] == 0:
                     if section.is_RELA():
                         fieldsize = 8 if self.elffile.elfclass == 32 else 16
                         addend = self._format_hex(rel['r_addend'], lead0x=False)
-                        self._emit(' %s   %s' % (' ' * fieldsize, addend))
+                        self._emit(' {}   {}'.format(' ' * fieldsize, addend))
                     self._emitline()
 
                 else:
@@ -670,17 +668,17 @@ class ReadElf:
                         version = self._symbol_version(rel['r_info_sym'])
                         version = (version['name']
                                    if version and version['name'] else '')
-                    symbol_name = '%.22s' % symbol_name
+                    symbol_name = f'{symbol_name:.22}'
                     if version:
                         symbol_name += '@' + version
 
-                    self._emit(' %s %s' % (
+                    self._emit(' {} {}'.format(
                         self._format_hex(
                             symbol['st_value'],
                             fullhex=True, lead0x=False),
                         _format_symbol_name(symbol_name)))
                     if section.is_RELA():
-                        self._emit(' %s %x' % (
+                        self._emit(' {} {:x}'.format(
                             '+' if rel['r_addend'] >= 0 else '-',
                             abs(rel['r_addend'])))
                     self._emitline()
@@ -690,10 +688,8 @@ class ReadElf:
                 if (self.elffile.elfclass == 64 and
                     self.elffile['e_machine'] == 'EM_MIPS'):
                     for i in (2, 3):
-                        rtype = rel['r_info_type%s' % i]
-                        self._emit('                    Type%s: %s' % (
-                                   i,
-                                   describe_reloc_type(rtype, self.elffile)))
+                        rtype = rel[f'r_info_type{i}']
+                        self._emit(f'                    Type{i}: {describe_reloc_type(rtype, self.elffile)}')
                         self._emitline()
 
         if not has_relocation_sections:
@@ -705,31 +701,32 @@ class ReadElf:
             return
         for ehabi_info in self.elffile.get_ehabi_infos():
             # Unwind section '.ARM.exidx' at offset 0x203e8 contains 1009 entries:
-            self._emitline("\nUnwind section '%s' at offset 0x%x contains %d %s" % (
-                ehabi_info.section_name(),
-                ehabi_info.section_offset(),
-                ehabi_info.num_entry(),
-                'entry' if ehabi_info.num_entry() == 1 else 'entries'))
+            entry_count = ehabi_info.num_entry()
+            self._emitline(
+                f"\nUnwind section '{ehabi_info.section_name()}' at offset "
+                f"0x{ehabi_info.section_offset():x} contains {entry_count:d} "
+                f"{'entry' if entry_count == 1 else 'entries'}"
+            )
 
             for i in range(ehabi_info.num_entry()):
                 entry = ehabi_info.get_entry(i)
                 self._emitline()
-                self._emitline("Entry %d:" % i)
+                self._emitline(f"Entry {int(i)}:")
                 if isinstance(entry, CorruptEHABIEntry):
-                    self._emitline("    [corrupt] %s" % entry.reason)
+                    self._emitline(f"    [corrupt] {entry.reason}")
                     continue
-                self._emit("    Function offset 0x%x: " % entry.function_offset)
+                self._emit(f"    Function offset 0x{entry.function_offset:x}: ")
                 if isinstance(entry, CannotUnwindEHABIEntry):
                     self._emitline("[cantunwind]")
                     continue
                 elif entry.eh_table_offset:
-                    self._emitline("@0x%x" % entry.eh_table_offset)
+                    self._emitline(f"@0x{entry.eh_table_offset:x}")
                 else:
                     self._emitline("Compact (inline)")
                 if isinstance(entry, GenericEHABIEntry):
-                    self._emitline("    Personality: 0x%x" % entry.personality)
+                    self._emitline(f"    Personality: 0x{entry.personality:x}")
                 else:
-                    self._emitline("    Compact model index: %d" % entry.personality)
+                    self._emitline(f"    Compact model index: {int(entry.personality)}")
                     for mnemonic_item in entry.mnmemonic_array():
                         self._emit('    ')
                         self._emitline(mnemonic_item)
@@ -749,7 +746,7 @@ class ReadElf:
                 # Symbol version info are printed four by four entries
                 for idx_by_4 in range(0, num_symbols, 4):
 
-                    self._emit('  %03x:' % idx_by_4)
+                    self._emit(f'  {idx_by_4:03x}:')
 
                     for idx in range(idx_by_4, min(idx_by_4 + 4, num_symbols)):
 
@@ -762,12 +759,11 @@ class ReadElf:
                             version_name = '(*global*)'
                         else:
                             version_index = symbol_version['index']
-                            version_name = '(%(name)s)' % symbol_version
+                            version_name = '({name})'.format(**symbol_version)
 
                         visibility = 'h' if symbol_version['hidden'] else ' '
 
-                        self._emit('%4x%s%-13s' % (
-                            version_index, visibility, version_name))
+                        self._emit(f'{version_index:4x}{visibility}{version_name:13}')
 
                     self._emitline()
 
@@ -787,19 +783,20 @@ class ReadElf:
                     else:
                         flags = 'none'
 
-                    self._emitline('  %s: Rev: %i  Flags: %s  Index: %i'
-                                   '  Cnt: %i  Name: %s' % (
-                            self._format_hex(offset, fieldsize=6,
-                                             alternate=True),
-                            verdef['vd_version'], flags, verdef['vd_ndx'],
-                            verdef['vd_cnt'], name))
+                    self._emitline(
+                        f"  {self._format_hex(offset, fieldsize=6, alternate=True)}: "
+                        f"Rev: {verdef['vd_version']:d}  Flags: {flags}  "
+                        f"Index: {verdef['vd_ndx']:d}  Cnt: {verdef['vd_cnt']:d}  "
+                        f"Name: {name}"
+                    )
 
                     verdaux_offset = (
                             offset + verdef['vd_aux'] + verdaux['vda_next'])
                     for idx, verdaux in enumerate(verdaux_iter, start=1):
-                        self._emitline('  %s: Parent %i: %s' %
-                            (self._format_hex(verdaux_offset, fieldsize=4),
-                                              idx, verdaux.name))
+                        self._emitline(
+                            f"  {self._format_hex(verdaux_offset, fieldsize=4)}: "
+                            f"Parent {idx:d}: {verdaux.name}"
+                        )
                         verdaux_offset += verdaux['vda_next']
 
                     offset += verdef['vd_next']
@@ -810,11 +807,11 @@ class ReadElf:
                 offset = 0
                 for verneed, verneed_iter in section.iter_versions():
 
-                    self._emitline('  %s: Version: %i  File: %s  Cnt: %i' % (
-                            self._format_hex(offset, fieldsize=6,
-                                             alternate=True),
-                            verneed['vn_version'], verneed.name,
-                            verneed['vn_cnt']))
+                    self._emitline(
+                        f"  {self._format_hex(offset, fieldsize=6, alternate=True)}: "
+                        f"Version: {verneed['vn_version']:d}  File: {verneed.name}  "
+                        f"Cnt: {verneed['vn_cnt']:d}"
+                    )
 
                     vernaux_offset = offset + verneed['vn_aux']
                     for idx, vernaux in enumerate(verneed_iter, start=1):
@@ -826,10 +823,10 @@ class ReadElf:
                             flags = 'none'
 
                         self._emitline(
-                            '  %s:   Name: %s  Flags: %s  Version: %i' % (
-                                self._format_hex(vernaux_offset, fieldsize=4),
-                                vernaux.name, flags,
-                                vernaux['vna_other']))
+                            f"  {self._format_hex(vernaux_offset, fieldsize=4)}:   "
+                            f"Name: {vernaux.name}  Flags: {flags}  "
+                            f"Version: {vernaux['vna_other']:d}"
+                        )
 
                         vernaux_offset += vernaux['vna_next']
 
@@ -851,15 +848,13 @@ class ReadElf:
         if section is None:
             # readelf prints the warning to stderr. Even though stderrs are not compared
             # in tests, we comply with that behavior.
-            sys.stderr.write('readelf: Warning: Section \'%s\' was not dumped because it does not exist!\n' % (
-                section_spec))
+            sys.stderr.write(f'readelf: Warning: Section \'{section_spec}\' was not dumped because it does not exist!\n')
             return
         if section['sh_type'] == 'SHT_NOBITS' or not (data := section.data()):
-            self._emitline("Section '%s' has no data to dump." % (
-                section_spec))
+            self._emitline(f"Section '{section_spec}' has no data to dump.")
             return
 
-        self._emitline("\nHex dump of section '%s':" % section.name)
+        self._emitline(f"\nHex dump of section '{section.name}':")
         self._note_relocs_for_section(section)
         addr = section['sh_addr']
         dataptr = 0
@@ -869,10 +864,10 @@ class ReadElf:
             # chunks of 16 bytes per line
             linebytes = min(bytesleft, 16)
 
-            self._emit('  %s ' % self._format_hex(addr, fieldsize=8))
+            self._emit(f'  {self._format_hex(addr, fieldsize=8)} ')
             for i in range(16):
                 if i < linebytes:
-                    self._emit('%2.2x' % data[dataptr + i])
+                    self._emit(f'{data[dataptr + i]:02x}')
                 else:
                     self._emit('  ')
                 if i % 4 == 3:
@@ -899,15 +894,13 @@ class ReadElf:
         if section is None:
             # readelf prints the warning to stderr. Even though stderrs are not compared
             # in tests, we comply with that behavior.
-            sys.stderr.write('readelf.py: Warning: Section \'%s\' was not dumped because it does not exist!\n' % (
-                section_spec))
+            sys.stderr.write(f'readelf.py: Warning: Section \'{section_spec}\' was not dumped because it does not exist!\n')
             return
         if section['sh_type'] == 'SHT_NOBITS':
-            self._emitline("\nSection '%s' has no data to dump." % (
-                section_spec))
+            self._emitline(f"\nSection '{section_spec}' has no data to dump.")
             return
 
-        self._emitline("\nString dump of section '%s':" % section.name)
+        self._emitline(f"\nString dump of section '{section.name}':")
 
         found = False
         data = section.data()
@@ -926,8 +919,7 @@ class ReadElf:
                 endptr += 1
 
             found = True
-            self._emitline('  [%6x]  %s' % (
-                dataptr, bytes2str(data[dataptr:endptr])))
+            self._emitline(f'  [{dataptr:6x}]  {bytes2str(data[dataptr:endptr])}')
 
             dataptr = endptr
 
@@ -962,7 +954,7 @@ class ReadElf:
         elif dump_what == 'Ranges':
             self._dump_debug_ranges()
         else:
-            self._emitline('debug dump not yet supported for "%s"' % dump_what)
+            self._emitline(f'debug dump not yet supported for "{dump_what}"')
 
     def _format_hex(
         self,
@@ -1007,7 +999,7 @@ class ReadElf:
         if fieldsize is None:
             field = '%x'
         else:
-            field = '%' + '0%sx' % fieldsize
+            field = '%' + f'0{fieldsize}x'
         return s + field % addr
 
     def _print_version_section_header(
@@ -1027,18 +1019,17 @@ class ReadElf:
         else:
             num_entries = version_section.num_symbols()
 
-        self._emitline("\n%s section '%s' contains %d %s:" % (
-            name, version_section.name, num_entries,
-            'entry' if num_entries == 1 else 'entries'))
-        self._emitline('%sAddr: %s  Offset: %s  Link: %i (%s)' % (
-            ' ' * indent,
-            self._format_hex(
-                version_section['sh_addr'], fieldsize=16, lead0x=lead0x),
-            self._format_hex(
-                version_section['sh_offset'], fieldsize=8, lead0x=True),
-            version_section['sh_link'],
-                self.elffile.get_section(version_section['sh_link']).name
-            )
+        self._emitline(
+            f"\n{name} section '{version_section.name}' contains {num_entries:d} "
+            f"{'entry' if num_entries == 1 else 'entries'}:"
+        )
+        link = version_section['sh_link']
+        self._emitline(
+            f"{' ' * indent}Addr: "
+            f"{self._format_hex(version_section['sh_addr'], fieldsize=16, lead0x=lead0x)}  "
+            f"Offset: "
+            f"{self._format_hex(version_section['sh_offset'], fieldsize=8, lead0x=True)}  "
+            f"Link: {link:d} ({self.elffile.get_section(link).name})"
         )
 
     @cached_property
@@ -1082,12 +1073,11 @@ class ReadElf:
         if index not in ('VER_NDX_LOCAL', 'VER_NDX_GLOBAL'):
             index = int(index)
 
-            if self._versioninfo['type'] == 'GNU':
-                # In GNU versioning mode, the highest bit is used to
-                # store whether the symbol is hidden or not
-                if index & 0x8000:
-                    index &= ~0x8000
-                    symbol_version['hidden'] = True
+            # In GNU versioning mode, the highest bit is used to
+            # store whether the symbol is hidden or not.
+            if self._versioninfo['type'] == 'GNU' and index & 0x8000:
+                index &= ~0x8000
+                symbol_version['hidden'] = True
 
             if (self._versioninfo['verdef'] and
                     index <= self._versioninfo['verdef'].num_versions()):
@@ -1159,35 +1149,34 @@ class ReadElf:
         """
         if not self._dwarfinfo.has_debug_info:
             return
-        self._emitline('Contents of the %s section:\n' % self._dwarfinfo.debug_info_sec.name)
+        self._emitline(f'Contents of the {self._dwarfinfo.debug_info_sec.name} section:\n')
 
         # Offset of the .debug_info section in the stream
         section_offset = self._dwarfinfo.debug_info_sec.global_offset
 
         for cu in self._dwarfinfo.iter_CUs():
-            self._emitline('  Compilation Unit @ offset %s:' %
-                self._format_hex(cu.cu_offset, alternate=True))
-            self._emitline('   Length:        %s (%s)' % (
+            self._emitline(f'  Compilation Unit @ offset {self._format_hex(cu.cu_offset, alternate=True)}:')
+            self._emitline('   Length:        {} ({})'.format(
                 self._format_hex(cu['unit_length']),
-                '%s-bit' % cu.dwarf_format()))
-            self._emitline('   Version:       %s' % cu['version'])
+                f'{cu.dwarf_format()}-bit'))
+            self._emitline('   Version:       {}'.format(cu['version']))
             if cu['version'] >= 5:
                 if cu.header.get("unit_type", ''):
                     unit_type = cu.header.unit_type
-                    self._emitline('   Unit Type:     %s (%d)' % (
-                        unit_type, ENUM_DW_UT.get(cu.header.unit_type, 0)))
-                    self._emitline('   Abbrev Offset: %s' % (
-                        self._format_hex(cu['debug_abbrev_offset'], alternate=True)))
-                    self._emitline('   Pointer Size:  %s' % cu['address_size'])
+                    self._emitline(
+                        f"   Unit Type:     {unit_type} "
+                        f"({ENUM_DW_UT.get(cu.header.unit_type, 0):d})"
+                    )
+                    self._emitline('   Abbrev Offset: {}'.format(self._format_hex(cu['debug_abbrev_offset'], alternate=True)))
+                    self._emitline('   Pointer Size:  {}'.format(cu['address_size']))
                     if unit_type in ('DW_UT_skeleton', 'DW_UT_split_compile'):
-                        self._emitline('   Dwo id:        %s' % cu['dwo_id'])
+                        self._emitline('   Dwo id:        {}'.format(cu['dwo_id']))
                     elif unit_type in ('DW_UT_type', 'DW_UT_split_type'):
-                        self._emitline('   Signature:     0x%x' % cu['type_signature'])
-                        self._emitline('   Type Offset:   0x%x' % cu['type_offset'])
+                        self._emitline('   Signature:     0x{:x}'.format(cu['type_signature']))
+                        self._emitline('   Type Offset:   0x{:x}'.format(cu['type_offset']))
             else:
-                self._emitline('   Abbrev Offset: %s' % (
-                    self._format_hex(cu['debug_abbrev_offset'], alternate=True))),
-                self._emitline('   Pointer Size:  %s' % cu['address_size'])
+                self._emitline('   Abbrev Offset: {}'.format(self._format_hex(cu['debug_abbrev_offset'], alternate=True))),
+                self._emitline('   Pointer Size:  {}'.format(cu['address_size']))
 
             # The nesting depth of each DIE within the tree of DIEs must be
             # displayed. To implement this, a counter is incremented each time
@@ -1200,11 +1189,11 @@ class ReadElf:
             for die in cu.iter_DIEs():
                 if die.tag == 'DW_TAG_subprogram':
                     current_function = die
-                self._emitline(' <%s><%x>: Abbrev Number: %s%s' % (
+                self._emitline(' <{}><{:x}>: Abbrev Number: {}{}'.format(
                     die_depth,
                     die.offset,
                     die.abbrev_code,
-                    (' (%s)' % die.tag) if not die.is_null() else ''))
+                    (f' ({die.tag})') if not die.is_null() else ''))
                 if die.is_null():
                     die_depth -= 1
                     continue
@@ -1213,7 +1202,7 @@ class ReadElf:
                     name = attr.name
                     # Unknown attribute values are passed-through as integers
                     if isinstance(name, int):
-                        name = 'Unknown AT value: %x' % name
+                        name = f'Unknown AT value: {name:x}'
 
                     attr_desc = describe_attr_value(attr, die, section_offset)
 
@@ -1222,11 +1211,9 @@ class ReadElf:
                     else:
                         postfix = ''
 
-                    self._emitline('    <%x>   %-18s: %s%s' % (
-                        attr.offset,
-                        name,
-                        attr_desc,
-                        postfix))
+                    self._emitline(
+                        f"    <{attr.offset:x}>   {name:<18}: {attr_desc}{postfix}"
+                    )
 
                 if die.has_children:
                     die_depth += 1
@@ -1240,29 +1227,28 @@ class ReadElf:
             return
         if self._dwarfinfo.debug_types_sec is None:
             return
-        self._emitline('Contents of the %s section:\n' % self._dwarfinfo.debug_types_sec.name)
+        self._emitline(f'Contents of the {self._dwarfinfo.debug_types_sec.name} section:\n')
 
         # Offset of the .debug_types section in the stream
         section_offset = self._dwarfinfo.debug_types_sec.global_offset
 
         for tu in self._dwarfinfo.iter_TUs():
-            self._emitline('  Compilation Unit @ offset %s:' %
-                           self._format_hex(tu.tu_offset, alternate=True))
-            self._emitline('   Length:        %s (%s)' % (self._format_hex(tu['unit_length']),
-                                                          '%s-bit' % tu.dwarf_format()))
-            self._emitline('   Version:       %s' % tu['version'])
-            self._emitline('   Abbrev Offset: %s' % (self._format_hex(tu['debug_abbrev_offset'], alternate=True)))
-            self._emitline('   Pointer Size:  %s' % tu['address_size'])
-            self._emitline('   Signature:     0x%x' % tu['signature'])
-            self._emitline('   Type Offset:   0x%x' % tu['type_offset'])
+            self._emitline(f'  Compilation Unit @ offset {self._format_hex(tu.tu_offset, alternate=True)}:')
+            self._emitline('   Length:        {} ({})'.format(self._format_hex(tu['unit_length']),
+                                                          f'{tu.dwarf_format()}-bit'))
+            self._emitline('   Version:       {}'.format(tu['version']))
+            self._emitline('   Abbrev Offset: {}'.format(self._format_hex(tu['debug_abbrev_offset'], alternate=True)))
+            self._emitline('   Pointer Size:  {}'.format(tu['address_size']))
+            self._emitline('   Signature:     0x{:x}'.format(tu['signature']))
+            self._emitline('   Type Offset:   0x{:x}'.format(tu['type_offset']))
 
             die_depth = 0
             for die in tu.iter_DIEs():
-                self._emitline(' <%s><%x>: Abbrev Number: %s%s' % (
+                self._emitline(' <{}><{:x}>: Abbrev Number: {}{}'.format(
                     die_depth,
                     die.offset,
                     die.abbrev_code,
-                    (' (%s)' % die.tag) if not die.is_null() else ''))
+                    (f' ({die.tag})') if not die.is_null() else ''))
                 if die.is_null():
                     die_depth -= 1
                     continue
@@ -1271,14 +1257,11 @@ class ReadElf:
                     name = attr.name
                     # Unknown attribute values are passed-through as integers
                     if isinstance(name, int):
-                        name = 'Unknown AT value: %x' % name
+                        name = f'Unknown AT value: {name:x}'
 
                     attr_desc = describe_attr_value(attr, die, section_offset)
 
-                    self._emitline('    <%x>   %-18s: %s' % (
-                        attr.offset,
-                        name,
-                        attr_desc))
+                    self._emitline(f'    <{attr.offset:x}>   {name:18}: {attr_desc}')
 
                 if die.has_children:
                     die_depth += 1
@@ -1291,7 +1274,7 @@ class ReadElf:
         """
         if not self._dwarfinfo.has_debug_info:
             return
-        self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_line_sec.name)
+        self._emitline(f'Contents of the {self._dwarfinfo.debug_line_sec.name} section:')
         self._emitline()
         lineprogram_list = []
 
@@ -1306,9 +1289,9 @@ class ReadElf:
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
             if lineprogram['include_directory']:
                 # GNU readelf 2.38 only outputs directory in wide mode
-                self._emitline('%s:' % cu_filename)
+                self._emitline(f'{cu_filename}:')
             else:
-                self._emitline('CU: %s:' % cu_filename)
+                self._emitline(f'CU: {cu_filename}:')
 
             self._emitline('File name                            Line number    Starting address    Stmt')
             # GNU readelf has a View column that we don't try to replicate
@@ -1325,30 +1308,49 @@ class ReadElf:
                         file_entry = lineprogram['file_entry'][entry.args[0] - 1]
                         if file_entry.dir_index == 0:
                             # current directory
-                            self._emitline('\n./%s:[++]' % (
-                                bytes2str(file_entry.name)))
+                            self._emitline(f'\n./{bytes2str(file_entry.name)}:[++]')
                         else:
-                            self._emitline('\n%s/%s:' % (
+                            self._emitline('\n{}/{}:'.format(
                                 bytes2str(lineprogram['include_directory'][file_entry.dir_index - 1]),
                                 bytes2str(file_entry.name)))
                     elif entry.command == DW_LNE_define_file:
-                        self._emitline('%s:' % (
-                            bytes2str(lineprogram['include_directory'][entry.args[0].dir_index])))
+                        self._emitline('{}:'.format(bytes2str(lineprogram['include_directory'][entry.args[0].dir_index])))
                 elif lineprogram['version'] < 4 or self.elffile['e_machine'] == 'EM_PPC64':
-                    self._emitline('%-35s  %11s  %18s    %s' % (
-                        bytes2str(lineprogram['file_entry'][state.file - 1].name),
-                        state.line if not state.end_sequence else '-',
-                        '0' if state.address == 0 else self._format_hex(state.address),
-                        'x' if state.is_stmt and not state.end_sequence else ''))
+                    filename = bytes2str(
+                        lineprogram['file_entry'][state.file - 1].name
+                    )
+                    line = state.line if not state.end_sequence else '-'
+                    address = (
+                        '0'
+                        if state.address == 0
+                        else self._format_hex(state.address)
+                    )
+                    stmt = 'x' if state.is_stmt and not state.end_sequence else ''
+                    self._emitline(
+                        f"{filename:<35}  {line:>11}  {address:>18}    {stmt}"
+                    )
                 else:
                     # In readelf, on non-VLIW machines there is no op_index postfix after address.
                     # It used to be unconditional.
-                    self._emitline('%-35s  %s  %18s%s %s' % (
-                        bytes2str(lineprogram['file_entry'][state.file - 1].name),
-                        "%11d" % (state.line,) if not state.end_sequence else '-',
-                        '0' if state.address == 0 else self._format_hex(state.address),
-                        '' if lineprogram.header.maximum_operations_per_instruction == 1 else '[%d]' % (state.op_index,),
-                        'x' if state.is_stmt and not state.end_sequence else ''))
+                    filename = bytes2str(
+                        lineprogram['file_entry'][state.file - 1].name
+                    )
+                    line = f"{state.line:11d}" if not state.end_sequence else '-'
+                    address = (
+                        '0'
+                        if state.address == 0
+                        else self._format_hex(state.address)
+                    )
+                    op_index = (
+                        ''
+                        if lineprogram.header.maximum_operations_per_instruction
+                        == 1
+                        else f'[{state.op_index:d}]'
+                    )
+                    stmt = 'x' if state.is_stmt and not state.end_sequence else ''
+                    self._emitline(
+                        f"{filename:<35}  {line}  {address:>18}{op_index} {stmt}"
+                    )
                 if entry.command == DW_LNS_copy:
                     # Another readelf oddity...
                     self._emitline()
@@ -1360,22 +1362,22 @@ class ReadElf:
             while `cfi_entries` must be an iterable that yields the sequence of
             CIE or FDE instances.
         """
-        self._emitline('Contents of the %s section:' % section.name)
+        self._emitline(f'Contents of the {section.name} section:')
 
         for entry in cfi_entries:
             if isinstance(entry, CIE):
-                self._emitline('\n%08x %s %s CIE' % (
+                self._emitline('\n{:08x} {} {} CIE'.format(
                     entry.offset,
                     self._format_hex(entry['length'], fullhex=True, lead0x=False),
                     self._format_hex(entry['CIE_id'], fieldsize=8, lead0x=False)))
-                self._emitline('  Version:               %d' % entry['version'])
-                self._emitline('  Augmentation:          "%s"' % bytes2str(entry['augmentation']))
+                self._emitline(f"  Version:               {int(entry['version'])}")
+                self._emitline('  Augmentation:          "{}"'.format(bytes2str(entry['augmentation'])))
                 if(entry['version'] >= 4):
-                    self._emitline('  Pointer Size:          %d' % entry['address_size'])
-                    self._emitline('  Segment Size:          %d' % entry['segment_size'])
-                self._emitline('  Code alignment factor: %u' % entry['code_alignment_factor'])
-                self._emitline('  Data alignment factor: %d' % entry['data_alignment_factor'])
-                self._emitline('  Return address column: %d' % entry['return_address_register'])
+                    self._emitline(f"  Pointer Size:          {int(entry['address_size'])}")
+                    self._emitline(f"  Segment Size:          {int(entry['segment_size'])}")
+                self._emitline(f"  Code alignment factor: {int(entry['code_alignment_factor'])}")
+                self._emitline(f"  Data alignment factor: {int(entry['data_alignment_factor'])}")
+                self._emitline(f"  Return address column: {int(entry['return_address_register'])}")
                 if entry.augmentation_bytes:
                     self._emitline(f'  Augmentation data:     {entry.augmentation_bytes.hex(" ")}')
                 self._emitline()
@@ -1383,7 +1385,7 @@ class ReadElf:
             elif isinstance(entry, FDE):
                 # Readelf bug #31973
                 length = entry['length'] if entry.cie.offset < entry.offset else entry.cie['length']
-                self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
+                self._emitline('\n{:08x} {} {} FDE cie={:08x} pc={}..{}'.format(
                     entry.offset,
                     self._format_hex(length, fullhex=True, lead0x=False),
                     self._format_hex(entry['CIE_pointer'], fieldsize=8, lead0x=False),
@@ -1397,7 +1399,7 @@ class ReadElf:
 
             else: # ZERO terminator
                 assert isinstance(entry, ZERO)
-                self._emitline('\n%08x ZERO terminator' % entry.offset)
+                self._emitline(f'\n{entry.offset:08x} ZERO terminator')
                 continue
 
             self._emit(describe_CFI_instructions(entry))
@@ -1432,7 +1434,7 @@ class ReadElf:
         if not namelut:
             return
 
-        self._emitline('Contents of the %s section:' % section.name)
+        self._emitline(f'Contents of the {section.name} section:')
         self._emitline()
 
         cu_headers = namelut.get_cu_headers()
@@ -1441,14 +1443,14 @@ class ReadElf:
         for (cu_hdr, (cu_ofs, items)) in zip(cu_headers, itertools.groupby(
             namelut.items(), key = lambda x: x[1].cu_ofs)):
 
-            self._emitline('  Length:                              %d'   % cu_hdr.unit_length)
-            self._emitline('  Version:                             %d'   % cu_hdr.version)
-            self._emitline('  Offset into .debug_info section:     0x%x' % cu_hdr.debug_info_offset)
-            self._emitline('  Size of area in .debug_info section: %d'   % cu_hdr.debug_info_length)
+            self._emitline(f'  Length:                              {int(cu_hdr.unit_length)}')
+            self._emitline(f'  Version:                             {int(cu_hdr.version)}')
+            self._emitline(f'  Offset into .debug_info section:     0x{cu_hdr.debug_info_offset:x}')
+            self._emitline(f'  Size of area in .debug_info section: {int(cu_hdr.debug_info_length)}')
             self._emitline()
             self._emitline('    Offset  Name')
             for item in items:
-                self._emitline('    %x          %s' % (item[1].die_ofs - cu_ofs, item[0]))
+                self._emitline(f'    {item[1].die_ofs - cu_ofs:x}          {item[0]}')
         self._emitline()
 
     def _dump_debug_aranges(self) -> None:
@@ -1468,30 +1470,24 @@ class ReadElf:
             self._emitline("Section '.debug_aranges' has no debugging data.")
             return
 
-        self._emitline('Contents of the %s section:' % self._dwarfinfo.debug_aranges_sec.name)
+        self._emitline(f'Contents of the {self._dwarfinfo.debug_aranges_sec.name} section:')
         self._emitline()
         prev_offset = None
         for entry in unordered_entries:
             if prev_offset != entry.info_offset:
                 if entry != unordered_entries[0]:
-                    self._emitline('    %s %s' % (
-                        self._format_hex(0, fullhex=True, lead0x=False),
-                        self._format_hex(0, fullhex=True, lead0x=False)))
-                self._emitline('  Length:                   %d' % (entry.unit_length))
-                self._emitline('  Version:                  %d' % (entry.version))
-                self._emitline('  Offset into .debug_info:  0x%x' % (entry.info_offset))
-                self._emitline('  Pointer Size:             %d' % (entry.address_size))
-                self._emitline('  Segment Size:             %d' % (entry.segment_size))
+                    self._emitline(f'    {self._format_hex(0, fullhex=True, lead0x=False)} {self._format_hex(0, fullhex=True, lead0x=False)}')
+                self._emitline(f'  Length:                   {int(entry.unit_length)}')
+                self._emitline(f'  Version:                  {int(entry.version)}')
+                self._emitline(f'  Offset into .debug_info:  0x{entry.info_offset:x}')
+                self._emitline(f'  Pointer Size:             {int(entry.address_size)}')
+                self._emitline(f'  Segment Size:             {int(entry.segment_size)}')
                 self._emitline()
                 self._emitline('    Address            Length')
             if entry.begin_addr != 0 or entry.length != 0:
-                self._emitline('    %s %s' % (
-                    self._format_hex(entry.begin_addr, fullhex=True, lead0x=False),
-                    self._format_hex(entry.length, fullhex=True, lead0x=False)))
+                self._emitline(f'    {self._format_hex(entry.begin_addr, fullhex=True, lead0x=False)} {self._format_hex(entry.length, fullhex=True, lead0x=False)}')
             prev_offset = entry.info_offset
-        self._emitline('    %s %s' % (
-                self._format_hex(0, fullhex=True, lead0x=False),
-                self._format_hex(0, fullhex=True, lead0x=False)))
+        self._emitline(f'    {self._format_hex(0, fullhex=True, lead0x=False)} {self._format_hex(0, fullhex=True, lead0x=False)}')
 
     def _dump_frames_interp_info(self, section, cfi_entries) -> None:
         """ Dump interpreted (decoded) frame information in a section.
@@ -1500,24 +1496,25 @@ class ReadElf:
         while `cfi_entries` must be an iterable that yields the sequence of
         CIE or FDE instances.
         """
-        self._emitline('Contents of the %s section:' % section.name)
+        self._emitline(f'Contents of the {section.name} section:')
 
         for entry in cfi_entries:
             if isinstance(entry, CIE):
-                self._emitline('\n%08x %s %s CIE "%s" cf=%d df=%d ra=%d' % (
-                    entry.offset,
-                    self._format_hex(entry['length'], fullhex=True, lead0x=False),
-                    self._format_hex(entry['CIE_id'], fieldsize=8, lead0x=False),
-                    bytes2str(entry['augmentation']),
-                    entry['code_alignment_factor'],
-                    entry['data_alignment_factor'],
-                    entry['return_address_register']))
+                self._emitline(
+                    f"\n{entry.offset:08x} "
+                    f"{self._format_hex(entry['length'], fullhex=True, lead0x=False)} "
+                    f"{self._format_hex(entry['CIE_id'], fieldsize=8, lead0x=False)} "
+                    f'CIE "{bytes2str(entry["augmentation"])}" '
+                    f"cf={entry['code_alignment_factor']:d} "
+                    f"df={entry['data_alignment_factor']:d} "
+                    f"ra={entry['return_address_register']:d}"
+                )
                 ra_regnum = entry['return_address_register']
 
             elif isinstance(entry, FDE):
                 # Readelf bug #31973 - FDE length misreported if FDE precedes its CIE
                 length = entry['length'] if entry.cie.offset < entry.offset else entry.cie['length']
-                self._emitline('\n%08x %s %s FDE cie=%08x pc=%s..%s' % (
+                self._emitline('\n{:08x} {} {} FDE cie={:08x} pc={}..{}'.format(
                     entry.offset,
                     self._format_hex(length, fullhex=True, lead0x=False),
                     self._format_hex(entry['CIE_pointer'], fieldsize=8, lead0x=False),
@@ -1535,7 +1532,7 @@ class ReadElf:
 
             else: # ZERO terminator
                 assert isinstance(entry, ZERO)
-                self._emitline('\n%08x ZERO terminator' % entry.offset)
+                self._emitline(f'\n{entry.offset:08x} ZERO terminator')
                 continue
 
             # Decode the table.
@@ -1562,7 +1559,7 @@ class ReadElf:
                     if regnum == ra_regnum:
                         self._emit('ra      ')
                         continue
-                    self._emit(' %-5s' % describe_reg_name(regnum))
+                    self._emit(f' {describe_reg_name(regnum):5}')
             self._emitline()
 
             for line in decoded_table.table:
@@ -1573,14 +1570,14 @@ class ReadElf:
                     s = describe_CFI_CFA_rule(line['cfa'])
                 else:
                     s = 'u'
-                self._emit(' %-9s' % s)
+                self._emit(f' {s:9}')
 
                 for regnum in reg_order:
                     if regnum in line:
                         s = describe_CFI_register_rule(line[regnum])
                     else:
                         s = 'u'
-                    self._emit(' %-5s' % s)
+                    self._emit(f' {s:5}')
                 self._emitline()
         self._emitline()
 
@@ -1634,12 +1631,12 @@ class ReadElf:
 
         addr_size = di.config.default_address_size # In bytes, 4 or 8
         addr_width = addr_size * 2 # In hex digits, 8 or 16
-        line_template = "    %%08x %%0%dx %%0%dx %%s%%s" % (addr_width, addr_width)
+        line_template = f"    %08x %0{addr_width}x %0{addr_width}x %s%s"
 
         loc_lists = list(loc_lists_sec.iter_location_lists())
         if not loc_lists:
             # Present but empty locations section - readelf outputs a message
-            self._emitline("\nSection '%s' has no debugging data." % (section_name,))
+            self._emitline(f"\nSection '{section_name}' has no debugging data.")
             return
 
         # The v5 loclists section consists of CUs - small header, and
@@ -1653,7 +1650,7 @@ class ReadElf:
         lcu_index = 0
         next_lcu_offset = 0
 
-        self._emitline('Contents of the %s section:\n' % (section_name,))
+        self._emitline(f'Contents of the {section_name} section:\n')
         if not ver5:
             self._emitline('    Offset   Begin            End              Expression')
 
@@ -1678,7 +1675,7 @@ class ReadElf:
             if isinstance(entry, LocationViewPair):
                 has_views = in_views = True
                 # The "v" before address is conditional in binutils, haven't figured out how
-                self._emitline("    %08x v%015x v%015x location view pair" % (entry.entry_offset, entry.begin, entry.end))
+                self._emitline(f"    {entry.entry_offset:08x} v{entry.begin:015x} v{entry.end:015x} location view pair")
             else:
                 if in_views:
                     in_views = False
@@ -1702,16 +1699,8 @@ class ReadElf:
                     if has_views:
                         view = loc_list[loc_entry_count]
                         postfix = ' (start == end)' if entry.begin_offset == entry.end_offset and view.begin == view.end else ''
-                        self._emitline('    %08x v%015x v%015x views at %08x for:' %(
-                            entry.entry_offset,
-                            view.begin,
-                            view.end,
-                            view.entry_offset))
-                        self._emitline('             %016x %016x %s%s' %(
-                            begin_offset,
-                            end_offset,
-                            expr,
-                            postfix))
+                        self._emitline(f'    {entry.entry_offset:08x} v{view.begin:015x} v{view.end:015x} views at {view.entry_offset:08x} for:')
+                        self._emitline(f'             {begin_offset:016x} {end_offset:016x} {expr}{postfix}')
                         loc_entry_count += 1
                     else:
                         postfix = ' (start == end)' if entry.begin_offset == entry.end_offset else ''
@@ -1723,25 +1712,25 @@ class ReadElf:
                             postfix))
                 elif isinstance(entry, LocBaseAddressEntry):
                     base_ip = entry.base_address
-                    self._emitline("    %08x %016x (base address)" % (entry.entry_offset, entry.base_address))
+                    self._emitline(f"    {entry.entry_offset:08x} {entry.base_address:016x} (base address)")
 
         # Pyelftools doesn't store the terminating entry,
         # but readelf emits its offset, so this should too.
         last = loc_list[-1]
-        self._emitline("    %08x <End of list>" % (last.entry_offset + last.entry_length))
+        self._emitline(f"    {last.entry_offset + last.entry_length:08x} <End of list>")
 
     def _dump_debug_loclists_CU_header(self, cu: Container) -> None:
         # Header slightly different from that of v5 rangelist in-section CU header dump
-        self._emitline('Table at Offset %s' % self._format_hex(cu.cu_offset, alternate=True))
-        self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
-        self._emitline('  DWARF version:   %d' % cu.version)
-        self._emitline('  Address size:    %d' % cu.address_size)
-        self._emitline('  Segment size:    %d' % cu.segment_selector_size)
-        self._emitline('  Offset entries:  %d\n' % cu.offset_count)
+        self._emitline(f'Table at Offset {self._format_hex(cu.cu_offset, alternate=True)}')
+        self._emitline(f'  Length:          {self._format_hex(cu.unit_length, alternate=True)}')
+        self._emitline(f'  DWARF version:   {int(cu.version)}')
+        self._emitline(f'  Address size:    {int(cu.address_size)}')
+        self._emitline(f'  Segment size:    {int(cu.segment_selector_size)}')
+        self._emitline(f'  Offset entries:  {int(cu.offset_count)}\n')
         if cu.offsets:
-            self._emitline('  Offsets starting at 0x%x:' % cu.offset_table_offset)
+            self._emitline(f'  Offsets starting at 0x{cu.offset_table_offset:x}:')
             for i_offset in enumerate(cu.offsets):
-                self._emitline('    [%6d] 0x%x' % i_offset)
+                self._emitline(f"    [{i_offset[0]:6d}] 0x{i_offset[1]:x}")
 
     def _dump_debug_ranges(self) -> None:
         # TODO: GNU readelf format doesn't need entry_length?
@@ -1757,16 +1746,16 @@ class ReadElf:
             self._dump_debug_rangesection(di, range_lists_sec)
 
     def _dump_debug_rnglists_CU_header(self, cu: CompileUnit) -> None:
-        self._emitline(' Table at Offset: %s:' % self._format_hex(cu.cu_offset, alternate=True))
-        self._emitline('  Length:          %s' % self._format_hex(cu.unit_length, alternate=True))
-        self._emitline('  DWARF version:   %d' % cu.version)
-        self._emitline('  Address size:    %d' % cu.address_size)
-        self._emitline('  Segment size:    %d' % cu.segment_selector_size)
-        self._emitline('  Offset entries:  %d\n' % cu.offset_count)
+        self._emitline(f' Table at Offset: {self._format_hex(cu.cu_offset, alternate=True)}:')
+        self._emitline(f'  Length:          {self._format_hex(cu.unit_length, alternate=True)}')
+        self._emitline(f'  DWARF version:   {int(cu.version)}')
+        self._emitline(f'  Address size:    {int(cu.address_size)}')
+        self._emitline(f'  Segment size:    {int(cu.segment_selector_size)}')
+        self._emitline(f'  Offset entries:  {int(cu.offset_count)}\n')
         if cu.offsets:
-            self._emitline('  Offsets starting at 0x%x:' % cu.offset_table_offset)
+            self._emitline(f'  Offsets starting at 0x{cu.offset_table_offset:x}:')
             for i_offset in enumerate(cu.offsets):
-                self._emitline('    [%6d] 0x%x' % i_offset)
+                self._emitline(f"    [{i_offset[0]:6d}] 0x{i_offset[1]:x}")
 
     def _dump_debug_rangesection(self, di: DWARFInfo, range_lists_sec) -> None:
         # Last amended to match readelf 2.41
@@ -1774,9 +1763,12 @@ class ReadElf:
         section_name = (di.debug_rnglists_sec if ver5 else di.debug_ranges_sec).name
         addr_size = di.config.default_address_size # In bytes, 4 or 8
         addr_width = addr_size * 2 # In hex digits, 8 or 16
-        line_template = "    %%08x %%0%dx %%0%dx %%s" % (addr_width, addr_width)
-        base_template = "    %%08x %%0%dx (base address)" % (addr_width)
-        base_template_indexed = "    %%08x %%0%dx (base address index) %%0%dx (base address)" % (addr_width, addr_width)
+        line_template = f"    %08x %0{addr_width}x %0{addr_width}x %s"
+        base_template = f"    %08x %0{addr_width}x (base address)"
+        base_template_indexed = (
+            f"    %08x %0{addr_width}x (base address index) "
+            f"%0{addr_width}x (base address)"
+        )
 
         # In order to determine the base address of the range
         # We need to know the corresponding CU.
@@ -1792,10 +1784,10 @@ class ReadElf:
         range_lists = list(range_lists_sec.iter_range_lists())
         if not range_lists:
             # Present but empty ranges section - readelf outputs a message
-            self._emitline("\nSection '%s' has no debugging data." % section_name)
+            self._emitline(f"\nSection '{section_name}' has no debugging data.")
             return
 
-        self._emitline('Contents of the %s section:\n\n\n' % section_name)
+        self._emitline(f'Contents of the {section_name} section:\n\n\n')
         if not ver5:
             self._emitline('    Offset   Begin    End')
 
@@ -1856,15 +1848,15 @@ class ReadElf:
             else:
                 raise NotImplementedError("Unknown object in a range list")
         last = range_list[-1]
-        self._emitline('    %08x <End of list>' % (last.entry_offset + last.entry_length if ver5 else first.entry_offset))
+        self._emitline(f'    {(last.entry_offset + last.entry_length if ver5 else first.entry_offset):08x} <End of list>')
 
     def _display_attributes(self, attr_sec, descriptor) -> None:
         """ Display the attributes contained in the section.
         """
         for s in attr_sec.iter_subsections():
-            self._emitline("Attribute Section: %s" % s.header['vendor_name'])
+            self._emitline("Attribute Section: {}".format(s.header['vendor_name']))
             for ss in s.iter_subsubsections():
-                h_val = "" if ss.header.extra is None else " ".join("%d" % x for x in ss.header.extra)
+                h_val = "" if ss.header.extra is None else " ".join(f"{int(x)}" for x in ss.header.extra)
                 self._emitline(descriptor(ss.header.tag, h_val, None))
 
                 for attr in ss.iter_attributes():
@@ -1897,7 +1889,7 @@ class ReadElf:
 
 
 SCRIPT_DESCRIPTION = 'Display information about the contents of ELF format files'
-VERSION_STRING = '%%(prog)s: based on pyelftools %s' % __version__
+VERSION_STRING = f'%(prog)s: based on pyelftools {__version__}'
 
 
 def main(stream: IO[str] | None = None) -> None:
@@ -2013,7 +2005,7 @@ def main(stream: IO[str] | None = None) -> None:
             output.flush()
         except ELFError as ex:
             sys.stdout.flush()
-            sys.stderr.write('ELF error: %s\n' % ex)
+            sys.stderr.write(f'ELF error: {ex}\n')
             if args.show_traceback:
                 traceback.print_exc()
             sys.exit(1)

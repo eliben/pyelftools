@@ -152,7 +152,7 @@ class Construct:
         self.conflags = flags
 
     def __repr__(self) -> str:
-        return "%s(%r)" % (self.__class__.__name__, self.name)
+        return f"{self.__class__.__name__}({self.name!r})"
 
     def _set_flag(self, flag: int) -> None:
         """
@@ -283,7 +283,7 @@ class Construct:
             context = Container()
         try:
             return self._sizeof(context)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - wrap all construct failures
             raise SizeofError(e)
 
     def _sizeof(self, context: Container) -> int:
@@ -338,14 +338,14 @@ def _read_stream(stream: IO[bytes], length: int) -> bytes:
         raise ValueError("length must be >= 0", length)
     data = stream.read(length)
     if len(data) != length:
-        raise FieldError("expected %d, found %d" % (length, len(data)))
+        raise FieldError(f"expected {int(length)}, found {len(data)}")
     return data
 
 def _write_stream(stream: IO[bytes], length: int, data: bytes) -> None:
     if length < 0:
         raise ValueError("length must be >= 0", length)
     if len(data) != length:
-        raise FieldError("expected %d, found %d" % (length, len(data)))
+        raise FieldError(f"expected {int(length)}, found {len(data)}")
     stream.write(data)
 
 class StaticField(Construct):
@@ -399,12 +399,12 @@ class FormatField(StaticField, Generic[_T]):
     def _parse(self, stream: IO[bytes], context: Container) -> _T:
         try:
             return self.packer.unpack(_read_stream(stream, self.length))[0]
-        except Exception as ex:
+        except Exception as ex:  # noqa: BLE001 - normalize struct failures
             raise FieldError(ex)
     def _build(self, obj: _T, stream: IO[bytes], context: Container) -> None:
         try:
             _write_stream(stream, self.length, self.packer.pack(obj))
-        except Exception as ex:
+        except Exception as ex:  # noqa: BLE001 - normalize struct failures
             raise FieldError(ex)
 
 class MetaField(Construct):
@@ -477,12 +477,12 @@ class MetaArray(Subconstruct):
                     obj.append(self.subcon._parse(stream, context))
                     c += 1
         except ConstructError as ex:
-            raise ArrayError("expected %d, found %d" % (count, c), ex)
+            raise ArrayError(f"expected {int(count)}, found {int(c)}", ex)
         return obj
     def _build(self, obj: Any, stream: IO[bytes], context: Container) -> None:
         count = self.countfunc(context)
         if len(obj) != count:
-            raise ArrayError("expected %d, found %d" % (count, len(obj)))
+            raise ArrayError(f"expected {int(count)}, found {len(obj)}")
         if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
             for subobj in obj:
                 self.subcon._build(subobj, stream, context.__copy__())
@@ -559,14 +559,17 @@ class Range(Subconstruct):
                     c += 1
         except ConstructError as ex:
             if c < self.mincount:
-                raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcout, c), ex)
+                raise RangeError(
+                    f"expected {self.mincount:d} to {self.maxcout:d}, found {c:d}",
+                    ex,
+                )
             stream.seek(pos)
         return obj
     def _build(self, obj: Any, stream: IO[bytes], context: Container) -> None:
         if len(obj) < self.mincount or len(obj) > self.maxcout:
-            raise RangeError("expected %d to %d, found %d" %
-                (self.mincount, self.maxcout, len(obj)))
+            raise RangeError(
+                f"expected {self.mincount:d} to {self.maxcout:d}, found {len(obj):d}"
+            )
         cnt = 0
         try:
             if self.subcon.conflags & self.FLAG_COPY_CONTEXT:
@@ -583,8 +586,11 @@ class Range(Subconstruct):
                     cnt += 1
         except ConstructError as ex:
             if cnt < self.mincount:
-                raise RangeError("expected %d to %d, found %d" %
-                    (self.mincount, self.maxcout, len(obj)), ex)
+                raise RangeError(
+                    f"expected {self.mincount:d} to {self.maxcout:d}, "
+                    f"found {len(obj):d}",
+                    ex,
+                )
     def _sizeof(self, context: Container) -> int:
         raise SizeofError("can't calculate size")
 
@@ -949,7 +955,7 @@ class Select(Construct):
                 context2 = context.__copy__()
                 try:
                     sc._build(obj, stream2, context2)
-                except Exception:
+                except Exception:  # noqa: BLE001, S110 - try the next construct
                     pass
                 else:
                     context.update(context2)

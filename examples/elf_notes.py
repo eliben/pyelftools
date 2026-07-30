@@ -19,18 +19,21 @@ def process_file(filename):
         for sect in ELFFile(f).iter_sections():
             if not isinstance(sect, NoteSection):
                 continue
-            print('  Note section "%s" at offset 0x%.8x with size %d' % (
-                sect.name, sect.header['sh_offset'], sect.header['sh_size']))
+            print(
+                f'  Note section "{sect.name}" at offset '
+                f"0x{sect.header['sh_offset']:08x} with size "
+                f"{sect.header['sh_size']:d}"
+            )
             for note in sect.iter_notes():
                 print('    Name:', note['n_name'])
                 print('    Type:', note['n_type'])
                 desc = note['n_desc']
                 if note['n_type'] == 'NT_GNU_ABI_TAG':
-                    print('    Desc: %s, ABI: %d.%d.%d' % (
-                        desc['abi_os'],
-                        desc['abi_major'],
-                        desc['abi_minor'],
-                        desc['abi_tiny']))
+                    print(
+                        f"    Desc: {desc['abi_os']}, ABI: "
+                        f"{desc['abi_major']:d}.{desc['abi_minor']:d}."
+                        f"{desc['abi_tiny']:d}"
+                    )
                 elif note['n_type'] in {'NT_GNU_BUILD_ID', 'NT_GNU_GOLD_VERSION'}:
                     print('    Desc:', desc)
                 else:

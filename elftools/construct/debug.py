@@ -4,7 +4,7 @@ Debugging utilities for constructs
 from __future__ import annotations
 
 import inspect
-import pdb
+import pdb  # noqa: T100 - debugger integration is this module's purpose
 import sys
 import traceback
 from typing import IO, Any
@@ -51,14 +51,14 @@ class Probe(Construct):
         Construct.__init__(self, None)
         if name is None:
             Probe.counter += 1
-            name = "<unnamed %d>" % (Probe.counter,)
+            name = f"<unnamed {int(Probe.counter)}>"
         self.printname = name
         self.show_stream = show_stream
         self.show_context = show_context
         self.show_stack = show_stack
         self.stream_lookahead = stream_lookahead
     def __repr__(self) -> str:
-        return "%s(%r)" % (self.__class__.__name__, self.printname)
+        return f"{self.__class__.__name__}({self.printname!r})"
     def _parse(self, stream: IO[bytes], context: Container) -> None:
         self.printout(stream, context)
     def _build(self, obj: Any, stream: IO[bytes], context: Container) -> None:
@@ -126,11 +126,11 @@ class Debugger(Subconstruct):
     def _build(self, obj: Any, stream: IO[bytes], context: Container) -> None:
         try:
             self.subcon._build(obj, stream, context)
-        except Exception:
+        except Exception:  # noqa: BLE001 - hand any failure to the debugger
             self.handle_exc()
     def handle_exc(self, msg: str | None = None) -> None:
         print("=" * 80)
-        print("Debugging exception of %s:" % (self.subcon,))
+        print(f"Debugging exception of {self.subcon}:")
         print("".join(traceback.format_exception(*sys.exc_info())[1:]))
         if msg:
             print(msg)

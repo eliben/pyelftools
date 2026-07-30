@@ -12,11 +12,13 @@ import sys
 import tempfile
 
 
-def run_exe(exe_path, args=[], echo=False):
+def run_exe(exe_path, args=None, echo=False):
     """ Runs the given executable as a subprocess, given the
         list of arguments. Captures its return code (rc) and stdout and
         returns a pair: rc, stdout_str
     """
+    if args is None:
+        args = []
     popen_cmd = [exe_path, *args]
     if os.path.splitext(exe_path)[1] == '.py':
         popen_cmd.insert(0, sys.executable)
@@ -46,9 +48,9 @@ def dump_output_to_temp_files(testlog, filename, option, *args):
     """
     for i, s in enumerate(args):
         fd, path = tempfile.mkstemp(
-                prefix='out-%d-%s-%s-' % (i + 1, os.path.split(filename)[-1], option),
+                prefix=f'out-{int(i + 1)}-{os.path.split(filename)[-1]}-{option}-',
                 suffix='.stdout')
         file = os.fdopen(fd, 'w')
         file.write(s)
         file.close()
-        testlog.info('@@ Output #%s dumped to file: %s' % (i + 1, path))
+        testlog.info(f'@@ Output #{i + 1} dumped to file: {path}')

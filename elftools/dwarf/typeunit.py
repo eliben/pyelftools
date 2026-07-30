@@ -186,7 +186,7 @@ class TypeUnit:
                 elif sibling.form == 'DW_FORM_ref_addr':
                     cur_offset = sibling.value
                 else:
-                    raise NotImplementedError('sibling in form %s' % sibling.form)
+                    raise NotImplementedError(f'sibling in form {sibling.form}')
             else:
                 # If no DW_AT_sibling attribute is provided by the producer
                 # then the whole child subtree must be parsed to find its next
@@ -216,7 +216,7 @@ class TypeUnit:
         # All DIEs are after the cu header and within the unit
         dwarf_assert(
             self.cu_die_offset <= refaddr < self.cu_offset + self.size,
-            'refaddr %s not in DIE range of CU %s' % (refaddr, self.cu_offset))
+            f'refaddr {refaddr} not in DIE range of CU {self.cu_offset}')
 
         return self._get_cached_DIE(refaddr)
 

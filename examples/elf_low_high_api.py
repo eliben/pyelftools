@@ -29,7 +29,7 @@ def section_info_lowlevel(stream):
     elffile = ELFFile(stream)
 
     # The e_shnum ELF header field says how many sections there are in a file
-    print('  %s sections' % elffile['e_shnum'])
+    print('  {} sections'.format(elffile['e_shnum']))
 
     # Try to find the symbol table
     for i in range(elffile['e_shnum']):
@@ -43,7 +43,7 @@ def section_info_lowlevel(stream):
             # here. To get to the actual name one would need to parse the string
             # table section and extract the name from there (or use the
             # high-level API!)
-            print('  Section name: %s, type: %s' % (
+            print('  Section name: {}, type: {}'.format(
                     section_header['sh_name'], section_header['sh_type']))
             break
     else:
@@ -56,7 +56,7 @@ def section_info_highlevel(stream):
 
     # Just use the public methods of ELFFile to get what we need
     # Note that section names are strings.
-    print('  %s sections' % elffile.num_sections())
+    print(f'  {elffile.num_sections()} sections')
     section = elffile.get_section_by_name('.symtab')
 
     if not section:
@@ -65,7 +65,7 @@ def section_info_highlevel(stream):
 
     # A section type is in its header, but the name was decoded and placed in
     # a public attribute.
-    print('  Section name: %s, type: %s' %(
+    print('  Section name: {}, type: {}'.format(
         section.name, section['sh_type']))
 
     # But there's more... If this section is a symbol table section (which is
@@ -73,9 +73,8 @@ def section_info_highlevel(stream):
     # get some more information about it.
     if isinstance(section, SymbolTableSection):
         num_symbols = section.num_symbols()
-        print("  It's a symbol section with %s symbols" % num_symbols)
-        print("  The name of the last symbol in the section is: %s" % (
-            section.get_symbol(num_symbols - 1).name))
+        print(f"  It's a symbol section with {num_symbols} symbols")
+        print(f"  The name of the last symbol in the section is: {section.get_symbol(num_symbols - 1).name}")
 
 
 if __name__ == '__main__':

@@ -34,7 +34,7 @@ def parse_dwarf(ef, args):
             # No way to isolate lineprog parsing :(
             di.line_program_for_CU(cu).get_entries()
         for die in cu.iter_DIEs():
-            for (_, attr) in die.attributes.items():
+            for attr in die.attributes.values():
                 if args.locs and LocationParser.attribute_has_location(attr, ver):
                     llp.parse_from_attribute(attr, ver, die)
                 elif args.ranges and attr.name == "DW_AT_ranges":
@@ -64,7 +64,7 @@ def main():
     start_time = time.time()
     for stream in fileblobs:
         parse_dwarf(ELFFile(stream), args)
-    print("--- %s seconds ---" % (time.time() - start_time))
+    print(f"--- {time.time() - start_time} seconds ---")
 
 
 if __name__ == '__main__':

@@ -25,7 +25,7 @@ class TestGNUCallAttributesHaveLocation(unittest.TestCase):
                     for key in DIE.attributes:
                         attr = DIE.attributes[key]
                         if attr.form == 'DW_FORM_exprloc':
-                            self.assertTrue(LocationParser.attribute_has_location(attr, CU['version']), "Attribute %s not recognized as a location" % key)
+                            self.assertTrue(LocationParser.attribute_has_location(attr, CU['version']), f"Attribute {key} not recognized as a location")
 
 
     def test_main(self):

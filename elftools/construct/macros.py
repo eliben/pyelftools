@@ -355,7 +355,10 @@ def Array(count: Length, subcon: Construct) -> MetaArray:
         con = MetaArray(count, subcon)
     return con
 
-def PrefixedArray(subcon: Construct, length_field: Construct = UBInt8("length")) -> LengthValueAdapter:
+def PrefixedArray(
+    subcon: Construct,
+    length_field: Construct = UBInt8("length"),  # noqa: B008 - public API default
+) -> LengthValueAdapter:
     """an array prefixed by a length field.
     * subcon - the subcon to be repeated
     * length_field - a construct returning an integer
@@ -518,7 +521,7 @@ def SymmetricMapping(subcon: Construct, mapping: Mapping[Any, Any], default: Has
       default value is given, and exception is raised. setting to Pass would
       return the value "as is" (unmapped)
     """
-    reversed_mapping = dict((v, k) for k, v in mapping.items())
+    reversed_mapping = {v: k for k, v in mapping.items()}
     return MappingAdapter(subcon,
         encoding = mapping,
         decoding = reversed_mapping,
@@ -612,7 +615,11 @@ def String(name: str, length: int, encoding: str | None = None, padchar: bytes |
             trimdir=trimdir)
     return con
 
-def PascalString(name: str, length_field: FormatField[int] = UBInt8("length"), encoding: str | None = None) -> StringAdapter:
+def PascalString(
+    name: str,
+    length_field: FormatField[int] = UBInt8("length"),  # noqa: B008 - public API
+    encoding: str | None = None,
+) -> StringAdapter:
     r"""
     A length-prefixed string.
 
@@ -651,7 +658,8 @@ def PascalString(name: str, length_field: FormatField[int] = UBInt8("length"), e
     )
 
 def CString(name: str, terminators: bytes = b"\x00", encoding: str | None = None,
-        char_field: Construct = Field(None, 1)) -> Reconfig:
+        char_field: Construct = Field(None, 1),  # noqa: B008 - public API default
+        ) -> Reconfig:
     r"""
     A string ending in a terminator.
 

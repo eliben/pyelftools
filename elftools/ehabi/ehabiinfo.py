@@ -56,13 +56,13 @@ class EHABIInfo:
         """ Get the exception handler entry at index #n. (EHABIEntry object or a subclass)
         """
         if n >= self.num_entry():
-            raise IndexError('Invalid entry %d/%d' % (n, self.num_entry()))
+            raise IndexError(f'Invalid entry {int(n)}/{int(self.num_entry())}')
         eh_index_entry_offset = self.section_offset() + n * EHABI_INDEX_ENTRY_SIZE
         eh_index_data = struct_parse(self._struct.EH_index_struct, self._arm_idx_section.stream, eh_index_entry_offset)
         word0, word1 = eh_index_data['word0'], eh_index_data['word1']
 
         if word0 & 0x80000000 != 0:
-            return CorruptEHABIEntry('Corrupt ARM exception handler table entry: %x' % n)
+            return CorruptEHABIEntry(f'Corrupt ARM exception handler table entry: {n:x}')
 
         function_offset = arm_expand_prel31(word0, self.section_offset() + n * EHABI_INDEX_ENTRY_SIZE)
 
@@ -81,7 +81,7 @@ class EHABIInfo:
                 # highest bit is one, arm compact model
                 # highest half must be 0b1000 for compact model
                 if word0 & 0x70000000 != 0:
-                    return CorruptEHABIEntry('Corrupt ARM compact model table entry: %x' % n)
+                    return CorruptEHABIEntry(f'Corrupt ARM compact model table entry: {n:x}')
                 per_index = (word0 >> 24) & 0x7f
                 if per_index == 0:
                     # arm compact model 0
@@ -100,11 +100,11 @@ class EHABIInfo:
                         opcode.append((r >> 0) & 0xFF)
                     return EHABIEntry(function_offset, per_index, opcode, eh_table_offset=eh_table_offset)
                 else:
-                    return CorruptEHABIEntry('Unknown ARM compact model %d at table entry: %x' % (per_index, n))
+                    return CorruptEHABIEntry(f'Unknown ARM compact model {int(per_index)} at table entry: {n:x}')
         else:
             # highest bit is one, compact model must be 0
             if word1 & 0x7f000000 != 0:
-                return CorruptEHABIEntry('Corrupt ARM compact model table entry: %x' % n)
+                return CorruptEHABIEntry(f'Corrupt ARM compact model table entry: {n:x}')
             opcode = [(word1 & 0xFF0000) >> 16, (word1 & 0xFF00) >> 8, word1 & 0xFF]
             return EHABIEntry(function_offset, 0, opcode)
 
@@ -186,7 +186,7 @@ class CorruptEHABIEntry(EHABIEntry):
         self.reason = reason
 
     def __repr__(self) -> str:
-        return "<CorruptEHABIEntry reason=%s>" % self.reason
+        return f"<CorruptEHABIEntry reason={self.reason}>"
 
 
 class CannotUnwindEHABIEntry(EHABIEntry):
@@ -201,7 +201,7 @@ class CannotUnwindEHABIEntry(EHABIEntry):
                                                      unwindable=False)
 
     def __repr__(self) -> str:
-        return "<CannotUnwindEHABIEntry function_offset=0x%x>" % self.function_offset
+        return f"<CannotUnwindEHABIEntry function_offset=0x{self.function_offset:x}>"
 
 
 class GenericEHABIEntry(EHABIEntry):
@@ -216,7 +216,7 @@ class GenericEHABIEntry(EHABIEntry):
         super().__init__(function_offset, personality, bytecode_array=None)
 
     def __repr__(self) -> str:
-        return "<GenericEHABIEntry function_offset=0x%x, personality=0x%x>" % (self.function_offset, self.personality)
+        return f"<GenericEHABIEntry function_offset=0x{self.function_offset:x}, personality=0x{self.personality:x}>"
 
 
 def arm_expand_prel31(address: int, place: int) -> int:

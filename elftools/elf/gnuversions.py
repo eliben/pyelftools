@@ -135,9 +135,8 @@ class GNUVersionSection(Section):
                 stream_pos=entry_offset)
 
             elf_assert(entry[count_field] > 0,
-                'Expected number of version auxiliary entries (%s) to be > 0'
-                'for the following version entry: %s' % (
-                    count_field, str(entry)))
+                f'Expected number of version auxiliary entries ({count_field}) to be > 0'
+                f'for the following version entry: {entry!s}')
 
             version = Version(entry)
             aux_entries_offset = entry_offset + entry[aux_field]

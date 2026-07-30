@@ -58,7 +58,7 @@ def run_test_on_file(filename, verbose=False, opt=None):
         run for one option.
     """
     success = True
-    testlog.info("Test file '%s'" % filename)
+    testlog.info(f"Test file '{filename}'")
     if opt is None:
         options = [
             '-e', '-d', '-s', '-n', '-r', '-x.text', '-p.shstrtab', '-V',
@@ -84,7 +84,7 @@ def run_test_on_file(filename, verbose=False, opt=None):
 
     for option in options:
         if verbose:
-            testlog.info("..option='%s'" % option)
+            testlog.info(f"..option='{option}'")
 
         # TODO(zlobober): this is a dirty hack to make tests work for ELF core
         # dump notes. Making it work properly requires a pretty deep
@@ -123,7 +123,7 @@ def run_test_on_file(filename, verbose=False, opt=None):
             t1 = time.time()
             rc, stdout = run_exe(exe_path, args)
             if verbose:
-                testlog.info("....elapsed: %s" % (time.time() - t1,))
+                testlog.info(f"....elapsed: {time.time() - t1}")
             if rc != 0:
                 testlog.error(f"@@ aborting - '{cmd}' returned {rc}")
                 return False
@@ -133,15 +133,15 @@ def run_test_on_file(filename, verbose=False, opt=None):
         t1 = time.time()
         rc, errmsg = compare_output(*stdouts)
         if verbose:
-            testlog.info("....elapsed: %s" % (time.time() - t1,))
+            testlog.info(f"....elapsed: {time.time() - t1}")
         if rc:
             if verbose:
                 testlog.info('.......................SUCCESS')
         else:
             success = False
             testlog.info('.......................FAIL')
-            testlog.info('....for file %s' % filename)
-            testlog.info('....for option "%s"' % option)
+            testlog.info(f'....for file {filename}')
+            testlog.info(f'....for option "{option}"')
             testlog.info('....Output #1 is readelf, Output #2 is pyelftools')
             testlog.info('@@ ' + errmsg)
             dump_output_to_temp_files(testlog, filename, option, *stdouts)
@@ -171,8 +171,7 @@ def compare_output(s1, s2):
     flag_in_debug_line_section = False
 
     if len(lines1) != len(lines2):
-        return False, 'Number of lines different: %s vs %s' % (
-                len(lines1), len(lines2))
+        return False, f'Number of lines different: {len(lines1)} vs {len(lines2)}'
 
     # Position of the View column in the output file, if parsing readelf..decodedline
     # output, and the GNU readelf output contains the View column. Otherwise stays -1.
@@ -257,8 +256,7 @@ def compare_output(s1, s2):
                         ok = True
                         break
             if not ok:
-                errmsg = 'Mismatch on line #%s:\n>>%s<<\n>>%s<<\n (%r)' % (
-                    i, lines1[i], lines2[i], changes)
+                errmsg = f'Mismatch on line #{i}:\n>>{lines1[i]}<<\n>>{lines2[i]}<<\n ({changes!r})'
                 return False, errmsg
     return True, ''
 
@@ -287,15 +285,14 @@ def main():
         help= 'Limit the test one one readelf option.')
     args = argparser.parse_args()
 
-    if args.parallel:
-        if args.verbose or not args.keep_going:
-            print('WARNING: parallel mode disables verbosity and always keeps going')
+    if args.parallel and (args.verbose or not args.keep_going):
+        print('WARNING: parallel mode disables verbosity and always keeps going')
 
     if args.verbose:
         testlog.info('Running in verbose mode')
-        testlog.info('Python executable = %s' % sys.executable)
-        testlog.info('readelf path = %s' % READELF_PATH)
-        testlog.info('Given list of files: %s' % args.files)
+        testlog.info(f'Python executable = {sys.executable}')
+        testlog.info(f'readelf path = {READELF_PATH}')
+        testlog.info(f'Given list of files: {args.files}')
 
     # If file names are given as command-line arguments, only these files
     # are taken as inputs. Otherwise, autodiscovery is performed.

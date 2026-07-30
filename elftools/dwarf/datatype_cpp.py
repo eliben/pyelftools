@@ -17,11 +17,11 @@ if TYPE_CHECKING:
     from .die import DIE
 
 
-cpp_symbols = dict(
-    pointer   = "*",
-    reference = "&",
-    const     = "const",
-    volatile  = "volatile")
+cpp_symbols = {
+    "pointer": "*",
+    "reference": "&",
+    "const": "const",
+    "volatile": "volatile"}
 
 def describe_cpp_datatype(var_die: DIE) -> str:
     return str(parse_cpp_datatype(var_die))
@@ -85,9 +85,9 @@ def parse_cpp_datatype(var_die: DIE) -> TypeDesc:
             if mods and mods[-1] == 'pointer':
                 mods.pop()
                 t.modifiers = tuple(mods)
-                t.name = "%s(%s*)(%s)" % (retval_type, ptr_prefix, params)
+                t.name = f"{retval_type}({ptr_prefix}*)({params})"
             else:
-                t.name = "%s(%s)" % (retval_type, params)
+                t.name = f"{retval_type}({params})"
             return t
     elif DIE_is_ptr_to_member_struct(type_die):
         dt =  parse_cpp_datatype(next(type_die.iter_children())) # The first element is pfn, a function pointer with a this
@@ -175,7 +175,7 @@ class TypeDesc:
             parts.append("".join(cpp_symbols[mod] for mod in mods))
 
         if self.dimensions:
-            dims = "".join('[%s]' % (str(dim) if dim > 0 else '',)
+            dims = "".join('[{}]'.format(str(dim) if dim > 0 else '')
                 for dim in self.dimensions)
         else:
             dims = ''

@@ -29,7 +29,7 @@ class TestCacheLUTandDIEref(unittest.TestCase):
 
             dwarf = elffile.get_dwarf_info()
             pt = dwarf.get_pubnames()
-            for (k, v) in pt.items():
+            for v in pt.values():
                 ndie = dwarf.get_DIE_from_lut_entry(v)
                 self.dprint(ndie)
                 if 'DW_AT_type' not in ndie.attributes:
@@ -43,14 +43,13 @@ class TestCacheLUTandDIEref(unittest.TestCase):
                     self.dprint(ndie)
                     ttag = tdie.tag
                     if isinstance(ttag, int):
-                        ttag = 'TAG(0x%x)' % ttag
+                        ttag = f'TAG(0x{ttag:x})'
                     tlist.append(ttag)
                     if 'DW_AT_name' in tdie.attributes:
                         break
                 tlist.append(bytes2str(tdie.attributes['DW_AT_name'].value))
                 tname = ' '.join(tlist)
-                line = "%s DIE at %s is of type %s" % (
-                        ndie.tag, ndie.offset, tname)
+                line = f"{ndie.tag} DIE at {ndie.offset} is of type {tname}"
                 lines.append(line)
                 self.dprint(line)
 

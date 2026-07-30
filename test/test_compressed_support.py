@@ -79,7 +79,7 @@ class TestCompressedSupport(unittest.TestCase):
         for cu in dwarf.iter_CUs():
             dies = []
 
-            def traverse(die):
+            def traverse(die, dies=dies):
                 dies.append(die.offset)
                 for child in die.iter_children():
                     traverse(child)

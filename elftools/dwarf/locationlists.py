@@ -177,8 +177,8 @@ class LocationLists:
         # Need to provide support for DW_AT_GNU_locviews. They are interspersed in
         # the locations section, no way to tell where short of checking all DIEs
         all_offsets = set() # Set of offsets where either a locview pair set can be found, or a view-less loclist
-        locviews = dict() # Map of locview offset to the respective loclist offset
-        cu_map = dict() # Map of loclist offsets to CUs
+        locviews = {} # Map of locview offset to the respective loclist offset
+        cu_map = {} # Map of loclist offsets to CUs
         assert self.dwarfinfo is not None
         for cu in self.dwarfinfo.iter_CUs():
             cu_ver: int = cu['version']
@@ -231,8 +231,7 @@ class LocationLists:
                         yield locview_pairs + entries
                         offset_index += 1
                     else: # We are at a gap - skip the gap to the next object or to the next CU
-                        if next_offset > cu_end_offset: # Gap at the CU end - the next object is in the next CU
-                            next_offset = cu_end_offset # And implicitly quit the loop within the CU
+                        next_offset = min(next_offset, cu_end_offset) # And implicitly quit the loop within the CU
                         stream.seek(next_offset, os.SEEK_SET)
         else:
             for offset in sorted_offsets:
@@ -320,9 +319,9 @@ class LocationLists:
         elif type in ('DW_LLE_base_addressx', 'DW_LLE_startx_endx', 'DW_LLE_startx_length'):
             # We don't have sample binaries for those LLEs. Their proper parsing would
             # require knowing the CU context (so that indices can be resolved to code offsets)
-            raise NotImplementedError("Location list entry type %s is not supported yet" % (type,))
+            raise NotImplementedError(f"Location list entry type {type} is not supported yet")
         else:
-            raise DWARFError(False, "Unknown DW_LLE code: %s" % (type,))
+            raise DWARFError(False, f"Unknown DW_LLE code: {type}")
 
     # Locviews is the dict, mapping locview offsets to corresponding loclist offsets
     def _parse_locview_pairs(self, locviews: Mapping[int, int]) -> list[LocationViewPair]:
@@ -381,14 +380,14 @@ class LocationParser:
     @staticmethod
     def _attribute_has_loc_expr(attr: AttributeValue, dwarf_version: int) -> bool:
         return ((dwarf_version < 4 and attr.form.startswith('DW_FORM_block') and
-            not attr.name == 'DW_AT_const_value') or
+            attr.name != 'DW_AT_const_value') or
             attr.form == 'DW_FORM_exprloc')
 
     @staticmethod
     def _attribute_has_loc_list(attr: AttributeValue, dwarf_version: int) -> bool:
         return (((dwarf_version < 4 and
                  attr.form in ('DW_FORM_data1', 'DW_FORM_data2', 'DW_FORM_data4', 'DW_FORM_data8') and
-                 not attr.name == 'DW_AT_const_value') or
+                 attr.name != 'DW_AT_const_value') or
                 attr.form in ('DW_FORM_sec_offset', 'DW_FORM_loclistx')) and
                 not LocationParser._attribute_is_constant(attr, dwarf_version))
 

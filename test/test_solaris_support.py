@@ -7,6 +7,7 @@
 import copy
 import os
 import unittest
+from typing import ClassVar
 
 from elftools.elf.constants import SUNW_SYMINFO_FLAGS
 from elftools.elf.elffile import ELFFile
@@ -49,7 +50,7 @@ class TestSolarisSupport(unittest.TestCase):
     def test_SUNW_syminfo_section_sparc64(self):
         self._test_SUNW_syminfo_section_generic('exe_solaris64_cc.sparc.elf')
 
-    ldsynsym_reference_data = ['', 'exe_solaris32.elf', 'crti.s', 'crt1.o',
+    ldsynsym_reference_data: ClassVar = ['', 'exe_solaris32.elf', 'crti.s', 'crt1.o',
                                'crt1.s', 'fsr.s', 'values-Xa.c',
                                'exe_solaris64.elf.c', 'crtn.s']
 

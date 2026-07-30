@@ -6,6 +6,7 @@
 #------------------------------------------------------------------------------
 import os
 import unittest
+from typing import ClassVar
 
 from elftools.elf.constants import VER_FLAGS
 from elftools.elf.elffile import ELFFile
@@ -18,7 +19,7 @@ from elftools.elf.gnuversions import (
 
 class TestSymbolVersioning(unittest.TestCase):
 
-    versym_reference_data = [
+    versym_reference_data: ClassVar = [
         {'name': '', 'ndx': 'VER_NDX_LOCAL'},
         {'name': '', 'ndx': 'VER_NDX_LOCAL'},
         {'name': '_ITM_deregisterTMCloneTable', 'ndx': 'VER_NDX_LOCAL'},
@@ -65,7 +66,7 @@ class TestSymbolVersioning(unittest.TestCase):
                 self.assertEqual(versym.name, ref_versym['name'])
                 self.assertEqual(versym['ndx'], ref_versym['ndx'])
 
-    verneed_reference_data = [
+    verneed_reference_data: ClassVar = [
         {'name': 'libz.so.1', 'vn_version': 1, 'vn_cnt': 1,
          'vernaux': [
             {'name': 'ZLIB_1.2.3.5', 'vna_flags': 0, 'vna_other': 7}]},
@@ -107,7 +108,7 @@ class TestSymbolVersioning(unittest.TestCase):
                     self.assertEqual(vernaux['vna_other'],
                                      ref_vernaux['vna_other'])
 
-    verdef_reference_data = [
+    verdef_reference_data: ClassVar = [
         {'vd_ndx': 1, 'vd_version': 1, 'vd_flags': VER_FLAGS.VER_FLG_BASE,
          'vd_cnt': 1,
          'verdaux': [

@@ -558,7 +558,7 @@ class CFIEntry:
         if isinstance(self, CIE):
             # For a CIE, initialize cur_line to an "empty" line
             cie = self
-            cur_line: Line = dict(pc=0, cfa=CFARule(reg=None, offset=0))
+            cur_line: Line = {'pc': 0, 'cfa': CFARule(reg=None, offset=0)}
             reg_order = []
         else: # FDE
             # For a FDE, we need to decode the attached CIE first, because its
@@ -572,7 +572,7 @@ class CFIEntry:
                 last_line_in_CIE = copy.copy(cie_decoded_table.table[-1])
                 cur_line = dict(last_line_in_CIE, pc=pc)
             else:
-                cur_line = dict(cfa=CFARule(reg=None, offset=0), pc=pc)
+                cur_line = {'cfa': CFARule(reg=None, offset=0), 'pc': pc}
             reg_order = copy.copy(cie_decoded_table.reg_order)
 
         table: list[Line] = []
@@ -734,7 +734,7 @@ class RegisterRule:
         self.arg = arg
 
     def __repr__(self) -> str:
-        return 'RegisterRule(%s, %s)' % (self.type, self.arg)
+        return f'RegisterRule({self.type}, {self.arg})'
 
 
 class CFARule:
@@ -752,8 +752,7 @@ class CFARule:
         self.expr = expr
 
     def __repr__(self) -> str:
-        return 'CFARule(reg=%s, offset=%s, expr=%s)' % (
-            self.reg, self.offset, self.expr)
+        return f'CFARule(reg={self.reg}, offset={self.offset}, expr={self.expr})'
 
 
 # Represents the decoded CFI for an entry, which is just a large table,

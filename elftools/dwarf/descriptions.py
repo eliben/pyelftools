@@ -69,14 +69,14 @@ def describe_CFI_instructions(entry: CFIEntry) -> str:
     def _assert_FDE_instruction(instr: CallFrameInstruction) -> None:
         dwarf_assert(
             isinstance(entry, FDE),
-            'Unexpected instruction "%s" for a CIE' % instr)
+            f'Unexpected instruction "{instr}" for a CIE')
 
     def _full_reg_name(regnum: int) -> str:
         regname = describe_reg_name(regnum, _MACHINE_ARCH, False)
         if regname:
-            return 'r%s (%s)' % (regnum, regname)
+            return f'r{regnum} ({regname})'
         else:
-            return 'r%s' % regnum
+            return f'r{regnum}'
 
     if isinstance(entry, CIE):
         cie = entry
@@ -91,51 +91,44 @@ def describe_CFI_instructions(entry: CFIEntry) -> str:
         name = instr.opcode.FQN
         match instr.opcode:
             case DW_CFA.offset | DW_CFA.offset_extended | DW_CFA.offset_extended_sf | DW_CFA.val_offset | DW_CFA.val_offset_sf:
-                s += '  %s: %s at cfa%+d\n' % (
-                    name, _full_reg_name(instr.args[0]),
-                    instr.args[1] * cie['data_alignment_factor'])
+                offset = instr.args[1] * cie['data_alignment_factor']
+                s += f"  {name}: {_full_reg_name(instr.args[0])} at cfa{offset:+d}\n"
             case DW_CFA.restore | DW_CFA.restore_extended | DW_CFA.undefined | DW_CFA.same_value | DW_CFA.def_cfa_register:
-                s += '  %s: %s\n' % (name, _full_reg_name(instr.args[0]))
+                s += f'  {name}: {_full_reg_name(instr.args[0])}\n'
             case DW_CFA.register:
-                s += '  %s: %s in %s' % (
-                    name, _full_reg_name(instr.args[0]),
-                    _full_reg_name(instr.args[1]))
+                s += f'  {name}: {_full_reg_name(instr.args[0])} in {_full_reg_name(instr.args[1])}'
             case DW_CFA.set_loc:
                 pc = instr.args[0]
                 assert pc is not None
-                s += '  %s: %08x\n' % (name, pc)
+                s += f'  {name}: {pc:08x}\n'
             case DW_CFA.advance_loc1 | DW_CFA.advance_loc2 | DW_CFA.advance_loc4 | DW_CFA.advance_loc:
                 _assert_FDE_instruction(instr)
                 assert pc is not None
                 factored_offset: int = instr.args[0] * cie['code_alignment_factor']
-                s += '  %s: %s to %08x\n' % (
-                    name, factored_offset, factored_offset + pc)
+                s += f'  {name}: {factored_offset} to {factored_offset + pc:08x}\n'
                 pc += factored_offset
             case DW_CFA.remember_state | DW_CFA.restore_state | DW_CFA.nop | DW_CFA.AARCH64_negate_ra_state:
-                s += '  %s\n' % name
+                s += f'  {name}\n'
             case DW_CFA.def_cfa:
-                s += '  %s: %s ofs %s\n' % (
-                    name, _full_reg_name(instr.args[0]), instr.args[1])
+                s += f'  {name}: {_full_reg_name(instr.args[0])} ofs {instr.args[1]}\n'
             case DW_CFA.def_cfa_sf:
-                s += '  %s: %s ofs %s\n' % (
+                s += '  {}: {} ofs {}\n'.format(
                     name, _full_reg_name(instr.args[0]),
                     instr.args[1] * cie['data_alignment_factor'])
             case DW_CFA.def_cfa_offset | DW_CFA.GNU_args_size:
-                s += '  %s: %s\n' % (name, instr.args[0])
+                s += f'  {name}: {instr.args[0]}\n'
             case DW_CFA.def_cfa_offset_sf:
                 assert entry.cie is not None
-                s += '  %s: %s\n' % (name, instr.args[0]*entry.cie['data_alignment_factor'])
+                s += '  {}: {}\n'.format(name, instr.args[0]*entry.cie['data_alignment_factor'])
             case DW_CFA.def_cfa_expression:
                 expr_dumper = ExprDumper(entry.structs)
                 # readelf output is missing a colon for DW_CFA.def_cfa_expression
-                s += '  %s (%s)\n' % (name, expr_dumper.dump_expr(instr.args[0]))
+                s += f'  {name} ({expr_dumper.dump_expr(instr.args[0])})\n'
             case DW_CFA.expression:
                 expr_dumper = ExprDumper(entry.structs)
-                s += '  %s: %s (%s)\n' % (
-                    name, _full_reg_name(instr.args[0]),
-                                         expr_dumper.dump_expr(instr.args[1]))
+                s += f'  {name}: {_full_reg_name(instr.args[0])} ({expr_dumper.dump_expr(instr.args[1])})\n'
             case _:
-                s += '  %s: <??>\n' % name
+                s += f'  {name}: <??>\n'
 
     return s
 
@@ -144,7 +137,7 @@ def describe_CFI_register_rule(rule: RegisterRule) -> str:
     s = _DESCR_CFI_REGISTER_RULE_TYPE[rule.type]
     if rule.type in ('OFFSET', 'VAL_OFFSET'):
         assert isinstance(rule.arg, int)
-        s += '%+d' % rule.arg
+        s += f'{int(rule.arg):+}'
     elif rule.type == 'REGISTER':
         assert isinstance(rule.arg, int)
         reg = describe_reg_name(rule.arg)
@@ -158,7 +151,7 @@ def describe_CFI_CFA_rule(rule: CFARule) -> str:
     else:
         assert isinstance(rule.reg, int)
         assert isinstance(rule.offset, int)
-        return '%s%+d' % (describe_reg_name(rule.reg), rule.offset)
+        return f'{describe_reg_name(rule.reg)}{int(rule.offset):+}'
 
 
 def describe_DWARF_expr(expr: Any, structs: DWARFStructs, cu_offset: int | None = None) -> str:
@@ -195,7 +188,7 @@ def describe_reg_name(regnum: int, machine_arch: str | None = None, default: boo
     elif machine_arch == 'AArch64':
         return _REG_NAMES_AArch64[regnum]
     elif default:
-        return 'r%s' % regnum
+        return f'r{regnum}'
     else:
         return None
 
@@ -219,13 +212,13 @@ _MACHINE_ARCH: str | None = None
 
 # Implements the alternative format of readelf: lowercase hex, prefixed with 0x unless 0
 def _format_hex(n: int) -> str:
-    return '0x%x' % n if n != 0 else '0'
+    return f'0x{n:x}' if n != 0 else '0'
 
 def _describe_attr_ref(attr: AttributeValue, die: DIE, section_offset: int) -> str:
-    return '<%s>' % _format_hex(attr.value + die.cu.cu_offset)
+    return f'<{_format_hex(attr.value + die.cu.cu_offset)}>'
 
 def _describe_attr_ref_sig8(attr: AttributeValue, die: DIE, section_offset: int) -> str:
-    return 'signature: %s' % _format_hex(attr.value)
+    return f'signature: {_format_hex(attr.value)}'
 
 def _describe_attr_value_passthrough(
     attr: AttributeValue,
@@ -235,23 +228,21 @@ def _describe_attr_value_passthrough(
     return attr.value
 
 def _describe_attr_hex(attr: AttributeValue, die: DIE, section_offset: int) -> str:
-    return '%s' % _format_hex(attr.value)
+    return f'{_format_hex(attr.value)}'
 
 def _describe_attr_hex_addr(attr: AttributeValue, die: DIE, section_offset: int) -> str:
-    return '<%s>' % _format_hex(attr.value)
+    return f'<{_format_hex(attr.value)}>'
 
 def _describe_attr_split_64bit(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     low_word = attr.value & 0xFFFFFFFF
     high_word = (attr.value >> 32) & 0xFFFFFFFF
-    return '%s %s' % (_format_hex(low_word), _format_hex(high_word))
+    return f'{_format_hex(low_word)} {_format_hex(high_word)}'
 
 def _describe_attr_strp(attr: AttributeValue, die: DIE, section_offset: int) -> str:
-    return '(indirect string, offset: %s): %s' % (
-        _format_hex(attr.raw_value), bytes2str(attr.value))
+    return f'(indirect string, offset: {_format_hex(attr.raw_value)}): {bytes2str(attr.value)}'
 
 def _describe_attr_line_strp(attr: AttributeValue, die: DIE, section_offset: int) -> str:
-    return '(indirect line string, offset: %s): %s' % (
-        _format_hex(attr.raw_value), bytes2str(attr.value))
+    return f'(indirect line string, offset: {_format_hex(attr.raw_value)}): {bytes2str(attr.value)}'
 
 def _describe_attr_string(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return bytes2str(attr.value)
@@ -269,8 +260,8 @@ def _describe_attr_present(attr: AttributeValue, die: DIE, section_offset: int) 
     return '1'
 
 def _describe_attr_block(attr: AttributeValue, die: DIE, section_offset: int) -> str:
-    s = '%s byte block: ' % len(attr.value)
-    s += ' '.join('%x' % item for item in attr.value) + ' '
+    s = f'{len(attr.value)} byte block: '
+    s += ' '.join(f'{item:x}' for item in attr.value) + ' '
     return s
 
 
@@ -304,33 +295,33 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_ref_sig8=_describe_attr_ref_sig8,
 )
 
-_FORM_CLASS = dict(
-    DW_FORM_addr='address',
-    DW_FORM_block2='block',
-    DW_FORM_block4='block',
-    DW_FORM_data2='constant',
-    DW_FORM_data4='constant',
-    DW_FORM_data8='constant',
-    DW_FORM_string='string',
-    DW_FORM_block='block',
-    DW_FORM_block1='block',
-    DW_FORM_data1='constant',
-    DW_FORM_flag='flag',
-    DW_FORM_sdata='constant',
-    DW_FORM_strp='string',
-    DW_FORM_udata='constant',
-    DW_FORM_ref_addr='reference',
-    DW_FORM_ref1='reference',
-    DW_FORM_ref2='reference',
-    DW_FORM_ref4='reference',
-    DW_FORM_ref8='reference',
-    DW_FORM_ref_udata='reference',
-    DW_FORM_indirect=None,
-    DW_FORM_sec_offset=None,
-    DW_FORM_exprloc='exprloc',
-    DW_FORM_flag_present='flag',
-    DW_FORM_ref_sig8='reference',
-)
+_FORM_CLASS = {
+    "DW_FORM_addr": 'address',
+    "DW_FORM_block2": 'block',
+    "DW_FORM_block4": 'block',
+    "DW_FORM_data2": 'constant',
+    "DW_FORM_data4": 'constant',
+    "DW_FORM_data8": 'constant',
+    "DW_FORM_string": 'string',
+    "DW_FORM_block": 'block',
+    "DW_FORM_block1": 'block',
+    "DW_FORM_data1": 'constant',
+    "DW_FORM_flag": 'flag',
+    "DW_FORM_sdata": 'constant',
+    "DW_FORM_strp": 'string',
+    "DW_FORM_udata": 'constant',
+    "DW_FORM_ref_addr": 'reference',
+    "DW_FORM_ref1": 'reference',
+    "DW_FORM_ref2": 'reference',
+    "DW_FORM_ref4": 'reference',
+    "DW_FORM_ref8": 'reference',
+    "DW_FORM_ref_udata": 'reference',
+    "DW_FORM_indirect": None,
+    "DW_FORM_sec_offset": None,
+    "DW_FORM_exprloc": 'exprloc',
+    "DW_FORM_flag_present": 'flag',
+    "DW_FORM_ref_sig8": 'reference',
+}
 
 _DESCR_DW_INL = {
     DW_INL.not_inlined: '(not inlined)',
@@ -450,16 +441,16 @@ _DESCR_DW_ORD = {
     DW_ORD.col_major: '(column major)',
 }
 
-_DESCR_CFI_REGISTER_RULE_TYPE = dict(
-    UNDEFINED='u',
-    SAME_VALUE='s',
-    OFFSET='c',
-    VAL_OFFSET='v',
-    REGISTER='',
-    EXPRESSION='exp',
-    VAL_EXPRESSION='vexp',
-    ARCHITECTURAL='a',
-)
+_DESCR_CFI_REGISTER_RULE_TYPE = {
+    "UNDEFINED": 'u',
+    "SAME_VALUE": 's',
+    "OFFSET": 'c',
+    "VAL_OFFSET": 'v',
+    "REGISTER": '',
+    "EXPRESSION": 'exp',
+    "VAL_EXPRESSION": 'vexp',
+    "ARCHITECTURAL": 'a',
+}
 
 def _make_extra_mapper(
     mapping: Mapping[_INT, str],
@@ -532,8 +523,7 @@ def _import_extra(attr: AttributeValue, die: DIE, section_offset: int) -> str:
             # stream.
             with preserve_stream_pos(die.stream):
                 ref_die = DIE(cu, die.stream, ref_die_offset)
-            return '[Abbrev Number: %s (%s)]' % (
-                ref_die.abbrev_code, ref_die.tag)
+            return f'[Abbrev Number: {ref_die.abbrev_code} ({ref_die.tag})]'
 
     return '[unknown]'
 
@@ -660,7 +650,7 @@ class ExprDumper:
             'DW_OP_deref_size', 'DW_OP_xderef_size', 'DW_OP_regx'}
 
         for n in range(32):
-            self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)
+            self._ops_with_decimal_arg.add(f'DW_OP_breg{n}')
 
         self._ops_with_two_decimal_args = {'DW_OP_bregx'}
 
@@ -684,47 +674,39 @@ class ExprDumper:
         if not args:
             if opcode_name.startswith('DW_OP_reg'):
                 regnum = int(opcode_name[9:])
-                return '%s (%s)' % (
-                    opcode_name,
-                    describe_reg_name(regnum, _MACHINE_ARCH))
+                return f'{opcode_name} ({describe_reg_name(regnum, _MACHINE_ARCH)})'
             else:
                 return opcode_name
         elif opcode_name in self._ops_with_decimal_arg:
             if opcode_name.startswith('DW_OP_breg'):
                 regnum = int(opcode_name[10:])
-                return '%s (%s): %s' % (
-                    opcode_name,
-                    describe_reg_name(regnum, _MACHINE_ARCH),
-                    args[0])
+                return f'{opcode_name} ({describe_reg_name(regnum, _MACHINE_ARCH)}): {args[0]}'
             elif opcode_name.endswith('regx'):
                 # applies to both regx and bregx
-                return '%s: %s (%s)' % (
-                    opcode_name,
-                    args[0],
-                    describe_reg_name(args[0], _MACHINE_ARCH))
+                return f'{opcode_name}: {args[0]} ({describe_reg_name(args[0], _MACHINE_ARCH)})'
             else:
-                return '%s: %s' % (opcode_name, args[0])
+                return f'{opcode_name}: {args[0]}'
         elif opcode_name in self._ops_with_hex_arg:
-            return '%s: %x' % (opcode_name, args[0])
+            return f'{opcode_name}: {args[0]:x}'
         elif opcode_name in self._ops_with_two_decimal_args:
-            return '%s: %s %s' % (opcode_name, args[0], args[1])
+            return f'{opcode_name}: {args[0]} {args[1]}'
         elif opcode_name in ('DW_OP_GNU_entry_value', 'DW_OP_entry_value'):
-            return '%s: (%s)' % (opcode_name, ','.join([self._dump_to_string(deo.op, deo.op_name, deo.args, cu_offset) for deo in args[0]]))
+            return '{}: ({})'.format(opcode_name, ','.join([self._dump_to_string(deo.op, deo.op_name, deo.args, cu_offset) for deo in args[0]]))
         elif opcode_name == 'DW_OP_implicit_value':
-            return "%s %s byte block: %s" % (opcode_name, len(args[0]), ''.join(["%x " % b for b in args[0]]))
+            return "{} {} byte block: {}".format(opcode_name, len(args[0]), ''.join([f"{b:x} " for b in args[0]]))
         elif opcode_name == 'DW_OP_GNU_parameter_ref':
-            return "%s: <0x%x>" % (opcode_name, args[0] + cu_offset)
+            return f"{opcode_name}: <0x{args[0] + cu_offset:x}>"
         elif opcode_name in ('DW_OP_GNU_implicit_pointer', 'DW_OP_implicit_pointer'):
-            return "%s: <0x%x> %d" % (opcode_name, args[0], args[1])
+            return f"{opcode_name}: <0x{args[0]:x}> {int(args[1])}"
         elif opcode_name in ('DW_OP_GNU_convert', 'DW_OP_convert'):
-            return "%s <0x%x>" % (opcode_name, args[0] + cu_offset)
+            return f"{opcode_name} <0x{args[0] + cu_offset:x}>"
         elif opcode_name in ('DW_OP_GNU_deref_type', 'DW_OP_deref_type'):
-            return "%s: %d <0x%x>" % (opcode_name, args[0], args[1] + cu_offset)
+            return f"{opcode_name}: {int(args[0])} <0x{args[1] + cu_offset:x}>"
         elif opcode_name in ('DW_OP_GNU_const_type', 'DW_OP_const_type'):
-            return "%s: <0x%x>  %d byte block: %s " % (opcode_name, args[0] + cu_offset, len(args[1]), ' '.join("%x" % b for b in args[1]))
+            return f"{opcode_name}: <0x{args[0] + cu_offset:x}>  {len(args[1])} byte block: {' '.join(f'{b:x}' for b in args[1])} "
         elif opcode_name in ('DW_OP_GNU_regval_type', 'DW_OP_regval_type'):
-            return "%s: %d (%s) <0x%x>" % (opcode_name, args[0], describe_reg_name(args[0], _MACHINE_ARCH), args[1] + cu_offset)
+            return f"{opcode_name}: {int(args[0])} ({describe_reg_name(args[0], _MACHINE_ARCH)}) <0x{args[1] + cu_offset:x}>"
         elif opcode_name == 'DW_OP_bit_piece':
-            return '%s: size: %s offset: %s' % (opcode_name, args[0], args[1])
+            return f'{opcode_name}: size: {args[0]} offset: {args[1]}'
         else:
-            return '<unknown %s>' % opcode_name
+            return f'<unknown {opcode_name}>'

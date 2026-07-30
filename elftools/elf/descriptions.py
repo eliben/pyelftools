@@ -86,7 +86,7 @@ def describe_p_type(x: int | str) -> str:
     if isinstance(x, str) and x in _DESCR_P_TYPE:
         return _DESCR_P_TYPE[x]
     elif isinstance(x, int) and ENUM_P_TYPE_BASE['PT_LOOS'] <= x <= ENUM_P_TYPE_BASE['PT_HIOS']:
-        return 'LOOS+%lx' % (x - ENUM_P_TYPE_BASE['PT_LOOS'])
+        return f"LOOS+{x - ENUM_P_TYPE_BASE['PT_LOOS']:x}"
     else:
         return _unknown
 
@@ -118,7 +118,7 @@ def describe_sh_type(x: int | str) -> str:
     if isinstance(x, str) and x in _DESCR_SH_TYPE:
         return _DESCR_SH_TYPE[x]
     elif isinstance(x, int) and ENUM_SH_TYPE_BASE['SHT_LOOS'] <= x < ENUM_SH_TYPE_BASE['SHT_GNU_versym']:
-        return 'loos+0x%lx' % (x - ENUM_SH_TYPE_BASE['SHT_LOOS'])
+        return f"loos+0x{x - ENUM_SH_TYPE_BASE['SHT_LOOS']:x}"
     else:
         return _unknown
 
@@ -132,9 +132,8 @@ def describe_sh_flags(x: int) -> str:
             SH_FLAGS.SHF_GROUP, SH_FLAGS.SHF_TLS, SH_FLAGS.SHF_MASKOS,
             SH_FLAGS.SHF_EXCLUDE):
         s += _DESCR_SH_FLAGS[flag] if (x & flag) else ''
-    if not x & SH_FLAGS.SHF_EXCLUDE:
-        if x & SH_FLAGS.SHF_MASKPROC:
-            s += 'p'
+    if not x & SH_FLAGS.SHF_EXCLUDE and x & SH_FLAGS.SHF_MASKPROC:
+        s += 'p'
     return s
 
 
@@ -162,7 +161,7 @@ def describe_symbol_other(x: Container) -> str:
 
 
 def describe_symbol_shndx(x: int | str) -> str:
-    return _DESCR_ST_SHNDX.get(x, f'{x:3}')  # type: ignore[arg-type] # ty: ignore[no-matching-overload]
+    return _DESCR_ST_SHNDX.get(x, f'{x:3}')  # type: ignore[arg-type]
 
 
 def describe_reloc_type(x: int, elffile: ELFFile) -> str:
@@ -186,7 +185,7 @@ def describe_reloc_type(x: int, elffile: ELFFile) -> str:
     elif arch == 'LoongArch':
         return _DESCR_RELOC_TYPE_LOONGARCH.get(x, _unknown)
     else:
-        return 'unrecognized: %-7x' % (x & 0xFFFFFFFF)
+        return f'unrecognized: {x & 4294967295:-7x}'
 
 
 def describe_dyn_tag(x: int) -> str:
@@ -218,7 +217,7 @@ def describe_syminfo_flags(x: int) -> str:
 
 
 def describe_symbol_boundto(x: str) -> str:
-    return _DESCR_SYMINFO_BOUNDTO.get(x, '%3s' % x)
+    return _DESCR_SYMINFO_BOUNDTO.get(x, f'{x:>3}')
 
 
 def describe_ver_flags(x: int) -> str:
@@ -233,15 +232,17 @@ def describe_note(x: Container, machine: str) -> str:
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
         if x['n_name'] == 'GNU':
-            desc = '\n    OS: %s, ABI: %d.%d.%d' % (
-                _DESCR_NOTE_ABI_TAG_OS.get(n_desc['abi_os'], _unknown),
-                n_desc['abi_major'], n_desc['abi_minor'], n_desc['abi_tiny'])
+            os_name = _DESCR_NOTE_ABI_TAG_OS.get(n_desc['abi_os'], _unknown)
+            desc = (
+                f"\n    OS: {os_name}, ABI: {n_desc['abi_major']:d}."
+                f"{n_desc['abi_minor']:d}.{n_desc['abi_tiny']:d}"
+            )
         else:
             desc = f'\n   description data: {bytes(x["n_descdata"]).hex()} '
     elif x['n_type'] == 'NT_GNU_BUILD_ID':
-        desc = '\n    Build ID: %s' % (n_desc)
+        desc = f'\n    Build ID: {n_desc}'
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
-        desc = '\n    Version: %s' % (n_desc)
+        desc = f'\n    Version: {n_desc}'
     elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
         if x['n_name'] == 'GNU':
             desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'], machine)
@@ -256,20 +257,20 @@ def describe_note(x: Container, machine: str) -> str:
     else:
         note_type = (x['n_type'] if isinstance(x['n_type'], str)
                     else 'Unknown note type:')
-        note_type_desc = ('0x%.8x' % x['n_type']
+        note_type_desc = ('0x{:08x}'.format(x['n_type'])
                         if isinstance(x['n_type'], int) else
                         _DESCR_NOTE_N_TYPE.get(x['n_type'], _unknown))
-    return '%s (%s)%s' % (note_type, note_type_desc, desc)
+    return f'{note_type} ({note_type_desc}){desc}'
 
 
 def describe_attr_tag_arm(tag: str, val: Any, extra: str | None) -> str:
-    s = _DESCR_ATTR_TAG_ARM.get(tag, '"%s"' % tag)
+    s = _DESCR_ATTR_TAG_ARM.get(tag, f'"{tag}"')
     idx = ENUM_ATTR_TAG_ARM[tag] - 1
     d_entry = _DESCR_ATTR_VAL_ARM[idx]
 
     if d_entry is None:
         if tag == 'TAG_COMPATIBILITY':
-            return s + 'flag = %d, vendor = %s' % (val, extra)
+            return s + f'flag = {int(val)}, vendor = {extra}'
 
         elif tag == 'TAG_ALSO_COMPATIBLE_WITH':
             if val.tag == 'TAG_CPU_ARCH':
@@ -277,12 +278,12 @@ def describe_attr_tag_arm(tag: str, val: Any, extra: str | None) -> str:
                 return s + (d_entry.get(val.value) or f'??? ({val.value})')
 
             else:
-                return s + '??? (%d)' % val.tag
+                return s + f'??? ({int(val.tag)})'
 
         elif tag == 'TAG_NODEFAULTS':
             return s + 'True'
 
-        s += '"%s"' % val if val else ''
+        s += f'"{val}"' if val else ''
         return s
 
     else:
@@ -294,7 +295,7 @@ def describe_attr_tag_riscv(tag: str, val: Any, extra: str) -> str:
 
     if d_entry is None:
         s = _DESCR_ATTR_TAG_RISCV[tag]
-        s += '"%s"' % val if val else ''
+        s += f'"{val}"' if val else ''
         return s
 
     else:
@@ -310,7 +311,7 @@ def describe_note_gnu_property_bitmap_and(
         for mask, desc in values
         if value & mask
     ]
-    return '%s: %s' % (prefix, ', '.join(descs))
+    return '{}: {}'.format(prefix, ', '.join(descs))
 
 def describe_note_gnu_properties(properties: list[Container], machine: str) -> str:
     descriptions = []
@@ -320,43 +321,43 @@ def describe_note_gnu_properties(properties: list[Container], machine: str) -> s
         sz: int = prop.pr_datasz
         if t == 'GNU_PROPERTY_STACK_SIZE':
             if isinstance(d, int):
-                prop_desc = 'stack size: 0x%x' % d
+                prop_desc = f'stack size: 0x{d:x}'
             else:
-                prop_desc = 'stack size: <corrupt length: 0x%x>' % sz
+                prop_desc = f'stack size: <corrupt length: 0x{sz:x}>'
         elif t == 'GNU_PROPERTY_NO_COPY_ON_PROTECTED':
             if sz != 0:
-                prop_desc = ' <corrupt length: 0x%x>' % sz
+                prop_desc = f' <corrupt length: 0x{sz:x}>'
             else:
                 prop_desc = 'no copy on protected'
         elif t == 'GNU_PROPERTY_X86_FEATURE_1_AND':
             if sz != 4:
-                prop_desc = ' <corrupt length: 0x%x>' % sz
+                prop_desc = f' <corrupt length: 0x{sz:x}>'
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_1_FLAGS, 'x86 feature', d)
         elif t == 'GNU_PROPERTY_X86_FEATURE_2_USED':
             if sz != 4:
-                prop_desc = ' <corrupt length: 0x%x>' % sz
+                prop_desc = f' <corrupt length: 0x{sz:x}>'
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_FEATURE_2_FLAGS, 'x86 feature used', d)
         elif t == 'GNU_PROPERTY_X86_ISA_1_NEEDED':
             if sz != 4:
-                prop_desc = ' <corrupt length: 0x%x>' % sz
+                prop_desc = f' <corrupt length: 0x{sz:x}>'
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS, 'x86 ISA needed', d)
         elif t == 'GNU_PROPERTY_X86_ISA_1_USED':
             if sz != 4:
-                prop_desc = ' <corrupt length: 0x%x>' % sz
+                prop_desc = f' <corrupt length: 0x{sz:x}>'
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_X86_ISA_1_FLAGS, 'x86 ISA used', d)
         elif t == 'GNU_PROPERTY_AARCH64_FEATURE_1_AND' and machine == 'EM_AARCH64':
             if sz != 4:
-                prop_desc = ' <corrupt length: 0x%x>' % sz
+                prop_desc = f' <corrupt length: 0x{sz:x}>'
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_AARCH64_FEATURE_1_AND, 'aarch64 feature', d)
         elif t == 'GNU_PROPERTY_AARCH64_FEATURE_1_AND' and machine == 'EM_RISCV':
             # RISC-V shares the same bit-mask with AArch64
             if sz != 4:
-                prop_desc = ' <corrupt length: 0x%x>' % sz
+                prop_desc = f' <corrupt length: 0x{sz:x}>'
             else:
                 prop_desc = describe_note_gnu_property_bitmap_and(_DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND, 'RISC-V AND feature', d)
         elif isinstance(t, int):
@@ -375,102 +376,102 @@ def describe_note_gnu_properties(properties: list[Container], machine: str) -> s
 _unknown: str = '<unknown>'
 
 
-_DESCR_EI_CLASS = dict(
-    ELFCLASSNONE='none',
-    ELFCLASS32='ELF32',
-    ELFCLASS64='ELF64',
-)
+_DESCR_EI_CLASS = {
+    "ELFCLASSNONE": 'none',
+    "ELFCLASS32": 'ELF32',
+    "ELFCLASS64": 'ELF64',
+}
 
 
-_DESCR_EI_DATA = dict(
-    ELFDATANONE='none',
-    ELFDATA2LSB="2's complement, little endian",
-    ELFDATA2MSB="2's complement, big endian",
-)
+_DESCR_EI_DATA = {
+    "ELFDATANONE": 'none',
+    "ELFDATA2LSB": "2's complement, little endian",
+    "ELFDATA2MSB": "2's complement, big endian",
+}
 
 
-_DESCR_EI_OSABI = dict(
-    ELFOSABI_SYSV='UNIX - System V',
-    ELFOSABI_HPUX='UNIX - HP-UX',
-    ELFOSABI_NETBSD='UNIX - NetBSD',
-    ELFOSABI_LINUX='UNIX - Linux',
-    ELFOSABI_HURD='UNIX - GNU/Hurd',
-    ELFOSABI_SOLARIS='UNIX - Solaris',
-    ELFOSABI_AIX='UNIX - AIX',
-    ELFOSABI_IRIX='UNIX - IRIX',
-    ELFOSABI_FREEBSD='UNIX - FreeBSD',
-    ELFOSABI_TRU64='UNIX - TRU64',
-    ELFOSABI_MODESTO='Novell - Modesto',
-    ELFOSABI_OPENBSD='UNIX - OpenBSD',
-    ELFOSABI_OPENVMS='VMS - OpenVMS',
-    ELFOSABI_NSK='HP - Non-Stop Kernel',
-    ELFOSABI_AROS='AROS',
-    ELFOSABI_FENIXOS='Fenix OS',
-    ELFOSABI_CLOUD='Nuxi - CloudABI',
-    ELFOSABI_SORTIX='Sortix',
-    ELFOSABI_ARM_AEABI='ARM - EABI',
-    ELFOSABI_ARM='ARM - ABI',
-    ELFOSABI_CELL_LV2='CellOS Lv-2',
-    ELFOSABI_STANDALONE='Standalone App',
-)
+_DESCR_EI_OSABI = {
+    "ELFOSABI_SYSV": 'UNIX - System V',
+    "ELFOSABI_HPUX": 'UNIX - HP-UX',
+    "ELFOSABI_NETBSD": 'UNIX - NetBSD',
+    "ELFOSABI_LINUX": 'UNIX - Linux',
+    "ELFOSABI_HURD": 'UNIX - GNU/Hurd',
+    "ELFOSABI_SOLARIS": 'UNIX - Solaris',
+    "ELFOSABI_AIX": 'UNIX - AIX',
+    "ELFOSABI_IRIX": 'UNIX - IRIX',
+    "ELFOSABI_FREEBSD": 'UNIX - FreeBSD',
+    "ELFOSABI_TRU64": 'UNIX - TRU64',
+    "ELFOSABI_MODESTO": 'Novell - Modesto',
+    "ELFOSABI_OPENBSD": 'UNIX - OpenBSD',
+    "ELFOSABI_OPENVMS": 'VMS - OpenVMS',
+    "ELFOSABI_NSK": 'HP - Non-Stop Kernel',
+    "ELFOSABI_AROS": 'AROS',
+    "ELFOSABI_FENIXOS": 'Fenix OS',
+    "ELFOSABI_CLOUD": 'Nuxi - CloudABI',
+    "ELFOSABI_SORTIX": 'Sortix',
+    "ELFOSABI_ARM_AEABI": 'ARM - EABI',
+    "ELFOSABI_ARM": 'ARM - ABI',
+    "ELFOSABI_CELL_LV2": 'CellOS Lv-2',
+    "ELFOSABI_STANDALONE": 'Standalone App',
+}
 
 
-_DESCR_E_TYPE = dict(
-    ET_NONE='NONE (None)',
-    ET_REL='REL (Relocatable file)',
-    ET_EXEC='EXEC (Executable file)',
-    ET_DYN='DYN (Shared object file)',
-    ET_CORE='CORE (Core file)',
-    PROC_SPECIFIC='Processor Specific',
-)
+_DESCR_E_TYPE = {
+    "ET_NONE": 'NONE (None)',
+    "ET_REL": 'REL (Relocatable file)',
+    "ET_EXEC": 'EXEC (Executable file)',
+    "ET_DYN": 'DYN (Shared object file)',
+    "ET_CORE": 'CORE (Core file)',
+    "PROC_SPECIFIC": 'Processor Specific',
+}
 
 
-_DESCR_E_MACHINE = dict(
-    EM_NONE='None',
-    EM_M32='WE32100',
-    EM_SPARC='Sparc',
-    EM_386='Intel 80386',
-    EM_68K='MC68000',
-    EM_88K='MC88000',
-    EM_860='Intel 80860',
-    EM_MIPS='MIPS R3000',
-    EM_S370='IBM System/370',
-    EM_S390='IBM S/390',
-    EM_MIPS_RS4_BE='MIPS 4000 big-endian',
-    EM_IA_64='Intel IA-64',
-    EM_X86_64='Advanced Micro Devices X86-64',
-    EM_AVR='Atmel AVR 8-bit microcontroller',
-    EM_ARM='ARM',
-    EM_AARCH64='AArch64',
-    EM_BLACKFIN='Analog Devices Blackfin',
-    EM_PPC='PowerPC',
-    EM_PPC64='PowerPC64',
-    EM_RISCV='RISC-V',
-    EM_LOONGARCH='LoongArch',
-    RESERVED='RESERVED',
-)
+_DESCR_E_MACHINE = {
+    "EM_NONE": 'None',
+    "EM_M32": 'WE32100',
+    "EM_SPARC": 'Sparc',
+    "EM_386": 'Intel 80386',
+    "EM_68K": 'MC68000',
+    "EM_88K": 'MC88000',
+    "EM_860": 'Intel 80860',
+    "EM_MIPS": 'MIPS R3000',
+    "EM_S370": 'IBM System/370',
+    "EM_S390": 'IBM S/390',
+    "EM_MIPS_RS4_BE": 'MIPS 4000 big-endian',
+    "EM_IA_64": 'Intel IA-64',
+    "EM_X86_64": 'Advanced Micro Devices X86-64',
+    "EM_AVR": 'Atmel AVR 8-bit microcontroller',
+    "EM_ARM": 'ARM',
+    "EM_AARCH64": 'AArch64',
+    "EM_BLACKFIN": 'Analog Devices Blackfin',
+    "EM_PPC": 'PowerPC',
+    "EM_PPC64": 'PowerPC64',
+    "EM_RISCV": 'RISC-V',
+    "EM_LOONGARCH": 'LoongArch',
+    "RESERVED": 'RESERVED',
+}
 
 
-_DESCR_P_TYPE = dict(
-    PT_NULL='NULL',
-    PT_LOAD='LOAD',
-    PT_DYNAMIC='DYNAMIC',
-    PT_INTERP='INTERP',
-    PT_NOTE='NOTE',
-    PT_SHLIB='SHLIB',
-    PT_PHDR='PHDR',
-    PT_GNU_EH_FRAME='GNU_EH_FRAME',
-    PT_GNU_STACK='GNU_STACK',
-    PT_GNU_RELRO='GNU_RELRO',
-    PT_GNU_PROPERTY='GNU_PROPERTY',
-    PT_ARM_ARCHEXT='ARM_ARCHEXT',
-    PT_ARM_EXIDX='EXIDX',  # binutils calls this EXIDX, not ARM_EXIDX
-    PT_AARCH64_ARCHEXT='AARCH64_ARCHEXT',
-    PT_AARCH64_UNWIND='AARCH64_UNWIND',
-    PT_TLS='TLS',
-    PT_MIPS_ABIFLAGS='ABIFLAGS',
-    PT_RISCV_ATTRIBUTES='RISCV_ATTRIBUT',
-)
+_DESCR_P_TYPE = {
+    "PT_NULL": 'NULL',
+    "PT_LOAD": 'LOAD',
+    "PT_DYNAMIC": 'DYNAMIC',
+    "PT_INTERP": 'INTERP',
+    "PT_NOTE": 'NOTE',
+    "PT_SHLIB": 'SHLIB',
+    "PT_PHDR": 'PHDR',
+    "PT_GNU_EH_FRAME": 'GNU_EH_FRAME',
+    "PT_GNU_STACK": 'GNU_STACK',
+    "PT_GNU_RELRO": 'GNU_RELRO',
+    "PT_GNU_PROPERTY": 'GNU_PROPERTY',
+    "PT_ARM_ARCHEXT": 'ARM_ARCHEXT',
+    "PT_ARM_EXIDX": 'EXIDX',  # binutils calls this EXIDX, not ARM_EXIDX
+    "PT_AARCH64_ARCHEXT": 'AARCH64_ARCHEXT',
+    "PT_AARCH64_UNWIND": 'AARCH64_UNWIND',
+    "PT_TLS": 'TLS',
+    "PT_MIPS_ABIFLAGS": 'ABIFLAGS',
+    "PT_RISCV_ATTRIBUTES": 'RISCV_ATTRIBUT',
+}
 
 
 _DESCR_P_FLAGS = {
@@ -480,75 +481,75 @@ _DESCR_P_FLAGS = {
 }
 
 
-_DESCR_SH_TYPE = dict(
-    SHT_NULL='NULL',
-    SHT_PROGBITS='PROGBITS',
-    SHT_SYMTAB='SYMTAB',
-    SHT_STRTAB='STRTAB',
-    SHT_RELA='RELA',
-    SHT_HASH='HASH',
-    SHT_DYNAMIC='DYNAMIC',
-    SHT_NOTE='NOTE',
-    SHT_NOBITS='NOBITS',
-    SHT_REL='REL',
-    SHT_SHLIB='SHLIB',
-    SHT_DYNSYM='DYNSYM',
-    SHT_INIT_ARRAY='INIT_ARRAY',
-    SHT_FINI_ARRAY='FINI_ARRAY',
-    SHT_PREINIT_ARRAY='PREINIT_ARRAY',
-    SHT_GNU_ATTRIBUTES='GNU_ATTRIBUTES',
-    SHT_GNU_HASH='GNU_HASH',
-    SHT_GROUP='GROUP',
-    SHT_SYMTAB_SHNDX='SYMTAB SECTION INDICIES',
-    SHT_RELR='RELR',
-    SHT_GNU_verdef='VERDEF',
-    SHT_GNU_verneed='VERNEED',
-    SHT_GNU_versym='VERSYM',
-    SHT_GNU_LIBLIST='GNU_LIBLIST',
-    SHT_AMD64_UNWIND='X86_64_UNWIND',
-    SHT_ARM_EXIDX='ARM_EXIDX',
-    SHT_ARM_PREEMPTMAP='ARM_PREEMPTMAP',
-    SHT_ARM_ATTRIBUTES='ARM_ATTRIBUTES',
-    SHT_ARM_DEBUGOVERLAY='ARM_DEBUGOVERLAY',
-    SHT_AARCH64_ATTRIBUTES='AARCH64_ATTRIBUTES',
-    SHT_RISCV_ATTRIBUTES='RISCV_ATTRIBUTES',
-    SHT_MIPS_LIBLIST='MIPS_LIBLIST',
-    SHT_MIPS_DEBUG='MIPS_DEBUG',
-    SHT_MIPS_REGINFO='MIPS_REGINFO',
-    SHT_MIPS_PACKAGE='MIPS_PACKAGE',
-    SHT_MIPS_PACKSYM='MIPS_PACKSYM',
-    SHT_MIPS_RELD='MIPS_RELD',
-    SHT_MIPS_IFACE='MIPS_IFACE',
-    SHT_MIPS_CONTENT='MIPS_CONTENT',
-    SHT_MIPS_OPTIONS='MIPS_OPTIONS',
-    SHT_MIPS_SHDR='MIPS_SHDR',
-    SHT_MIPS_FDESC='MIPS_FDESC',
-    SHT_MIPS_EXTSYM='MIPS_EXTSYM',
-    SHT_MIPS_DENSE='MIPS_DENSE',
-    SHT_MIPS_PDESC='MIPS_PDESC',
-    SHT_MIPS_LOCSYM='MIPS_LOCSYM',
-    SHT_MIPS_AUXSYM='MIPS_AUXSYM',
-    SHT_MIPS_OPTSYM='MIPS_OPTSYM',
-    SHT_MIPS_LOCSTR='MIPS_LOCSTR',
-    SHT_MIPS_LINE='MIPS_LINE',
-    SHT_MIPS_RFDESC='MIPS_RFDESC',
-    SHT_MIPS_DELTASYM='MIPS_DELTASYM',
-    SHT_MIPS_DELTAINST='MIPS_DELTAINST',
-    SHT_MIPS_DELTACLASS='MIPS_DELTACLASS',
-    SHT_MIPS_DWARF='MIPS_DWARF',
-    SHT_MIPS_DELTADECL='MIPS_DELTADECL',
-    SHT_MIPS_SYMBOL_LIB='MIPS_SYMBOL_LIB',
-    SHT_MIPS_EVENTS='MIPS_EVENTS',
-    SHT_MIPS_TRANSLATE='MIPS_TRANSLATE',
-    SHT_MIPS_PIXIE='MIPS_PIXIE',
-    SHT_MIPS_XLATE='MIPS_XLATE',
-    SHT_MIPS_XLATE_DEBUG='MIPS_XLATE_DEBUG',
-    SHT_MIPS_WHIRL='MIPS_WHIRL',
-    SHT_MIPS_EH_REGION='MIPS_EH_REGION',
-    SHT_MIPS_XLATE_OLD='MIPS_XLATE_OLD',
-    SHT_MIPS_PDR_EXCEPTION='MIPS_PDR_EXCEPTION',
-    SHT_MIPS_ABIFLAGS='MIPS_ABIFLAGS',
-)
+_DESCR_SH_TYPE = {
+    "SHT_NULL": 'NULL',
+    "SHT_PROGBITS": 'PROGBITS',
+    "SHT_SYMTAB": 'SYMTAB',
+    "SHT_STRTAB": 'STRTAB',
+    "SHT_RELA": 'RELA',
+    "SHT_HASH": 'HASH',
+    "SHT_DYNAMIC": 'DYNAMIC',
+    "SHT_NOTE": 'NOTE',
+    "SHT_NOBITS": 'NOBITS',
+    "SHT_REL": 'REL',
+    "SHT_SHLIB": 'SHLIB',
+    "SHT_DYNSYM": 'DYNSYM',
+    "SHT_INIT_ARRAY": 'INIT_ARRAY',
+    "SHT_FINI_ARRAY": 'FINI_ARRAY',
+    "SHT_PREINIT_ARRAY": 'PREINIT_ARRAY',
+    "SHT_GNU_ATTRIBUTES": 'GNU_ATTRIBUTES',
+    "SHT_GNU_HASH": 'GNU_HASH',
+    "SHT_GROUP": 'GROUP',
+    "SHT_SYMTAB_SHNDX": 'SYMTAB SECTION INDICIES',
+    "SHT_RELR": 'RELR',
+    "SHT_GNU_verdef": 'VERDEF',
+    "SHT_GNU_verneed": 'VERNEED',
+    "SHT_GNU_versym": 'VERSYM',
+    "SHT_GNU_LIBLIST": 'GNU_LIBLIST',
+    "SHT_AMD64_UNWIND": 'X86_64_UNWIND',
+    "SHT_ARM_EXIDX": 'ARM_EXIDX',
+    "SHT_ARM_PREEMPTMAP": 'ARM_PREEMPTMAP',
+    "SHT_ARM_ATTRIBUTES": 'ARM_ATTRIBUTES',
+    "SHT_ARM_DEBUGOVERLAY": 'ARM_DEBUGOVERLAY',
+    "SHT_AARCH64_ATTRIBUTES": 'AARCH64_ATTRIBUTES',
+    "SHT_RISCV_ATTRIBUTES": 'RISCV_ATTRIBUTES',
+    "SHT_MIPS_LIBLIST": 'MIPS_LIBLIST',
+    "SHT_MIPS_DEBUG": 'MIPS_DEBUG',
+    "SHT_MIPS_REGINFO": 'MIPS_REGINFO',
+    "SHT_MIPS_PACKAGE": 'MIPS_PACKAGE',
+    "SHT_MIPS_PACKSYM": 'MIPS_PACKSYM',
+    "SHT_MIPS_RELD": 'MIPS_RELD',
+    "SHT_MIPS_IFACE": 'MIPS_IFACE',
+    "SHT_MIPS_CONTENT": 'MIPS_CONTENT',
+    "SHT_MIPS_OPTIONS": 'MIPS_OPTIONS',
+    "SHT_MIPS_SHDR": 'MIPS_SHDR',
+    "SHT_MIPS_FDESC": 'MIPS_FDESC',
+    "SHT_MIPS_EXTSYM": 'MIPS_EXTSYM',
+    "SHT_MIPS_DENSE": 'MIPS_DENSE',
+    "SHT_MIPS_PDESC": 'MIPS_PDESC',
+    "SHT_MIPS_LOCSYM": 'MIPS_LOCSYM',
+    "SHT_MIPS_AUXSYM": 'MIPS_AUXSYM',
+    "SHT_MIPS_OPTSYM": 'MIPS_OPTSYM',
+    "SHT_MIPS_LOCSTR": 'MIPS_LOCSTR',
+    "SHT_MIPS_LINE": 'MIPS_LINE',
+    "SHT_MIPS_RFDESC": 'MIPS_RFDESC',
+    "SHT_MIPS_DELTASYM": 'MIPS_DELTASYM',
+    "SHT_MIPS_DELTAINST": 'MIPS_DELTAINST',
+    "SHT_MIPS_DELTACLASS": 'MIPS_DELTACLASS',
+    "SHT_MIPS_DWARF": 'MIPS_DWARF',
+    "SHT_MIPS_DELTADECL": 'MIPS_DELTADECL',
+    "SHT_MIPS_SYMBOL_LIB": 'MIPS_SYMBOL_LIB',
+    "SHT_MIPS_EVENTS": 'MIPS_EVENTS',
+    "SHT_MIPS_TRANSLATE": 'MIPS_TRANSLATE',
+    "SHT_MIPS_PIXIE": 'MIPS_PIXIE',
+    "SHT_MIPS_XLATE": 'MIPS_XLATE',
+    "SHT_MIPS_XLATE_DEBUG": 'MIPS_XLATE_DEBUG',
+    "SHT_MIPS_WHIRL": 'MIPS_WHIRL',
+    "SHT_MIPS_EH_REGION": 'MIPS_EH_REGION',
+    "SHT_MIPS_XLATE_OLD": 'MIPS_XLATE_OLD',
+    "SHT_MIPS_PDR_EXCEPTION": 'MIPS_PDR_EXCEPTION',
+    "SHT_MIPS_ABIFLAGS": 'MIPS_ABIFLAGS',
+}
 
 
 _DESCR_SH_FLAGS = {
@@ -587,43 +588,43 @@ _DESCR_RH_FLAGS = {
 }
 
 
-_DESCR_ST_INFO_TYPE = dict(
-    STT_NOTYPE='NOTYPE',
-    STT_OBJECT='OBJECT',
-    STT_FUNC='FUNC',
-    STT_SECTION='SECTION',
-    STT_FILE='FILE',
-    STT_COMMON='COMMON',
-    STT_TLS='TLS',
-    STT_NUM='NUM',
-    STT_RELC='RELC',
-    STT_SRELC='SRELC',
-)
+_DESCR_ST_INFO_TYPE = {
+    "STT_NOTYPE": 'NOTYPE',
+    "STT_OBJECT": 'OBJECT',
+    "STT_FUNC": 'FUNC',
+    "STT_SECTION": 'SECTION',
+    "STT_FILE": 'FILE',
+    "STT_COMMON": 'COMMON',
+    "STT_TLS": 'TLS',
+    "STT_NUM": 'NUM',
+    "STT_RELC": 'RELC',
+    "STT_SRELC": 'SRELC',
+}
 
 
-_DESCR_ST_INFO_BIND = dict(
-    STB_LOCAL='LOCAL',
-    STB_GLOBAL='GLOBAL',
-    STB_WEAK='WEAK',
-)
+_DESCR_ST_INFO_BIND = {
+    "STB_LOCAL": 'LOCAL',
+    "STB_GLOBAL": 'GLOBAL',
+    "STB_WEAK": 'WEAK',
+}
 
 
-_DESCR_ST_VISIBILITY = dict(
-    STV_DEFAULT='DEFAULT',
-    STV_INTERNAL='INTERNAL',
-    STV_HIDDEN='HIDDEN',
-    STV_PROTECTED='PROTECTED',
-    STV_EXPORTED='EXPORTED',
-    STV_SINGLETON='SINGLETON',
-    STV_ELIMINATE='ELIMINATE',
-)
+_DESCR_ST_VISIBILITY = {
+    "STV_DEFAULT": 'DEFAULT',
+    "STV_INTERNAL": 'INTERNAL',
+    "STV_HIDDEN": 'HIDDEN',
+    "STV_PROTECTED": 'PROTECTED',
+    "STV_EXPORTED": 'EXPORTED',
+    "STV_SINGLETON": 'SINGLETON',
+    "STV_ELIMINATE": 'ELIMINATE',
+}
 
 
-_DESCR_ST_SHNDX = dict(
-    SHN_UNDEF='UND',
-    SHN_ABS='ABS',
-    SHN_COMMON='COM',
-)
+_DESCR_ST_SHNDX = {
+    "SHN_UNDEF": 'UND',
+    "SHN_ABS": 'ABS',
+    "SHN_COMMON": 'COM',
+}
 
 
 _DESCR_SYMINFO_FLAGS = {
@@ -640,12 +641,12 @@ _DESCR_SYMINFO_FLAGS = {
 }
 
 
-_DESCR_SYMINFO_BOUNDTO = dict(
-    SYMINFO_BT_SELF='<self>',
-    SYMINFO_BT_PARENT='<parent>',
-    SYMINFO_BT_NONE='',
-    SYMINFO_BT_EXTERN='<extern>',
-)
+_DESCR_SYMINFO_BOUNDTO = {
+    "SYMINFO_BT_SELF": '<self>',
+    "SYMINFO_BT_PARENT": '<parent>',
+    "SYMINFO_BT_NONE": '',
+    "SYMINFO_BT_EXTERN": '<extern>',
+}
 
 
 _DESCR_VER_FLAGS = {
@@ -657,24 +658,24 @@ _DESCR_VER_FLAGS = {
 
 
 # PT_NOTE section types
-_DESCR_NOTE_N_TYPE = dict(
-    NT_GNU_ABI_TAG='ABI version tag',
-    NT_GNU_HWCAP='DSO-supplied software HWCAP info',
-    NT_GNU_BUILD_ID='unique build ID bitstring',
-    NT_GNU_GOLD_VERSION='gold version',
-    NT_GNU_PROPERTY_TYPE_0='program properties'
-)
+_DESCR_NOTE_N_TYPE = {
+    "NT_GNU_ABI_TAG": 'ABI version tag',
+    "NT_GNU_HWCAP": 'DSO-supplied software HWCAP info',
+    "NT_GNU_BUILD_ID": 'unique build ID bitstring',
+    "NT_GNU_GOLD_VERSION": 'gold version',
+    "NT_GNU_PROPERTY_TYPE_0": 'program properties'
+}
 
 
 # Values in GNU .note.ABI-tag notes (n_type=='NT_GNU_ABI_TAG')
-_DESCR_NOTE_ABI_TAG_OS = dict(
-    ELF_NOTE_OS_LINUX='Linux',
-    ELF_NOTE_OS_GNU='GNU',
-    ELF_NOTE_OS_SOLARIS2='Solaris 2',
-    ELF_NOTE_OS_FREEBSD='FreeBSD',
-    ELF_NOTE_OS_NETBSD='NetBSD',
-    ELF_NOTE_OS_SYLLABLE='Syllable',
-)
+_DESCR_NOTE_ABI_TAG_OS = {
+    "ELF_NOTE_OS_LINUX": 'Linux',
+    "ELF_NOTE_OS_GNU": 'GNU',
+    "ELF_NOTE_OS_SOLARIS2": 'Solaris 2',
+    "ELF_NOTE_OS_FREEBSD": 'FreeBSD',
+    "ELF_NOTE_OS_NETBSD": 'NetBSD',
+    "ELF_NOTE_OS_SYLLABLE": 'Syllable',
+}
 
 
 # Values in GNU .note.gnu.property notes (n_type=='NT_GNU_PROPERTY_TYPE_0') have
@@ -760,51 +761,51 @@ _low_priority_D_TAG = (
 )
 _DESCR_D_TAG = _reverse_dict(ENUM_D_TAG, low_priority=_low_priority_D_TAG)
 
-_DESCR_ATTR_TAG_ARM = dict(
-    TAG_FILE='File Attributes',
-    TAG_SECTION='Section Attributes:',
-    TAG_SYMBOL='Symbol Attributes:',
-    TAG_CPU_RAW_NAME='Tag_CPU_raw_name: ',
-    TAG_CPU_NAME='Tag_CPU_name: ',
-    TAG_CPU_ARCH='Tag_CPU_arch: ',
-    TAG_CPU_ARCH_PROFILE='Tag_CPU_arch_profile: ',
-    TAG_ARM_ISA_USE='Tag_ARM_ISA_use: ',
-    TAG_THUMB_ISA_USE='Tag_THUMB_ISA_use: ',
-    TAG_FP_ARCH='Tag_FP_arch: ',
-    TAG_WMMX_ARCH='Tag_WMMX_arch: ',
-    TAG_ADVANCED_SIMD_ARCH='Tag_Advanced_SIMD_arch: ',
-    TAG_PCS_CONFIG='Tag_PCS_config: ',
-    TAG_ABI_PCS_R9_USE='Tag_ABI_PCS_R9_use: ',
-    TAG_ABI_PCS_RW_DATA='Tag_ABI_PCS_RW_data: ',
-    TAG_ABI_PCS_RO_DATA='Tag_ABI_PCS_RO_data: ',
-    TAG_ABI_PCS_GOT_USE='Tag_ABI_PCS_GOT_use: ',
-    TAG_ABI_PCS_WCHAR_T='Tag_ABI_PCS_wchar_t: ',
-    TAG_ABI_FP_ROUNDING='Tag_ABI_FP_rounding: ',
-    TAG_ABI_FP_DENORMAL='Tag_ABI_FP_denormal: ',
-    TAG_ABI_FP_EXCEPTIONS='Tag_ABI_FP_exceptions: ',
-    TAG_ABI_FP_USER_EXCEPTIONS='Tag_ABI_FP_user_exceptions: ',
-    TAG_ABI_FP_NUMBER_MODEL='Tag_ABI_FP_number_model: ',
-    TAG_ABI_ALIGN_NEEDED='Tag_ABI_align_needed: ',
-    TAG_ABI_ALIGN_PRESERVED='Tag_ABI_align_preserved: ',
-    TAG_ABI_ENUM_SIZE='Tag_ABI_enum_size: ',
-    TAG_ABI_HARDFP_USE='Tag_ABI_HardFP_use: ',
-    TAG_ABI_VFP_ARGS='Tag_ABI_VFP_args: ',
-    TAG_ABI_WMMX_ARGS='Tag_ABI_WMMX_args: ',
-    TAG_ABI_OPTIMIZATION_GOALS='Tag_ABI_optimization_goals: ',
-    TAG_ABI_FP_OPTIMIZATION_GOALS='Tag_ABI_FP_optimization_goals: ',
-    TAG_COMPATIBILITY='Tag_compatibility: ',
-    TAG_CPU_UNALIGNED_ACCESS='Tag_CPU_unaligned_access: ',
-    TAG_FP_HP_EXTENSION='Tag_FP_HP_extension: ',
-    TAG_ABI_FP_16BIT_FORMAT='Tag_ABI_FP_16bit_format: ',
-    TAG_MPEXTENSION_USE='Tag_MPextension_use: ',
-    TAG_DIV_USE='Tag_DIV_use: ',
-    TAG_NODEFAULTS='Tag_nodefaults: ',
-    TAG_ALSO_COMPATIBLE_WITH='Tag_also_compatible_with: ',
-    TAG_T2EE_USE='Tag_T2EE_use: ',
-    TAG_CONFORMANCE='Tag_conformance: ',
-    TAG_VIRTUALIZATION_USE='Tag_Virtualization_use: ',
-    TAG_MPEXTENSION_USE_OLD='Tag_MPextension_use_old: ',
-)
+_DESCR_ATTR_TAG_ARM = {
+    "TAG_FILE": 'File Attributes',
+    "TAG_SECTION": 'Section Attributes:',
+    "TAG_SYMBOL": 'Symbol Attributes:',
+    "TAG_CPU_RAW_NAME": 'Tag_CPU_raw_name: ',
+    "TAG_CPU_NAME": 'Tag_CPU_name: ',
+    "TAG_CPU_ARCH": 'Tag_CPU_arch: ',
+    "TAG_CPU_ARCH_PROFILE": 'Tag_CPU_arch_profile: ',
+    "TAG_ARM_ISA_USE": 'Tag_ARM_ISA_use: ',
+    "TAG_THUMB_ISA_USE": 'Tag_THUMB_ISA_use: ',
+    "TAG_FP_ARCH": 'Tag_FP_arch: ',
+    "TAG_WMMX_ARCH": 'Tag_WMMX_arch: ',
+    "TAG_ADVANCED_SIMD_ARCH": 'Tag_Advanced_SIMD_arch: ',
+    "TAG_PCS_CONFIG": 'Tag_PCS_config: ',
+    "TAG_ABI_PCS_R9_USE": 'Tag_ABI_PCS_R9_use: ',
+    "TAG_ABI_PCS_RW_DATA": 'Tag_ABI_PCS_RW_data: ',
+    "TAG_ABI_PCS_RO_DATA": 'Tag_ABI_PCS_RO_data: ',
+    "TAG_ABI_PCS_GOT_USE": 'Tag_ABI_PCS_GOT_use: ',
+    "TAG_ABI_PCS_WCHAR_T": 'Tag_ABI_PCS_wchar_t: ',
+    "TAG_ABI_FP_ROUNDING": 'Tag_ABI_FP_rounding: ',
+    "TAG_ABI_FP_DENORMAL": 'Tag_ABI_FP_denormal: ',
+    "TAG_ABI_FP_EXCEPTIONS": 'Tag_ABI_FP_exceptions: ',
+    "TAG_ABI_FP_USER_EXCEPTIONS": 'Tag_ABI_FP_user_exceptions: ',
+    "TAG_ABI_FP_NUMBER_MODEL": 'Tag_ABI_FP_number_model: ',
+    "TAG_ABI_ALIGN_NEEDED": 'Tag_ABI_align_needed: ',
+    "TAG_ABI_ALIGN_PRESERVED": 'Tag_ABI_align_preserved: ',
+    "TAG_ABI_ENUM_SIZE": 'Tag_ABI_enum_size: ',
+    "TAG_ABI_HARDFP_USE": 'Tag_ABI_HardFP_use: ',
+    "TAG_ABI_VFP_ARGS": 'Tag_ABI_VFP_args: ',
+    "TAG_ABI_WMMX_ARGS": 'Tag_ABI_WMMX_args: ',
+    "TAG_ABI_OPTIMIZATION_GOALS": 'Tag_ABI_optimization_goals: ',
+    "TAG_ABI_FP_OPTIMIZATION_GOALS": 'Tag_ABI_FP_optimization_goals: ',
+    "TAG_COMPATIBILITY": 'Tag_compatibility: ',
+    "TAG_CPU_UNALIGNED_ACCESS": 'Tag_CPU_unaligned_access: ',
+    "TAG_FP_HP_EXTENSION": 'Tag_FP_HP_extension: ',
+    "TAG_ABI_FP_16BIT_FORMAT": 'Tag_ABI_FP_16bit_format: ',
+    "TAG_MPEXTENSION_USE": 'Tag_MPextension_use: ',
+    "TAG_DIV_USE": 'Tag_DIV_use: ',
+    "TAG_NODEFAULTS": 'Tag_nodefaults: ',
+    "TAG_ALSO_COMPATIBLE_WITH": 'Tag_also_compatible_with: ',
+    "TAG_T2EE_USE": 'Tag_T2EE_use: ',
+    "TAG_CONFORMANCE": 'Tag_conformance: ',
+    "TAG_VIRTUALIZATION_USE": 'Tag_Virtualization_use: ',
+    "TAG_MPEXTENSION_USE_OLD": 'Tag_MPextension_use_old: ',
+}
 
 _DESCR_ATTR_VAL_ARM: Final = (
     None, #1
@@ -1056,19 +1057,19 @@ _DESCR_ATTR_VAL_ARM: Final = (
     },
 )
 
-_DESCR_ATTR_TAG_RISCV = dict(
-    TAG_FILE='File Attributes',
-    TAG_SECTION='Section Attributes:',
-    TAG_SYMBOL='Symbol Attributes:',
-    TAG_STACK_ALIGN='Tag_RISCV_stack_align: ',
-    TAG_ARCH='Tag_RISCV_arch: ',
-    TAG_UNALIGNED='Tag_RISCV_unaligned_access: ',
-    TAG_PRIV_SPEC='Tag_RISCV_priv_spec: ',
-    TAG_PRIV_SPEC_MINOR='Tag_RISCV_priv_spec_minor: ',
-    TAG_PRIV_SPEC_REVISION='Tag_RISCV_priv_spec_revision: ',
-    TAG_ATOMIC_ABI='Tag_RISCV_atomic_abi: ',
-    TAG_X3_REG_USAGE='Tag_RISCV_x3_reg_usage: ',
-)
+_DESCR_ATTR_TAG_RISCV = {
+    "TAG_FILE": 'File Attributes',
+    "TAG_SECTION": 'Section Attributes:',
+    "TAG_SYMBOL": 'Symbol Attributes:',
+    "TAG_STACK_ALIGN": 'Tag_RISCV_stack_align: ',
+    "TAG_ARCH": 'Tag_RISCV_arch: ',
+    "TAG_UNALIGNED": 'Tag_RISCV_unaligned_access: ',
+    "TAG_PRIV_SPEC": 'Tag_RISCV_priv_spec: ',
+    "TAG_PRIV_SPEC_MINOR": 'Tag_RISCV_priv_spec_minor: ',
+    "TAG_PRIV_SPEC_REVISION": 'Tag_RISCV_priv_spec_revision: ',
+    "TAG_ATOMIC_ABI": 'Tag_RISCV_atomic_abi: ',
+    "TAG_X3_REG_USAGE": 'Tag_RISCV_x3_reg_usage: ',
+}
 
 _DESCR_ATTR_VAL_RISCV: Final = (
     None, #1

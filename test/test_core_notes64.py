@@ -17,7 +17,7 @@ class TestCoreNotes(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls._core_file = open(os.path.join('test',
+        cls._core_file = open(os.path.join('test',  # noqa: SIM115
                               'testfiles_for_unittests', 'core_linux64.elf'),
                               'rb')
 

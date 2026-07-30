@@ -98,6 +98,6 @@ class BitStreamWriter(BitStream):
         if not data:
             return 0
         if type(data) is not bytes:
-            raise TypeError("data must be a bytes, not %r" % (type(data),))
+            raise TypeError(f"data must be a bytes, not {type(data)!r}")
         self.buffer.append(data)
         return len(data)

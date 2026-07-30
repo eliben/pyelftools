@@ -91,14 +91,14 @@ class DynamicTag:
         return self.entry[name]
 
     def __repr__(self) -> str:
-        return '<DynamicTag (%s): %r>' % (self.entry.d_tag, self.entry)
+        return f'<DynamicTag ({self.entry.d_tag}): {self.entry!r}>'
 
     def __str__(self) -> str:
         if self.entry.d_tag in self._HANDLED_TAGS:
-            s = '"%s"' % getattr(self, self.entry.d_tag[3:].lower())
+            s = f'"{getattr(self, self.entry.d_tag[3:].lower())}"'
         else:
-            s = '%#x' % self.entry.d_ptr
-        return '<DynamicTag (%s) %s>' % (self.entry.d_tag, s)
+            s = f'{self.entry.d_ptr:#x}'
+        return f'<DynamicTag ({self.entry.d_tag}) {s}>'
 
 
 class Dynamic:
@@ -247,7 +247,7 @@ class Dynamic:
 
             relentsz = next(self.iter_tags('DT_RELENT'))['d_val']
             elf_assert(result['REL'].entry_size == relentsz,
-                'Expected DT_RELENT to be %s' % relentsz)
+                f'Expected DT_RELENT to be {relentsz}')
 
         if list(self.iter_tags('DT_RELA')):
             result['RELA'] = RelocationTable(self.elffile,
@@ -256,7 +256,7 @@ class Dynamic:
 
             relentsz = next(self.iter_tags('DT_RELAENT'))['d_val']
             elf_assert(result['RELA'].entry_size == relentsz,
-                'Expected DT_RELAENT to be %s' % relentsz)
+                f'Expected DT_RELAENT to be {relentsz}')
 
         if list(self.iter_tags('DT_RELR')):
             result['RELR'] = RelrRelocationTable(self.elffile,
@@ -336,12 +336,16 @@ class DynamicSegment(Segment, Dynamic):
         nearest_ptr: int | None = None
         for tag in self.iter_tags():
             tag_ptr = tag['d_ptr']
-            if tag['d_tag'] == 'DT_SYMENT':
-                if self._symbol_size != tag['d_val']:
-                    # DT_SYMENT is the size of one symbol entry. It must be
-                    # the same as returned by Elf_Sym.sizeof.
-                    raise ELFError('DT_SYMENT (%d) != Elf_Sym (%d).' %
-                                   (tag['d_val'], self._symbol_size))
+            if (
+                tag['d_tag'] == 'DT_SYMENT'
+                and self._symbol_size != tag['d_val']
+            ):
+                # DT_SYMENT is the size of one symbol entry. It must be
+                # the same as returned by Elf_Sym.sizeof.
+                raise ELFError(
+                    f"DT_SYMENT ({tag['d_val']:d}) != "
+                    f"Elf_Sym ({self._symbol_size:d})."
+                )
             if (tag_ptr > tab_ptr and
                     (nearest_ptr is None or nearest_ptr > tag_ptr)):
                 nearest_ptr = tag_ptr

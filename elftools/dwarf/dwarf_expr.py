@@ -152,7 +152,7 @@ class DWARFExprParser:
 
             # Decode the opcode and its name.
             op = ord(byte)
-            op_name = DW_OP_opcode2name.get(op, 'OP:0x%x' % op)
+            op_name = DW_OP_opcode2name.get(op, f'OP:0x{op:x}')
 
             # Use dispatch table to parse args.
             arg_parser = self._dispatch_table[op]
@@ -219,7 +219,7 @@ def _init_dispatch_table(structs: DWARFStructs) -> dict[int, Callable[[IO[bytes]
             elif op == 3:
                 return [op, struct_parse(structs.the_Dwarf_uint32, stream)]
             else:
-                raise DWARFError("Unknown operation code in DW_OP_WASM_location: %d" % (op,))
+                raise DWARFError(f"Unknown operation code in DW_OP_WASM_location: {int(op)}")
         return parse
 
     add('DW_OP_addr', parse_op_addr())
@@ -252,9 +252,9 @@ def _init_dispatch_table(structs: DWARFStructs) -> dict[int, Callable[[IO[bytes]
         add(opname, parse_noargs())
 
     for n in range(32):
-        add('DW_OP_lit%s' % n, parse_noargs())
-        add('DW_OP_reg%s' % n, parse_noargs())
-        add('DW_OP_breg%s' % n, parse_arg_struct(structs.the_Dwarf_sleb128))
+        add(f'DW_OP_lit{n}', parse_noargs())
+        add(f'DW_OP_reg{n}', parse_noargs())
+        add(f'DW_OP_breg{n}', parse_arg_struct(structs.the_Dwarf_sleb128))
 
     for opname in [ 'DW_OP_regx', 'DW_OP_piece', 'DW_OP_convert', 'DW_OP_GNU_convert',
                     'DW_OP_GNU_addr_index', 'DW_OP_GNU_const_index', 'DW_OP_GNU_variable_value']:

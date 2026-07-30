@@ -123,8 +123,7 @@ class MappingAdapter(Adapter):
             return self.encoding[obj]
         except (KeyError, TypeError):
             if self.encdefault is NotImplemented:
-                raise MappingError("no encoding mapping for %r [%s]" % (
-                    obj, self.subcon.name))
+                raise MappingError(f"no encoding mapping for {obj!r} [{self.subcon.name}]")
             if self.encdefault is Pass:
                 return obj
             return self.encdefault
@@ -133,8 +132,7 @@ class MappingAdapter(Adapter):
             return self.decoding[obj]
         except (KeyError, TypeError):
             if self.decdefault is NotImplemented:
-                raise MappingError("no decoding mapping for %r [%s]" % (
-                    obj, self.subcon.name))
+                raise MappingError(f"no decoding mapping for {obj!r} [{self.subcon.name}]")
             if self.decdefault is Pass:
                 return obj
             return self.decdefault
@@ -371,10 +369,10 @@ class ConstAdapter(Adapter):
         if obj is None or obj == self.value:
             return self.value
         else:
-            raise ConstError("expected %r, found %r" % (self.value, obj))
+            raise ConstError(f"expected {self.value!r}, found {obj!r}")
     def _decode(self, obj: object, context: Container) -> object:
         if obj != self.value:
-            raise ConstError("expected %r, found %r" % (self.value, obj))
+            raise ConstError(f"expected {self.value!r}, found {obj!r}")
         return obj
 
 class SlicingAdapter(Adapter):
@@ -439,7 +437,7 @@ class PaddingAdapter(Adapter):
         if self.strict:
             expected = self._sizeof(context) * self.pattern
             if obj != expected:
-                raise PaddingError("expected %r, found %r" % (expected, obj))
+                raise PaddingError(f"expected {expected!r}, found {obj!r}")
         return obj
 
 
