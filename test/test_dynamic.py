@@ -4,14 +4,14 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
-from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFError
-from elftools.elf.dynamic import DynamicTag
-from elftools.elf.enums import ENUM_D_TAG
 from elftools.elf.descriptions import _DESCR_D_TAG, _low_priority_D_TAG
+from elftools.elf.dynamic import DynamicTag
+from elftools.elf.elffile import ELFFile
+from elftools.elf.enums import ENUM_D_TAG
 
 
 class TestDynamicTag(unittest.TestCase):

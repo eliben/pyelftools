@@ -8,9 +8,9 @@
 # William Woodruff (william@yossarian.net)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from collections import defaultdict
-import sys
 import posixpath
+import sys
+from collections import defaultdict
 
 from elftools.elf.elffile import ELFFile
 

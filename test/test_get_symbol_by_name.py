@@ -4,8 +4,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
 

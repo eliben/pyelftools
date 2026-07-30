@@ -4,11 +4,11 @@
 # Yann Rouillard (yann@pleiades.fr.eu.org)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
-from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection, DynamicTag
+from elftools.elf.elffile import ELFFile
 
 
 class TestDoubleDynstrSections(unittest.TestCase):

@@ -58,12 +58,7 @@ class ELFHashTable:
         self.elffile = elffile
         self._symboltable = symboltable
         if size == 0:  # size may also be None if its unknown
-            self.params = Container(**{
-                'nbuckets': 0,
-                'nchains': 0,
-                'buckets': [],
-                'chains': [],
-            })
+            self.params = Container(nbuckets=0, nchains=0, buckets=[], chains=[])
         else:
             self.params = struct_parse(self.elffile.structs.Elf_Hash,
                                        self.elffile.stream,

@@ -8,11 +8,11 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
+import math
+from bisect import bisect_right
 from typing import IO, TYPE_CHECKING, NamedTuple
 
 from ..common.utils import struct_parse
-from bisect import bisect_right
-import math
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -14,10 +14,11 @@
 # $ gcc test_sup.c -o test_gnudebugaltlink2
 # $ dwz test_gnudebugaltlink1 test_gnudebugaltlink2 -m test_gnudebugaltlink.common
 
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
+
 
 class TestDWARFSupplementaryObjects(unittest.TestCase):
 

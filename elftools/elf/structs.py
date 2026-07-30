@@ -12,15 +12,34 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import elftools.elf .enums as e
-from ..construct import (
-    UBInt8, UBInt16, UBInt32, UBInt64,
-    ULInt8, ULInt16, ULInt32, ULInt64,
-    SBInt32, SLInt32, SBInt64, SLInt64,
-    Struct, Array, Enum, Padding, BitStruct, BitField, Value, String, CString,
-    Switch, Field
-    )
+
 from ..common.construct_utils import ULEB128
 from ..common.utils import roundup
+from ..construct import (
+    Array,
+    BitField,
+    BitStruct,
+    CString,
+    Enum,
+    Field,
+    Padding,
+    SBInt32,
+    SBInt64,
+    SLInt32,
+    SLInt64,
+    String,
+    Struct,
+    Switch,
+    UBInt8,
+    UBInt16,
+    UBInt32,
+    UBInt64,
+    ULInt8,
+    ULInt16,
+    ULInt32,
+    ULInt64,
+    Value,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable

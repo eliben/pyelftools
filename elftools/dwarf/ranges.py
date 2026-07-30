@@ -11,8 +11,8 @@ from __future__ import annotations
 import os
 from typing import IO, TYPE_CHECKING, NamedTuple, NoReturn
 
-from ..common.utils import struct_parse
 from ..common.exceptions import DWARFError
+from ..common.utils import struct_parse
 from .dwarf_util import _iter_CUs_in_section
 
 if TYPE_CHECKING:

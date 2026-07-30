@@ -13,9 +13,9 @@ from typing import IO, TYPE_CHECKING, Any, NamedTuple
 
 from ..common.exceptions import DWARFError, ELFParseError
 from ..common.utils import bytes2str, struct_parse
-from .enums import DW_FORM_raw2name
-from .dwarf_util import _resolve_via_offset_table, _get_base_offset
 from ..construct import ConstructError
+from .dwarf_util import _get_base_offset, _resolve_via_offset_table
+from .enums import DW_FORM_raw2name
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

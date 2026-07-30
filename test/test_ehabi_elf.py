@@ -5,10 +5,15 @@
 # This code is in the public domain
 # -------------------------------------------------------------------------------
 
-import unittest
 import os
+import unittest
 
-from elftools.ehabi.ehabiinfo import EHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry, CorruptEHABIEntry
+from elftools.ehabi.ehabiinfo import (
+    CannotUnwindEHABIEntry,
+    CorruptEHABIEntry,
+    EHABIEntry,
+    GenericEHABIEntry,
+)
 from elftools.elf.elffile import ELFFile
 
 

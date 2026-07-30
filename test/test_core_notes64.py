@@ -4,8 +4,8 @@
 # Maxim Akhmedov (max42@yandex-team.ru)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.segments import NoteSegment

@@ -12,21 +12,20 @@ from bisect import bisect_right
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, NamedTuple
 
-from ..construct.lib.container import Container
 from ..common.exceptions import DWARFError
-from ..common.utils import (struct_parse, dwarf_assert,
-                            parse_cstring_from_stream)
-from .structs import DWARFStructs
-from .compileunit import CompileUnit
-from .typeunit import TypeUnit
+from ..common.utils import dwarf_assert, parse_cstring_from_stream, struct_parse
+from ..construct.lib.container import Container
 from .abbrevtable import AbbrevTable
-from .lineprogram import LineProgram
-from .callframe import CallFrameInfo
-from .locationlists import LocationLists, LocationListsPair
-from .ranges import RangeLists, RangeListsPair
 from .aranges import ARanges
-from .namelut import NameLUT
+from .callframe import CallFrameInfo
+from .compileunit import CompileUnit
 from .dwarf_util import _get_base_offset
+from .lineprogram import LineProgram
+from .locationlists import LocationLists, LocationListsPair
+from .namelut import NameLUT
+from .ranges import RangeLists, RangeListsPair
+from .structs import DWARFStructs
+from .typeunit import TypeUnit
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -720,11 +719,7 @@ class DWARFInfo:
             lineprog_header.include_directory = tuple(d.DW_LNCT_path for d in lineprog_header.directories)
         if lineprog_header.get('file_names', False):
             lineprog_header.file_entry = tuple(
-                Container(**{
-                    'name':e.get('DW_LNCT_path'),
-                    'dir_index': e.get('DW_LNCT_directory_index'),
-                    'mtime': e.get('DW_LNCT_timestamp'),
-                    'length': e.get('DW_LNCT_size')})
+                Container(name=e.get('DW_LNCT_path'), dir_index=e.get('DW_LNCT_directory_index'), mtime=e.get('DW_LNCT_timestamp'), length=e.get('DW_LNCT_size'))
                 for e in lineprog_header.file_names)
 
         # Calculate the offset to the next line program (see DWARF 6.2.4)

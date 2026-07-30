@@ -12,9 +12,8 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 from ..common.utils import struct_parse
-
-from .decoder import EHABIBytecodeDecoder
 from .constants import EHABI_INDEX_ENTRY_SIZE
+from .decoder import EHABIBytecodeDecoder
 from .structs import EHABIStructs
 
 if TYPE_CHECKING:

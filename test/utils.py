@@ -7,8 +7,8 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os
-import sys
 import subprocess
+import sys
 import tempfile
 
 

@@ -15,13 +15,12 @@ from typing import IO, TYPE_CHECKING, Any, Literal, NamedTuple, cast
 from warnings import warn
 
 from ..common.exceptions import DWARFError
-from ..common.utils import (
-    struct_parse, dwarf_assert, preserve_stream_pos)
+from ..common.utils import dwarf_assert, preserve_stream_pos, struct_parse
 from ..construct import Struct, Switch
 from ..construct.lib.container import Container
+from .constants import DW_CFA
 from .enums import DW_EH_encoding_flags
 from .structs import DWARFStructs
-from .constants import DW_CFA
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -318,7 +317,7 @@ class CallFrameInfo:
         # Augmentation parsing works in minimal mode here: we need the length
         # field to be able to skip unhandled augmentation fields.
         assert augmentation.startswith(b'z'), (
-            'Unhandled augmentation string: {}'.format(repr(augmentation)))
+            f'Unhandled augmentation string: {augmentation!r}')
 
         available_fields: dict[str, Construct | Literal[True]] = {
             'z': entry_structs.Dwarf_uleb128('length'),
@@ -404,7 +403,7 @@ class CallFrameInfo:
             ptr += self.address + stream_offset
 
         else:
-            assert False, 'Unsupported encoding modifier for LSDA pointer: {:#x}'.format(modifier)
+            assert False, f'Unsupported encoding modifier for LSDA pointer: {modifier:#x}'
 
         return ptr
 
@@ -451,7 +450,7 @@ class CallFrameInfo:
             result['initial_location'] += (
                 self.address + initial_location_offset)
         else:
-            assert False, 'Unsupported encoding: {:#x}'.format(encoding)
+            assert False, f'Unsupported encoding: {encoding:#x}'
 
         return result
 

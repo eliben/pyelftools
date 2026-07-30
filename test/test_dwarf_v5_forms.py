@@ -8,11 +8,11 @@
 # }
 # $ gcc -O0 -gdwarf-5 dwarf_v5_forms.c -o dwarf_v5_forms.debug
 # $ strip --only-keep-debug dwarf_v5_forms.debug
-import unittest
 import os
-
+import unittest
 
 from elftools.elf.elffile import ELFFile
+
 
 class TestDWARFV5_forms(unittest.TestCase):
 

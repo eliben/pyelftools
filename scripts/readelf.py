@@ -10,11 +10,11 @@
 from __future__ import annotations
 
 import argparse
-import os
-import sys
-import re
-import traceback
 import itertools
+import os
+import re
+import sys
+import traceback
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, TypedDict
 
@@ -26,43 +26,74 @@ sys.path.insert(0, '.')
 from elftools import __version__
 from elftools.common.exceptions import ELFError
 from elftools.common.utils import bytes2str
-from elftools.elf.elffile import ELFFile
-from elftools.elf.dynamic import DynamicSection
-from elftools.elf.enums import ENUM_D_TAG
-from elftools.elf.segments import InterpSegment
-from elftools.elf.sections import (
-    NoteSection, SymbolTableSection, SymbolTableIndexSection
-)
-from elftools.elf.gnuversions import (
-    GNUVerSymSection, GNUVerDefSection,
-    GNUVerNeedSection,
-    )
-from elftools.elf.relocation import RelocationSection
-from elftools.elf.descriptions import (
-    describe_ei_class, describe_ei_data, describe_ei_version,
-    describe_ei_osabi, describe_e_type, describe_e_machine,
-    describe_e_version_numeric, describe_p_type, describe_p_flags,
-    describe_rh_flags, describe_sh_type, describe_sh_flags,
-    describe_symbol_type, describe_symbol_bind, describe_symbol_shndx, describe_reloc_type, describe_dyn_tag,
-    describe_dt_flags, describe_dt_flags_1, describe_ver_flags, describe_note,
-    describe_attr_tag_arm, describe_attr_tag_riscv, describe_symbol_other
-    )
-from elftools.elf.constants import E_FLAGS
-from elftools.elf.constants import E_FLAGS_MASKS
-from elftools.elf.constants import SH_FLAGS
-from elftools.elf.constants import SHN_INDICES
-from elftools.dwarf.descriptions import (
-    describe_reg_name, describe_attr_value, set_global_machine_arch,
-    describe_CFI_instructions, describe_CFI_register_rule,
-    describe_CFI_CFA_rule, describe_DWARF_expr
-    )
-from elftools.dwarf.constants import (
-    DW_LNS_copy, DW_LNS_set_file, DW_LNE_define_file)
-from elftools.dwarf.locationlists import LocationParser, LocationEntry, LocationViewPair, BaseAddressEntry as LocBaseAddressEntry, LocationListsPair
-from elftools.dwarf.ranges import RangeEntry, BaseAddressEntry as RangeBaseAddressEntry, RangeListsPair
 from elftools.dwarf.callframe import CIE, FDE, ZERO
-from elftools.ehabi.ehabiinfo import CorruptEHABIEntry, CannotUnwindEHABIEntry, GenericEHABIEntry
+from elftools.dwarf.constants import DW_LNE_define_file, DW_LNS_copy, DW_LNS_set_file
+from elftools.dwarf.descriptions import (
+    describe_attr_value,
+    describe_CFI_CFA_rule,
+    describe_CFI_instructions,
+    describe_CFI_register_rule,
+    describe_DWARF_expr,
+    describe_reg_name,
+    set_global_machine_arch,
+)
 from elftools.dwarf.enums import ENUM_DW_UT
+from elftools.dwarf.locationlists import BaseAddressEntry as LocBaseAddressEntry
+from elftools.dwarf.locationlists import (
+    LocationEntry,
+    LocationListsPair,
+    LocationParser,
+    LocationViewPair,
+)
+from elftools.dwarf.ranges import BaseAddressEntry as RangeBaseAddressEntry
+from elftools.dwarf.ranges import RangeEntry, RangeListsPair
+from elftools.ehabi.ehabiinfo import (
+    CannotUnwindEHABIEntry,
+    CorruptEHABIEntry,
+    GenericEHABIEntry,
+)
+from elftools.elf.constants import E_FLAGS, E_FLAGS_MASKS, SH_FLAGS, SHN_INDICES
+from elftools.elf.descriptions import (
+    describe_attr_tag_arm,
+    describe_attr_tag_riscv,
+    describe_dt_flags,
+    describe_dt_flags_1,
+    describe_dyn_tag,
+    describe_e_machine,
+    describe_e_type,
+    describe_e_version_numeric,
+    describe_ei_class,
+    describe_ei_data,
+    describe_ei_osabi,
+    describe_ei_version,
+    describe_note,
+    describe_p_flags,
+    describe_p_type,
+    describe_reloc_type,
+    describe_rh_flags,
+    describe_sh_flags,
+    describe_sh_type,
+    describe_symbol_bind,
+    describe_symbol_other,
+    describe_symbol_shndx,
+    describe_symbol_type,
+    describe_ver_flags,
+)
+from elftools.elf.dynamic import DynamicSection
+from elftools.elf.elffile import ELFFile
+from elftools.elf.enums import ENUM_D_TAG
+from elftools.elf.gnuversions import (
+    GNUVerDefSection,
+    GNUVerNeedSection,
+    GNUVerSymSection,
+)
+from elftools.elf.relocation import RelocationSection
+from elftools.elf.sections import (
+    NoteSection,
+    SymbolTableIndexSection,
+    SymbolTableSection,
+)
+from elftools.elf.segments import InterpSegment
 
 if TYPE_CHECKING:
     from elftools.construct.lib.container import Container
@@ -548,8 +579,7 @@ class ReadElf:
                     parsed = '%i' % tag['d_val']
                 elif tag.entry.d_tag == 'DT_PLTREL':
                     s = describe_dyn_tag(tag.entry.d_val)
-                    if s.startswith('DT_'):
-                        s = s[3:]
+                    s = s.removeprefix('DT_')
                     parsed = '%s' % s
                 elif tag.entry.d_tag == 'DT_MIPS_FLAGS':
                     parsed = describe_rh_flags(tag.entry.d_val)
@@ -576,8 +606,7 @@ class ReadElf:
         for section in self.elffile.iter_sections():
             if isinstance(section, NoteSection):
                 for note in section.iter_notes():
-                      self._emitline("\nDisplaying notes found in: {}".format(
-                          section.name))
+                      self._emitline(f"\nDisplaying notes found in: {section.name}")
                       self._emitline('  Owner                Data size        Description')
                       self._emitline('  %s %s\t%s' % (
                           note['n_name'].ljust(20),
@@ -838,7 +867,7 @@ class ReadElf:
         while dataptr < len(data):
             bytesleft = len(data) - dataptr
             # chunks of 16 bytes per line
-            linebytes = 16 if bytesleft > 16 else bytesleft
+            linebytes = min(bytesleft, 16)
 
             self._emit('  %s ' % self._format_hex(addr, fieldsize=8))
             for i in range(16):

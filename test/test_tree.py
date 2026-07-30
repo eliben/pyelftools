@@ -10,9 +10,11 @@
 # TODO: find a siblingless file. None in the corpus so far.
 #------------------------------------------------------------------------------
 
-import unittest
 import os
+import unittest
+
 from elftools.elf.elffile import ELFFile
+
 
 class TestTree(unittest.TestCase):
     def test_tree(self):

@@ -8,15 +8,15 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import argparse
-from difflib import SequenceMatcher
 import logging
-from multiprocessing import Pool
 import os
 import platform
 import sys
 import time
+from difflib import SequenceMatcher
+from multiprocessing import Pool
 
-from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
+from utils import dump_output_to_temp_files, is_in_rootdir, run_exe
 
 # Make it possible to run this file from the root dir of pyelftools without
 # installing pyelftools; useful for CI testing, etc.
@@ -195,8 +195,7 @@ def main():
         testlog.info('\nConclusion: SUCCESS')
         return 0
     elif args.keep_going:
-        testlog.info('\nConclusion: FAIL ({}/{})'.format(
-            failures, len(filenames)))
+        testlog.info(f'\nConclusion: FAIL ({failures}/{len(filenames)})')
         return 1
     else:
         testlog.info('\nConclusion: FAIL')

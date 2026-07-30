@@ -3,9 +3,8 @@ from __future__ import annotations
 from io import BytesIO
 from typing import TYPE_CHECKING, Any, Literal
 
-from .core import Adapter, AdaptationError, Pass
-from .lib import int_to_bin, bin_to_int, swap_bytes
-from .lib import FlagsContainer, HexString
+from .core import AdaptationError, Adapter, Pass
+from .lib import FlagsContainer, HexString, bin_to_int, int_to_bin, swap_bytes
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Hashable, Mapping, Sized
@@ -15,11 +14,28 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    "BitIntegerError", "MappingError", "ConstError", "ValidationError", "PaddingError",
-    "BitIntegerAdapter", "MappingAdapter", "FlagsAdapter", "StringAdapter", "PaddedStringAdapter",
-    "LengthValueAdapter", "CStringAdapter", "TunnelAdapter", "ExprAdapter", "HexDumpAdapter", "ConstAdapter",
-    "SlicingAdapter", "IndexingAdapter", "PaddingAdapter",
-    "Validator", "OneOf", "NoneOf",
+    "BitIntegerAdapter",
+    "BitIntegerError",
+    "CStringAdapter",
+    "ConstAdapter",
+    "ConstError",
+    "ExprAdapter",
+    "FlagsAdapter",
+    "HexDumpAdapter",
+    "IndexingAdapter",
+    "LengthValueAdapter",
+    "MappingAdapter",
+    "MappingError",
+    "NoneOf",
+    "OneOf",
+    "PaddedStringAdapter",
+    "PaddingAdapter",
+    "PaddingError",
+    "SlicingAdapter",
+    "StringAdapter",
+    "TunnelAdapter",
+    "ValidationError",
+    "Validator",
 ]
 
 
@@ -55,7 +71,7 @@ class BitIntegerAdapter(Adapter):
     * bytesize - number of bits per byte, used for byte-swapping (if swapped).
       default is 8.
     """
-    __slots__ = ("width", "swapped", "signed", "bytesize")
+    __slots__ = ("bytesize", "signed", "swapped", "width")
     def __init__(self, subcon: Construct, width: int, swapped: bool = False, signed: bool = False,
             bytesize: int = 8) -> None:
         Adapter.__init__(self, subcon)
@@ -92,7 +108,7 @@ class MappingAdapter(Adapter):
       in the encoding mapping. if no object is given, an exception is raised.
       if `Pass` is used, the unmapped object will be passed as-is
     """
-    __slots__ = ("encoding", "decoding", "encdefault", "decdefault")
+    __slots__ = ("decdefault", "decoding", "encdefault", "encoding")
     def __init__(self, subcon: Construct, decoding: Mapping[Any, Any], encoding: Mapping[Any, Any],
             decdefault: Hashable | _Pass = NotImplemented,
             encdefault: Hashable | _Pass = NotImplemented,
@@ -312,7 +328,7 @@ class ExprAdapter(Adapter):
         decoder = lambda obj, ctx: obj * 4,
     )
     """
-    __slots__ = ("__encode", "__decode")
+    __slots__ = ("__decode", "__encode")
     def __init__(self, subcon: Construct, encoder: Callable[[Any, Container], bytes], decoder: Callable[[bytes, Container], Any]) -> None:
         Adapter.__init__(self, subcon)
         self.__encode = encoder
@@ -371,7 +387,7 @@ class SlicingAdapter(Adapter):
     * stop - stop index (or None for up-to-end)
     * step - step (or None for every element)
     """
-    __slots__ = ("start", "stop", "step")
+    __slots__ = ("start", "step", "stop")
     def __init__(self, subcon: Construct, start: int, stop: int | None = None) -> None:
         Adapter.__init__(self, subcon)
         self.start = start

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 class AbbrevTable:
     """ Represents a DWARF abbreviation table.
     """
-    __slots__ = ('structs', 'stream', 'offset', '_abbrev_map')
+    __slots__ = ('_abbrev_map', 'offset', 'stream', 'structs')
     def __init__(self, structs: DWARFStructs, stream: IO[bytes], offset: int) -> None:
         """ Create new abbreviation table. Parses the actual table from the
             stream and stores it internally.
@@ -70,7 +70,7 @@ class AbbrevDecl:
 
         The abbreviation declaration represents an "entry" that points to it.
     """
-    __slots__ = ('code', 'decl', '_has_children')
+    __slots__ = ('_has_children', 'code', 'decl')
     def __init__(self, code: int, decl: Container) -> None:
         self.code = code
         self.decl = decl

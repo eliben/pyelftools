@@ -12,8 +12,8 @@ from bisect import bisect_right
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
-from .die import DIE
 from ..common.utils import dwarf_assert
+from .die import DIE
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

@@ -4,8 +4,8 @@
 # Kyle Zeng (zengyhkyle@asu.edu)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.segments import NoteSegment

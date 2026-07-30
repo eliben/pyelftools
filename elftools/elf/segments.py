@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
-from ..construct import CString
 from ..common.utils import struct_parse
+from ..construct import CString
 from .constants import SH_FLAGS
 from .notes import iter_notes
 
@@ -60,11 +60,7 @@ class Segment:
         # Only PT_LOAD, PT_GNU_RELRO and PT_TLS segments can contain SHF_TLS
         # sections
         if (    secflags & SH_FLAGS.SHF_TLS and
-                segtype in ('PT_TLS', 'PT_GNU_RELRO', 'PT_LOAD')):
-            pass
-        # PT_TLS segment contains only SHF_TLS sections, PT_PHDR no sections
-        # at all
-        elif (  (secflags & SH_FLAGS.SHF_TLS) == 0 and
+                segtype in ('PT_TLS', 'PT_GNU_RELRO', 'PT_LOAD')) or (  (secflags & SH_FLAGS.SHF_TLS) == 0 and
                 segtype not in ('PT_TLS', 'PT_PHDR')):
             pass
         else:

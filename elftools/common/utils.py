@@ -8,12 +8,12 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
+import os
 from contextlib import contextmanager
 from typing import IO, TYPE_CHECKING, Any, TypeVar, overload
 
-from .exceptions import ELFParseError, ELFError, DWARFError
 from ..construct import ConstructError
-import os
+from .exceptions import DWARFError, ELFError, ELFParseError
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping

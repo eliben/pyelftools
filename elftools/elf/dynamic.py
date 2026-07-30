@@ -14,7 +14,7 @@ from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, Protocol, TypedDict, runtime_checkable
 
 from ..common.exceptions import ELFError
-from ..common.utils import elf_assert, struct_parse, parse_cstring_from_stream
+from ..common.utils import elf_assert, parse_cstring_from_stream, struct_parse
 from .enums import ENUM_D_TAG
 from .hash import ELFHashTable, GNUHashTable
 from .relocation import RelocationTable, RelrRelocationTable

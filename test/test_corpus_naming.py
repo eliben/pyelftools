@@ -4,10 +4,11 @@
 # Seva Alekseyev (sevaa@sprynet.com)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
+
 
 class TestCorpusNaming(unittest.TestCase):
     def scan_under(self, subdir):

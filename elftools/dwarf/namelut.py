@@ -13,7 +13,7 @@ from functools import cached_property
 from typing import IO, TYPE_CHECKING, NamedTuple, TypeVar, overload
 
 from ..common.utils import struct_parse
-from ..construct import CString, Struct, If
+from ..construct import CString, If, Struct
 
 if TYPE_CHECKING:
     from collections.abc import ItemsView, Iterator

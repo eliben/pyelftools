@@ -23,8 +23,11 @@ if TYPE_CHECKING:
 
 
 __all__ = [
+    "Container",
+    "FlagsContainer",
+    "LazyContainer",
+    "ListContainer",
     "recursion_lock",
-    "Container", "FlagsContainer", "ListContainer", "LazyContainer",
 ]
 
 
@@ -145,7 +148,7 @@ class ListContainer(list[Any]):
 
 class LazyContainer:
 
-    __slots__ = ("subcon", "stream", "pos", "context", "_value")
+    __slots__ = ("_value", "context", "pos", "stream", "subcon")
 
     def __init__(self, subcon: Construct, stream: IO[bytes], pos: int, context: Container) -> None:
         self.subcon = subcon

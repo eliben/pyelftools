@@ -5,12 +5,12 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 
-from contextlib import contextmanager
 import os
 import unittest
+from contextlib import contextmanager
 
-from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFCompressionError
+from elftools.elf.elffile import ELFFile
 
 
 class TestCompressedSupport(unittest.TestCase):
@@ -65,7 +65,7 @@ class TestCompressedSupport(unittest.TestCase):
         """ Context manager to open and parse an ELF file.
         """
         with open(os.path.join('test', 'testfiles_for_unittests',
-                               'compressed_{}.o'.format(name)), 'rb') as f:
+                               f'compressed_{name}.o'), 'rb') as f:
             yield ELFFile(f)
 
     def get_cus_info(self, elffile):
@@ -85,9 +85,6 @@ class TestCompressedSupport(unittest.TestCase):
                     traverse(child)
 
             traverse(cu.get_top_DIE())
-            result.append('CU {:#0x}: {:#0x}-{:#0x}'.format(
-                cu.cu_offset,
-                dies[0], dies[-1]
-            ))
+            result.append(f'CU {cu.cu_offset:#0x}: {dies[0]:#0x}-{dies[-1]:#0x}')
 
         return result

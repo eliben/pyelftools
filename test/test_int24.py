@@ -4,12 +4,13 @@
 # Seva Alekseyev (sevaa@sprynet.com)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-import unittest
 import random
+import unittest
 from io import BytesIO
 
-from elftools.common.construct_utils import ULInt24, UBInt24
+from elftools.common.construct_utils import UBInt24, ULInt24
 from elftools.common.utils import struct_parse
+
 
 class TestInt24(unittest.TestCase):
     def test_main(self):

@@ -1,11 +1,11 @@
 """
 Test that elftools does not fail to load corrupted ELF files
 """
-import unittest
 import os
+import unittest
 
-from elftools.elf.elffile import ELFFile
 from elftools.common.exceptions import ELFParseError
+from elftools.elf.elffile import ELFFile
 
 
 class TestCorruptFile(unittest.TestCase):

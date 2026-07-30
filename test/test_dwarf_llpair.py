@@ -4,10 +4,12 @@
 # Seva Alekseyev (sevaa@sprynet.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
+
 from elftools.dwarf.locationlists import LocationListsPair, LocationParser
 from elftools.elf.elffile import ELFFile
+
 
 class TestLocListsPair(unittest.TestCase):
     def test_llpair(self):

@@ -6,17 +6,25 @@
 #-------------------------------------------------------------------------------
 import unittest
 from io import BytesIO
+from os.path import join
 
 from elftools.dwarf.callframe import (
-    CallFrameInfo, CIE, FDE, CallFrameInstruction,
-    RegisterRule, DecodedCallFrameTable, CFARule)
+    CIE,
+    FDE,
+    CallFrameInfo,
+    CallFrameInstruction,
+    CFARule,
+    DecodedCallFrameTable,
+    RegisterRule,
+)
 from elftools.dwarf.constants import DW_CFA
-from elftools.dwarf.structs import DWARFStructs
-from elftools.dwarf.descriptions import (describe_CFI_instructions,
-    set_global_machine_arch)
+from elftools.dwarf.descriptions import (
+    describe_CFI_instructions,
+    set_global_machine_arch,
+)
 from elftools.dwarf.enums import DW_EH_encoding_flags
+from elftools.dwarf.structs import DWARFStructs
 from elftools.elf.elffile import ELFFile
-from os.path import join
 
 
 class TestCallFrame(unittest.TestCase):

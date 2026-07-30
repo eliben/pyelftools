@@ -4,10 +4,11 @@
 # Ricardo Barbedo (ricardo@barbedo.me)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
+
 
 class TestRISCVSupport(unittest.TestCase):
     def test_hello(self):

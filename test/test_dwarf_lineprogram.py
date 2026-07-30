@@ -7,9 +7,9 @@
 import unittest
 from io import BytesIO
 
+from elftools.dwarf.constants import DW_LNS
 from elftools.dwarf.lineprogram import LineProgram
 from elftools.dwarf.structs import DWARFStructs
-from elftools.dwarf.constants import DW_LNS
 
 
 class TestLineProgram(unittest.TestCase):

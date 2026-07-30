@@ -3,11 +3,13 @@ from __future__ import annotations
 import io
 from typing import IO, TYPE_CHECKING
 
-from .binary import encode_bin, decode_bin
+from .binary import decode_bin, encode_bin
 
 if TYPE_CHECKING:
-    from typing_extensions import Buffer  # 3.12+
-    from typing_extensions import Self  # 3.11+
+    from typing_extensions import (
+        Buffer,  # 3.12+
+        Self,  # 3.11+
+    )
 
 
 class BitStream(io.RawIOBase, IO[bytes]):
@@ -48,7 +50,7 @@ class BitStreamReader(BitStream):
         if count < 0:
             raise ValueError("count cannot be negative")
 
-        l = len(self.buffer)  # noqa: E741
+        l = len(self.buffer)
         if count == 0:
             data = b""
         elif count <= l:

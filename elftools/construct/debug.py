@@ -3,14 +3,14 @@ Debugging utilities for constructs
 """
 from __future__ import annotations
 
+import inspect
+import pdb
 import sys
 import traceback
-import pdb
-import inspect
 from typing import IO, Any
 
 from .core import Construct, Subconstruct
-from .lib import HexString, Container, ListContainer
+from .lib import Container, HexString, ListContainer
 
 
 class Probe(Construct):
@@ -37,7 +37,10 @@ class Probe(Construct):
     )
     """
     __slots__ = (
-        "printname", "show_stream", "show_context", "show_stack",
+        "printname",
+        "show_context",
+        "show_stack",
+        "show_stream",
         "stream_lookahead"
     )
     counter = 0

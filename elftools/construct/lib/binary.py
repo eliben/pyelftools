@@ -60,7 +60,7 @@ def swap_bytes(bits: bytes, bytesize: int = 8) -> bytes:
         b'11100100'
     """
     i = 0
-    l = len(bits)  # noqa: E741 - Legacy construct code uses short names here.
+    l = len(bits)
     output = [b""] * ((l // bytesize) + 1)
     j = len(output) - 1
     while i < l:
@@ -98,7 +98,7 @@ def decode_bin(data: bytes) -> bytes:
         raise ValueError("Data length must be a multiple of 8")
     i = 0
     j = 0
-    l = len(data) // 8  # noqa: E741 - Legacy construct code uses short names here.
+    l = len(data) // 8
     chars = [b""] * l
     while j < l:
         chars[j] = _bin_to_char[data[i:i+8]]

@@ -8,13 +8,13 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
-import os
 import binascii
+import os
 from typing import IO, TYPE_CHECKING, Any
 
-from ..construct.macros import Array
 from ..common.exceptions import DWARFError
 from ..common.utils import preserve_stream_pos, struct_parse
+from ..construct.macros import Array
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

@@ -6,8 +6,9 @@
 #-------------------------------------------------------------------------------
 import unittest
 
-from elftools.dwarf.locationlists import LocationParser
 from elftools.dwarf.die import AttributeValue
+from elftools.dwarf.locationlists import LocationParser
+
 
 class TestLocationAttrubute(unittest.TestCase):
     def test_has_location(self):

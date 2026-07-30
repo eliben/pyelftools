@@ -1,7 +1,9 @@
-import unittest
 import os
+import unittest
+
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
+
 
 class TestSectionSelfLink(unittest.TestCase):
     def test_self_link(self):

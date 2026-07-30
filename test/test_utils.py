@@ -8,8 +8,11 @@ import unittest
 from io import BytesIO
 from random import randint
 
-from elftools.common.utils import (parse_cstring_from_stream, merge_dicts,
-        preserve_stream_pos)
+from elftools.common.utils import (
+    merge_dicts,
+    parse_cstring_from_stream,
+    preserve_stream_pos,
+)
 
 
 class Test_parse_cstring_from_stream(unittest.TestCase):

@@ -9,15 +9,16 @@
 from __future__ import annotations
 
 import zlib
+from collections import defaultdict
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
+from elftools.construct.lib.container import Container
+
 from ..common.exceptions import ELFCompressionError
-from ..common.utils import struct_parse, elf_assert, parse_cstring_from_stream
-from collections import defaultdict
+from ..common.utils import elf_assert, parse_cstring_from_stream, struct_parse
 from .constants import SH_FLAGS
 from .notes import iter_notes
-from elftools.construct.lib.container import Container
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -103,17 +104,17 @@ class Section:
                 result = decomp.decompress(compressed, self.data_size)
             elif isinstance(c_type, int):
                 raise ELFCompressionError(
-                    'Unknown compression type: {:#0x}'.format(c_type)
+                    f'Unknown compression type: {c_type:#0x}'
                 )
             else:
                 raise ELFCompressionError(
-                    'Unknown compression type: {!r}'.format(c_type)
+                    f'Unknown compression type: {c_type!r}'
                 )
 
             if len(result) != self._decompressed_size:
                 raise ELFCompressionError(
-                    'Decompressed data is {} bytes long, should be {} bytes'
-                    ' long'.format(len(result), self._decompressed_size)
+                    f'Decompressed data is {len(result)} bytes long, should be {self._decompressed_size} bytes'
+                    ' long'
                 )
         else:
             self.stream.seek(self['sh_offset'])

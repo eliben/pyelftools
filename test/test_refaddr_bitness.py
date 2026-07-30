@@ -15,11 +15,12 @@
 # the Mach-O header isn't preserved.
 #------------------------------------------------------------------------------
 
-import unittest
-import os
 import io
+import os
+import unittest
 
-from elftools.dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
+from elftools.dwarf.dwarfinfo import DebugSectionDescriptor, DwarfConfig, DWARFInfo
+
 
 class TestRefAddrOnDWARFv2With64BitTarget(unittest.TestCase):
     def test_main(self):

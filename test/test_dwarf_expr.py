@@ -7,7 +7,7 @@
 import unittest
 
 from elftools.dwarf.descriptions import ExprDumper, set_global_machine_arch
-from elftools.dwarf.dwarf_expr import DWARFExprParser, DWARFExprOp
+from elftools.dwarf.dwarf_expr import DWARFExprOp, DWARFExprParser
 from elftools.dwarf.structs import DWARFStructs
 
 

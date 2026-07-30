@@ -11,13 +11,22 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Literal, overload
 
-from .constants import (
-    DW_ACCESS, DW_ATE, DW_CC, DW_CFA, DW_ID, DW_INL, DW_LANG, DW_ORD, DW_VIRTUALITY, DW_VIS,
-    )
-from .dwarf_expr import DWARFExprParser
-from .die import DIE
-from ..common.utils import preserve_stream_pos, dwarf_assert, bytes2str
+from ..common.utils import bytes2str, dwarf_assert, preserve_stream_pos
 from .callframe import CIE, FDE
+from .constants import (
+    DW_ACCESS,
+    DW_ATE,
+    DW_CC,
+    DW_CFA,
+    DW_ID,
+    DW_INL,
+    DW_LANG,
+    DW_ORD,
+    DW_VIRTUALITY,
+    DW_VIS,
+)
+from .die import DIE
+from .dwarf_expr import DWARFExprParser
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -650,7 +659,7 @@ class ExprDumper:
             'DW_OP_bra', 'DW_OP_skip', 'DW_OP_fbreg', 'DW_OP_piece',
             'DW_OP_deref_size', 'DW_OP_xderef_size', 'DW_OP_regx'}
 
-        for n in range(0, 32):
+        for n in range(32):
             self._ops_with_decimal_arg.add('DW_OP_breg%s' % n)
 
         self._ops_with_two_decimal_args = {'DW_OP_bregx'}

@@ -7,8 +7,9 @@
 import os
 import unittest
 
-from elftools.elf.elffile import ELFFile
 from elftools.common.utils import bytes2str
+from elftools.elf.elffile import ELFFile
+
 
 class TestCacheLUTandDIEref(unittest.TestCase):
     def dprint(self, list):

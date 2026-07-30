@@ -8,8 +8,8 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
-import os
 import copy
+import os
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, NamedTuple
 

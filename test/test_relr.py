@@ -14,10 +14,11 @@
 # $ clang-12 -c -o lib_relro.o -fPIC lib_relro.c
 # $ ld.lld-12 -o lib_relro.so.elf --pack-dyn-relocs=relr --shared -Bsymbolic-functions lib_relro.o
 
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
+
 
 class TestRelr(unittest.TestCase):
 

@@ -8,7 +8,7 @@
 # This code is in the public domain
 # -------------------------------------------------------------------------------
 
-from ..construct import UBInt32, ULInt32, Struct
+from ..construct import Struct, UBInt32, ULInt32
 
 
 class EHABIStructs:

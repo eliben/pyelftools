@@ -21,11 +21,10 @@
 #-------------------------------------------------------------------------------
 import sys
 
+from elftools.dwarf.descriptions import describe_DWARF_expr, set_global_machine_arch
+from elftools.dwarf.locationlists import LocationEntry, LocationExpr, LocationParser
 from elftools.elf.elffile import ELFFile
-from elftools.dwarf.descriptions import (
-    describe_DWARF_expr, set_global_machine_arch)
-from elftools.dwarf.locationlists import (
-    LocationEntry, LocationExpr, LocationParser)
+
 
 def process_file(filename):
     print('Processing file:', filename)

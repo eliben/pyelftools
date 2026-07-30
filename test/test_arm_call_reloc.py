@@ -9,8 +9,8 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os
-from io import BytesIO
 import unittest
+from io import BytesIO
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.relocation import RelocationHandler

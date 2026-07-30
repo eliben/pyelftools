@@ -5,13 +5,14 @@
 # This code is in the public domain
 #------------------------------------------------------------------------------
 
-import unittest
 import os
+import unittest
+
+from elftools.dwarf.locationlists import LocationParser
 
 # sys.path.insert(1, os.getcwd())
-
 from elftools.elf.elffile import ELFFile
-from elftools.dwarf.locationlists import LocationParser
+
 
 class TestGNUCallAttributesHaveLocation(unittest.TestCase):
     def _test_file(self, filename):

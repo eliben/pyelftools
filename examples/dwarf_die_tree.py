@@ -7,8 +7,8 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from elftools.elf.elffile import ELFFile
 

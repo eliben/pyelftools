@@ -6,10 +6,11 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
+
 
 class TestUnicodeSymbols(unittest.TestCase):
     """Test that we can handle a unicode symbol as produced by clang"""

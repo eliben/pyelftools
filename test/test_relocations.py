@@ -1,8 +1,8 @@
 import os
 import unittest
 
+from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.elffile import ELFFile
-from elftools.elf.dynamic import DynamicSegment, DynamicSection
 
 
 class TestRelocation(unittest.TestCase):

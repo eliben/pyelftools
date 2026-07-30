@@ -7,10 +7,11 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import logging
 import os
 import sys
-import logging
-from utils import run_exe, is_in_rootdir, dump_output_to_temp_files
+
+from utils import dump_output_to_temp_files, is_in_rootdir, run_exe
 
 # Make it possible to run this file from the root dir of pyelftools without
 # installing pyelftools; useful for CI testing, etc.

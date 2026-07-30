@@ -4,14 +4,16 @@
 # Yann Rouillard (yann@pleiades.fr.eu.org)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
-from elftools.elf.elffile import ELFFile
 from elftools.elf.constants import VER_FLAGS
+from elftools.elf.elffile import ELFFile
 from elftools.elf.gnuversions import (
-        GNUVerNeedSection, GNUVerDefSection,
-        GNUVerSymSection)
+    GNUVerDefSection,
+    GNUVerNeedSection,
+    GNUVerSymSection,
+)
 
 
 class TestSymbolVersioning(unittest.TestCase):

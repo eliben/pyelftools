@@ -5,14 +5,15 @@
 # This code is in the public domain
 #------------------------------------------------------------------------------
 
-import unittest
 import os
 import sys
+import unittest
 
 sys.path.insert(1, os.getcwd())
 
-from elftools.elf.elffile import ELFFile
 from elftools.dwarf.locationlists import LocationParser
+from elftools.elf.elffile import ELFFile
+
 
 class TestConstWithData4IsntLocation(unittest.TestCase):
     def _test_file(self, filename):

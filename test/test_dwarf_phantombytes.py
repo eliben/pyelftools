@@ -5,10 +5,11 @@
 # This code is in the public domain
 #------------------------------------------------------------------------------
 
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
+
 
 class TestPhantomBytes(unittest.TestCase):
     # Prior to 11/17/2023, trying to get DWARF from binaries built by

@@ -11,8 +11,9 @@
 #-------------------------------------------------------------------------------
 import sys
 
-from elftools.elf.elffile import ELFFile
 from elftools.common.utils import bytes2str
+from elftools.elf.elffile import ELFFile
+
 
 def process_file(filename):
     print('Processing file:', filename)

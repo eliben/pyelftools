@@ -25,17 +25,20 @@ from typing import IO, TYPE_CHECKING, overload
 # installed pyelftools.
 sys.path.insert(0, '.')
 
+import elftools.dwarf.enums as e
+import elftools.dwarf.ranges
 from elftools import __version__
 from elftools.common.exceptions import DWARFError, ELFError
 from elftools.common.utils import bytes2str
-from elftools.elf.elffile import ELFFile
-from elftools.dwarf.locationlists import LocationParser, LocationEntry, LocationExpr, BaseAddressEntry as LocBaseAddressEntry
-from elftools.dwarf.ranges import RangeEntry # ranges.BaseAddressEntry collides with the one above
-import elftools.dwarf.ranges
-import elftools.dwarf.enums as e
-from elftools.dwarf.dwarf_expr import DWARFExprParser, DWARFExprOp
 from elftools.dwarf.datatype_cpp import describe_cpp_datatype
 from elftools.dwarf.descriptions import describe_reg_name
+from elftools.dwarf.dwarf_expr import DWARFExprOp, DWARFExprParser
+from elftools.dwarf.locationlists import BaseAddressEntry as LocBaseAddressEntry
+from elftools.dwarf.locationlists import LocationEntry, LocationExpr, LocationParser
+from elftools.dwarf.ranges import (
+    RangeEntry,  # ranges.BaseAddressEntry collides with the one above
+)
+from elftools.elf.elffile import ELFFile
 
 if TYPE_CHECKING:
     from elftools.dwarf.compileunit import CompileUnit

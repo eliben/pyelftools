@@ -4,12 +4,13 @@
 # Andreas Ziegler (andreas.ziegler@fau.de)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import os
 import unittest
 import unittest.mock
-import os
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.hash import ELFHashTable, GNUHashTable, _SymbolTable
+
 
 class TestELFHash(unittest.TestCase):
     """ Tests for the ELF hash table.

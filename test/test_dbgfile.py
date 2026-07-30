@@ -1,11 +1,12 @@
 """
 Test that elftools does not fail to load debug symbol ELF files
 """
-import unittest
 import os
+import unittest
 
-from elftools.elf.elffile import ELFFile, DynamicSection
 from elftools.dwarf.callframe import ZERO
+from elftools.elf.elffile import DynamicSection, ELFFile
+
 
 class TestDBGFile(unittest.TestCase):
     def test_dynamic_segment(self):

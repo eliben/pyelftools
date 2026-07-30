@@ -13,12 +13,19 @@ from typing import IO, TYPE_CHECKING, Any, NamedTuple, Protocol
 
 from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
-from .sections import Section, SymbolTableSection
-from .enums import (
-    ENUM_RELOC_TYPE_i386, ENUM_RELOC_TYPE_x64, ENUM_RELOC_TYPE_MIPS,
-    ENUM_RELOC_TYPE_ARM, ENUM_RELOC_TYPE_AARCH64, ENUM_RELOC_TYPE_PPC64,
-    ENUM_RELOC_TYPE_S390X, ENUM_RELOC_TYPE_BPF, ENUM_RELOC_TYPE_LOONGARCH)
 from ..construct import Container
+from .enums import (
+    ENUM_RELOC_TYPE_AARCH64,
+    ENUM_RELOC_TYPE_ARM,
+    ENUM_RELOC_TYPE_BPF,
+    ENUM_RELOC_TYPE_LOONGARCH,
+    ENUM_RELOC_TYPE_MIPS,
+    ENUM_RELOC_TYPE_PPC64,
+    ENUM_RELOC_TYPE_S390X,
+    ENUM_RELOC_TYPE_i386,
+    ENUM_RELOC_TYPE_x64,
+)
+from .sections import Section, SymbolTableSection
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping

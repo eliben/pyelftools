@@ -12,8 +12,14 @@ from struct import Struct
 from typing import IO, TYPE_CHECKING, Any, NoReturn
 
 from ..construct import (
-    Subconstruct, ConstructError, ArrayError, SizeofError, Construct, StaticField, FieldError
-    )
+    ArrayError,
+    Construct,
+    ConstructError,
+    FieldError,
+    SizeofError,
+    StaticField,
+    Subconstruct,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..common.utils import struct_parse, roundup, bytes2str
+from ..common.utils import bytes2str, roundup, struct_parse
 from ..construct import CString
 
 if TYPE_CHECKING:

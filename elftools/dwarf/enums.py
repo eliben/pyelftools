@@ -8,7 +8,6 @@
 #-------------------------------------------------------------------------------
 from ..construct import Pass
 
-
 ENUM_DW_TAG = dict(
     DW_TAG_null                        = 0x00,
     DW_TAG_array_type                  = 0x01,

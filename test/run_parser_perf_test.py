@@ -10,18 +10,19 @@
 # This runs and times in-memory firehose DWARF parsing on all files from the dwarfdump autotest.
 # The idea was to isolate the performance of the struct parsing logic alone.
 #-------------------------------------------------------------------------------
-from io import BytesIO
+import argparse
 import os
 import sys
 import time
-import argparse
+from io import BytesIO
 
 from utils import is_in_rootdir
 
 sys.path.insert(0, '.')
 
-from elftools.elf.elffile import ELFFile
 from elftools.dwarf.locationlists import LocationParser
+from elftools.elf.elffile import ELFFile
+
 
 def parse_dwarf(ef, args):
     di = ef.get_dwarf_info()

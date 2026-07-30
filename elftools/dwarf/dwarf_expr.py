@@ -11,8 +11,8 @@ from __future__ import annotations
 from io import BytesIO
 from typing import IO, TYPE_CHECKING, Any, NamedTuple
 
-from ..common.utils import struct_parse
 from ..common.exceptions import DWARFError
+from ..common.utils import struct_parse
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -106,9 +106,9 @@ DW_OP_name2opcode: Mapping[str, int] = dict(
     DW_OP_GNU_const_index=0xfc,
     DW_OP_GNU_variable_value=0xfd,
     DW_OP_hi_user=0xff,
-    **{f"DW_OP_lit{val}": 0x30 + val for val in range(0, 32)},
-    **{f"DW_OP_reg{val}": 0x50 + val for val in range(0, 32)},
-    **{f"DW_OP_breg{val}": 0x70 + val for val in range(0, 32)},
+    **{f"DW_OP_lit{val}": 0x30 + val for val in range(32)},
+    **{f"DW_OP_reg{val}": 0x50 + val for val in range(32)},
+    **{f"DW_OP_breg{val}": 0x70 + val for val in range(32)},
 )
 
 # opcode -> name mapping
@@ -251,7 +251,7 @@ def _init_dispatch_table(structs: DWARFStructs) -> dict[int, Callable[[IO[bytes]
                     'DW_OP_GNU_push_tls_address', 'DW_OP_GNU_uninit']:
         add(opname, parse_noargs())
 
-    for n in range(0, 32):
+    for n in range(32):
         add('DW_OP_lit%s' % n, parse_noargs())
         add('DW_OP_reg%s' % n, parse_noargs())
         add('DW_OP_breg%s' % n, parse_arg_struct(structs.the_Dwarf_sleb128))

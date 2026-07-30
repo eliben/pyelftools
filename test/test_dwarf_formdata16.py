@@ -4,10 +4,11 @@
 # Seva Alekseyev (sevaa@sprynet.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
+
 
 class TestFormData16(unittest.TestCase):
     def test_formdata16(self):

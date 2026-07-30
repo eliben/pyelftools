@@ -11,7 +11,7 @@ from __future__ import annotations
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
-from ..common.utils import struct_parse, elf_assert
+from ..common.utils import elf_assert, struct_parse
 from .sections import Section, Symbol
 
 if TYPE_CHECKING:

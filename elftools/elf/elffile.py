@@ -17,24 +17,29 @@ from io import BytesIO
 from typing import IO, TYPE_CHECKING, Any
 
 from ..common.exceptions import ELFError, ELFParseError
-from ..common.utils import struct_parse, elf_assert
-from .structs import ELFStructs
-from .sections import (
-        Section, StringTableSection, SymbolTableSection,
-        SymbolTableIndexSection, SUNWSyminfoTableSection, NullSection,
-        NoteSection, StabSection, ARMAttributesSection, RISCVAttributesSection)
-from .dynamic import DynamicSection, DynamicSegment
-from .relocation import (RelocationSection, RelocationHandler,
-        RelrRelocationSection)
-from .gnuversions import (
-        GNUVerNeedSection, GNUVerDefSection,
-        GNUVerSymSection)
-from .segments import Segment, InterpSegment, NoteSegment
-from ..dwarf.dwarfinfo import DWARFInfo, DebugSectionDescriptor, DwarfConfig
-from ..ehabi.ehabiinfo import EHABIInfo
-from .hash import ELFHashSection, GNUHashSection
-from .constants import SHN_INDICES
+from ..common.utils import elf_assert, struct_parse
 from ..dwarf.dwarf_util import _file_crc32
+from ..dwarf.dwarfinfo import DebugSectionDescriptor, DwarfConfig, DWARFInfo
+from ..ehabi.ehabiinfo import EHABIInfo
+from .constants import SHN_INDICES
+from .dynamic import DynamicSection, DynamicSegment
+from .gnuversions import GNUVerDefSection, GNUVerNeedSection, GNUVerSymSection
+from .hash import ELFHashSection, GNUHashSection
+from .relocation import RelocationHandler, RelocationSection, RelrRelocationSection
+from .sections import (
+    ARMAttributesSection,
+    NoteSection,
+    NullSection,
+    RISCVAttributesSection,
+    Section,
+    StabSection,
+    StringTableSection,
+    SUNWSyminfoTableSection,
+    SymbolTableIndexSection,
+    SymbolTableSection,
+)
+from .segments import InterpSegment, NoteSegment, Segment
+from .structs import ELFStructs
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator

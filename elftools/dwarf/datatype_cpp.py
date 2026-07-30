@@ -142,7 +142,7 @@ class TypeDesc:
 
     """
     def __init__(self) -> None:
-        self.name: str
+        self.name: str = ''
         self.modifiers: tuple[str, ...] = () # Reads left to right
         self.scopes: tuple[str, ...] = () # Reads left to right
         self.tag: str | None = None

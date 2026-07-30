@@ -4,10 +4,11 @@
 # Anders Dellien (anders@andersdellien.se)
 # This code is in the public domain
 #------------------------------------------------------------------------------
-import unittest
 import os
+import unittest
 
 from elftools.elf.elffile import ELFFile
+
 
 class TestDieSize(unittest.TestCase):
     """ This test verifies that null DIEs are treated correctly - i.e.

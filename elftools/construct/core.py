@@ -4,7 +4,7 @@ from io import BytesIO
 from struct import Struct as Packer
 from typing import IO, TYPE_CHECKING, Any, Final, Generic, Literal, NoReturn, TypeVar
 
-from .lib import Container, ListContainer, LazyContainer
+from .lib import Container, LazyContainer, ListContainer
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -17,14 +17,42 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 __all__ = [
-    "ConstructError", "FieldError", "SizeofError", "AdaptationError", "ArrayError", "RangeError", "SwitchError", "SelectError", "TerminatorError",
-    "Construct", "Subconstruct", "Adapter",
-    "StaticField", "FormatField", "MetaField", "MetaArray", "Range", "RepeatUntil",
-    "Struct", "Sequence", "Union",
-    "Switch", "Select",
-    "Pointer", "Peek", "OnDemand", "Buffered", "Restream",
-    "Reconfig", "Anchor", "Value", "LazyBound",
-    "_Pass", "Pass", "_Terminator", "Terminator",
+    "AdaptationError",
+    "Adapter",
+    "Anchor",
+    "ArrayError",
+    "Buffered",
+    "Construct",
+    "ConstructError",
+    "FieldError",
+    "FormatField",
+    "LazyBound",
+    "MetaArray",
+    "MetaField",
+    "OnDemand",
+    "Pass",
+    "Peek",
+    "Pointer",
+    "Range",
+    "RangeError",
+    "Reconfig",
+    "RepeatUntil",
+    "Restream",
+    "Select",
+    "SelectError",
+    "Sequence",
+    "SizeofError",
+    "StaticField",
+    "Struct",
+    "Subconstruct",
+    "Switch",
+    "SwitchError",
+    "Terminator",
+    "TerminatorError",
+    "Union",
+    "Value",
+    "_Pass",
+    "_Terminator",
 ]
 
 
@@ -113,7 +141,7 @@ class Construct:
     FLAG_EMBED                 = 0x0004
     FLAG_NESTING               = 0x0008
 
-    __slots__ = ("name", "conflags")
+    __slots__ = ("conflags", "name")
     def __init__(self, name: str | None, flags: int = 0) -> None:
         if name is not None:
             if type(name) is not str:
@@ -508,7 +536,7 @@ class Range(Subconstruct):
     RangeError: expected 3..7, found 8
     """
 
-    __slots__ = ("mincount", "maxcout")
+    __slots__ = ("maxcout", "mincount")
     def __init__(self, mincount: int, maxcout: int, subcon: Construct) -> None:
         Subconstruct.__init__(self, subcon)
         self.mincount = mincount
@@ -646,7 +674,7 @@ class Struct(Construct):
         UBInt8("third_element"),
     )
     """
-    __slots__ = ("subcons", "nested",)
+    __slots__ = ("nested", "subcons")
     def __init__(self, name: str | None, *subcons: Construct, nested: bool = True) -> None:
         self.nested = nested
         Construct.__init__(self, name)
@@ -773,7 +801,7 @@ class Union(Construct):
         ),
     )
     """
-    __slots__ = ("parser", "builder")
+    __slots__ = ("builder", "parser")
     def __init__(self, name: str | None, master: Construct, *subcons: Construct) -> None:
         Construct.__init__(self, name)
         args: list[Construct] = [Peek(sc) for sc in subcons]
@@ -831,7 +859,7 @@ class Switch(Construct, Generic[_T]):
             raise SwitchError("no default case defined")
     NoDefault: Final = _NoDefault("No default value specified")
 
-    __slots__ = ("subcons", "keyfunc", "cases", "default", "include_key")
+    __slots__ = ("cases", "default", "include_key", "keyfunc", "subcons")
 
     def __init__(self, name: str | None, keyfunc: Callable[[Container], _T], cases: Mapping[_T, Construct], default: Construct = NoDefault,
             include_key: bool = False) -> None:
@@ -885,7 +913,7 @@ class Select(Construct):
         UBInt8("tiny"),
     )
     """
-    __slots__ = ("subcons", "include_name")
+    __slots__ = ("include_name", "subcons")
     def __init__(self, name: str | None, *subcons: Construct, include_name: bool = False) -> None:
         Construct.__init__(self, name)
         self.subcons = subcons
@@ -1079,7 +1107,7 @@ class Buffered(Subconstruct):
         resizer = lambda size: size / 8,
     )
     """
-    __slots__ = ("encoder", "decoder", "resizer")
+    __slots__ = ("decoder", "encoder", "resizer")
     def __init__(self, subcon: Construct, decoder: Callable[[bytes], bytes], encoder: Callable[[bytes], bytes], resizer: Callable[[int], int]) -> None:
         Subconstruct.__init__(self, subcon)
         self.encoder = encoder
@@ -1129,7 +1157,7 @@ class Restream(Subconstruct):
         resizer = lambda size: size / 8,
     )
     """
-    __slots__ = ("stream_reader", "stream_writer", "resizer")
+    __slots__ = ("resizer", "stream_reader", "stream_writer")
     def __init__(self, subcon: Construct, stream_reader: type[BitStream], stream_writer: type[BitStream], resizer: Callable[[int], int]) -> None:
         Subconstruct.__init__(self, subcon)
         self.stream_reader = stream_reader
