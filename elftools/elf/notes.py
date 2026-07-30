@@ -12,12 +12,23 @@ from typing import TYPE_CHECKING
 
 from ..common.utils import struct_parse, roundup, bytes2str
 from ..construct import CString
+from .enums import ENUM_NOTE_N_TYPE, ENUM_CORE_NOTE_N_TYPE
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from ..construct.lib.container import Container
     from .elffile import ELFFile
+
+
+# In ET_CORE files the note type is decoded with the core-note enum, but a note
+# named 'GNU' uses the generic GNU note types regardless of the ELF type (e.g.
+# type 3 is NT_GNU_BUILD_ID, not the core NT_PRPSINFO). These maps recover the
+# raw type value so such notes can be re-resolved against the generic enum.
+_CORE_NOTE_TYPE_VALUE = {name: value for name, value in ENUM_CORE_NOTE_N_TYPE.items()
+                         if isinstance(value, int)}
+_GNU_NOTE_TYPE_BY_VALUE = {value: name for name, value in ENUM_NOTE_N_TYPE.items()
+                           if isinstance(value, int)}
 
 
 def iter_notes(elffile: ELFFile, offset: int, size: int) -> Iterator[Container]:
@@ -43,6 +54,14 @@ def iter_notes(elffile: ELFFile, offset: int, size: int) -> Iterator[Container]:
             offset += disk_namesz
         else:
             note['n_name'] = None
+
+        if note['n_name'] == 'GNU' and elffile['e_type'] == 'ET_CORE':
+            # A GNU-named note carries a generic GNU type even inside a core
+            # dump, so re-resolve the type that was decoded with the core enum.
+            raw_type = (note['n_type'] if isinstance(note['n_type'], int)
+                        else _CORE_NOTE_TYPE_VALUE.get(note['n_type']))
+            if raw_type in _GNU_NOTE_TYPE_BY_VALUE:
+                note['n_type'] = _GNU_NOTE_TYPE_BY_VALUE[raw_type]
 
         desc_data: bytes = elffile.stream.read(note['n_descsz'])
         note['n_descdata'] = desc_data
