@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 
 def merge_dicts(*dicts: Mapping[_K, _V]) -> dict[_K, _V]:
-    "Given any number of dicts, merges them into a new one."""
+    """Given any number of dicts, merges them into a new one."""
     result: dict[_K, _V] = {}
     for d in dicts:
         result.update(d)
