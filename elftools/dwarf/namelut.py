@@ -129,10 +129,10 @@ class NameLUT(Mapping[str, NameLUTEntry]):
         return self._entries.items()
 
     @overload
-    def get(self, name: str) -> NameLUTEntry | None: ...
+    def get(self, name: object) -> NameLUTEntry | None: ...
     @overload
-    def get(self, name: str, default: NameLUTEntry | _T = ...) -> NameLUTEntry | _T: ...
-    def get(self, name: str, default: NameLUTEntry | _T | None = None) -> NameLUTEntry | _T | None:
+    def get(self, name: object, default: _T) -> NameLUTEntry | _T: ...
+    def get(self, name: object, default: _T | None = None) -> NameLUTEntry | _T | None:
         """
         Returns NameLUTEntry(cu_ofs, die_ofs) for the provided symbol name or
         None if the symbol does not exist in the corresponding section.
