@@ -6,6 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+# Keep dict(...) constructs: their aligned, keyword-style enum definitions are
+# more readable than dict literals in this mapping-heavy file.
+# ruff: noqa: C408
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

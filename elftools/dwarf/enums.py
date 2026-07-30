@@ -6,6 +6,10 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+# Keep dict(...) constructs: their aligned, keyword-style enum definitions are
+# more readable than dict literals or comprehensions in this mapping-heavy file.
+# ruff: noqa: C402, C408
+
 from ..construct import Pass
 
 ENUM_DW_TAG = dict(
