@@ -15,7 +15,7 @@ from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
 from elftools.construct.lib.container import Container
 
-from ..common.exceptions import ELFCompressionError
+from ..common.exceptions import ELFCompressionError, ELFError
 from ..common.utils import elf_assert, parse_cstring_from_stream, struct_parse
 from .constants import SH_FLAGS
 from .notes import iter_notes
@@ -156,7 +156,15 @@ class StringTableSection(Section):
         """ Get the string stored at the given offset in this string table.
         """
         table_offset = self['sh_offset']
-        s = parse_cstring_from_stream(self.stream, table_offset + offset)
+        try:
+            s = parse_cstring_from_stream(self.stream, table_offset + offset)
+        except (OverflowError, ValueError, OSError) as e:
+            # A corrupt name offset can make the absolute stream position out
+            # of range for stream.seek(). Depending on the stream type this
+            # raises OverflowError/ValueError (BytesIO) or ValueError/OSError
+            # (a real file). Surface any of them as an ELFError.
+            raise ELFError(
+                'Invalid string offset %s in string table' % offset) from e
         return s.decode('utf-8', errors='replace') if s else ''
 
 
