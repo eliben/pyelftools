@@ -164,7 +164,7 @@ class StringTableSection(Section):
             # raises OverflowError/ValueError (BytesIO) or ValueError/OSError
             # (a real file). Surface any of them as an ELFError.
             raise ELFError(
-                'Invalid string offset %s in string table' % offset) from e
+                f'Invalid string offset {offset} in string table') from e
         return s.decode('utf-8', errors='replace') if s else ''
 
 
