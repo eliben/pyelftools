@@ -55,3 +55,21 @@ class TestCacheLUTandDIEref(unittest.TestCase):
 
         self.oprint('\n'.join(lines))
         self.assertGreater(len(lines), 1)
+
+    def test_clear_die_cache(self):
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'lambda.elf'), 'rb') as f:
+            dwarf = ELFFile(f).get_dwarf_info()
+            cu = next(dwarf.iter_CUs())
+
+            original_dies = list(cu.iter_DIEs())
+            original_offsets = [die.offset for die in original_dies]
+            self.assertTrue(cu.has_top_DIE())
+
+            cu.clear_DIE_cache()
+            self.assertFalse(cu.has_top_DIE())
+
+            reparsed_dies = list(cu.iter_DIEs())
+            self.assertEqual(
+                original_offsets, [die.offset for die in reparsed_dies])
+            self.assertIsNot(original_dies[0], reparsed_dies[0])
