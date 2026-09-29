@@ -125,6 +125,21 @@ class CompileUnit:
         """
         return bool(self._diemap)
 
+    def clear_DIE_cache(self) -> None:
+        """Release all DIEs cached by this compilation unit.
+
+        Previously returned DIE objects must not be used after this call. The
+        compilation unit remains usable and will reparse DIEs on demand.
+        """
+        for die in self._dielist:
+            # Parent and terminator references can form cycles. Break them so
+            # reference counting can reclaim the DIE graph immediately.
+            die._parent = None
+            die._terminator = None
+
+        self._dielist.clear()
+        self._diemap.clear()
+
     @property
     def size(self) -> int:
         return self['unit_length'] + self.structs.initial_length_field_size()
