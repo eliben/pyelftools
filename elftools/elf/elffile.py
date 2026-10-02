@@ -657,28 +657,32 @@ class ELFFile:
     def _identify_file(self) -> None:
         """ Verify the ELF file and identify its class and endianness.
         """
-        # Note: this code reads the stream directly, without using ELFStructs,
-        # since we don't yet know its exact format. ELF was designed to be
-        # read like this - its e_ident field is word-size and endian agnostic.
-        self.stream.seek(0)
-        magic = self.stream.read(4)
-        elf_assert(magic == b'\x7fELF', 'Magic number does not match')
+        try:
+            # Note: this code reads the stream directly, without using ELFStructs,
+            # since we don't yet know its exact format. ELF was designed to be
+            # read like this - its e_ident field is word-size and endian agnostic.
+            self.stream.seek(0)
+            magic = self.stream.read(4)
+            elf_assert(magic == b'\x7fELF', 'Magic number does not match')
 
-        ei_class = self.stream.read(1)
-        if ei_class == b'\x01':
-            self.elfclass = 32
-        elif ei_class == b'\x02':
-            self.elfclass = 64
-        else:
-            raise ELFError(f'Invalid EI_CLASS {ei_class!r}')
+            ei_class = self.stream.read(1)
+            if ei_class == b'\x01':
+                self.elfclass = 32
+            elif ei_class == b'\x02':
+                self.elfclass = 64
+            else:
+                raise ELFError(f'Invalid EI_CLASS {ei_class!r}')
 
-        ei_data = self.stream.read(1)
-        if ei_data == b'\x01':
-            self.little_endian = True
-        elif ei_data == b'\x02':
-            self.little_endian = False
-        else:
-            raise ELFError(f'Invalid EI_DATA {ei_data!r}')
+            ei_data = self.stream.read(1)
+            if ei_data == b'\x01':
+                self.little_endian = True
+            elif ei_data == b'\x02':
+                self.little_endian = False
+            else:
+                raise ELFError(f'Invalid EI_DATA {ei_data!r}')
+        except Exception:
+            self.stream.seek(0)
+            raise
 
     def _section_offset(self, n: int) -> int:
         """ Compute the offset of section #n in the file

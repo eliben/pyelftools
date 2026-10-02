@@ -4,9 +4,11 @@
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------
+import io
 import os
 import unittest
 
+from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 
 
@@ -60,6 +62,17 @@ class TestSectionFilter(unittest.TestCase):
             self.assertEqual(len(list(elf.iter_sections('SHT_REL'))), 2)
             self.assertEqual(len(list(elf.iter_sections('SHT_ARM_EXIDX'))), 1)
             self.assertTrue(elf.has_ehabi_info())
+
+
+class TestIdentification(unittest.TestCase):
+    def test_invalid_magic_resets_stream_position(self):
+        stream = io.BytesIO(b'not an ELF file')
+
+        with self.assertRaises(ELFError):
+            ELFFile(stream)
+
+        self.assertEqual(stream.tell(), 0)
+
 
 if __name__ == '__main__':
     unittest.main()
