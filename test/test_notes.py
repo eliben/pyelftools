@@ -1,8 +1,28 @@
+import io
 import os
+import struct
 import unittest
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import NoteSection
+from elftools.elf.segments import NoteSegment
+
+
+def _build_core_with_gnu_note(n_type, desc):
+    """ Build a minimal 32-bit LE ARM ET_CORE ELF with a single PT_NOTE segment
+        holding one note named 'GNU' with the given type and descriptor.
+    """
+    name = b'GNU\x00'
+    note = struct.pack('<III', len(b'GNU') + 1, len(desc), n_type) + name + desc
+    ehsize, phentsize = 52, 32
+    p_offset = ehsize + phentsize
+    ehdr = (b'\x7fELF\x01\x01\x01\x00' + b'\x00' * 8 +
+            struct.pack('<HHIIIIIHHHHHH',
+                        4, 40, 1, 0, ehsize, 0, 0,
+                        ehsize, phentsize, 1, 0, 0, 0))
+    phdr = struct.pack('<IIIIIIII',
+                       4, p_offset, p_offset, p_offset, len(note), len(note), 0, 4)
+    return io.BytesIO(ehdr + phdr + note)
 
 
 class TestNotes(unittest.TestCase):
@@ -27,6 +47,20 @@ class TestNotes(unittest.TestCase):
             notes = list(note_sections[0].iter_notes())
             # There's one note in this section:
             self.assertEqual(len(notes), 1)
+
+    def test_gnu_build_id_note_in_core(self):
+        # A GNU build ID note (type 3, name 'GNU') can appear inside an ET_CORE
+        # file, where type 3 otherwise means NT_PRPSINFO. It must be decoded as
+        # NT_GNU_BUILD_ID rather than parsed as a prpsinfo struct (issue #656).
+        stream = _build_core_with_gnu_note(3, b'\xde\xad\xc0\xde\xde\xad\xc0\xde')
+        elf = ELFFile(stream)
+        segments = [s for s in elf.iter_segments() if isinstance(s, NoteSegment)]
+        self.assertEqual(len(segments), 1)
+        notes = list(segments[0].iter_notes())
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0]['n_name'], 'GNU')
+        self.assertEqual(notes[0]['n_type'], 'NT_GNU_BUILD_ID')
+        self.assertEqual(notes[0]['n_desc'], 'deadc0dedeadc0de')
 
     def test_note_tc3xx_blinky(self):
         with ELFFile.load_from_path(os.path.join('test', 'testfiles_for_unittests', 'note_tc3xxx_blinky.elf')) as elf:
