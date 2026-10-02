@@ -10,6 +10,8 @@ import unittest
 from contextlib import contextmanager
 
 from elftools.common.exceptions import ELFCompressionError
+from elftools.elf.constants import SH_FLAGS
+from elftools.elf.descriptions import describe_sh_flags
 from elftools.elf.elffile import ELFFile
 
 
@@ -19,6 +21,7 @@ class TestCompressedSupport(unittest.TestCase):
         with self.elffile('32') as elf:
             section = elf.get_section_by_name('.debug_info')
             self.assertTrue(section.compressed)
+            self.assertEqual(describe_sh_flags(section['sh_flags']), 'C')
             self.assertEqual(section.data_size, 0x330)
             self.assertEqual(section.data_alignment, 1)
 
@@ -28,9 +31,14 @@ class TestCompressedSupport(unittest.TestCase):
         with self.elffile('64') as elf:
             section = elf.get_section_by_name('.debug_info')
             self.assertTrue(section.compressed)
+            self.assertEqual(describe_sh_flags(section['sh_flags']), 'C')
             self.assertEqual(section.data_size, 0x327)
             self.assertEqual(section.data_alignment, 1)
             self.assertEqual(self.get_cus_info(elf), ['CU 0x0: 0xb-0x319'])
+
+    def test_compressed_and_excluded_flags(self):
+        flags = SH_FLAGS.SHF_COMPRESSED | SH_FLAGS.SHF_EXCLUDE
+        self.assertEqual(describe_sh_flags(flags), 'CE')
 
     def test_compressed_unknown_type(self):
         with self.elffile('unknown_type') as elf:
