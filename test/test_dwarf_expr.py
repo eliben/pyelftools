@@ -70,6 +70,38 @@ class TestParseExpr(unittest.TestCase):
     def setUp(self):
         set_global_machine_arch('x64')
 
+    def test_gnu_implicit_pointer_reference_size(self):
+        for version in (2, 3, 4, 5):
+            for dwarf_format in (32, 64):
+                for address_size in (4, 8):
+                    for little_endian in (True, False):
+                        with self.subTest(version=version,
+                                          dwarf_format=dwarf_format,
+                                          address_size=address_size,
+                                          little_endian=little_endian):
+                            structs = DWARFStructs(
+                                little_endian=little_endian,
+                                dwarf_format=dwarf_format,
+                                address_size=address_size,
+                                dwarf_version=version)
+                            reference_size = (address_size if version == 2
+                                              else dwarf_format // 8)
+                            reference = (0x314 if reference_size == 4
+                                         else 0x123456789ab)
+                            expr = (b'\xf2' + reference.to_bytes(
+                                reference_size,
+                                'little' if little_endian else 'big')
+                                + b'\x7f\x96')
+                            self.assertEqual(
+                                DWARFExprParser(structs).parse_expr(expr), [
+                                    DWARFExprOp(
+                                        op=0xf2,
+                                        op_name='DW_OP_GNU_implicit_pointer',
+                                        args=[reference, -1], offset=0),
+                                    DWARFExprOp(
+                                        op=0x96, op_name='DW_OP_nop', args=[],
+                                        offset=reference_size + 2)])
+
     def test_single(self):
         p = DWARFExprParser(self.structs32)
         lst = p.parse_expr(b'\x1b')

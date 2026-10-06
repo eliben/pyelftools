@@ -285,7 +285,9 @@ def _init_dispatch_table(structs: DWARFStructs) -> dict[int, Callable[[IO[bytes]
                                                    structs.the_Dwarf_uleb128))
     add('DW_OP_GNU_deref_type', parse_arg_struct2(structs.the_Dwarf_uint8,
                                                    structs.the_Dwarf_uleb128))
-    add('DW_OP_GNU_implicit_pointer', parse_arg_struct2(structs.the_Dwarf_offset,
+    gnu_implicit_pointer_ref = (structs.the_Dwarf_target_addr if structs.dwarf_version == 2
+                               else structs.the_Dwarf_offset)
+    add('DW_OP_GNU_implicit_pointer', parse_arg_struct2(gnu_implicit_pointer_ref,
                                                         structs.the_Dwarf_sleb128))
     add('DW_OP_GNU_parameter_ref', parse_arg_struct(structs.the_Dwarf_offset))
     add('DW_OP_WASM_location', parse_wasmloc())
