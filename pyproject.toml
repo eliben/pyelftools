@@ -21,7 +21,7 @@ maintainers = [
     {name = "Eli Bendersky", email = "eliben@gmail.com"},
 ]
 description = "Library for analyzing ELF files and DWARF debugging information"
-readme = "README.rst"
+readme = "README.md"
 license = {text = "Public domain"}
 #license = {file = "LICENSE"}
 #license-files = ["LICENSE"]
