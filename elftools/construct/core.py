@@ -338,14 +338,14 @@ def _read_stream(stream: IO[bytes], length: int) -> bytes:
         raise ValueError("length must be >= 0", length)
     data = stream.read(length)
     if len(data) != length:
-        raise FieldError(f"expected {int(length)}, found {len(data)}")
+        raise FieldError(f"expected read length {int(length)}, found {len(data)}")
     return data
 
 def _write_stream(stream: IO[bytes], length: int, data: bytes) -> None:
     if length < 0:
         raise ValueError("length must be >= 0", length)
     if len(data) != length:
-        raise FieldError(f"expected {int(length)}, found {len(data)}")
+        raise FieldError(f"expected write length {int(length)}, found {len(data)}")
     stream.write(data)
 
 class StaticField(Construct):
@@ -381,13 +381,13 @@ class FormatField(StaticField, Generic[_T]):
     __slots__ = ("packer",)
     if TYPE_CHECKING:
         name: str
-    def __init__(self, name: str, endianity: Literal["<", ">", "="], format: str) -> None:
-        if endianity not in (">", "<", "="):
-            raise ValueError("endianity must be be '=', '<', or '>'",
-                endianity)
+    def __init__(self, name: str, endianness: Literal["<", ">", "="], format: str) -> None:
+        if endianness not in (">", "<", "="):
+            raise ValueError("endianness must be be '=', '<', or '>'",
+                endianness)
         if len(format) != 1:
             raise ValueError("must specify one and only one format char")
-        self.packer = Packer(endianity + format)
+        self.packer = Packer(endianness + format)
         StaticField.__init__(self, name, self.packer.size)
     def __getstate__(self) -> dict[str, Any]:
         attrs = StaticField.__getstate__(self)
