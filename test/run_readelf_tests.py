@@ -162,10 +162,22 @@ def compare_output(s1, s2):
         or silly inconsistencies in the output of readelf, which I was reluctant
         to replicate. Read the documentation for more details.
     """
-    def prepare_lines(s):
-        return [line for line in s.lower().splitlines() if line.strip()]
+    def prepare_lines(s, skip_frame_header=False):
+        lines = []
+        in_frame_header = False
+        for line in s.lower().splitlines():
+            if line.startswith('contents of the ') and line.endswith(' section:'):
+                in_frame_header = (
+                    skip_frame_header and
+                    line == 'contents of the .eh_frame_hdr section:')
+            if line.strip() and not in_frame_header:
+                lines.append(line)
+        return lines
 
-    lines1 = prepare_lines(s1)
+    # Readelf 2.47 also dumps .eh_frame_hdr for --debug-dump=frames and
+    # frames-interp. We don't implement that section yet. It can precede or
+    # follow .eh_frame; continue comparing all other section contents.
+    lines1 = prepare_lines(s1, skip_frame_header=True)
     lines2 = prepare_lines(s2)
 
     flag_in_debug_line_section = False

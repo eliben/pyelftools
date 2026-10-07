@@ -187,6 +187,8 @@ def describe_reg_name(regnum: int, machine_arch: str | None = None, default: boo
         return _REG_NAMES_x64[regnum]
     elif machine_arch == 'AArch64':
         return _REG_NAMES_AArch64[regnum]
+    elif machine_arch == 'LoongArch' and 0 <= regnum < len(_REG_NAMES_LoongArch):
+        return _REG_NAMES_LoongArch[regnum]
     elif default:
         return f'r{regnum}'
     else:
@@ -610,6 +612,18 @@ _REG_NAMES_AArch64 = [
     'z8', 'z9', 'z10', 'z11', 'z12', 'z13', 'z14', 'z15',
     'z16', 'z17', 'z18', 'z19', 'z20', 'z21', 'z22', 'z23',
     'z24', 'z25', 'z26', 'z27', 'z28', 'z29', 'z30', 'z31'
+]
+
+
+_REG_NAMES_LoongArch = [
+    '$zero', '$ra', '$tp', '$sp', '$a0', '$a1', '$a2', '$a3',
+    '$a4', '$a5', '$a6', '$a7', '$t0', '$t1', '$t2', '$t3',
+    '$t4', '$t5', '$t6', '$t7', '$t8', '$r21', '$fp', '$s0',
+    '$s1', '$s2', '$s3', '$s4', '$s5', '$s6', '$s7', '$s8',
+    '$fa0', '$fa1', '$fa2', '$fa3', '$fa4', '$fa5', '$fa6', '$fa7',
+    '$ft0', '$ft1', '$ft2', '$ft3', '$ft4', '$ft5', '$ft6', '$ft7',
+    '$ft8', '$ft9', '$ft10', '$ft11', '$ft12', '$ft13', '$ft14', '$ft15',
+    '$fs0', '$fs1', '$fs2', '$fs3', '$fs4', '$fs5', '$fs6', '$fs7',
 ]
 
 

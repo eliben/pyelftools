@@ -1480,7 +1480,7 @@ class ReadElf:
                 self._emitline(f'  Length:                   {int(entry.unit_length)}')
                 self._emitline(f'  Version:                  {int(entry.version)}')
                 self._emitline(f'  Offset into .debug_info:  0x{entry.info_offset:x}')
-                self._emitline(f'  Pointer Size:             {int(entry.address_size)}')
+                self._emitline(f'  Address size:             {int(entry.address_size)}')
                 self._emitline(f'  Segment Size:             {int(entry.segment_size)}')
                 self._emitline()
                 self._emitline('    Address            Length')
