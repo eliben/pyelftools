@@ -7,6 +7,7 @@
 import os
 import unittest
 
+from elftools.elf.descriptions import describe_note
 from elftools.elf.elffile import ELFFile
 
 
@@ -70,6 +71,23 @@ class TestRISCVSupport(unittest.TestCase):
 
             for i in subsubsec.iter_attributes('TAG_PRIV_SPEC_MINOR'):
                 self.assertEqual(i.value, 11)
+
+    def test_cfi_compiler_objects(self):
+        root = os.path.join('test', 'testfiles_for_unittests', 'riscv_cfi')
+        cases = (
+            ('unlabeled.o',
+             'RISC-V AND feature: CFI_LP_UNLABELED, CFI_SS'),
+            ('func_sig.o',
+             'RISC-V AND feature: CFI_SS, CFI_LP_FUNC_SIG'),
+        )
+        for name, expected in cases:
+            with self.subTest(name=name):
+                with open(os.path.join(root, name), 'rb') as f:
+                    elf = ELFFile(f)
+                    note = next(elf.get_section_by_name('.note.gnu.property').iter_notes())
+                    desc = describe_note(note, elf.header['e_machine'])
+                self.assertIn(expected, desc)
+
 
 if __name__ == '__main__':
     unittest.main()

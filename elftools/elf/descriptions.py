@@ -720,8 +720,9 @@ _DESCR_NOTE_GNU_PROPERTY_AARCH64_FEATURE_1_AND = (
 )
 
 _DESCR_NOTE_GNU_PROPERTY_RISCV_FEATURE_1_AND = (
-    (1, 'ZICFILP'),
-    (2, 'ZICFISS'),
+    (1, 'CFI_LP_UNLABELED'),
+    (2, 'CFI_SS'),
+    (4, 'CFI_LP_FUNC_SIG'),
 )
 
 def _reverse_dict(d: Mapping[_K, _V], low_priority: TContainer[_K] = ()) -> dict[_V, _K]:
