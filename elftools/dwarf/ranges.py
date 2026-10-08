@@ -138,7 +138,6 @@ class RangeLists:
     ) -> None:
         self.stream = stream
         self.structs = structs
-        self._max_addr = 2 ** (self.structs.address_size * 8) - 1
         self.version = version
         self._dwarfinfo = dwarfinfo
 
@@ -149,9 +148,9 @@ class RangeLists:
     ) -> list[RangeEntry | BaseAddressEntry]:
         """ Get a range list at the given offset in the section.
 
-            The cu argument is necessary if the ranges section is a
-            DWARFv5 debug_rnglists one, and the target rangelist
-            contains indirect encodings
+            The cu argument selects the compilation unit's address size.
+            It is required for DWARFv5 debug_rnglists, which may contain
+            indirect encodings.
         """
         self.stream.seek(offset, os.SEEK_SET)
         return self._parse_range_list_from_stream(cu)
@@ -222,23 +221,25 @@ class RangeLists:
         self,
         cu: CompileUnit | None,
     ) -> list[RangeEntry | BaseAddressEntry]:
+        structs = cu.structs if cu is not None else self.structs
         if self.version >= 5:
             assert cu is not None
             return [entry_translate[entry.entry_type](entry, cu)
                 for entry
-                in struct_parse(self.structs.Dwarf_rnglists_entries, self.stream)]
+                in struct_parse(structs.Dwarf_rnglists_entries, self.stream)]
         else:
+            max_addr = 2 ** (structs.address_size * 8) - 1
             lst: list[RangeEntry | BaseAddressEntry] = []
             while True:
                 entry_offset = self.stream.tell()
                 begin_offset = struct_parse(
-                    self.structs.the_Dwarf_target_addr, self.stream)
+                    structs.the_Dwarf_target_addr, self.stream)
                 end_offset = struct_parse(
-                    self.structs.the_Dwarf_target_addr, self.stream)
+                    structs.the_Dwarf_target_addr, self.stream)
                 if begin_offset == 0 and end_offset == 0:
                     # End of list - we're done.
                     break
-                elif begin_offset == self._max_addr:
+                elif begin_offset == max_addr:
                     # Base address selection entry
                     lst.append(BaseAddressEntry(entry_offset=entry_offset, base_address=end_offset))
                 else:
