@@ -12,6 +12,7 @@ from elftools.elf.descriptions import _DESCR_D_TAG, _low_priority_D_TAG
 from elftools.elf.dynamic import DynamicTag
 from elftools.elf.elffile import ELFFile
 from elftools.elf.enums import ENUM_D_TAG
+from elftools.elf.structs import ELFStructs
 
 
 class TestDynamicTag(unittest.TestCase):
@@ -20,6 +21,42 @@ class TestDynamicTag(unittest.TestCase):
     def test_requires_stringtable(self):
         with self.assertRaises(ELFError):
             DynamicTag('', None)
+
+    def test_powerpc_tags(self):
+        tags = {
+            'EM_PPC': [(0x70000000, 'DT_PPC_GOT'), (0x70000001, 'DT_PPC_OPT')],
+            'EM_PPC64': [
+                (0x70000000, 'DT_PPC64_GLINK'), (0x70000001, 'DT_PPC64_OPD'),
+                (0x70000002, 'DT_PPC64_OPDSZ'), (0x70000003, 'DT_PPC64_OPT')],
+        }
+        for machine, entries in tags.items():
+            for elfclass in (32, 64):
+                for little_endian in (False, True):
+                    structs = ELFStructs(little_endian=little_endian, elfclass=elfclass)
+                    structs.create_basic_structs()
+                    structs.create_advanced_structs(e_machine=machine)
+                    size = elfclass // 8
+                    byteorder = 'little' if little_endian else 'big'
+                    for value, name in entries:
+                        with self.subTest(machine=machine, elfclass=elfclass,
+                                          little_endian=little_endian, tag=name):
+                            data = value.to_bytes(size, byteorder) + (42).to_bytes(size, byteorder)
+                            entry = structs.Elf_Dyn.parse(data)
+                            self.assertEqual(entry.d_tag, name)
+                            self.assertEqual(entry.d_val, 42)
+                            self.assertEqual(structs.Elf_Dyn.build(entry), data)
+                            self.assertEqual(ENUM_D_TAG[name], value)
+
+    def test_machine_specific_tag_collisions(self):
+        for machine, expected in [('EM_MIPS', 'DT_MIPS_RLD_VERSION'),
+                                  ('EM_AARCH64', 'DT_AARCH64_BTI_PLT'),
+                                  ('EM_386', 0x70000001)]:
+            with self.subTest(machine=machine):
+                structs = ELFStructs()
+                structs.create_basic_structs()
+                structs.create_advanced_structs(e_machine=machine)
+                entry = structs.Elf_Dyn.parse(b'\x01\x00\x00\x70\x00\x00\x00\x00')
+                self.assertEqual(entry.d_tag, expected)
 
     def test_tag_priority(self):
         for tag in _low_priority_D_TAG:
