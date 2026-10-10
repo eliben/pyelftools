@@ -344,6 +344,9 @@ class RelocationHandler:
             if reloc.is_RELA():
                 raise ELFRelocationError(
                     f'Unexpected RELA relocation for ARM: {reloc}')
+            # R_ARM_NONE records a dependency and does not modify any data.
+            if reloc_type == ENUM_RELOC_TYPE_ARM['R_ARM_NONE']:
+                return
             recipe = self._RELOCATION_RECIPES_ARM.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'AArch64':
             recipe = self._RELOCATION_RECIPES_AARCH64.get(reloc_type, None)
