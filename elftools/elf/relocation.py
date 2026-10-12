@@ -344,9 +344,6 @@ class RelocationHandler:
             if reloc.is_RELA():
                 raise ELFRelocationError(
                     f'Unexpected RELA relocation for ARM: {reloc}')
-            # R_ARM_NONE records a dependency and does not modify any data.
-            if reloc_type == ENUM_RELOC_TYPE_ARM['R_ARM_NONE']:
-                return
             recipe = self._RELOCATION_RECIPES_ARM.get(reloc_type, None)
         elif self.elffile.get_machine_arch() == 'AArch64':
             recipe = self._RELOCATION_RECIPES_AARCH64.get(reloc_type, None)
@@ -365,6 +362,10 @@ class RelocationHandler:
         if recipe is None:
             raise ELFRelocationError(
                     f'Unsupported relocation type: {reloc_type}')
+
+        # Zero-byte recipes record dependencies without accessing target data.
+        if recipe.bytesize == 0:
+            return
 
         # So now we have everything we need to actually perform the relocation.
         # Let's get to it:
@@ -405,6 +406,7 @@ class RelocationHandler:
     # Relocations are represented by "recipes". Each recipe specifies:
     #  bytesize: The number of bytes to read (and write back) to the section.
     #            This is the unit of data on which relocation is performed.
+    #            Zero denotes a no-op that does not access the section data.
     #  has_addend: Does this relocation have an extra addend?
     #  calc_func: A function that performs the relocation on an extracted
     #             value, and returns the updated value.
@@ -415,6 +417,8 @@ class RelocationHandler:
         calc_func: _RelocationFunction
 
     _RELOCATION_RECIPES_ARM: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
+        ENUM_RELOC_TYPE_ARM['R_ARM_NONE']: _RELOCATION_RECIPE_TYPE(
+            bytesize=0, has_addend=False, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_ARM['R_ARM_ABS32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False,
             calc_func=_reloc_calc_sym_plus_value),

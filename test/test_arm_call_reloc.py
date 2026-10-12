@@ -73,6 +73,22 @@ class TestARMNoneRelocation(unittest.TestCase):
                     self.assertEqual(stream.getvalue(), data)
                     self.assertEqual(stream.tell(), len(data))
 
+    def test_none_in_object_file(self) -> None:
+        # Reproducible binary with ABS32 and two NONE records in .rel.data.
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'arm_none_reloc.o'), 'rb') as f:
+            elf = ELFFile(f)
+            self.assertEqual(elf.get_machine_arch(), 'ARM')
+            target = elf.get_section_by_name('.data')
+            rel = elf.get_section_by_name('.rel.data')
+            entries = list(rel.iter_relocations())
+            self.assertEqual([entry['r_info_type'] for entry in entries], [2, 0, 0])
+            self.assertEqual(entries[-1]['r_offset'], target['sh_size'] - 1)
+            stream = BytesIO(target.data())
+            self.assertEqual(stream.getvalue(), elf.structs.Elf_word('').build(17))
+            RelocationHandler(elf).apply_section_relocations(stream, rel)
+            self.assertEqual(stream.getvalue(), elf.structs.Elf_word('').build(21))
+
     def test_none_interleaved_with_abs32(self) -> None:
         for elf in self.arm_files:
             with self.subTest(little_endian=elf.little_endian):
