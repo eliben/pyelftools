@@ -8,11 +8,14 @@ import unittest
 from io import BytesIO
 from random import randint
 
+from elftools.common.exceptions import ELFParseError
 from elftools.common.utils import (
     merge_dicts,
     parse_cstring_from_stream,
     preserve_stream_pos,
+    struct_parse,
 )
+from elftools.construct import ULInt32
 
 
 class Test_parse_cstring_from_stream(unittest.TestCase):
@@ -55,6 +58,14 @@ class Test_preserve_stream_pos(unittest.TestCase):
         with preserve_stream_pos(sio):
             sio.seek(0)
         self.assertEqual(sio.tell(), 5)
+
+    def test_parse_error(self):
+        sio = BytesIO(b'abcdef')
+        sio.seek(2)
+        with self.assertRaises(ELFParseError), preserve_stream_pos(sio):
+            struct_parse(ULInt32('value'), sio, 5)
+        self.assertEqual(sio.tell(), 2)
+        self.assertEqual(sio.read(), b'cdef')
 
 
 class Test_merge_dicts(unittest.TestCase):

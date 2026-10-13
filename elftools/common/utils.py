@@ -103,8 +103,10 @@ def preserve_stream_pos(stream: IO[bytes]) -> Iterator[None]:
         # stream still has position FOO
     """
     saved_pos = stream.tell()
-    yield
-    stream.seek(saved_pos)
+    try:
+        yield
+    finally:
+        stream.seek(saved_pos)
 
 
 def roundup(num: int, bits: int) -> int:
