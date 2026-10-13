@@ -11,7 +11,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING, Protocol
 
-from ..common.utils import struct_parse
+from ..common.utils import preserve_stream_pos, struct_parse
 from ..construct.lib.container import Container
 from .sections import Section
 
@@ -196,7 +196,8 @@ class GNUHashTable:
         while True:
             cur_hash = struct.unpack(hash_format, self.elffile.stream.read(self._wordsize))[0]
             if cur_hash | 1 == namehash | 1:
-                symbol = self._symboltable.get_symbol(symidx)
+                with preserve_stream_pos(self.elffile.stream):
+                    symbol = self._symboltable.get_symbol(symidx)
                 if symbol and name == symbol.name:
                     return symbol
 

@@ -5,8 +5,10 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import os
+import struct
 import unittest
 import unittest.mock
+from io import BytesIO
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.hash import ELFHashTable, GNUHashTable, _SymbolTable
@@ -123,3 +125,32 @@ class TestGNUHash(unittest.TestCase):
             symbol_f1 = hash_section.get_symbol('caller')
             self.assertIsNotNone(symbol_f1)
             self.assertEqual(symbol_f1['st_value'], 0x5a4)
+
+    def test_get_symbol_hash_collision(self):
+        path = os.path.join('test', 'testfiles_for_unittests',
+                            'lib_versioned64.so.elf')
+        with open(path, 'rb') as f:
+            data = bytearray(f.read())
+        elf = ELFFile(BytesIO(data))
+        hash_section = elf.get_section_by_name('.gnu.hash')
+        symbols = elf.get_section_by_name('.dynsym')
+        symoffset = hash_section.params['symoffset']
+        chains = [GNUHashTable.gnu_hash(symbols.get_symbol(i).name) & ~1
+                  for i in range(symoffset, symbols.num_symbols())]
+        chains[-1] |= 1
+        # One bucket puts hash collisions in the same chain. All-set bloom
+        # words permit every symbol, without changing the symbol/string tables.
+        table = struct.pack('<IIIIQQI', 1, symoffset, 2, 7,
+                            (1 << 64) - 1, (1 << 64) - 1, symoffset)
+        table += struct.pack('<' + 'I' * len(chains), *chains)
+        self.assertLessEqual(len(table), hash_section['sh_size'])
+        offset = hash_section['sh_offset']
+        data[offset:offset + len(table)] = table
+        elf = ELFFile(BytesIO(data))
+        hash_section = elf.get_section_by_name('.gnu.hash')
+        # These names collide when the chain's termination bit is ignored.
+        for name in ('function2', 'VER_1.1', 'function1_ver1_1'):
+            with self.subTest(name=name):
+                symbol = hash_section.get_symbol(name)
+                self.assertIsNotNone(symbol)
+                self.assertEqual(symbol.name, name)
