@@ -101,7 +101,12 @@ class Section:
                 compressed: bytes = self.stream.read(self['sh_size'] - hdr_size)
 
                 decomp = zlib.decompressobj()
-                result = decomp.decompress(compressed, self.data_size)
+                try:
+                    result = decomp.decompress(compressed, self.data_size)
+                except zlib.error as e:
+                    raise ELFCompressionError(
+                        f'Could not decompress section {self.name}: {e}'
+                    ) from e
             elif isinstance(c_type, int):
                 raise ELFCompressionError(
                     f'Unknown compression type: {c_type:#0x}'

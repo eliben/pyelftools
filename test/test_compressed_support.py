@@ -5,6 +5,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 
+import io
 import os
 import unittest
 from contextlib import contextmanager
@@ -65,6 +66,21 @@ class TestCompressedSupport(unittest.TestCase):
                 )
             else:
                 self.fail('An exception was exected')
+
+    def test_compressed_corrupt_zlib_data(self):
+        # Flip the first byte of the zlib stream, which directly follows the
+        # 24-byte Elf64_Chdr header of the compressed .debug_info section.
+        path = os.path.join('test', 'testfiles_for_unittests', 'compressed_64.o')
+        with open(path, 'rb') as f:
+            data = bytearray(f.read())
+        section = ELFFile(io.BytesIO(data)).get_section_by_name('.debug_info')
+        data[section['sh_offset'] + 24] ^= 0xff
+
+        section = ELFFile(io.BytesIO(data)).get_section_by_name('.debug_info')
+        with self.assertRaisesRegex(
+            ELFCompressionError, 'Could not decompress section .debug_info'
+        ):
+            section.data()
 
     # Test helpers
 
