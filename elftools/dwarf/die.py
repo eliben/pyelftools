@@ -273,8 +273,11 @@ class DIE:
                     (form, raw_value, indirection_length) = self._resolve_indirect()
                     value = self._translate_attr_value(form, raw_value)
                 else:
-                    dw_form = structs.Dwarf_dw_form[form]
-                    assert dw_form is not None
+                    dw_form = structs.Dwarf_dw_form.get(form)
+                    if dw_form is None:
+                        # Unknown codes are left as numbers by the abbrev table
+                        shown = f'0x{form:x}' if isinstance(form, int) else form
+                        raise DWARFError(f'Unsupported DW_FORM {shown}')
                     raw_value = dw_form.parse_stream(stream)
                     value = self._translate_attr_value(form, raw_value)
                 self.attributes[name] = AttributeValue(
