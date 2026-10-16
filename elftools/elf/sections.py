@@ -8,6 +8,7 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
+import struct
 import zlib
 from collections import defaultdict
 from functools import cached_property
@@ -15,9 +16,16 @@ from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
 from elftools.construct.lib.container import Container
 
-from ..common.exceptions import ELFCompressionError
+from ..common.exceptions import ELFCompressionError, ELFParseError
 from ..common.utils import elf_assert, parse_cstring_from_stream, struct_parse
 from .constants import SH_FLAGS
+from .enums import (
+    ST_INFO_BIND_raw2name,
+    ST_INFO_TYPE_raw2name,
+    ST_LOCAL_raw2name,
+    ST_SHNDX_raw2name,
+    ST_VISIBILITY_raw2name,
+)
 from .notes import iter_notes
 
 if TYPE_CHECKING:
@@ -25,6 +33,27 @@ if TYPE_CHECKING:
 
     from .elffile import ELFFile
     from .structs import ELFStructs
+
+# Fixed Elf_Sym layout per (elfclass, little_endian), matching the construct
+# definition in elftools.elf.structs. 32-bit: name, value, size, info, other,
+# shndx; 64-bit reorders info/other/shndx ahead of value/size.
+_ELF_SYM_STRUCT = {
+    (32, True): struct.Struct("<IIIBBH"),
+    (32, False): struct.Struct(">IIIBBH"),
+    (64, True): struct.Struct("<IBBHQQ"),
+    (64, False): struct.Struct(">IBBHQQ"),
+}
+
+# Decoded (bind, type) / (local, visibility) names for every possible
+# st_info / st_other byte, as structs.Elf_Sym decodes them.
+_ST_INFO_NAMES = tuple(
+    (ST_INFO_BIND_raw2name.get(b >> 4, b >> 4),
+     ST_INFO_TYPE_raw2name.get(b & 0x0F, b & 0x0F))
+    for b in range(256))
+_ST_OTHER_NAMES = tuple(
+    (ST_LOCAL_raw2name.get((b >> 5) & 0x07, (b >> 5) & 0x07),
+     ST_VISIBILITY_raw2name.get(b & 0x07, b & 0x07))
+    for b in range(256))
 
 
 class Section:
@@ -212,15 +241,15 @@ class SymbolTableSection(Section):
     def get_symbol(self, n: int) -> Symbol:
         """ Get the symbol at index #n from the table (Symbol object)
         """
-        # Grab the symbol's entry from the stream
-        entry_offset = self['sh_offset'] + n * self['sh_entsize']
-        entry = struct_parse(
-            self.structs.Elf_Sym,
-            self.stream,
-            stream_pos=entry_offset)
-        # Find the symbol name in the associated string table
-        name = self.stringtable.get_string(entry['st_name'])
-        return Symbol(entry, name)
+        # Decode the entry straight from the table bytes with a plain struct;
+        # going through the construct Elf_Sym parser per symbol dominates the
+        # cost of reading large symbol tables.
+        sfmt = self._sym_struct
+        offset = n * self['sh_entsize']
+        data = self._symtab_data
+        if n < 0 or offset + sfmt.size > len(data):
+            raise ELFParseError(f'Symbol index {n} out of range in section {self.name!r}')
+        return self._make_symbol(sfmt.unpack_from(data, offset))
 
     def get_symbol_by_name(self, name: str) -> list[Symbol] | None:
         """ Get a symbol(s) by name. Return None if no symbol by the given name
@@ -239,8 +268,70 @@ class SymbolTableSection(Section):
     def iter_symbols(self) -> Iterator[Symbol]:
         """ Yield all the symbols in the table
         """
-        for i in range(self.num_symbols()):
-            yield self.get_symbol(i)
+        sfmt = self._sym_struct
+        data = self._symtab_data
+        if self['sh_entsize'] == sfmt.size and len(data) == self['sh_size']:
+            make_symbol = self._make_symbol
+            for fields in sfmt.iter_unpack(data):
+                yield make_symbol(fields)
+        else:
+            # Padded entries or a truncated table
+            for i in range(self.num_symbols()):
+                yield self.get_symbol(i)
+
+    @cached_property
+    def _sym_struct(self) -> struct.Struct:
+        return _ELF_SYM_STRUCT[(self.structs.elfclass, self.structs.little_endian)]
+
+    def _make_symbol(self, fields: tuple[int, ...]) -> Symbol:
+        """ Build a Symbol from an unpacked Elf_Sym tuple, with the same
+            layout and decoded values as structs.Elf_Sym.
+        """
+        if self.structs.elfclass == 32:
+            st_name, st_value, st_size, st_info, st_other, st_shndx = fields
+        else:
+            st_name, st_info, st_other, st_shndx, st_value, st_size = fields
+        bind, type_ = _ST_INFO_NAMES[st_info]
+        local, visibility = _ST_OTHER_NAMES[st_other]
+        entry = Container(
+            st_name=st_name,
+            st_value=st_value,
+            st_size=st_size,
+            st_info=Container(bind=bind, type=type_),
+            st_other=Container(local=local, visibility=visibility),
+            st_shndx=ST_SHNDX_raw2name.get(st_shndx, st_shndx),
+        )
+        return Symbol(entry, self._get_name(st_name))
+
+    @cached_property
+    def _symtab_data(self) -> bytes:
+        """ Raw bytes of the symbol table, read on first use. Read lazily
+            rather than in __init__ since users may replace the stream
+            after constructing the section.
+        """
+        self.stream.seek(self['sh_offset'])
+        return self.stream.read(self['sh_size'])
+
+    @cached_property
+    def _strtab_data(self) -> bytes | None:
+        """ Raw bytes of the associated string table, or None when it isn't a
+            regular string table section (e.g. a _DynamicStringTable built from
+            dynamic tags), in which case names go through get_string().
+        """
+        strtab = self.stringtable
+        if not isinstance(strtab, StringTableSection) or strtab.compressed:
+            return None
+        strtab.stream.seek(strtab['sh_offset'])
+        return strtab.stream.read(strtab['sh_size'])
+
+    def _get_name(self, st_name: int) -> str:
+        strdata = self._strtab_data
+        if strdata is not None:
+            end = strdata.find(b'\x00', st_name)
+            if end >= 0:
+                return strdata[st_name:end].decode('utf-8', errors='replace')
+        # Unterminated or out-of-table offset: keep the stream-based behavior
+        return self.stringtable.get_string(st_name)
 
 
 class Symbol:
