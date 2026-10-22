@@ -11,6 +11,7 @@ from __future__ import annotations
 from functools import cached_property
 from typing import IO, TYPE_CHECKING, Any, NamedTuple, Protocol
 
+from ..common.construct_utils import ULEB128
 from ..common.exceptions import ELFRelocationError
 from ..common.utils import elf_assert, struct_parse
 from ..construct import Container
@@ -21,6 +22,7 @@ from .enums import (
     ENUM_RELOC_TYPE_LOONGARCH,
     ENUM_RELOC_TYPE_MIPS,
     ENUM_RELOC_TYPE_PPC64,
+    ENUM_RELOC_TYPE_RISCV,
     ENUM_RELOC_TYPE_S390X,
     ENUM_RELOC_TYPE_i386,
     ENUM_RELOC_TYPE_x64,
@@ -223,6 +225,10 @@ class RelrRelocationSection(Section, RelrRelocationTable):
             self['sh_offset'], self['sh_size'], self['sh_entsize'])
 
 
+# Recipe bytesize of a relocation that patches a ULEB128 encoded value
+_ULEB128_BYTESIZE = 0
+
+
 class _RelocationFunction(Protocol):
     def __call__(self, value: int, sym_value: int, offset: int, addend: int = 0) -> int: ...
 
@@ -257,6 +263,14 @@ def _arm_reloc_calc_sym_plus_value_pcrel(value: int, sym_value: int, offset: int
 
 def _bpf_64_32_reloc_calc_sym_plus_addend(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
     return (sym_value + addend) // 8 - 1
+
+
+def _riscv_reloc_calc_set6(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
+    return (value & 0xc0) | ((sym_value + addend) & 0x3f)
+
+
+def _riscv_reloc_calc_sub6(value: int, sym_value: int, offset: int, addend: int = 0) -> int:
+    return (value & 0xc0) | ((value - sym_value - addend) & 0x3f)
 
 
 class RelocationHandler:
@@ -358,6 +372,11 @@ class RelocationHandler:
                 raise ELFRelocationError(
                     f'Unexpected REL relocation for LoongArch: {reloc}')
             recipe = self._RELOCATION_RECIPES_LOONGARCH.get(reloc_type, None)
+        elif self.elffile.get_machine_arch() == 'RISC-V':
+            if not reloc.is_RELA():
+                raise ELFRelocationError(
+                    f'Unexpected REL relocation for RISC-V: {reloc}')
+            recipe = self._RELOCATION_RECIPES_RISCV.get(reloc_type, None)
 
         if recipe is None:
             raise ELFRelocationError(
@@ -365,6 +384,10 @@ class RelocationHandler:
 
         # So now we have everything we need to actually perform the relocation.
         # Let's get to it:
+
+        if recipe.bytesize == _ULEB128_BYTESIZE:
+            self._do_apply_uleb128_relocation(stream, reloc, recipe, sym_value)
+            return
 
         # 0. Find out which struct we're going to be using to read this value
         #    from the stream and write it back.
@@ -399,9 +422,39 @@ class RelocationHandler:
         relocated_value = relocated_value % (2 ** (recipe.bytesize * 8))
         value_struct.build_stream(relocated_value, stream)
 
+    def _do_apply_uleb128_relocation(
+        self,
+        stream: IO[bytes],
+        reloc: Relocation,
+        recipe: _RELOCATION_RECIPE_TYPE,
+        sym_value: int,
+    ) -> None:
+        # The relocated value is written back in the same number of bytes as
+        # the original encoding, as ld does, so the data that follows it does
+        # not move.
+        original_value = struct_parse(ULEB128(''), stream, stream_pos=reloc['r_offset'])
+        length = stream.tell() - reloc['r_offset']
+        relocated_value = recipe.calc_func(
+            value=original_value,
+            sym_value=sym_value,
+            offset=reloc['r_offset'],
+            addend=reloc['r_addend'] if recipe.has_addend else 0)
+        relocated_value %= 2 ** (7 * length)
+        encoded = bytearray()
+        for i in range(length):
+            byte = relocated_value & 0x7f
+            relocated_value >>= 7
+            if i < length - 1:
+                byte |= 0x80
+            encoded.append(byte)
+        stream.seek(reloc['r_offset'])
+        stream.write(encoded)
+
     # Relocations are represented by "recipes". Each recipe specifies:
     #  bytesize: The number of bytes to read (and write back) to the section.
     #            This is the unit of data on which relocation is performed.
+    #            _ULEB128_BYTESIZE marks a ULEB128 encoded value, which keeps
+    #            the length it already has.
     #  has_addend: Does this relocation have an extra addend?
     #  calc_func: A function that performs the relocation on an extracted
     #             value, and returns the updated value.
@@ -539,6 +592,58 @@ class RelocationHandler:
         ENUM_RELOC_TYPE_LOONGARCH['R_LARCH_64_PCREL']: _RELOCATION_RECIPE_TYPE(
             bytesize=8, has_addend=True,
             calc_func=_reloc_calc_sym_plus_addend_pcrel),
+    }
+
+    # https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-elf.adoc#relocations
+    # Linker relaxation can still change code size, so a difference between
+    # two labels is emitted as a pair of relocations, ADD and SUB, or SET and
+    # SUB, applied one after the other to the same place.
+    _RELOCATION_RECIPES_RISCV: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_NONE']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_32_PCREL']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True,
+            calc_func=_reloc_calc_sym_plus_addend_pcrel),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD8']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD16']: _RELOCATION_RECIPE_TYPE(
+            bytesize=2, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_ADD64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_value),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB8']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True,
+            calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB16']: _RELOCATION_RECIPE_TYPE(
+            bytesize=2, has_addend=True,
+            calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True,
+            calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True,
+            calc_func=_reloc_calc_value_minus_sym_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB6']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_riscv_reloc_calc_sub6),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET6']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_riscv_reloc_calc_set6),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET8']: _RELOCATION_RECIPE_TYPE(
+            bytesize=1, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET16']: _RELOCATION_RECIPE_TYPE(
+            bytesize=2, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SET_ULEB128']: _RELOCATION_RECIPE_TYPE(
+            bytesize=_ULEB128_BYTESIZE, has_addend=True,
+            calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_RISCV['R_RISCV_SUB_ULEB128']: _RELOCATION_RECIPE_TYPE(
+            bytesize=_ULEB128_BYTESIZE, has_addend=True,
+            calc_func=_reloc_calc_value_minus_sym_addend),
     }
 
     _RELOCATION_RECIPES_S390X: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
