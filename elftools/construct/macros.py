@@ -647,11 +647,13 @@ def PascalString(
     b'\x00\x05hello'
     """
 
+    length_name = length_field.name
+    assert length_name is not None
     return StringAdapter(
         LengthValueAdapter(
             Sequence(name,
                 length_field,
-                Field("data", lambda ctx: ctx[length_field.name]),
+                Field("data", lambda ctx: ctx[length_name]),
             )
         ),
         encoding=encoding,

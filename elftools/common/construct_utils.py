@@ -62,12 +62,7 @@ class RepeatUntilExcluding(Subconstruct):
         raise SizeofError("can't calculate size")
 
 
-class _NamedConstruct(Construct):
-    if TYPE_CHECKING:
-        name: str  # instead of `str|None` from Construct to save us from `is None` checks everywhere
-
-
-class ULEB128(_NamedConstruct):
+class ULEB128(Construct):
     """A construct based parser for ULEB128 encoding.
     """
     def _parse(self, stream: IO[bytes], context: Container) -> int:
@@ -84,7 +79,7 @@ class ULEB128(_NamedConstruct):
                 return value
 
 
-class SLEB128(_NamedConstruct):
+class SLEB128(Construct):
     """A construct based parser for SLEB128 encoding.
     """
     def _parse(self, stream: IO[bytes], context: Container) -> int:
@@ -101,7 +96,7 @@ class SLEB128(_NamedConstruct):
                 return value | (~0 << shift) if b & 0x40 else value
 
 
-class StreamOffset(_NamedConstruct):
+class StreamOffset(Construct):
     """
     Captures the current stream offset
 
@@ -118,6 +113,7 @@ class StreamOffset(_NamedConstruct):
     def _parse(self, stream: IO[bytes], context: Container) -> int:
         return stream.tell()
     def _build(self, obj: None, stream: IO[bytes], context: Container) -> None:
+        assert self.name is not None
         context[self.name] = stream.tell()
     def _sizeof(self, context: Container) -> int:
         return 0

@@ -379,8 +379,6 @@ class FormatField(StaticField, Generic[_T]):
     """
 
     __slots__ = ("packer",)
-    if TYPE_CHECKING:
-        name: str
     def __init__(self, name: str, endianness: Literal["<", ">", "="], format: str) -> None:
         if endianness not in (">", "<", "="):
             raise ValueError("endianness must be be '=', '<', or '>'",
@@ -1231,11 +1229,10 @@ class Anchor(Construct):
     )
     """
     __slots__ = ()
-    if TYPE_CHECKING:
-        name: str
     def _parse(self, stream: IO[bytes], context: Container) -> int:
         return stream.tell()
     def _build(self, obj: None, stream: IO[bytes], context: Container) -> None:
+        assert self.name is not None
         context[self.name] = stream.tell()
     def _sizeof(self, context: Container) -> int:
         return 0
@@ -1256,8 +1253,6 @@ class Value(Construct, Generic[_T]):
     )
     """
     __slots__ = ("func",)
-    if TYPE_CHECKING:
-        name: str
     def __init__(self, name: str, func: Callable[[Container], _T]) -> None:
         Construct.__init__(self, name)
         self.func = func
@@ -1265,6 +1260,7 @@ class Value(Construct, Generic[_T]):
     def _parse(self, stream: IO[bytes], context: Container) -> _T:
         return self.func(context)
     def _build(self, obj: _T, stream: IO[bytes], context: Container) -> None:
+        assert self.name is not None
         context[self.name] = self.func(context)
     def _sizeof(self, context: Container) -> int:
         return 0
