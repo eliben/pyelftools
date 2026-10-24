@@ -152,7 +152,7 @@ class ELFStructs:
         self._create_gnu_versym()
         self._create_gnu_abi()
         self._create_gnu_property()
-        self._create_note(e_type)
+        self._create_note()
         self._create_stabs()
         self._create_attributes_subsection()
         self._create_arm_attributes()
@@ -476,7 +476,7 @@ class ELFStructs:
             Padding(roundup_padding)
         )
 
-    def _create_note(self, e_type: str | None = None) -> None:
+    def _create_note(self) -> None:
         # Structure of "PT_NOTE" section
 
         self.Elf_ugid = self.Elf_half if self.elfclass == 32 and self.e_machine in {
@@ -495,9 +495,8 @@ class ELFStructs:
         self.Elf_Nhdr = Struct('Elf_Nhdr',
             self.Elf_word('n_namesz'),
             self.Elf_word('n_descsz'),
-            Enum(self.Elf_word('n_type'),
-                 **(e.ENUM_NOTE_N_TYPE if e_type != "ET_CORE"
-                    else e.ENUM_CORE_NOTE_N_TYPE)),
+            # The type's namespace is determined by the owner after the header.
+            self.Elf_word('n_type'),
         )
 
         # A process psinfo structure according to

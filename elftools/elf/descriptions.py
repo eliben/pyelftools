@@ -234,35 +234,25 @@ def describe_note(x: Container, machine: str) -> str:
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
-        if x['n_name'] == 'GNU':
-            os_name = _DESCR_NOTE_ABI_TAG_OS.get(n_desc['abi_os'], _unknown)
-            desc = (
-                f"\n    OS: {os_name}, ABI: {n_desc['abi_major']:d}."
-                f"{n_desc['abi_minor']:d}.{n_desc['abi_tiny']:d}"
-            )
-        else:
-            desc = f'\n   description data: {bytes(x["n_descdata"]).hex()} '
+        os_name = _DESCR_NOTE_ABI_TAG_OS.get(n_desc['abi_os'], _unknown)
+        desc = (
+            f"\n    OS: {os_name}, ABI: {n_desc['abi_major']:d}."
+            f"{n_desc['abi_minor']:d}.{n_desc['abi_tiny']:d}"
+        )
     elif x['n_type'] == 'NT_GNU_BUILD_ID':
         desc = f'\n    Build ID: {n_desc}'
     elif x['n_type'] == 'NT_GNU_GOLD_VERSION':
         desc = f'\n    Version: {n_desc}'
     elif x['n_type'] == 'NT_GNU_PROPERTY_TYPE_0':
-        if x['n_name'] == 'GNU':
-            desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'], machine)
-        else:
-            desc = f'\n   description data: {bytes(x["n_descdata"]).hex()} '
+        desc = '\n      Properties: ' + describe_note_gnu_properties(x['n_desc'], machine)
     else:
         desc = f'\n      description data: {bytes(n_desc).hex()}'
 
-    if x['n_type'] == 'NT_GNU_ABI_TAG' and x['n_name'] == 'Android':
-        note_type = 'NT_VERSION'
-        note_type_desc = 'version'
-    else:
-        note_type = (x['n_type'] if isinstance(x['n_type'], str)
-                    else 'Unknown note type:')
-        note_type_desc = ('0x{:08x}'.format(x['n_type'])
-                        if isinstance(x['n_type'], int) else
-                        _DESCR_NOTE_N_TYPE.get(x['n_type'], _unknown))
+    note_type = (x['n_type'] if isinstance(x['n_type'], str)
+                else 'Unknown note type:')
+    note_type_desc = ('0x{:08x}'.format(x['n_type'])
+                    if isinstance(x['n_type'], int) else
+                    _DESCR_NOTE_N_TYPE.get(x['n_type'], _unknown))
     return f'{note_type} ({note_type_desc}){desc}'
 
 
@@ -664,6 +654,7 @@ _DESCR_VER_FLAGS = {
 
 # PT_NOTE section types
 _DESCR_NOTE_N_TYPE = {
+    "NT_VERSION": 'version',
     "NT_GNU_ABI_TAG": 'ABI version tag',
     "NT_GNU_HWCAP": 'DSO-supplied software HWCAP info',
     "NT_GNU_BUILD_ID": 'unique build ID bitstring',

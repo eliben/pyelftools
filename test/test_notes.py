@@ -34,5 +34,6 @@ class TestNotes(unittest.TestCase):
             # There's only one note section in this file:
             self.assertEqual(len(note_sections), 1)
             notes = list(note_sections[0].iter_notes())
-            # There's one note in this section:
+            # All 522 notes belong to Altium, whose type numbers are not GNU's.
             self.assertEqual(len(notes), 522)
+            self.assertTrue(all(isinstance(note.n_type, int) for note in notes))

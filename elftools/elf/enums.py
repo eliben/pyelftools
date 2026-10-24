@@ -1100,7 +1100,7 @@ ENUM_VERSYM = dict(
     _default_=Pass,
 )
 
-# PT_NOTE section types for all ELF types except ET_CORE
+# Note types for the GNU owner
 ENUM_NOTE_N_TYPE: Mapping[str, int] = dict(
     NT_GNU_ABI_TAG=1,
     NT_GNU_HWCAP=2,
@@ -1110,7 +1110,13 @@ ENUM_NOTE_N_TYPE: Mapping[str, int] = dict(
     _default_=Pass,
 )
 
-# PT_NOTE section types for ET_CORE
+# Note types for the Android owner
+ENUM_ANDROID_NOTE_N_TYPE: Mapping[str, int] = dict(
+    NT_VERSION=1,
+    _default_=Pass,
+)
+
+# Note types for the CORE owner in ET_CORE files
 ENUM_CORE_NOTE_N_TYPE: Mapping[str, int] = dict(
     NT_PRSTATUS=1,
     NT_FPREGSET=2,
