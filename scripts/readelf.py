@@ -1857,7 +1857,7 @@ class ReadElf:
         for s in attr_sec.iter_subsections():
             self._emitline("Attribute Section: {}".format(s.header['vendor_name']))
             for ss in s.iter_subsubsections():
-                h_val = "" if ss.header.extra is None else " ".join(f"{int(x)}" for x in ss.header.extra)
+                h_val = " ".join(str(x) for x in ss.header.extra)
                 self._emitline(descriptor(ss.header.tag, h_val, None))
 
                 for attr in ss.iter_attributes():

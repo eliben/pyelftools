@@ -339,8 +339,8 @@ class Attribute:
 
     def __init__(self, structs: ELFStructs, stream: IO[bytes]) -> None:
         self._tag = self._parse(structs, stream)
-        # Section/symbol indices for TAG_SECTION/TAG_SYMBOL; otherwise None.
-        self.extra: list[int] | None = None
+        # Section/symbol indices for TAG_SECTION/TAG_SYMBOL; otherwise empty.
+        self.extra: list[int] = []
 
     @classmethod
     def _parse(cls, structs: ELFStructs, stream: IO[bytes]) -> Container:
@@ -352,7 +352,7 @@ class Attribute:
 
     def __repr__(self) -> str:
         s = f'<{self.__class__.__name__} ({self.tag}): {self.value!r}>'
-        s += f' {self.extra}' if self.extra is not None else ''
+        s += f' {self.extra}' if self.extra else ''
         return s
 
 
@@ -534,7 +534,6 @@ class ARMAttribute(Attribute):
             self.value = struct_parse(structs.Elf_word('value'), stream)
 
             if self.tag != 'TAG_FILE':
-                self.extra = []
                 s_number: int = struct_parse(structs.Elf_uleb128('s_number'), stream)
 
                 while s_number != 0:
@@ -601,7 +600,6 @@ class RISCVAttribute(Attribute):
             self.value = struct_parse(structs.Elf_word('value'), stream)
 
             if self.tag != 'TAG_FILE':
-                self.extra = []
                 s_number: int = struct_parse(structs.Elf_uleb128('s_number'), stream)
 
                 while s_number != 0:

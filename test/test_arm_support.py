@@ -56,7 +56,7 @@ class TestARMSupport(unittest.TestCase):
             attr = attrs[0]
             self.assertEqual(attr.value, 1)
             self.assertEqual(attr.vendor_name, 'gnu')
-            self.assertIsNone(attr.extra)
+            self.assertEqual(attr.extra, [])
             self.assertEqual(repr(attr), '<ARMAttribute (TAG_COMPATIBILITY): 1> gnu')
 
     def test_DWARF_indirect_forms(self):
