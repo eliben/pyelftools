@@ -1,0 +1,27 @@
+Processing file: ./examples/sample_exe64.elf
+  Compilation unit at offset 0x0
+  Compilation unit at offset 0x77
+    DW_TAG_variable _IO_stdin_used at 0xe6
+      DW_AT_type (DW_FORM_ref4, value=0x85) -> DW_TAG_const_type <unnamed> at 0xfc
+      DW_AT_type (DW_FORM_ref4, value=0x57) -> DW_TAG_base_type int at 0xce
+  Compilation unit at offset 0x102
+    DW_TAG_variable glob at 0x18b
+      DW_AT_type (DW_FORM_ref4, value=0x6f) -> DW_TAG_base_type int at 0x171
+  Compilation unit at offset 0x1a2
+    DW_TAG_typedef size_t at 0x1d6
+      DW_AT_type (DW_FORM_ref4, value=0x3f) -> DW_TAG_base_type long unsigned int at 0x1e1
+    DW_TAG_variable size at 0x259
+      DW_AT_type (DW_FORM_ref4, value=0xe9) -> DW_TAG_const_type <unnamed> at 0x28b
+      DW_AT_type (DW_FORM_ref4, value=0x34) -> DW_TAG_typedef size_t at 0x1d6
+      DW_AT_type (DW_FORM_ref4, value=0x3f) -> DW_TAG_base_type long unsigned int at 0x1e1
+    DW_TAG_variable i at 0x269
+      DW_AT_type (DW_FORM_ref4, value=0x34) -> DW_TAG_typedef size_t at 0x1d6
+      DW_AT_type (DW_FORM_ref4, value=0x3f) -> DW_TAG_base_type long unsigned int at 0x1e1
+    DW_TAG_variable __init_array_start at 0x2b7
+      DW_AT_type (DW_FORM_ref4, value=0xee) -> DW_TAG_array_type <unnamed> at 0x290
+      DW_AT_type (DW_FORM_ref4, value=0x10f) -> DW_TAG_pointer_type <unnamed> at 0x2b1
+      DW_AT_type (DW_FORM_ref4, value=0xf9) -> DW_TAG_subroutine_type <unnamed> at 0x29b
+    DW_TAG_variable __init_array_end at 0x2c4
+      DW_AT_type (DW_FORM_ref4, value=0xee) -> DW_TAG_array_type <unnamed> at 0x290
+      DW_AT_type (DW_FORM_ref4, value=0x10f) -> DW_TAG_pointer_type <unnamed> at 0x2b1
+      DW_AT_type (DW_FORM_ref4, value=0xf9) -> DW_TAG_subroutine_type <unnamed> at 0x29b

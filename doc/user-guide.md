@@ -167,6 +167,13 @@ the answer is positive, use the `get_dwarf_info` method to get a
 all the required book-keeping (including even relocation of DWARF
 sections), and the resulting `DWARFInfo` is ready for usage.
 
+To follow a type reference, use `die.get_DIE_from_attribute('DW_AT_type')`.
+Reference forms such as `DW_FORM_ref4` store offsets relative to the compilation
+unit, so their attribute values cannot be compared directly with `DIE.offset`.
+The [type references example](../examples/dwarf_type_references.py) demonstrates
+following these references through typedefs and other types, and displays both
+the stored values and the resolved DIE offsets.
+
 Contrary to ELF with its structured set of sections and segments, DWARF
 information is quite ad hoc for the special needs it serves. Each DWARF
 section contains different information that has to be decoded and
