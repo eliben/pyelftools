@@ -317,6 +317,18 @@ class RelocationHandler:
         reloc: Relocation,
         symtab: SymbolTableSection,
     ) -> None:
+        arch = self.elffile.get_machine_arch()
+        reloc_type = reloc['r_info_type']
+
+        # NONE has no target field and needs no symbol lookup. MIPS64 packs
+        # up to three operations into one entry; r_info_type is only the first.
+        # If a later operation is non-NONE, let the unsupported combination
+        # raise an error below instead of silently skipping the entire entry.
+        is_mips_composed = arch == 'MIPS' and (
+            reloc.entry.get('r_type2', 0) != 0 or reloc.entry.get('r_type3', 0) != 0)
+        if reloc_type in self._RELOCATION_NONE_TYPES.get(arch, ()) and not is_mips_composed:
+            return
+
         # Preparations for performing the relocation: obtain the value of
         # the symbol mentioned in the relocation, as well as the relocation
         # recipe which tells us how to actually perform it.
@@ -326,20 +338,19 @@ class RelocationHandler:
                 'Invalid symbol reference in relocation: index {}'.format(reloc['r_info_sym']))
         sym_value = symtab.get_symbol(reloc['r_info_sym'])['st_value']
 
-        reloc_type = reloc['r_info_type']
         recipe = None
 
-        if self.elffile.get_machine_arch() == 'x86':
+        if arch == 'x86':
             if reloc.is_RELA():
                 raise ELFRelocationError(
                     f'Unexpected RELA relocation for x86: {reloc}')
             recipe = self._RELOCATION_RECIPES_X86.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'x64':
+        elif arch == 'x64':
             if not reloc.is_RELA():
                 raise ELFRelocationError(
                     f'Unexpected REL relocation for x64: {reloc}')
             recipe = self._RELOCATION_RECIPES_X64.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'MIPS':
+        elif arch == 'MIPS':
             if reloc.is_RELA():
                 if (
                     reloc_type == ENUM_RELOC_TYPE_MIPS['R_MIPS_64']
@@ -354,25 +365,25 @@ class RelocationHandler:
                 recipe = self._RELOCATION_RECIPES_MIPS_RELA.get(reloc_type, None)
             else:
                 recipe = self._RELOCATION_RECIPES_MIPS_REL.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'ARM':
+        elif arch == 'ARM':
             if reloc.is_RELA():
                 raise ELFRelocationError(
                     f'Unexpected RELA relocation for ARM: {reloc}')
             recipe = self._RELOCATION_RECIPES_ARM.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'AArch64':
+        elif arch == 'AArch64':
             recipe = self._RELOCATION_RECIPES_AARCH64.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == '64-bit PowerPC':
+        elif arch == '64-bit PowerPC':
             recipe = self._RELOCATION_RECIPES_PPC64.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'IBM S/390':
+        elif arch == 'IBM S/390':
             recipe = self._RELOCATION_RECIPES_S390X.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'Linux BPF - in-kernel virtual machine':
+        elif arch == 'Linux BPF - in-kernel virtual machine':
             recipe = self._RELOCATION_RECIPES_EBPF.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'LoongArch':
+        elif arch == 'LoongArch':
             if not reloc.is_RELA():
                 raise ELFRelocationError(
                     f'Unexpected REL relocation for LoongArch: {reloc}')
             recipe = self._RELOCATION_RECIPES_LOONGARCH.get(reloc_type, None)
-        elif self.elffile.get_machine_arch() == 'RISC-V':
+        elif arch == 'RISC-V':
             if not reloc.is_RELA():
                 raise ELFRelocationError(
                     f'Unexpected REL relocation for RISC-V: {reloc}')
@@ -450,7 +461,23 @@ class RelocationHandler:
         stream.seek(reloc['r_offset'])
         stream.write(encoded)
 
-    # Relocations are represented by "recipes". Each recipe specifies:
+    # NONE relocations are handled before symbol lookup or target access, so
+    # they do not have recipes describing a field to read and write.
+    _RELOCATION_NONE_TYPES: Mapping[str, tuple[int, ...]] = {
+        'x86': (ENUM_RELOC_TYPE_i386['R_386_NONE'],),
+        'x64': (ENUM_RELOC_TYPE_x64['R_X86_64_NONE'],),
+        'MIPS': (ENUM_RELOC_TYPE_MIPS['R_MIPS_NONE'],),
+        'ARM': (ENUM_RELOC_TYPE_ARM['R_ARM_NONE'],),
+        # The AArch64 ABI accepts both 0 and the historical value 256.
+        'AArch64': (0, ENUM_RELOC_TYPE_AARCH64['R_AARCH64_NONE']),
+        '64-bit PowerPC': (ENUM_RELOC_TYPE_PPC64['R_PPC64_NONE'],),
+        'IBM S/390': (ENUM_RELOC_TYPE_S390X['R_390_NONE'],),
+        'Linux BPF - in-kernel virtual machine': (ENUM_RELOC_TYPE_BPF['R_BPF_NONE'],),
+        'LoongArch': (ENUM_RELOC_TYPE_LOONGARCH['R_LARCH_NONE'],),
+        'RISC-V': (ENUM_RELOC_TYPE_RISCV['R_RISCV_NONE'],),
+    }
+
+    # Other relocations are represented by "recipes". Each recipe specifies:
     #  bytesize: The number of bytes to read (and write back) to the section.
     #            This is the unit of data on which relocation is performed.
     #            _ULEB128_BYTESIZE marks a ULEB128 encoded value, which keeps
@@ -485,15 +512,11 @@ class RelocationHandler:
 
     # https://dmz-portal.mips.com/wiki/MIPS_relocation_types
     _RELOCATION_RECIPES_MIPS_REL: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
-        ENUM_RELOC_TYPE_MIPS['R_MIPS_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_MIPS['R_MIPS_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False,
             calc_func=_reloc_calc_sym_plus_value),
     }
     _RELOCATION_RECIPES_MIPS_RELA: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
-        ENUM_RELOC_TYPE_MIPS['R_MIPS_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=True, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_MIPS['R_MIPS_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True,
             calc_func=_reloc_calc_sym_plus_value),
@@ -512,8 +535,6 @@ class RelocationHandler:
     }
 
     _RELOCATION_RECIPES_X86: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
-        ENUM_RELOC_TYPE_i386['R_386_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_i386['R_386_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False,
             calc_func=_reloc_calc_sym_plus_value),
@@ -523,8 +544,6 @@ class RelocationHandler:
     }
 
     _RELOCATION_RECIPES_X64: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
-        ENUM_RELOC_TYPE_x64['R_X86_64_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=True, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_x64['R_X86_64_64']: _RELOCATION_RECIPE_TYPE(
             bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_x64['R_X86_64_PC32']: _RELOCATION_RECIPE_TYPE(
@@ -538,8 +557,6 @@ class RelocationHandler:
 
     # https://www.kernel.org/doc/html/latest/bpf/llvm_reloc.html#different-relocation-types
     _RELOCATION_RECIPES_EBPF: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
-        ENUM_RELOC_TYPE_BPF['R_BPF_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=8, has_addend=False, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_BPF['R_BPF_64_64']: _RELOCATION_RECIPE_TYPE(
             bytesize=8, has_addend=False, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_BPF['R_BPF_64_32']: _RELOCATION_RECIPE_TYPE(
@@ -554,8 +571,6 @@ class RelocationHandler:
 
     # https://github.com/loongson/la-abi-specs/blob/release/laelf.adoc
     _RELOCATION_RECIPES_LOONGARCH: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
-        ENUM_RELOC_TYPE_LOONGARCH['R_LARCH_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_LOONGARCH['R_LARCH_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True,
             calc_func=_reloc_calc_sym_plus_addend),
@@ -599,8 +614,6 @@ class RelocationHandler:
     # two labels is emitted as a pair of relocations, ADD and SUB, or SET and
     # SUB, applied one after the other to the same place.
     _RELOCATION_RECIPES_RISCV: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
-        ENUM_RELOC_TYPE_RISCV['R_RISCV_NONE']: _RELOCATION_RECIPE_TYPE(
-            bytesize=4, has_addend=False, calc_func=_reloc_calc_identity),
         ENUM_RELOC_TYPE_RISCV['R_RISCV_32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_RISCV['R_RISCV_64']: _RELOCATION_RECIPE_TYPE(
