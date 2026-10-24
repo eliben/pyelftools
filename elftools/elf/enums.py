@@ -636,6 +636,18 @@ ENUM_D_TAG_MIPS: Mapping[str, int] = dict(
     DT_MIPS_XHASH=0x70000036,
 )
 
+ENUM_D_TAG_PPC: Mapping[str, int] = dict(
+    DT_PPC_GOT=0x70000000,
+    DT_PPC_OPT=0x70000001,
+)
+
+ENUM_D_TAG_PPC64: Mapping[str, int] = dict(
+    DT_PPC64_GLINK=0x70000000,
+    DT_PPC64_OPD=0x70000001,
+    DT_PPC64_OPDSZ=0x70000002,
+    DT_PPC64_OPT=0x70000003,
+)
+
 ENUM_D_TAG_AARCH64: Mapping[str, int] = dict(
     DT_AARCH64_BTI_PLT=0x70000001,
 )
@@ -647,6 +659,8 @@ ENUM_D_TAG_AARCH64: Mapping[str, int] = dict(
 # solaris
 
 ENUMMAP_EXTRA_D_TAG_MACHINE: Mapping[str, Mapping[str, int]] = dict(
+    EM_PPC=ENUM_D_TAG_PPC,
+    EM_PPC64=ENUM_D_TAG_PPC64,
     EM_MIPS=ENUM_D_TAG_MIPS,
     EM_MIPS_RS3_LE=ENUM_D_TAG_MIPS,
     EM_AARCH64=ENUM_D_TAG_AARCH64
