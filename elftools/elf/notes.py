@@ -12,12 +12,16 @@ from typing import TYPE_CHECKING
 
 from ..common.utils import bytes2str, roundup, struct_parse
 from ..construct import CString
+from . import enums
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from ..construct.lib.container import Container
     from .elffile import ELFFile
+
+_NOTE_N_TYPE_REV = {v: k for k, v in enums.ENUM_NOTE_N_TYPE.items() if k != '_default_'}
+_CORE_NOTE_N_TYPE_REV = {v: k for k, v in enums.ENUM_CORE_NOTE_N_TYPE.items() if k != '_default_'}
 
 
 def iter_notes(elffile: ELFFile, offset: int, size: int) -> Iterator[Container]:
@@ -44,6 +48,15 @@ def iter_notes(elffile: ELFFile, offset: int, size: int) -> Iterator[Container]:
         else:
             note['n_name'] = None
 
+        if note['n_name'] == 'GNU':
+            raw_type = enums.ENUM_CORE_NOTE_N_TYPE.get(note['n_type'], note['n_type'])
+            if isinstance(raw_type, int) and raw_type in _NOTE_N_TYPE_REV:
+                note['n_type'] = _NOTE_N_TYPE_REV[raw_type]
+        elif note['n_name'] == 'CORE':
+            raw_type = enums.ENUM_NOTE_N_TYPE.get(note['n_type'], note['n_type'])
+            if isinstance(raw_type, int) and raw_type in _CORE_NOTE_N_TYPE_REV:
+                note['n_type'] = _CORE_NOTE_N_TYPE_REV[raw_type]
+
         desc_data: bytes = elffile.stream.read(note['n_descsz'])
         note['n_descdata'] = desc_data
         if note['n_type'] == 'NT_GNU_ABI_TAG' and note['n_name'] == 'GNU':
@@ -54,11 +67,11 @@ def iter_notes(elffile: ELFFile, offset: int, size: int) -> Iterator[Container]:
             note['n_desc'] = bytes(desc_data).hex()
         elif note['n_type'] == 'NT_GNU_GOLD_VERSION' and note['n_name'] == 'GNU':
             note['n_desc'] = bytes2str(desc_data)
-        elif note['n_type'] == 'NT_PRPSINFO':
+        elif note['n_type'] == 'NT_PRPSINFO' and (note['n_name'] == 'CORE' or note['n_name'] is None):
             note['n_desc'] = struct_parse(elffile.structs.Elf_Prpsinfo,
                                           elffile.stream,
                                           offset)
-        elif note['n_type'] == 'NT_FILE':
+        elif note['n_type'] == 'NT_FILE' and (note['n_name'] == 'CORE' or note['n_name'] is None):
             note['n_desc'] = struct_parse(elffile.structs.Elf_Nt_File,
                                           elffile.stream,
                                           offset)
