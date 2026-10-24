@@ -58,8 +58,7 @@ from ..construct import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from typing_extensions import Self  # 3.11+
+    from typing import Self
 
     from ..construct.adapters import LengthValueAdapter
     from ..construct.lib.container import Container

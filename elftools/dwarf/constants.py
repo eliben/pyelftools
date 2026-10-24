@@ -12,7 +12,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing_extensions import Self  # 3.11+
+    from typing import Self
 
 
 class _IntEnum(int, Enum):  # Py3.11: enum.ReprEnum

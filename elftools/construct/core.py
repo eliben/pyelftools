@@ -8,8 +8,7 @@ from .lib import Container, LazyContainer, ListContainer
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
-
-    from typing_extensions import Self  # 3.11+
+    from typing import Self
 
     from .lib.bitstream import BitStream
 

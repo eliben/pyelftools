@@ -10,9 +10,7 @@ from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
-    from typing import Concatenate, ParamSpec, TypeVar
-
-    from typing_extensions import Self  # 3.11+
+    from typing import Concatenate, ParamSpec, Self, TypeVar
 
     from ..core import Construct
     from .hex import HexString

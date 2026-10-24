@@ -45,8 +45,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from collections.abc import Container as TContainer
     from types import TracebackType
-
-    from typing_extensions import Self  # 3.11+
+    from typing import Self
 
     from ..construct.lib.container import Container
 

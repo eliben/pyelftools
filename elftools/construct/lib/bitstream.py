@@ -6,10 +6,9 @@ from typing import IO, TYPE_CHECKING
 from .binary import decode_bin, encode_bin
 
 if TYPE_CHECKING:
-    from typing_extensions import (
-        Buffer,  # 3.12+
-        Self,  # 3.11+
-    )
+    from typing import Self
+
+    from typing_extensions import Buffer  # 3.12+
 
 
 class BitStream(io.RawIOBase, IO[bytes]):
