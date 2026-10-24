@@ -4,6 +4,7 @@
 # Kyle Zeng (zengyhkyle@asu.edu)
 # This code is in the public domain
 #------------------------------------------------------------------------------
+import io
 import os
 import unittest
 
@@ -167,6 +168,55 @@ class TestCoreNotes(unittest.TestCase):
         self.assertEqual(entry.vm_start, expected_vm_start)
         self.assertEqual(entry.vm_end, expected_vm_end)
         self.assertEqual(entry.page_offset, expected_page_offset)
+
+    def test_core_gnu_build_id(self):
+        # A core dump may contain standard GNU notes such as NT_GNU_BUILD_ID
+        # (note type 3, name 'GNU'). Verify that iter_notes does not confuse
+        # type 3 with NT_PRPSINFO (issue #656).
+        data = bytearray()
+        # ELF Header (32-bit little-endian ARM ET_CORE)
+        data.extend(b'\x7fELF\x01\x01\x01\x00' + b'\x00' * 8)
+        data.extend(b'\x04\x00')          # e_type = ET_CORE (4)
+        data.extend(b'\x28\x00')          # e_machine = EM_ARM (40)
+        data.extend(b'\x01\x00\x00\x00')  # e_version = 1
+        data.extend(b'\x00\x00\x00\x00')  # e_entry = 0
+        data.extend(b'\x34\x00\x00\x00')  # e_phoff = 52
+        data.extend(b'\x00\x00\x00\x00')  # e_shoff = 0
+        data.extend(b'\x00\x00\x00\x00')  # e_flags = 0
+        data.extend(b'\x34\x00')          # e_ehsize = 52
+        data.extend(b'\x20\x00')          # e_phentsize = 32
+        data.extend(b'\x01\x00')          # e_phnum = 1
+        data.extend(b'\x00\x00')          # e_shentsize = 0
+        data.extend(b'\x00\x00')          # e_shnum = 0
+        data.extend(b'\x00\x00')          # e_shstrndx = 0
+
+        # Program Header (PT_NOTE Segment)
+        data.extend(b'\x04\x00\x00\x00')  # p_type = PT_NOTE (4)
+        data.extend(b'\x54\x00\x00\x00')  # p_offset = 84
+        data.extend(b'\x54\x00\x00\x00')  # p_vaddr = 84
+        data.extend(b'\x54\x00\x00\x00')  # p_paddr = 84
+        data.extend(b'\x18\x00\x00\x00')  # p_filesz = 24
+        data.extend(b'\x18\x00\x00\x00')  # p_memsz = 24
+        data.extend(b'\x00\x00\x00\x00')  # p_flags = 0
+        data.extend(b'\x04\x00\x00\x00')  # p_align = 4
+
+        # Note Header (n_namesz=4, n_descsz=8, n_type=3)
+        data.extend(b'\x04\x00\x00\x00')  # n_namesz = 4
+        data.extend(b'\x08\x00\x00\x00')  # n_descsz = 8
+        data.extend(b'\x03\x00\x00\x00')  # n_type = 3
+        data.extend(b'GNU\x00')           # n_name = 'GNU'
+        data.extend(b'\xde\xad\xc0\xde\xde\xad\xc0\xde')  # 8-byte build ID
+
+        elf = ELFFile(io.BytesIO(data))
+        notes = []
+        for segment in elf.iter_segments():
+            if isinstance(segment, NoteSegment):
+                notes.extend(segment.iter_notes())
+
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0]['n_type'], 'NT_GNU_BUILD_ID')
+        self.assertEqual(notes[0]['n_name'], 'GNU')
+        self.assertEqual(notes[0]['n_desc'], 'deadc0dedeadc0de')
 
     @classmethod
     def tearDownClass(cls):
