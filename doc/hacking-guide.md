@@ -33,13 +33,16 @@ simple method of output comparison.
 
 This is implemented in `test/run_readelf_tests.py`, which runs the
 `scripts/readelf.py` script on a set of files with a variety of options,
-and compares its output with the system\'s installed `readelf`.
+and compares its output with GNU `readelf`. On Linux, the default is the
+bundled x86-64 executable in `test/external_tools/readelf`, falling back to
+`readelf` on `PATH` if the bundled file is absent.
 
-Failures in this test suite frequently result from minor differences in
-the output of `readelf`, which tends to change between versions. It may
-also depend on the system the tool is run on (I run it on 64-bit Ubuntu,
-x86-64). Take a look at the `READELF_PATH` variable in
-`test/run_readelf_tests.py` to get an idea of the binutils version used.
+Set the `READELF` environment variable to override this choice on any platform.
+For example, on a 32-bit or ARM Linux system, supply a native build:
+
+```sh
+READELF=/path/to/native/readelf python3 test/run_readelf_tests.py --parallel
+```
 
 ### Unit tests
 

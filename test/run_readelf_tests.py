@@ -27,18 +27,41 @@ testlog = logging.getLogger('run_tests')
 testlog.setLevel(logging.DEBUG)
 testlog.addHandler(logging.StreamHandler(sys.stdout))
 
-# Set the path for calling readelf. We carry our own version of readelf around,
-# because binutils tend to change its output even between daily builds of the
-# same minor release and keeping track is a headache.
-if platform.system() == "Darwin": # MacOS
-    READELF_PATH = 'greadelf'
-elif platform.system() == "Windows":
-    # Point the environment variable READELF at Cygwin's readelf.exe, or some other Windows build
-    READELF_PATH = os.environ.get('READELF', "readelf.exe")
-else:
-    READELF_PATH = 'test/external_tools/readelf'
-    if not os.path.exists(READELF_PATH):
-        READELF_PATH = 'readelf'
+
+def get_readelf_path():
+    """ Select readelf, allowing a native build to be supplied on any platform.
+    """
+    if 'READELF' in os.environ:
+        return os.environ['READELF']
+    if platform.system() == 'Darwin':
+        return 'greadelf'
+    if platform.system() == 'Windows':
+        return 'readelf.exe'
+    # Prefer our bundled version: binutils output varies between versions.
+    bundled = 'test/external_tools/readelf'
+    return bundled if os.path.exists(bundled) else 'readelf'
+
+
+READELF_PATH = get_readelf_path()
+
+
+def check_readelf():
+    """ Check that the selected executable runs before starting comparisons.
+    """
+    try:
+        rc, _ = run_exe(READELF_PATH, ['--version'])
+    except OSError as error:
+        reason = str(error)
+    else:
+        if rc == 0:
+            return True
+        reason = f'--version exited with status {rc}'
+
+    testlog.error(f'Cannot run readelf {READELF_PATH!r}: {reason}')
+    testlog.error(
+        'Set READELF to a GNU readelf executable built for this system. '
+        'See test/external_tools/README.txt for the expected binutils version.')
+    return False
 
 
 def discover_testfiles(rootdir):
@@ -296,6 +319,9 @@ def main():
         action='store', dest='opt', metavar='<readelf-option>',
         help= 'Limit the test one one readelf option.')
     args = argparser.parse_args()
+
+    if not check_readelf():
+        return 1
 
     if args.parallel and (args.verbose or not args.keep_going):
         print('WARNING: parallel mode disables verbosity and always keeps going')
