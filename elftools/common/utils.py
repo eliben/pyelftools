@@ -16,7 +16,7 @@ from ..construct import ConstructError
 from .exceptions import DWARFError, ELFError, ELFParseError
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Generator, Mapping
 
     from ..construct import Construct, FormatField
     from ..dwarf.dwarfinfo import DebugSectionDescriptor
@@ -95,7 +95,7 @@ def dwarf_assert(cond: object, msg: str = '') -> None:
 
 
 @contextmanager
-def preserve_stream_pos(stream: IO[bytes]) -> Iterator[None]:
+def preserve_stream_pos(stream: IO[bytes]) -> Generator[None, None, None]:
     """ Usage:
         # stream has some position FOO (return value of stream.tell())
         with preserve_stream_pos(stream):
