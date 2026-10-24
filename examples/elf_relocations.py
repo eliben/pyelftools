@@ -32,7 +32,7 @@ def process_file(filename):
         for reloc in reladyn.iter_relocations():
             print('    Relocation ({})'.format('RELA') if reloc.is_RELA() else 'REL')
             # Relocation entry attributes are available through item lookup
-            print('      offset = {}'.format(reloc['r_offset']))
+            print(f"      offset = {reloc['r_offset']:#x}")
 
 
 if __name__ == '__main__':
