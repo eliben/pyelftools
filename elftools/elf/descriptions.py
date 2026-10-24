@@ -26,6 +26,7 @@ from .enums import (
     ENUM_RELOC_TYPE_MIPS,
     ENUM_RELOC_TYPE_PPC,
     ENUM_RELOC_TYPE_PPC64,
+    ENUM_RELOC_TYPE_RISCV,
     ENUM_RELOC_TYPE_S390X,
     ENUM_SH_TYPE_BASE,
     ENUM_RELOC_TYPE_i386,
@@ -184,6 +185,8 @@ def describe_reloc_type(x: int, elffile: ELFFile) -> str:
         return _DESCR_RELOC_TYPE_MIPS.get(x, _unknown)
     elif arch == 'LoongArch':
         return _DESCR_RELOC_TYPE_LOONGARCH.get(x, _unknown)
+    elif arch == 'RISC-V':
+        return _DESCR_RELOC_TYPE_RISCV.get(x, _unknown)
     else:
         return f'unrecognized: {x & 4294967295:-7x}'
 
@@ -751,6 +754,7 @@ _DESCR_RELOC_TYPE_PPC = _reverse_dict(ENUM_RELOC_TYPE_PPC)
 _DESCR_RELOC_TYPE_S390X = _reverse_dict(ENUM_RELOC_TYPE_S390X)
 _DESCR_RELOC_TYPE_MIPS = _reverse_dict(ENUM_RELOC_TYPE_MIPS)
 _DESCR_RELOC_TYPE_LOONGARCH = _reverse_dict(ENUM_RELOC_TYPE_LOONGARCH)
+_DESCR_RELOC_TYPE_RISCV = _reverse_dict(ENUM_RELOC_TYPE_RISCV)
 
 _low_priority_D_TAG = (
     # these are 'meta-tags' marking semantics of numeric ranges of the enum
