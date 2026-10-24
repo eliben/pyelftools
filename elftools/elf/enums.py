@@ -640,16 +640,20 @@ ENUM_D_TAG_AARCH64: Mapping[str, int] = dict(
     DT_AARCH64_BTI_PLT=0x70000001,
 )
 
+ENUM_D_TAG_PPC: Mapping[str, int] = dict(
+    DT_PPC_GOT=0x70000000,
+)
+
 # Here is the mapping from e_machine enum to the extra dynamic tags which it
 # validates. Solaris is missing from this list because its inclusion is not
 # controlled by e_machine but rather e_ident[EI_OSABI].
-# TODO: add the rest of the machine-specific dynamic tags, not just mips and
-# solaris
+# TODO: add the remaining machine-specific dynamic tags.
 
 ENUMMAP_EXTRA_D_TAG_MACHINE: Mapping[str, Mapping[str, int]] = dict(
     EM_MIPS=ENUM_D_TAG_MIPS,
     EM_MIPS_RS3_LE=ENUM_D_TAG_MIPS,
-    EM_AARCH64=ENUM_D_TAG_AARCH64
+    EM_AARCH64=ENUM_D_TAG_AARCH64,
+    EM_PPC=ENUM_D_TAG_PPC,
 )
 
 # Here is the full combined mapping from tag name to value
