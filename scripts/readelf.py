@@ -89,6 +89,7 @@ from elftools.elf.gnuversions import (
 )
 from elftools.elf.relocation import RelocationSection
 from elftools.elf.sections import (
+    ARMAttribute,
     NoteSection,
     SymbolTableIndexSection,
     SymbolTableSection,
@@ -1861,7 +1862,8 @@ class ReadElf:
 
                 for attr in ss.iter_attributes():
                     self._emit('  ')
-                    self._emitline(descriptor(attr.tag, attr.value, attr.extra))
+                    vendor_name = attr.vendor_name if isinstance(attr, ARMAttribute) else None
+                    self._emitline(descriptor(attr.tag, attr.value, vendor_name))
 
     def _display_arch_specific_arm(self) -> None:
         """ Display the ARM architecture-specific info contained in the file.

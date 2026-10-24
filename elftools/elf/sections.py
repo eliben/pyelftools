@@ -339,7 +339,8 @@ class Attribute:
 
     def __init__(self, structs: ELFStructs, stream: IO[bytes]) -> None:
         self._tag = self._parse(structs, stream)
-        self.extra: Any | None = None
+        # Section/symbol indices for TAG_SECTION/TAG_SYMBOL; otherwise None.
+        self.extra: list[int] | None = None
 
     @classmethod
     def _parse(cls, structs: ELFStructs, stream: IO[bytes]) -> Container:
@@ -516,6 +517,9 @@ class AttributesSection(Section):
 
 class ARMAttribute(Attribute):
     """ ARM attribute object - representing a build attribute of ARM ELF files.
+
+        vendor_name holds the vendor for TAG_COMPATIBILITY, or None for other
+        tags.
     """
 
     @classmethod
@@ -524,12 +528,13 @@ class ARMAttribute(Attribute):
 
     def __init__(self, structs: ELFStructs, stream: IO[bytes]) -> None:
         super().__init__(structs, stream)
+        self.vendor_name: str | None = None
 
         if self.tag in ('TAG_FILE', 'TAG_SECTION', 'TAG_SYMBOL'):
             self.value = struct_parse(structs.Elf_word('value'), stream)
 
             if self.tag != 'TAG_FILE':
-                self.extra: list[int] = []
+                self.extra = []
                 s_number: int = struct_parse(structs.Elf_uleb128('s_number'), stream)
 
                 while s_number != 0:
@@ -544,9 +549,8 @@ class ARMAttribute(Attribute):
 
         elif self.tag == 'TAG_COMPATIBILITY':
             self.value = struct_parse(structs.Elf_uleb128('value'), stream)
-            self.extra = struct_parse(structs.Elf_ntbs('vendor_name',
-                                                       encoding='utf-8'),
-                                      stream)
+            self.vendor_name = struct_parse(
+                structs.Elf_ntbs('vendor_name', encoding='utf-8'), stream)
 
         elif self.tag == 'TAG_ALSO_COMPATIBLE_WITH':
             self.value = ARMAttribute(structs, stream)
@@ -558,6 +562,10 @@ class ARMAttribute(Attribute):
 
         else:
             self.value = struct_parse(structs.Elf_uleb128('value'), stream)
+
+    def __repr__(self) -> str:
+        s = super().__repr__()
+        return s + f' {self.vendor_name}' if self.vendor_name is not None else s
 
 
 class ARMAttributesSubsubsection(AttributesSubsubsection):
@@ -593,7 +601,7 @@ class RISCVAttribute(Attribute):
             self.value = struct_parse(structs.Elf_word('value'), stream)
 
             if self.tag != 'TAG_FILE':
-                self.extra: list[int] = []
+                self.extra = []
                 s_number: int = struct_parse(structs.Elf_uleb128('s_number'), stream)
 
                 while s_number != 0:

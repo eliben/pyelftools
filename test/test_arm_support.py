@@ -40,9 +40,24 @@ class TestARMSupport(unittest.TestCase):
 
             for i in subsubsec.iter_attributes('TAG_CPU_NAME'):
                 self.assertEqual(i.value, 'ARM7TDMI-S')
+                self.assertIsNone(i.vendor_name)
 
             for i in subsubsec.iter_attributes('TAG_CPU_ARCH'):
                 self.assertEqual(i.value, 2)
+
+    def test_compatibility_attribute(self):
+        with open(os.path.join('test', 'testfiles_for_readelf',
+                               'arm-eabi-attr-names.o.elf'), 'rb') as f:
+            elf = ELFFile(f)
+            sec = elf.get_section_by_name('.ARM.attributes')
+            subsubsec = sec.subsections[0].subsubsections[0]
+            attrs = list(subsubsec.iter_attributes('TAG_COMPATIBILITY'))
+            self.assertEqual(len(attrs), 1)
+            attr = attrs[0]
+            self.assertEqual(attr.value, 1)
+            self.assertEqual(attr.vendor_name, 'gnu')
+            self.assertIsNone(attr.extra)
+            self.assertEqual(repr(attr), '<ARMAttribute (TAG_COMPATIBILITY): 1> gnu')
 
     def test_DWARF_indirect_forms(self):
         # This file uses a lot of DW_FORM_indirect, and is also an ARM ELF
