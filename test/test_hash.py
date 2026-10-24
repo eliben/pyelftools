@@ -110,6 +110,20 @@ class TestGNUHash(unittest.TestCase):
             self.assertIsNotNone(symbol_f1)
             self.assertEqual(symbol_f1['st_value'], 0x9a2)
 
+    def test_get_symbol_hash_collision(self):
+        path = os.path.join('test', 'testfiles_for_unittests',
+                            'gnu_hash_collision.so.elf')
+        with open(path, 'rb') as f:
+            elf = ELFFile(f)
+            hash_section = elf.get_section_by_name('.gnu.hash')
+            # Both names have the same GNU hash, so lookup must continue
+            # along the chain after a candidate's name does not match.
+            for name in ('ab', 'bA'):
+                with self.subTest(name=name):
+                    symbol = hash_section.get_symbol(name)
+                    self.assertIsNotNone(symbol)
+                    self.assertEqual(symbol.name, name)
+
     def test_get_symbol_big_endian(self):
         """ Verify we can get a specific symbol from a GNU hash section in a
             big-endian file.
