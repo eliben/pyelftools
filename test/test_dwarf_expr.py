@@ -6,7 +6,11 @@
 #-------------------------------------------------------------------------------
 import unittest
 
-from elftools.dwarf.descriptions import ExprDumper, set_global_machine_arch
+from elftools.dwarf.descriptions import (
+    ExprDumper,
+    describe_reg_name,
+    set_global_machine_arch,
+)
 from elftools.dwarf.dwarf_expr import DWARFExprOp, DWARFExprParser
 from elftools.dwarf.structs import DWARFStructs
 
@@ -59,6 +63,20 @@ class TestExprDumper(unittest.TestCase):
         self.assertIn(self.visitor.dump_expr([0x08, 0x0f, 0xe0]),
                       ('DW_OP_const1u: 15; DW_OP_GNU_push_tls_address',
                        'DW_OP_const1u: 15; DW_OP_lo_user'))
+
+    def test_riscv_registers(self):
+        set_global_machine_arch('RISC-V')
+        self.addCleanup(set_global_machine_arch, 'x64')
+        self.assertEqual(
+            self.visitor.dump_expr([0x5a, 0x72, 8, 0x90, 42, 0x90, 96]),
+            'DW_OP_reg10 (a0); DW_OP_breg2 (sp): 8; '
+            'DW_OP_regx: 42 (fa0); DW_OP_regx: 96 (v0)')
+
+        # Reserved and unmapped numbers retain the usual numeric fallback.
+        for regnum in (-1, 64, 95, 128, 8192):
+            with self.subTest(regnum=regnum):
+                self.assertEqual(describe_reg_name(regnum), f'r{regnum}')
+                self.assertIsNone(describe_reg_name(regnum, 'RISC-V', default=False))
 
 
 class TestParseExpr(unittest.TestCase):

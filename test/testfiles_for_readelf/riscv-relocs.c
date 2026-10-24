@@ -1,5 +1,5 @@
 /*
- * riscv64-linux-gnu-gcc -c -O2 -g -gdwarf-5 relocs.c -o relocs.o
+ * riscv64-linux-gnu-gcc -c -O2 -g -gdwarf-5 riscv-relocs.c -o riscv-relocs.o.elf
  *
  * Built with GCC 14.2.0 and binutils 2.44 from Debian trixie.
  */
