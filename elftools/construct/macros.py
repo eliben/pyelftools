@@ -39,8 +39,7 @@ from .lib import BitStreamReader, BitStreamWriter, Container, decode_bin, encode
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Hashable, Mapping
-
-    from typing_extensions import Unpack  # Py3.11+
+    from typing import Unpack
 
     from .adapters import Adapter
     from .core import Construct, Subconstruct, _Pass

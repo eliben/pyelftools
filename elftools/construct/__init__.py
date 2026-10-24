@@ -67,8 +67,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from typing_extensions import ParamSpec
+    from typing import ParamSpec
 
     _P = ParamSpec("_P")
     _T = TypeVar("_T")
