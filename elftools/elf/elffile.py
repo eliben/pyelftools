@@ -331,10 +331,6 @@ class ELFFile:
                          '.debug_sup', '.gnu_debugaltlink', '.debug_types',
                          ]
 
-        compressed = self.has_section('.zdebug_info')
-        if compressed:
-            section_names = [f'.z{s[1:]}' for s in section_names]
-
         # As it is loaded in the process image, .eh_frame cannot be compressed
         section_names.append('.eh_frame')
 
@@ -349,13 +345,19 @@ class ELFFile:
         debug_sections: dict[str, DebugSectionDescriptor | None] = {}
         for secname in section_names:
             section = self.get_section_by_name(secname)
+            compressed = False
+            if section is None and secname.startswith('.debug_'):
+                # GNU-style compressed section. A section that compression
+                # would not make smaller keeps its .debug_ name.
+                section = self.get_section_by_name(f'.z{secname[1:]}')
+                compressed = section is not None
             if section is None:
                 debug_sections[secname] = None
             else:
                 dwarf_section = self._read_dwarf_section(
                     section,
                     relocate_dwarf_sections)
-                if compressed and secname.startswith('.z'):
+                if compressed:
                     dwarf_section = self._decompress_dwarf_section(dwarf_section)
                 debug_sections[secname] = dwarf_section
 
