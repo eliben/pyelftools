@@ -37,7 +37,7 @@ class Segment:
     @overload
     def __getitem__(self, name: Literal["p_filesz", "p_memsz", "p_offset", "p_vaddr"]) -> int: ...
     @overload
-    def __getitem__(self, name: Literal["p_type"]) -> str: ...
+    def __getitem__(self, name: Literal["p_type"]) -> str | int: ...
     @overload
     def __getitem__(self, name: str) -> Any: ...
     def __getitem__(self, name: str) -> Any:
@@ -53,8 +53,8 @@ class Segment:
             elf/include/internal.h in the source of binutils.
         """
         # Only the 'strict' checks from ELF_SECTION_IN_SEGMENT_1 are included
-        segtype: str = self['p_type']
-        sectype: str = section['sh_type']
+        segtype = self['p_type']
+        sectype = section['sh_type']
         secflags: int = section['sh_flags']
 
         # Only PT_LOAD, PT_GNU_RELRO and PT_TLS segments can contain SHF_TLS

@@ -3,6 +3,10 @@
 #
 # Mappings of enum names to values
 #
+# Enums with _default_=Pass decode recognized values to names (str) and
+# preserve unrecognized values as integers. This lets callers inspect files
+# containing newer or vendor-specific values without losing the raw value.
+#
 # Eli Bendersky (eliben@gmail.com)
 # This code is in the public domain
 #-------------------------------------------------------------------------------

@@ -11,7 +11,7 @@ from __future__ import annotations
 import zlib
 from collections import defaultdict
 from functools import cached_property
-from typing import IO, TYPE_CHECKING, Any, Literal, overload
+from typing import IO, TYPE_CHECKING, Any, Literal, cast, overload
 
 from elftools.construct.lib.container import Container
 
@@ -49,7 +49,7 @@ class Section:
             header = struct_parse(self.structs.Elf_Chdr,
                                   self.stream,
                                   stream_pos=self['sh_offset'])
-            self._compression_type: str = header['ch_type']
+            self._compression_type: str | int = header['ch_type']
             self._decompressed_size: int = header['ch_size']
             self._decompressed_align: int = header['ch_addralign']
         else:
@@ -130,7 +130,7 @@ class Section:
     @overload
     def __getitem__(self, name: Literal["sh_addr", "sh_entsize", "sh_flags", "sh_offset", "sh_size"]) -> int: ...
     @overload
-    def __getitem__(self, name: Literal["st_name", "sh_type"]) -> str: ...
+    def __getitem__(self, name: Literal["sh_type"]) -> str | int: ...
     @overload
     def __getitem__(self, name: str) -> Any: ...
     def __getitem__(self, name: str) -> Any:
@@ -348,7 +348,9 @@ class Attribute:
 
     @property
     def tag(self) -> str:
-        return self._tag['tag']
+        # ARM and RISC-V attribute enums reject unknown values rather than
+        # passing them through, so these tags are always symbolic names.
+        return cast(str, self._tag['tag'])
 
     def __repr__(self) -> str:
         s = f'<{self.__class__.__name__} ({self.tag}): {self.value!r}>'

@@ -145,6 +145,18 @@ by printing the `header` attribute (when it exists, it\'s mentioned as a
 publicly accessible attribute in the documentation string of the
 relevant class).
 
+Enum fields such as `e_machine`, `sh_type`, `p_type`, and `d_tag` return
+symbolic names (`str`) for recognized values and the original numbers
+(`int`) for unrecognized ones. For example, `elffile['e_machine']` may be
+`'EM_X86_64'` or an unknown machine number. Check `isinstance(value, str)`
+before using string operations on these fields.
+
+This behavior, enabled by `_default_=Pass` in `elftools/elf/enums.py`,
+allows inspection of files containing newer or vendor-specific values.
+An unrecognized value does not necessarily mean the file is invalid.
+Fields needed to determine the file's layout, such as ELF class and byte
+order, still require recognized values.
+
 In addition, it\'s possible to see how these headers are parsed in the
 parts of **pyelftools** which define \"structs\". For ELF this is in
 `elftools/elf/structs.py`, and for DWARF this is in

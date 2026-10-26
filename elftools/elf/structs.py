@@ -92,14 +92,14 @@ class ELFStructs:
         assert elfclass == 32 or elfclass == 64
         self.little_endian = little_endian
         self.elfclass = elfclass
-        self.e_type: str | None = None  # e.ENUM_E_TYPE
-        self.e_machine: str | None = None  # e.ENUM_E_MACHINE
-        self.e_ident_osabi: str | None = None  # e.ENUM_E_VERSION
+        self.e_type: str | int | None = None  # e.ENUM_E_TYPE
+        self.e_machine: str | int | None = None  # e.ENUM_E_MACHINE
+        self.e_ident_osabi: str | int | None = None  # e.ENUM_EI_OSABI
 
-    def __getstate__(self) -> tuple[bool, int, str | None, str | None, str | None]:
+    def __getstate__(self) -> tuple[bool, int, str | int | None, str | int | None, str | int | None]:
         return self.little_endian, self.elfclass, self.e_type, self.e_machine, self.e_ident_osabi
 
-    def __setstate__(self, state: tuple[bool, int, str | None, str | None, str | None]) -> None:
+    def __setstate__(self, state: tuple[bool, int, str | int | None, str | int | None, str | int | None]) -> None:
         self.little_endian, self.elfclass, e_type, e_machine, e_osabi = state
         self.create_basic_structs()
         self.create_advanced_structs(e_type, e_machine, e_osabi)
@@ -132,7 +132,12 @@ class ELFStructs:
         self._create_leb128()
         self._create_ntbs()
 
-    def create_advanced_structs(self, e_type: str | None = None, e_machine: str | None = None, e_ident_osabi: str | None = None) -> None:
+    def create_advanced_structs(
+        self,
+        e_type: str | int | None = None,
+        e_machine: str | int | None = None,
+        e_ident_osabi: str | int | None = None,
+    ) -> None:
         """ Create all ELF structs except the ehdr. They may possibly depend
             on provided e_type and/or e_machine parsed from ehdr.
         """
@@ -335,7 +340,7 @@ class ELFStructs:
     def _create_dyn(self) -> None:
         d_tag_dict = dict(e.ENUM_D_TAG_COMMON)
         if self.e_machine in e.ENUMMAP_EXTRA_D_TAG_MACHINE:
-            assert self.e_machine is not None
+            assert isinstance(self.e_machine, str)
             d_tag_dict.update(e.ENUMMAP_EXTRA_D_TAG_MACHINE[self.e_machine])
         elif self.e_ident_osabi == 'ELFOSABI_SOLARIS':
             d_tag_dict.update(e.ENUM_D_TAG_SOLARIS)

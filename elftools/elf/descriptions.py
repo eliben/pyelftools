@@ -52,18 +52,18 @@ def describe_ei_data(x: str) -> str:
     return _DESCR_EI_DATA.get(x, _unknown)
 
 
-def describe_ei_version(x: str) -> str:
+def describe_ei_version(x: str | int) -> str:
     s = str(ENUM_E_VERSION.get(x, f"{x} <unknown>"))
     if x == 'EV_CURRENT':
         s += ' (current)'
     return s
 
 
-def describe_ei_osabi(x: str) -> str:
+def describe_ei_osabi(x: str | int) -> str:
     return _DESCR_EI_OSABI.get(x, _unknown)
 
 
-def describe_e_type(x: str, elffile: ELFFile | None = None) -> str:
+def describe_e_type(x: str | int, elffile: ELFFile | None = None) -> str:
     if elffile is not None and x == 'ET_DYN':
         # Detect whether this is a normal SO or a PIE executable
         dynamic = elffile.get_section_by_name('.dynamic')
@@ -75,11 +75,11 @@ def describe_e_type(x: str, elffile: ELFFile | None = None) -> str:
     return _DESCR_E_TYPE.get(x, _unknown)
 
 
-def describe_e_machine(x: str) -> str:
+def describe_e_machine(x: str | int) -> str:
     return _DESCR_E_MACHINE.get(x, _unknown)
 
 
-def describe_e_version_numeric(x: str) -> str:
+def describe_e_version_numeric(x: str | int) -> str:
     return f"{ENUM_E_VERSION.get(x, x):#x}"
 
 
@@ -138,11 +138,11 @@ def describe_sh_flags(x: int) -> str:
     return s
 
 
-def describe_symbol_type(x: str) -> str:
+def describe_symbol_type(x: str | int) -> str:
     return _DESCR_ST_INFO_TYPE.get(x, _unknown)
 
 
-def describe_symbol_bind(x: str, elffile: ELFFile | None = None) -> str:
+def describe_symbol_bind(x: str | int, elffile: ELFFile | None = None) -> str:
     if x == 'STB_LOOS':
         # STB_GNU_UNIQUE shares value 10 with STB_LOOS, but only has its GNU
         # meaning when the file uses the GNU/Linux OS ABI.
@@ -152,7 +152,7 @@ def describe_symbol_bind(x: str, elffile: ELFFile | None = None) -> str:
     return _DESCR_ST_INFO_BIND.get(x, _unknown)
 
 
-def describe_symbol_visibility(x: str) -> str:
+def describe_symbol_visibility(x: str | int) -> str:
     return _DESCR_ST_VISIBILITY.get(x, _unknown)
 
 
@@ -225,7 +225,7 @@ def describe_syminfo_flags(x: int) -> str:
         SUNW_SYMINFO_FLAGS.SYMINFO_FLG_DEFERRED) if x & flag)
 
 
-def describe_symbol_boundto(x: str) -> str:
+def describe_symbol_boundto(x: str | int) -> str:
     return _DESCR_SYMINFO_BOUNDTO.get(x, f'{x:>3}')
 
 
@@ -236,7 +236,7 @@ def describe_ver_flags(x: int) -> str:
         VER_FLAGS.VER_FLG_INFO) if x & flag)
 
 
-def describe_note(x: Container, machine: str) -> str:
+def describe_note(x: Container, machine: str | int) -> str:
     n_desc = x['n_desc']
     desc = ''
     if x['n_type'] == 'NT_GNU_ABI_TAG':
@@ -312,7 +312,7 @@ def describe_note_gnu_property_bitmap_and(
     ]
     return '{}: {}'.format(prefix, ', '.join(descs))
 
-def describe_note_gnu_properties(properties: list[Container], machine: str) -> str:
+def describe_note_gnu_properties(properties: list[Container], machine: str | int) -> str:
     descriptions = []
     for prop in properties:
         t: str | int = prop.pr_type
