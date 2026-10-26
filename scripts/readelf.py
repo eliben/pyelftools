@@ -16,7 +16,7 @@ import re
 import sys
 import traceback
 from functools import cached_property
-from typing import IO, TYPE_CHECKING, TypedDict
+from typing import IO, TYPE_CHECKING
 
 # For running from development directory. It should take precedence over the
 # installed pyelftools.
@@ -101,18 +101,6 @@ if TYPE_CHECKING:
     from elftools.dwarf.compileunit import CompileUnit
     from elftools.dwarf.dwarfinfo import DWARFInfo
     from elftools.elf.sections import Section
-
-    class VersionInfo(TypedDict):
-        versym: GNUVerSymSection | None
-        verdef: GNUVerDefSection | None
-        verneed: GNUVerNeedSection | None
-        type: str | None
-
-    class SymbolVersion(TypedDict):
-        index: str | int | None
-        name: str | None
-        filename: str | None
-        hidden: bool | None
 
 
 def _get_cu_base(cu: CompileUnit):
@@ -492,13 +480,14 @@ class ReadElf:
             else: # 64
                 self._emitline('   Num:    Value          Size Type    Bind   Vis      Ndx Name')
 
+            versym = self._version_sections.get(section_index)
             for nsym, symbol in enumerate(section.iter_symbols()):
                 version_info = ''
                 # readelf doesn't display version info for Solaris versioning
                 if (section['sh_type'] == 'SHT_DYNSYM' and
-                        self._versioninfo['type'] == 'GNU'):
-                    version = self._symbol_version(nsym)
-                    if (version['name'] != symbol.name and
+                        versym is not None and versym.is_gnu):
+                    version = versym.get_symbol_version(nsym)
+                    if (version is not None and version['name'] != symbol.name and
                         version['index'] not in ('VER_NDX_LOCAL',
                                                  'VER_NDX_GLOBAL')):
                         if version['filename']:
@@ -661,6 +650,7 @@ class ReadElf:
 
             # The symbol table section pointed to in sh_link
             symtable = self.elffile.get_section(section['sh_link'])
+            versym = self._version_sections.get(section['sh_link'])
 
             for rel in section.iter_relocations():
                 hexwidth = 8 if self.elffile.elfclass == 32 else 12
@@ -692,7 +682,8 @@ class ReadElf:
                         version = ''
                     else:
                         symbol_name = symbol.name
-                        version = self._symbol_version(rel['r_info_sym'])
+                        version = (versym.get_symbol_version(rel['r_info_sym'])
+                                   if versym is not None else None)
                         version = (version['name']
                                    if version and version['name'] else '')
                     symbol_name = f'{symbol_name:.22}'
@@ -761,11 +752,13 @@ class ReadElf:
     def display_version_info(self) -> None:
         """ Display the version info contained in the file
         """
-        if not self._versioninfo['type']:
+        sections = [section for section in self.elffile.iter_sections()
+                    if isinstance(section, (GNUVerSymSection, GNUVerDefSection, GNUVerNeedSection))]
+        if not sections:
             self._emitline("\nNo version information found in this file.")
             return
 
-        for section in self.elffile.iter_sections():
+        for section in sections:
             if isinstance(section, GNUVerSymSection):
                 self._print_version_section_header(section, 'Version symbols')
                 num_symbols = section.num_symbols()
@@ -777,7 +770,7 @@ class ReadElf:
 
                     for idx in range(idx_by_4, min(idx_by_4 + 4, num_symbols)):
 
-                        symbol_version = self._symbol_version(idx)
+                        symbol_version = section.get_symbol_version(idx)
                         if symbol_version['index'] == 'VER_NDX_LOCAL':
                             version_index = 0
                             version_name = '(*local*)'
@@ -1060,65 +1053,12 @@ class ReadElf:
         )
 
     @cached_property
-    def _versioninfo(self) -> VersionInfo:
-        """ Search and initialize informations about version related sections
-            and the kind of versioning used (GNU or Solaris).
+    def _version_sections(self) -> dict[int, GNUVerSymSection]:
+        """ Map symbol table section indices to their version symbol sections.
         """
-        info = {'versym': None, 'verdef': None,
-                             'verneed': None, 'type': None}
-
-        for section in self.elffile.iter_sections():
-            if isinstance(section, GNUVerSymSection):
-                info['versym'] = section
-            elif isinstance(section, GNUVerDefSection):
-                info['verdef'] = section
-            elif isinstance(section, GNUVerNeedSection):
-                info['verneed'] = section
-            elif isinstance(section, DynamicSection):
-                for tag in section.iter_tags():
-                    if tag['d_tag'] == 'DT_VERSYM':
-                        info['type'] = 'GNU'
-                        break
-
-        if not info['type'] and (info['verneed'] or info['verdef']):
-            info['type'] = 'Solaris'
-
-        return info
-
-    def _symbol_version(self, nsym: int) -> SymbolVersion | None:
-        """ Return a dict containing information on the
-            or None if no version information is available
-        """
-        symbol_version = dict.fromkeys(('index', 'name', 'filename', 'hidden'))
-
-        if (not self._versioninfo['versym'] or
-                nsym >= self._versioninfo['versym'].num_symbols()):
-            return None
-
-        symbol = self._versioninfo['versym'].get_symbol(nsym)
-        index = symbol.entry['ndx']
-        if index not in ('VER_NDX_LOCAL', 'VER_NDX_GLOBAL'):
-            index = int(index)
-
-            # In GNU versioning mode, the highest bit is used to
-            # store whether the symbol is hidden or not.
-            if self._versioninfo['type'] == 'GNU' and index & 0x8000:
-                index &= ~0x8000
-                symbol_version['hidden'] = True
-
-            if (self._versioninfo['verdef'] and
-                    index <= self._versioninfo['verdef'].num_versions()):
-                _, verdaux_iter = \
-                        self._versioninfo['verdef'].get_version(index)
-                symbol_version['name'] = next(verdaux_iter).name
-            else:
-                verneed, vernaux = \
-                        self._versioninfo['verneed'].get_version(index)
-                symbol_version['name'] = vernaux.name
-                symbol_version['filename'] = verneed.name
-
-        symbol_version['index'] = index
-        return symbol_version
+        return {section['sh_link']: section
+                for section in self.elffile.iter_sections()
+                if isinstance(section, GNUVerSymSection)}
 
     def _section_from_spec(self, spec: int | str) -> Section | None:
         """ Retrieve a section given a "spec" (either number or name).

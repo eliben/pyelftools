@@ -9,9 +9,11 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
+from ..common.exceptions import ELFError
 from ..common.utils import elf_assert, struct_parse
+from .dynamic import DynamicSection
 from .sections import Section, Symbol
 
 if TYPE_CHECKING:
@@ -21,6 +23,13 @@ if TYPE_CHECKING:
     from ..construct.lib.container import Container
     from .elffile import ELFFile
     from .sections import StringTableSection, SymbolTableSection
+
+
+class SymbolVersion(TypedDict):
+    index: str | int
+    name: str | None
+    filename: str | None
+    hidden: bool
 
 
 class Version:
@@ -257,6 +266,80 @@ class GNUVerSymSection(Section):
         # Find the symbol name in the associated symbol table
         name = self.symboltable.get_symbol(n).name
         return Symbol(entry, name)
+
+    @cached_property
+    def is_gnu(self) -> bool:
+        """ Whether this file uses GNU rather than Solaris versioning.
+            GNU versioning is identified by the DT_VERSYM dynamic tag.
+        """
+        return any(
+            tag['d_tag'] == 'DT_VERSYM'
+            for section in self.elffile.iter_sections()
+            if isinstance(section, DynamicSection)
+            for tag in section.iter_tags())
+
+    @cached_property
+    def _version_sections(self) -> list[GNUVerDefSection | GNUVerNeedSection]:
+        # Version definitions and requirements refer to the same string table
+        # as the symbol table linked by this versym section.
+        return [
+            section for section in self.elffile.iter_sections()
+            if isinstance(section, (GNUVerDefSection, GNUVerNeedSection))
+            and section['sh_link'] == self.symboltable['sh_link']]
+
+    def get_symbol_version(self, n: int) -> SymbolVersion | None:
+        """ Resolve the version of symbol #n in this section's symboltable.
+
+            Return a dict with index, name, filename, and hidden fields, or
+            None if n is outside the table. Local and unversioned global
+            symbols have indices 'VER_NDX_LOCAL' and 'VER_NDX_GLOBAL' and no
+            name or filename. For named versions, filename identifies the
+            dependency supplying the version, or is None for a definition
+            in this file. hidden is the GNU version-hidden bit, not ELF symbol
+            visibility; it is False for Solaris versioning.
+
+            Raise ELFError if a version index has no matching definition or
+            requirement. Resolving versions requires section headers.
+        """
+        if not 0 <= n < self.num_symbols():
+            return None
+
+        index = self.get_symbol(n)['ndx']
+        hidden = False
+        if isinstance(index, int) and self.is_gnu:
+            # GNU uses the high bit as a flag; the remaining bits are the
+            # index shared with the version definition/requirement tables.
+            hidden = bool(index & 0x8000)
+            index &= 0x7fff
+            if index == 0:
+                index = 'VER_NDX_LOCAL'
+            elif index == 1:
+                index = 'VER_NDX_GLOBAL'
+
+        result: SymbolVersion = {
+            'index': index, 'name': None, 'filename': None, 'hidden': hidden}
+        if index in ('VER_NDX_LOCAL', 'VER_NDX_GLOBAL'):
+            return result
+
+        # Look up the recorded index, which need not be consecutive or bounded
+        # by the number of definitions in the section.
+        for section in self._version_sections:
+            if isinstance(section, GNUVerDefSection):
+                definition = section.get_version(index)
+                if definition is None:
+                    continue
+                _, auxiliaries = definition
+                result['name'] = next(auxiliaries).name
+            else:
+                needed = section.get_version(index)
+                if needed is None:
+                    continue
+                requirement, auxiliary = needed
+                result['name'] = auxiliary.name
+                result['filename'] = requirement.name
+            return result
+
+        raise ELFError(f'No version definition or requirement for index {index}')
 
     def iter_symbols(self) -> Iterator[Symbol]:
         """ Yield all the symbols in the table

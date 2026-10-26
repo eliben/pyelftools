@@ -5,7 +5,9 @@
 # This code is in the public domain
 #------------------------------------------------------------------------------
 import os
+import struct
 import unittest
+from io import BytesIO
 from typing import ClassVar
 
 from elftools.elf.constants import VER_FLAGS
@@ -65,6 +67,63 @@ class TestSymbolVersioning(unittest.TestCase):
                                                    reference_data):
                 self.assertEqual(versym.name, ref_versym['name'])
                 self.assertEqual(versym['ndx'], ref_versym['ndx'])
+
+    def test_symbol_versions(self):
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'lib_versioned64.so.elf'), 'rb') as f:
+            elf = ELFFile(f)
+            versym = elf.get_section_by_name('.gnu.version')
+            self.assertTrue(versym.is_gnu)
+            for n, index, name, filename, hidden in (
+                    (0, 'VER_NDX_LOCAL', None, None, False),
+                    (11, 'VER_NDX_GLOBAL', None, None, False),
+                    (3, 5, 'GLIBC_2.2.5', 'libc.so.6', False),
+                    (5, 6, 'GLIBC_2.4', 'libc.so.6', False),
+                    (7, 7, 'ZLIB_1.2.3.5', 'libz.so.1', False),
+                    (15, 4, 'VER_1.2', None, True),
+                    (17, 2, 'VER_1.0', None, False),
+                    (23, 3, 'VER_1.1', None, False)):
+                with self.subTest(symbol=n):
+                    self.assertEqual(versym.get_symbol_version(n), {
+                        'index': index, 'name': name,
+                        'filename': filename, 'hidden': hidden})
+            self.assertIsNone(versym.get_symbol_version(-1))
+            self.assertIsNone(versym.get_symbol_version(versym.num_symbols()))
+
+    def test_sparse_version_indices(self):
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'lib_versioned64.so.elf'), 'rb') as f:
+            stream = BytesIO(f.read())
+        elf = ELFFile(stream)
+        verdef = elf.get_section_by_name('.gnu.version_d')
+        versym = elf.get_section_by_name('.gnu.version')
+
+        # Move definition 4 to index 42 without increasing the definition count.
+        offset = verdef['sh_offset']
+        for version, _ in verdef.iter_versions():
+            if version['vd_ndx'] == 4:
+                stream.seek(offset + 4)  # Elf_Verdef.vd_ndx
+                stream.write(struct.pack('<H', 42))
+                break
+            offset += version['vd_next']
+        stream.seek(versym['sh_offset'] + 15 * versym['sh_entsize'])
+        stream.write(struct.pack('<H', 42 | 0x8000))
+
+        self.assertEqual(versym.get_symbol_version(15), {
+            'index': 42, 'name': 'VER_1.2', 'filename': None, 'hidden': True})
+
+    def test_solaris_symbol_versions(self):
+        with open(os.path.join('test', 'testfiles_for_unittests',
+                               'exe_solaris32_cc.elf'), 'rb') as f:
+            elf = ELFFile(f)
+            versym = elf.get_section_by_name('.SUNW_versym')
+            self.assertFalse(versym.is_gnu)
+            self.assertEqual(versym.get_symbol_version(1), {
+                'index': 'VER_NDX_GLOBAL', 'name': None,
+                'filename': None, 'hidden': False})
+            self.assertEqual(versym.get_symbol_version(15), {
+                'index': 2, 'name': 'SYSVABI_1.3',
+                'filename': 'libc.so.1', 'hidden': False})
 
     verneed_reference_data: ClassVar = [
         {'name': 'libz.so.1', 'vn_version': 1, 'vn_cnt': 1,
