@@ -6,10 +6,11 @@
 #-------------------------------------------------------------------------------
 import os
 import unittest
+from io import BytesIO
 
 from elftools.common.exceptions import ELFError
 from elftools.elf.descriptions import _DESCR_D_TAG, _low_priority_D_TAG
-from elftools.elf.dynamic import DynamicTag
+from elftools.elf.dynamic import DynamicTag, _DynamicStringTable
 from elftools.elf.elffile import ELFFile
 from elftools.elf.enums import ENUM_D_TAG
 
@@ -35,6 +36,17 @@ class TestDynamicTag(unittest.TestCase):
 
 class TestDynamic(unittest.TestCase):
     """Tests for the Dynamic class."""
+
+    def test_stringtable_decoding(self):
+        # Match StringTableSection even when the ELF has no section headers.
+        for data, expected in (
+                (b'\0', ''),
+                (b'libc.so.6\0', 'libc.so.6'),
+                (b'lib\xc3\xa9.so\0', 'libé.so'),
+                (b'lib\xff.so\0', 'lib\ufffd.so')):
+            with self.subTest(data=data):
+                table = _DynamicStringTable(BytesIO(data), 0)
+                self.assertEqual(table.get_string(0), expected)
 
     def test_missing_sections(self):
         """Verify we can get dynamic strings w/out section headers"""

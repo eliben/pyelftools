@@ -57,7 +57,7 @@ class _DynamicStringTable:
         """ Get the string stored at the given offset in this string table.
         """
         s = parse_cstring_from_stream(self._stream, self._table_offset + offset)
-        return s.decode('utf-8') if s else ''
+        return s.decode('utf-8', errors='replace') if s else ''
 
 
 class DynamicTag:
