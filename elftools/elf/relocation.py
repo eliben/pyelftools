@@ -274,7 +274,12 @@ def _riscv_reloc_calc_sub6(value: int, sym_value: int, offset: int, addend: int 
 
 
 class RelocationHandler:
-    """ Handles the logic of relocations in ELF files.
+    """ Applies a supported subset of ELF relocations to section data,
+        primarily for reading DWARF sections.
+
+        Symbol values come directly from the linked symbol table's st_value
+        fields. This handler does not perform runtime symbol resolution,
+        account for load addresses, or implement general dynamic linking.
     """
     def __init__(self, elffile: ELFFile) -> None:
         self.elffile = elffile
@@ -301,9 +306,15 @@ class RelocationHandler:
         stream: IO[bytes],
         reloc_section: RelocationSection,
     ) -> None:
-        """ Apply all relocations in reloc_section (a RelocationSection object)
-            to the given stream, that contains the data of the section that is
-            being relocated. The stream is modified as a result.
+        """ Apply reloc_section's relocations in place to a stream containing
+            the target section's data, starting at stream offset 0. The stream
+            must support reading, writing, and seeking.
+
+            Each r_offset is used directly as a position within this stream,
+            matching section-relative offsets in relocatable (ET_REL) files.
+            The target section's offset within the ELF file is not added.
+            Virtual addresses in executable/shared-object dynamic relocations
+            are not translated to stream offsets by this API.
         """
         # The symbol table associated with this relocation section
         symtab = self.elffile.get_section(reloc_section['sh_link'])
@@ -390,8 +401,13 @@ class RelocationHandler:
             recipe = self._RELOCATION_RECIPES_RISCV.get(reloc_type, None)
 
         if recipe is None:
+            # Avoid a circular import through descriptions -> dynamic -> relocation.
+            from .descriptions import describe_reloc_type
+
+            name = describe_reloc_type(reloc_type, self.elffile)
+            detail = f'{reloc_type} ({name})' if name.startswith('R_') else str(reloc_type)
             raise ELFRelocationError(
-                    f'Unsupported relocation type: {reloc_type}')
+                    f'Unsupported relocation type: {detail} for {arch}')
 
         # So now we have everything we need to actually perform the relocation.
         # Let's get to it:

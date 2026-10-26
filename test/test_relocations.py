@@ -73,8 +73,25 @@ class TestRelocation(unittest.TestCase):
                 handler, symtab = self._make_handler(arch)
                 reloc = Relocation(Container(r_info_type=reloc_type, r_info_sym=0,
                                              r_offset=0, r_addend=0), handler.elffile)
-                with self.assertRaisesRegex(ELFRelocationError, 'Unsupported relocation type'):
+                with self.assertRaisesRegex(ELFRelocationError, 'Unsupported relocation type') as error:
                     handler._do_apply_relocation(BytesIO(), reloc, symtab)
+                self.assertIn(f'type: {reloc_type}', str(error.exception))
+                self.assertIn(f'for {arch}', str(error.exception))
+
+    def test_unsupported_dynamic_relocation(self):
+        # Issue #143: applying .rela.dyn requires dynamic-linker functionality
+        # that the section relocation handler does not provide.
+        path = os.path.join('test', 'testfiles_for_unittests', 'sample_exe64.elf')
+        with open(path, 'rb') as f:
+            elf = ELFFile(f)
+            data = elf.get_section_by_name('.got').data()
+            stream = BytesIO(data)
+            relocs = elf.get_section_by_name('.rela.dyn')
+            with self.assertRaisesRegex(
+                    ELFRelocationError,
+                    r'Unsupported relocation type: 6 \(R_X86_64_GLOB_DAT\) for x64'):
+                RelocationHandler(elf).apply_section_relocations(stream, relocs)
+            self.assertEqual(stream.getvalue(), data)
 
     def test_mips_composed_relocation_is_not_none(self):
         # MIPS64 has up to three operations in a single relocation entry.
