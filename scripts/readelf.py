@@ -560,43 +560,67 @@ class ReadElf:
 
             padding = 20 + (8 if self.elffile.elfclass == 32 else 0)
             for tag in section.iter_tags():
-                if tag.entry.d_tag == 'DT_NEEDED':
+                # Enum decoding returns a 'DT_*' string for a known tag and
+                # preserves an unknown tag as an int (_default_=Pass). Recover
+                # the number for the Tag column, keeping d_tag for dispatch.
+                d_tag = tag.entry.d_tag
+                tag_number = ENUM_D_TAG[d_tag] if isinstance(d_tag, str) else d_tag
+                # d_tag is stored as a signed 32- or 64-bit integer, but readelf
+                # prints its original bit pattern as unsigned hex. Masking to
+                # the ELF word size turns -1 into 0xffffffff (32-bit) or
+                # 0xffffffffffffffff (64-bit). Only the display value changes.
+                tag_number &= (1 << self.elffile.elfclass) - 1
+                if isinstance(d_tag, int):
+                    # Unknown tags have no symbolic name or known value
+                    # semantics. Match readelf's range-based label and raw hex
+                    # value, before reaching the string operations below.
+                    if ENUM_D_TAG['DT_LOOS'] <= tag_number <= ENUM_D_TAG['DT_HIOS']:
+                        tag_type = f'Operating System specific: {tag_number:x}'
+                    elif ENUM_D_TAG['DT_LOPROC'] <= tag_number <= ENUM_D_TAG['DT_HIPROC']:
+                        tag_type = f'Processor Specific: {tag_number:x}'
+                    else:
+                        tag_type = f'<unknown>: {tag_number:x}'
+                    parsed = f"{tag['d_val']:#x}"
+                elif d_tag == 'DT_NEEDED':
                     parsed = f'Shared library: [{tag.needed}]'
-                elif tag.entry.d_tag == 'DT_RPATH':
+                elif d_tag == 'DT_RPATH':
                     parsed = f'Library rpath: [{tag.rpath}]'
-                elif tag.entry.d_tag == 'DT_RUNPATH':
+                elif d_tag == 'DT_RUNPATH':
                     parsed = f'Library runpath: [{tag.runpath}]'
-                elif tag.entry.d_tag == 'DT_SONAME':
+                elif d_tag == 'DT_SONAME':
                     parsed = f'Library soname: [{tag.soname}]'
-                elif tag.entry.d_tag.endswith(('SZ', 'ENT')):
+                elif d_tag.endswith(('SZ', 'ENT')):
                     parsed = f"{int(tag['d_val'])} (bytes)"
-                elif tag.entry.d_tag == 'DT_FLAGS':
+                elif d_tag == 'DT_FLAGS':
                     parsed = describe_dt_flags(tag.entry.d_val)
-                elif tag.entry.d_tag == 'DT_FLAGS_1':
+                elif d_tag == 'DT_FLAGS_1':
                     parsed = f'Flags: {describe_dt_flags_1(tag.entry.d_val)}'
-                elif tag.entry.d_tag.endswith(('NUM', 'COUNT')):
+                elif d_tag.endswith(('NUM', 'COUNT')):
                     parsed = f"{int(tag['d_val'])}"
-                elif tag.entry.d_tag == 'DT_PLTREL':
+                elif d_tag == 'DT_PLTREL':
                     s = describe_dyn_tag(tag.entry.d_val)
                     s = s.removeprefix('DT_')
                     parsed = f'{s}'
-                elif tag.entry.d_tag == 'DT_MIPS_FLAGS':
+                elif d_tag == 'DT_MIPS_FLAGS':
                     parsed = describe_rh_flags(tag.entry.d_val)
-                elif tag.entry.d_tag in ('DT_MIPS_SYMTABNO',
-                                         'DT_MIPS_LOCAL_GOTNO'):
+                elif d_tag in ('DT_MIPS_SYMTABNO', 'DT_MIPS_LOCAL_GOTNO'):
                     parsed = str(tag.entry.d_val)
-                elif tag.entry.d_tag == 'DT_AARCH64_BTI_PLT':
+                elif d_tag == 'DT_AARCH64_BTI_PLT':
                     parsed = ''
                 else:
                     parsed = '{:#x}'.format(tag['d_val'])
 
+                # Known tags display their name without the 'DT_' prefix;
+                # unknown integers already received a descriptive label above.
+                if isinstance(d_tag, str):
+                    tag_type = d_tag[3:]
                 tag_value = self._format_hex(
-                    ENUM_D_TAG.get(tag.entry.d_tag, tag.entry.d_tag),
+                    tag_number,
                     fullhex=True,
                     lead0x=True,
                 )
                 self._emitline(
-                    f" {tag_value} {f'({tag.entry.d_tag[3:]})':<{padding}} {parsed}"
+                    f" {tag_value} {f'({tag_type})':<{padding}} {parsed}"
                 )
         if not has_dynamic_sections:
             self._emitline("\nThere is no dynamic section in this file.")
