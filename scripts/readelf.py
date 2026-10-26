@@ -528,12 +528,14 @@ class ReadElf:
                 symbol_shndx = describe_symbol_shndx(
                     self._get_symbol_shndx(symbol, nsym, section_index)
                 )
+                symbol_bind = describe_symbol_bind(
+                    symbol['st_info']['bind'], self.elffile)
                 self._emitline(
                     f"{nsym:6d}: "
                     f"{self._format_hex(symbol['st_value'], fullhex=True, lead0x=False)} "
                     f"{symbol_size} "
                     f"{describe_symbol_type(symbol['st_info']['type']):<7} "
-                    f"{describe_symbol_bind(symbol['st_info']['bind']):<6} "
+                    f"{symbol_bind:<6} "
                     f"{describe_symbol_other(symbol['st_other']):<7} "
                     f"{symbol_shndx:>4} "
                     f"{_format_symbol_name(symbol_name):.25}{version_info}"

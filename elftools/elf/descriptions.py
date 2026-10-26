@@ -142,7 +142,13 @@ def describe_symbol_type(x: str) -> str:
     return _DESCR_ST_INFO_TYPE.get(x, _unknown)
 
 
-def describe_symbol_bind(x: str) -> str:
+def describe_symbol_bind(x: str, elffile: ELFFile | None = None) -> str:
+    if x == 'STB_LOOS':
+        # STB_GNU_UNIQUE shares value 10 with STB_LOOS, but only has its GNU
+        # meaning when the file uses the GNU/Linux OS ABI.
+        if elffile is not None and elffile['e_ident']['EI_OSABI'] == 'ELFOSABI_LINUX':
+            return 'UNIQUE'
+        return '<OS specific>: 10'
     return _DESCR_ST_INFO_BIND.get(x, _unknown)
 
 
