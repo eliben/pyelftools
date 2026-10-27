@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 # value:
 #   The value parsed from the section and translated accordingly to the form
 #   (e.g. for a DW_FORM_strp it's the actual string taken from the string table)
+#   DW_FORM_block* and DW_FORM_exprloc values are bytes.
 #
 # raw_value:
 #   Raw value as parsed from the section - used for debugging and presentation
@@ -52,7 +53,7 @@ class AttributeValue(NamedTuple):
     name: str
     form: str
     value: Any
-    raw_value: int
+    raw_value: Any
     offset: int
     indirection_length: int
 

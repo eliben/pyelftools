@@ -5,11 +5,46 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------------
 import unittest
+from io import BytesIO
 
+from elftools.construct import ConstructError
 from elftools.dwarf.structs import DWARFStructs
 
 
 class TestDWARFStructs(unittest.TestCase):
+    def test_block_forms(self):
+        # Include NUL/high-bit bytes and a multi-byte ULEB128 length.
+        for little_endian in (True, False):
+            ds = DWARFStructs(little_endian=little_endian, dwarf_format=32, address_size=4)
+            byteorder = 'little' if little_endian else 'big'
+            for payload, uleb_length in (
+                (b'', b'\x00'),
+                (b'\x00\x80\xff', b'\x03'),
+                (bytes(range(129)), b'\x81\x01'),
+            ):
+                prefixes = {
+                    'DW_FORM_block1': len(payload).to_bytes(1, byteorder),
+                    'DW_FORM_block2': len(payload).to_bytes(2, byteorder),
+                    'DW_FORM_block4': len(payload).to_bytes(4, byteorder),
+                    'DW_FORM_block': uleb_length,
+                    'DW_FORM_exprloc': uleb_length,
+                }
+                for form, prefix in prefixes.items():
+                    with self.subTest(form=form, little_endian=little_endian, length=len(payload)):
+                        parser = ds.Dwarf_dw_form[form]
+                        stream = BytesIO(prefix + payload + b'\xaa')
+                        value = parser.parse_stream(stream)
+                        self.assertIsInstance(value, bytes)
+                        self.assertEqual(value, payload)
+                        self.assertEqual(stream.read(), b'\xaa')
+
+                        # Reject incomplete lengths and short payloads.
+                        with self.assertRaises(ConstructError):
+                            parser.parse(prefix[:-1])
+                        if payload:
+                            with self.assertRaises(ConstructError):
+                                parser.parse(prefix + payload[:-1])
+
     def test_lineprog_header(self):
         ds = DWARFStructs(little_endian=True, dwarf_format=32, address_size=4)
 

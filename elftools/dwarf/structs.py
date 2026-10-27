@@ -29,14 +29,17 @@ from ..construct import (
     CString,
     Embed,
     Enum,
+    Field,
     If,
     IfThenElse,
+    LengthValueAdapter,
     PrefixedArray,
     Rename,
     SBInt8,
     SBInt16,
     SBInt32,
     SBInt64,
+    Sequence,
     SLInt8,
     SLInt16,
     SLInt32,
@@ -60,7 +63,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Self
 
-    from ..construct.adapters import LengthValueAdapter
     from ..construct.lib.container import Container
 
 
@@ -544,11 +546,13 @@ class DWARFStructs:
             self.Dwarf_target_addr('address_range'))
 
     def _make_block_struct(self, length_field: Callable[[str], Construct]) -> LengthValueAdapter:
-        """ Create a struct for DW_FORM_block<size>
+        """ Parse DW_FORM_block* and DW_FORM_exprloc payloads as bytes.
         """
-        return PrefixedArray(
-                    subcon=self.Dwarf_uint8('elem'),
-                    length_field=length_field(''))
+        # Read the block as raw bytes, without decoding text or creating an
+        # integer list. The length prefix is not part of the returned value.
+        return LengthValueAdapter(Sequence('',
+            length_field('length'),
+            Field('data', lambda ctx: ctx.length)))
 
     def _create_loclists_parsers(self) -> None:
         """ Create a struct for debug_loclists CU header, DWARFv5, 7,29

@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 class LocationExpr(NamedTuple):
-    loc_expr: list[int]
+    loc_expr: bytes
 
 
 class LocationEntry(NamedTuple):
