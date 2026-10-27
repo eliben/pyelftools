@@ -96,7 +96,7 @@ def describe_CFI_instructions(entry: CFIEntry) -> str:
             case DW_CFA.restore | DW_CFA.restore_extended | DW_CFA.undefined | DW_CFA.same_value | DW_CFA.def_cfa_register:
                 s += f'  {name}: {_full_reg_name(instr.args[0])}\n'
             case DW_CFA.register:
-                s += f'  {name}: {_full_reg_name(instr.args[0])} in {_full_reg_name(instr.args[1])}'
+                s += f'  {name}: {_full_reg_name(instr.args[0])} in {_full_reg_name(instr.args[1])}\n'
             case DW_CFA.set_loc:
                 pc = instr.args[0]
                 assert pc is not None

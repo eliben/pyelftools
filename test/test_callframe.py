@@ -155,6 +155,27 @@ class TestCallFrame(unittest.TestCase):
             (   '  DW_CFA_def_cfa: r7 (edi) ofs 2\n'
                 '  DW_CFA_expression: r2 (edx) (DW_OP_addr: 201; DW_OP_deref; DW_OP_deref)\n'))
 
+    def test_describe_CFI_register(self):
+        # A single CIE whose DW_CFA_register is followed by another instruction
+        s = BytesIO(
+            b'\x11\x00\x00\x00'        # length
+            b'\xff\xff\xff\xff'        # CIE_id
+            b'\x03\x00\x04\x7c'        # version, augmentation, caf, daf
+            b'\x08'                    # return address
+            b'\x0c\x07\x02'            # DW_CFA_def_cfa: r7 ofs 2
+            b'\x09\x08\x01'            # DW_CFA_register: r8 in r1
+            b'\x08\x07')               # DW_CFA_same_value: r7
+
+        structs = DWARFStructs(little_endian=True, dwarf_format=32, address_size=4)
+        cfi = CallFrameInfo(s, len(s.getbuffer()), 0, structs)
+        entries = cfi.get_entries()
+
+        set_global_machine_arch('x86')
+        self.assertEqual(describe_CFI_instructions(entries[0]),
+            (   '  DW_CFA_def_cfa: r7 (edi) ofs 2\n'
+                '  DW_CFA_register: r8 (eip) in r1 (ecx)\n'
+                '  DW_CFA_same_value: r7 (edi)\n'))
+
     def test_CFIEntry_get_decoded(self):
         oracle_decoded = DecodedCallFrameTable(
             table = [
