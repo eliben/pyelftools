@@ -140,8 +140,8 @@ def describe_CFI_register_rule(rule: RegisterRule) -> str:
         s += f'{int(rule.arg):+}'
     elif rule.type == 'REGISTER':
         assert isinstance(rule.arg, int)
-        reg = describe_reg_name(rule.arg)
-        s += reg
+        reg = describe_reg_name(rule.arg, _MACHINE_ARCH, False)
+        s += f'r{rule.arg}' + (f' ({reg})' if reg else '')
     return s
 
 
