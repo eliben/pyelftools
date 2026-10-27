@@ -3,5 +3,8 @@ Processing file: ./examples/sample_exe64.elf
   Found a compile unit at offset 119, length 135
   Found a compile unit at offset 258, length 156
   Found a compile unit at offset 418, length 300
-   DIE DW_TAG_lexical_block. attr DW_AT_ranges.
-[RangeEntry(entry_offset=0, entry_length=16, begin_offset=26, end_offset=40, is_absolute=False), RangeEntry(entry_offset=16, entry_length=16, begin_offset=85, end_offset=118, is_absolute=False), RangeEntry(entry_offset=32, entry_length=16, begin_offset=73, end_offset=77, is_absolute=False), RangeEntry(entry_offset=48, entry_length=16, begin_offset=64, end_offset=67, is_absolute=False)]
+   DIE DW_TAG_lexical_block at 0x264. DW_AT_ranges (DW_FORM_data4)
+    [0x40053a, 0x400548) (base 0x400520 + offsets 0x1a, 0x28)
+    [0x400575, 0x400596) (base 0x400520 + offsets 0x55, 0x76)
+    [0x400569, 0x40056d) (base 0x400520 + offsets 0x49, 0x4d)
+    [0x400560, 0x400563) (base 0x400520 + offsets 0x40, 0x43)
