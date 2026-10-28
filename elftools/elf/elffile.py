@@ -296,7 +296,9 @@ class ELFFile:
             this file.
 
             If relocate_dwarf_sections is True, relocations for DWARF sections
-            are looked up and applied.
+            are looked up and applied in relocatable (ET_REL) files. Linked
+            executables and shared objects already contain relocated data;
+            any retained relocation entries are not applied again.
 
             If follow_links is True, we will try to load the external and/or supplementary
             object file (if any), and use it to resolve references and imports.
@@ -904,7 +906,7 @@ class ELFFile:
         relocate_dwarf_sections: bool,
     ) -> DebugSectionDescriptor:
         """ Read the contents of a DWARF section from the stream and return a
-            DebugSectionDescriptor. Apply relocations if asked to.
+            DebugSectionDescriptor. Relocate ET_REL data if requested.
         """
         phantom_bytes = self.has_phantom_bytes()
         # The section data is read into a new stream, for processing
@@ -912,7 +914,10 @@ class ELFFile:
         section_data = section.data()
         section_stream.write(section_data[::2] if phantom_bytes else section_data)
 
-        if relocate_dwarf_sections:
+        # Linkers can retain relocation entries in ET_EXEC/ET_DYN files
+        # (e.g. with --emit-relocs), but have already applied them. Reapplying
+        # REL entries would treat the relocated value as the original addend.
+        if relocate_dwarf_sections and self['e_type'] == 'ET_REL':
             reloc_handler = RelocationHandler(self)
             reloc_section = reloc_handler.find_relocations_for_section(section)
             if reloc_section is not None:
