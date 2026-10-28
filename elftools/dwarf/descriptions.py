@@ -26,7 +26,7 @@ from .constants import (
     DW_VIS,
 )
 from .die import DIE
-from .dwarf_expr import DWARFExprParser
+from .dwarf_expr import DW_OP_name2opcode, DWARFExprParser
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping
@@ -248,6 +248,14 @@ def _describe_attr_strp(attr: AttributeValue, die: DIE, section_offset: int) -> 
 def _describe_attr_line_strp(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return f'(indirect line string, offset: {_format_hex(attr.raw_value)}): {bytes2str(attr.value)}'
 
+def _describe_attr_strx(attr: AttributeValue, die: DIE, section_offset: int) -> str:
+    return f'(indexed string: {_format_hex(attr.raw_value)}): {bytes2str(attr.value)}'
+
+def _describe_attr_index(attr: AttributeValue, die: DIE, section_offset: int) -> str:
+    # addrx, loclistx and rnglistx: the index and the address or offset it
+    # resolves to
+    return f'(index: {_format_hex(attr.raw_value)}): {_format_hex(attr.value)}'
+
 def _describe_attr_string(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     return bytes2str(attr.value)
 
@@ -264,6 +272,10 @@ def _describe_attr_present(attr: AttributeValue, die: DIE, section_offset: int) 
     return '1'
 
 def _describe_attr_block(attr: AttributeValue, die: DIE, section_offset: int) -> str:
+    # readelf leaves out the bytes of a block that starts with DW_OP_addrx,
+    # only the decoded expression follows
+    if attr.value and attr.value[0] == DW_OP_name2opcode['DW_OP_addrx']:
+        return ''
     s = f'{len(attr.value)} byte block: '
     s += ' '.join(f'{item:x}' for item in attr.value) + ' '
     return s
@@ -290,6 +302,18 @@ _ATTR_DESCRIPTION_MAP = defaultdict(
     DW_FORM_string=_describe_attr_string,
     DW_FORM_strp=_describe_attr_strp,
     DW_FORM_line_strp=_describe_attr_line_strp,
+    DW_FORM_strx=_describe_attr_strx,
+    DW_FORM_strx1=_describe_attr_strx,
+    DW_FORM_strx2=_describe_attr_strx,
+    DW_FORM_strx3=_describe_attr_strx,
+    DW_FORM_strx4=_describe_attr_strx,
+    DW_FORM_addrx=_describe_attr_index,
+    DW_FORM_addrx1=_describe_attr_index,
+    DW_FORM_addrx2=_describe_attr_index,
+    DW_FORM_addrx3=_describe_attr_index,
+    DW_FORM_addrx4=_describe_attr_index,
+    DW_FORM_loclistx=_describe_attr_index,
+    DW_FORM_rnglistx=_describe_attr_index,
     DW_FORM_block1=_describe_attr_block,
     DW_FORM_block2=_describe_attr_block,
     DW_FORM_block4=_describe_attr_block,
@@ -488,8 +512,9 @@ _DWARF_EXPR_DUMPER_CACHE: dict[int, ExprDumper] = {}
 def _location_list_extra(attr: AttributeValue, die: DIE, section_offset: int) -> str:
     # According to section 2.6 of the DWARF spec v3, class loclistptr means
     # a location list, and class block means a location expression.
-    # DW_FORM.sec_offset is new in DWARFv4 as a section offset.
-    if attr.form in ('DW_FORM_data4', 'DW_FORM_data8', 'DW_FORM_sec_offset'):
+    # DW_FORM.sec_offset is new in DWARFv4 as a section offset, and
+    # DW_FORM_loclistx in DWARFv5 as an index into the offset table.
+    if attr.form in ('DW_FORM_data4', 'DW_FORM_data8', 'DW_FORM_sec_offset', 'DW_FORM_loclistx'):
         return '(location list)'
     else:
         return describe_DWARF_expr(attr.value, die.cu.structs, die.cu.cu_offset)
@@ -555,6 +580,7 @@ _EXTRA_INFO_DESCRIPTION_MAP = defaultdict(
         _DESCR_DW_ORD, '(undefined)'),
     DW_AT_frame_base=_location_list_extra,
     DW_AT_location=_location_list_extra,
+    DW_AT_loclists_base=_location_list_extra,
     DW_AT_string_length=_location_list_extra,
     DW_AT_return_addr=_location_list_extra,
     DW_AT_data_member_location=_data_member_location_extra,
@@ -739,5 +765,7 @@ class ExprDumper:
             return f"{opcode_name}: {int(args[0])} ({describe_reg_name(args[0], _MACHINE_ARCH)}) <0x{args[1] + cu_offset:x}>"
         elif opcode_name == 'DW_OP_bit_piece':
             return f'{opcode_name}: size: {args[0]} offset: {args[1]}'
+        elif opcode_name in ('DW_OP_addrx', 'DW_OP_GNU_addr_index', 'DW_OP_GNU_const_index'):
+            return f'{opcode_name} <{_format_hex(args[0])}>'
         else:
             return f'<unknown {opcode_name}>'
