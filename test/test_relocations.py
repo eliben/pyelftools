@@ -23,6 +23,41 @@ class TestRelocation(unittest.TestCase):
         symtab.get_symbol.return_value = {'st_value': 0x100}
         return RelocationHandler(elf), symtab
 
+    def test_find_relocations_duplicate_names(self):
+        # Issue #564: verify relocation lookup for duplicate section names.
+        # This does not test loading all of them through get_dwarf_info(),
+        # which still selects only one DWARF section per name.
+        path = os.path.join('test', 'testfiles_for_unittests', 'gmtime_r.o.elf')
+        with open(path, 'rb') as f:
+            elf = ELFFile(f)
+            handler = RelocationHandler(elf)
+            for name in ('.debug_info', '.debug_line'):
+                sections = [(i, s) for i, s in enumerate(elf.iter_sections()) if s.name == name]
+                self.assertGreater(len(sections), 1)
+                relocated = 0
+                for index, section in sections:
+                    with self.subTest(name=name, section=index):
+                        relocation = handler.find_relocations_for_section(section)
+                        if relocation is not None:
+                            # The returned relocation must target this particular
+                            # section, not another section with the same name.
+                            self.assertEqual(relocation['sh_info'], index)
+                            relocated += 1
+                # Every .debug_info has relocations, but only one .debug_line
+                # does; lookup must return None for the remaining line sections.
+                self.assertEqual(relocated, len(sections) if name == '.debug_info' else 1)
+
+    def test_find_relocations_rela(self):
+        path = os.path.join('test', 'testfiles_for_unittests', 'sample_exe64.elf')
+        with open(path, 'rb') as f:
+            elf = ELFFile(f)
+            handler = RelocationHandler(elf)
+            self.assertEqual(
+                handler.find_relocations_for_section(elf.get_section_by_name('.plt')),
+                elf.get_section_by_name('.rela.plt'))
+            # .rela.dyn has sh_info == 0, which does not target the null section.
+            self.assertIsNone(handler.find_relocations_for_section(elf.get_section(0)))
+
     def test_none_relocations(self):
         # Exercise every supported architecture, including both AArch64 codes
         # and both REL and RELA. NONE must ignore its symbol, offset and addend.

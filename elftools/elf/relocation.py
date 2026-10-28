@@ -289,15 +289,12 @@ class RelocationHandler:
             file. Return a RelocationSection object, or None if none was
             found.
         """
-        reloc_section_names = (
-                '.rel' + section.name,
-                '.rela' + section.name)
-        # Find the relocation section aimed at this one. Currently assume
-        # that either .rel or .rela section exists for this section, but
-        # not both.
+        # sh_info identifies the target section; names need not be unique.
+        # A zero index means no target section (e.g. for dynamic relocations).
         for relsection in self.elffile.iter_sections():
-            if (    isinstance(relsection, RelocationSection) and
-                    relsection.name in reloc_section_names):
+            if (isinstance(relsection, RelocationSection) and
+                    relsection['sh_info'] != 0 and
+                    self.elffile.get_section(relsection['sh_info']) == section):
                 return relsection
         return None
 
