@@ -141,6 +141,11 @@ class Section:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Section) and self.header == other.header
 
+    def __repr__(self) -> str:
+        return (f"<{type(self).__name__} {self.name!r} "
+                f"addr={self['sh_addr']:#x} size={self['sh_size']:#x} "
+                f"type={self['sh_type']!r}>")
+
 
 class NullSection(Section):
     """ ELF NULL section
@@ -258,6 +263,11 @@ class Symbol:
         """ Implement dict-like access to entries
         """
         return self.entry[name]
+
+    def __repr__(self) -> str:
+        return (f"<{type(self).__name__} {self.name!r} "
+                f"value={self['st_value']:#x} size={self['st_size']:#x} "
+                f"type={self['st_info']['type']!r}>")
 
 
 class SUNWSyminfoTableSection(Section):

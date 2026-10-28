@@ -655,6 +655,11 @@ class ELFFile:
         """
         return self.header[name]
 
+    def __repr__(self) -> str:
+        endian = 'little' if self.little_endian else 'big'
+        return (f"<{type(self).__name__} ELF{self.elfclass} {endian}-endian "
+                f"type={self['e_type']!r} machine={self['e_machine']!r}>")
+
     def _identify_file(self) -> None:
         """ Verify the ELF file and identify its class and endianness.
         """

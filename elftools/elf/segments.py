@@ -45,6 +45,11 @@ class Segment:
         """
         return self.header[name]
 
+    def __repr__(self) -> str:
+        return (f"<{type(self).__name__} type={self['p_type']!r} "
+                f"vaddr={self['p_vaddr']:#x} filesz={self['p_filesz']:#x} "
+                f"memsz={self['p_memsz']:#x}>")
+
     def section_in_segment(self, section: Section) -> bool:
         """ Is the given section contained in this segment?
 
