@@ -135,19 +135,19 @@ class LocationLists:
         self.structs = structs
         self.dwarfinfo = dwarfinfo
         self.version = version
-        self._max_addr: int = 2 ** (self.structs.address_size * 8) - 1
 
     def get_location_list_at_offset(self, offset: int, die: DIE | None = None) -> list[_Location]:
         """ Get a location list at the given offset in the section.
-        Passing the die is only neccessary in DWARF5+, for decoding
-        location entry encodings that contain references to other sections.
+        Passing the die selects the address size of its compilation unit.
+        It is required in DWARF5+ for decoding location entry encodings
+        that contain references to other sections.
         """
         self.stream.seek(offset, os.SEEK_SET)
         if self.version >= 5:
             if die is None:
                 raise DWARFError("For this binary, \"die\" needs to be provided")
             return self._parse_location_list_from_stream_v5(die.cu)
-        return self._parse_location_list_from_stream()
+        return self._parse_location_list_from_stream(die.cu if die is not None else None)
 
     def iter_location_lists(self) -> Iterator[list[_Location]]:
         """ Iterates through location lists and view pairs. Returns lists of
@@ -239,7 +239,7 @@ class LocationLists:
                 if cu_map[list_offset].header.version < 5:
                     stream.seek(offset, os.SEEK_SET)
                     locview_pairs = self._parse_locview_pairs(locviews)
-                    entries = self._parse_location_list_from_stream()
+                    entries = self._parse_location_list_from_stream(cu_map[list_offset])
                     yield locview_pairs + entries
 
     def iter_CUs(self) -> Iterator[CompileUnit]:
@@ -254,26 +254,31 @@ class LocationLists:
 
     #------ PRIVATE ------#
 
-    def _parse_location_list_from_stream(self) -> list[_Location]:
+    def _parse_location_list_from_stream(
+        self,
+        cu: CompileUnit | TypeUnit | None = None,
+    ) -> list[_Location]:
+        structs = cu.structs if cu is not None else self.structs
+        max_addr = 2 ** (structs.address_size * 8) - 1
         lst: list[_Location] = []
         while True:
             entry_offset = self.stream.tell()
             begin_offset: int = struct_parse(
-                self.structs.the_Dwarf_target_addr, self.stream)
+                structs.the_Dwarf_target_addr, self.stream)
             end_offset: int = struct_parse(
-                self.structs.the_Dwarf_target_addr, self.stream)
+                structs.the_Dwarf_target_addr, self.stream)
             if begin_offset == 0 and end_offset == 0:
                 # End of list - we're done.
                 break
-            elif begin_offset == self._max_addr:
+            elif begin_offset == max_addr:
                 # Base address selection entry
                 entry_length = self.stream.tell() - entry_offset
                 lst.append(BaseAddressEntry(entry_offset=entry_offset, entry_length=entry_length, base_address=end_offset))
             else:
                 # Location list entry
                 expr_len: int = struct_parse(
-                    self.structs.the_Dwarf_uint16, self.stream)
-                loc_expr: list[int] = [struct_parse(self.structs.the_Dwarf_uint8,
+                    structs.the_Dwarf_uint16, self.stream)
+                loc_expr: list[int] = [struct_parse(structs.the_Dwarf_uint8,
                                          self.stream)
                                 for i in range(expr_len)]
                 entry_length = self.stream.tell() - entry_offset
@@ -297,9 +302,10 @@ class LocationLists:
             DWARFv5 debug_loclists one, and the target loclist
             contains indirect encodings.
         """
+        structs = cu.structs if cu is not None else self.structs
         return [entry_translate[entry.entry_type](entry, cu)  # type: ignore[arg-type] # ty: ignore[invalid-argument-type]
             for entry
-            in struct_parse(self.structs.Dwarf_loclists_entries, self.stream)]
+            in struct_parse(structs.Dwarf_loclists_entries, self.stream)]
 
     # From V5 style entries to a LocationEntry/BaseAddressEntry
     def _translate_entry_v5(self, entry: Container, die: DIE) -> _Location:
