@@ -1801,7 +1801,8 @@ class ReadElf:
                 raw_v5_entry = None
                 if ver5:
                     if not raw_v5_rangelist:
-                        raw_v5_rangelist = range_lists_sec.get_range_list_at_offset_ex(range_list[0].entry_offset)
+                        raw_v5_rangelist = range_lists_sec.get_range_list_at_offset_ex(
+                            first.entry_offset, cu_map[first.entry_offset])
                     raw_v5_entry = next(re for re in raw_v5_rangelist if re.entry_offset == entry.entry_offset)
                 if raw_v5_entry and raw_v5_entry.entry_type == 'DW_RLE_base_addressx':
                     self._emitline(base_template_indexed % (
