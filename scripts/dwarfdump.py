@@ -492,7 +492,9 @@ class ReadElf:
             )
             self._emitline("ranges:")
             if cu.offset_count > 0:
-                rangelists = [ranges_sec.get_range_list_at_offset_ex(offset) for offset in cu.offsets]
+                offsets = [cu.offset_table_offset + offset for offset in cu.offsets]
+                rangelists = [ranges_sec.get_range_list_at_offset_ex(offset, cu_map[offset])
+                             for offset in offsets]
             else:
                 rangelists = list(ranges_sec.iter_CU_range_lists_ex(cu))
             # We have to parse it completely before dumping, because dwarfdump aligns columns,
