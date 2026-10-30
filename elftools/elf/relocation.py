@@ -554,6 +554,11 @@ class RelocationHandler:
         ENUM_RELOC_TYPE_i386['R_386_PC32']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False,
             calc_func=_reloc_calc_sym_plus_value_pcrel),
+        # The location of a thread-local variable in the debug sections of an
+        # object file: its offset in its TLS section, as objdump applies it.
+        ENUM_RELOC_TYPE_i386['R_386_TLS_LDO_32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False,
+            calc_func=_reloc_calc_sym_plus_value),
     }
 
     _RELOCATION_RECIPES_X64: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
@@ -566,6 +571,12 @@ class RelocationHandler:
             bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
         ENUM_RELOC_TYPE_x64['R_X86_64_32S']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        # The location of a thread-local variable in the debug sections of an
+        # object file: its offset in its TLS section, as objdump applies it.
+        ENUM_RELOC_TYPE_x64['R_X86_64_DTPOFF32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
+        ENUM_RELOC_TYPE_x64['R_X86_64_DTPOFF64']: _RELOCATION_RECIPE_TYPE(
+            bytesize=8, has_addend=True, calc_func=_reloc_calc_sym_plus_addend),
     }
 
     # https://www.kernel.org/doc/html/latest/bpf/llvm_reloc.html#different-relocation-types

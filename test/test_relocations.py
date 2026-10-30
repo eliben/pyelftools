@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 from elftools.common.exceptions import ELFRelocationError
 from elftools.construct import Container
+from elftools.dwarf.dwarf_expr import DWARFExprParser
 from elftools.elf.dynamic import DynamicSection, DynamicSegment
 from elftools.elf.elffile import ELFFile
 from elftools.elf.relocation import Relocation, RelocationHandler
@@ -138,6 +139,28 @@ class TestRelocation(unittest.TestCase):
                                              r_offset=0, r_addend=0), handler.elffile)
                 with self.assertRaisesRegex(ELFRelocationError, 'Unsupported relocation type'):
                     handler._do_apply_relocation(BytesIO(b'\0' * 4), reloc, symtab)
+
+    def test_tls_offsets_in_debug_info(self):
+        # The location of a thread-local variable in the debug info of an
+        # object file is its offset in its TLS section. The offsets are the
+        # ones objdump --dwarf=info shows.
+        test_dir = os.path.join('test', 'testfiles_for_unittests')
+        for filename, offsets in (
+            ('tls_relocs_x64_gcc.o', {'first': 4, 'second': 0, 'buffer': 0}),
+            ('tls_relocs_x64_clang.o', {'first': 0, 'second': 4, 'buffer': 0}),
+            ('tls_relocs_i386_gcc.o', {'first': 4, 'second': 0, 'buffer': 0}),
+        ):
+            with (self.subTest(filename=filename),
+                  open(os.path.join(test_dir, filename), 'rb') as f):
+                dwarfinfo = ELFFile(f).get_dwarf_info()
+                locations = {}
+                for cu in dwarfinfo.iter_CUs():
+                    parser = DWARFExprParser(cu.structs)
+                    for die in cu.iter_DIEs():
+                        if die.tag == 'DW_TAG_variable':
+                            expr = parser.parse_expr(die.attributes['DW_AT_location'].value)
+                            locations[die.attributes['DW_AT_name'].value.decode()] = expr[0].args[0]
+                self.assertEqual(locations, offsets)
 
     def test_dynamic_segment(self):
         """Verify that we can process relocations on the PT_DYNAMIC segment without section headers"""
