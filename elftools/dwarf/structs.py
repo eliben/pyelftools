@@ -454,6 +454,10 @@ class DWARFStructs:
                 self.format_field = format_field
 
             def _parse(self, stream: IO[bytes], context: Container) -> Any:
+                # An empty format consumes no input. Empty tables are still
+                # allowed, since they never call this method.
+                if not context[self.format_field]:
+                    raise ConstructError(f"Empty {self.format_field} for a nonempty table")
                 # Somewhat tricky technique here, explicitly writing back to the context
                 if self.format_field + "_parser" in context:
                     parser = context[self.format_field + "_parser"]

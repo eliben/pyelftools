@@ -7,6 +7,8 @@
 import unittest
 from io import BytesIO
 
+from elftools.common.exceptions import ELFParseError
+from elftools.common.utils import struct_parse
 from elftools.construct import ConstructError
 from elftools.dwarf.structs import DWARFStructs
 
@@ -71,6 +73,58 @@ class TestDWARFStructs(unittest.TestCase):
         self.assertEqual(c.file_entry[0].name, b'ar')
         self.assertEqual(c.file_entry[1].name, b'EPQ')
         self.assertEqual(c.file_entry[1].dir_index, 0x12 * 128 + 6)
+
+    def _lineprog_header_v5(self, structs, directories, file_names):
+        byteorder = 'little' if structs.little_endian else 'big'
+        body = (
+            b'\x01\x01\x01\xfb\x0e\x0d'  # Fixed fields through opcode_base
+            b'\x00\x01\x01\x01\x01\x00\x00\x00\x01\x00\x00\x01'
+            + directories + file_names)
+        header = (
+            (5).to_bytes(2, byteorder) + b'\x08\x00'
+            + len(body).to_bytes(structs.dwarf_format // 8, byteorder) + body)
+        if structs.dwarf_format == 32:
+            return len(header).to_bytes(4, byteorder) + header
+        return b'\xff' * 4 + len(header).to_bytes(8, byteorder) + header
+
+    def test_lineprog_header_v5_empty_entry_format(self):
+        # Issue #685: a nonzero count with no format consumes no input per
+        # entry. Count 1 catches the bug without exhausting memory on failure.
+        for little_endian in (True, False):
+            for dwarf_format in (32, 64):
+                structs = DWARFStructs(little_endian=little_endian,
+                                      dwarf_format=dwarf_format, address_size=8)
+                for directories, file_names, field in (
+                    (b'\x00\x01', b'\x00\x00', 'directory_entry_format'),
+                    (b'\x00\x00', b'\x00\x01', 'file_name_entry_format'),
+                ):
+                    with self.subTest(little_endian=little_endian,
+                                      dwarf_format=dwarf_format, field=field):
+                        header = self._lineprog_header_v5(structs, directories, file_names)
+                        with self.assertRaisesRegex(ELFParseError, field):
+                            struct_parse(structs.Dwarf_lineprog_header, BytesIO(header))
+
+    def test_lineprog_header_v5_entry_tables(self):
+        tables = (
+            (b'\x00\x00', []),  # Empty format, zero entries
+            (b'\x01\x01\x08\x00', []),  # DW_LNCT_path / DW_FORM_string, zero entries
+            (b'\x01\x01\x08\x02first\x00second\x00', [b'first', b'second']),
+        )
+        for little_endian in (True, False):
+            for dwarf_format in (32, 64):
+                structs = DWARFStructs(little_endian=little_endian,
+                                      dwarf_format=dwarf_format, address_size=8)
+                for directories, expected_dirs in tables:
+                    for file_names, expected_files in tables:
+                        with self.subTest(little_endian=little_endian,
+                                          dwarf_format=dwarf_format,
+                                          directories=directories, file_names=file_names):
+                            header = self._lineprog_header_v5(structs, directories, file_names)
+                            parsed = struct_parse(structs.Dwarf_lineprog_header, BytesIO(header))
+                            self.assertEqual([entry.DW_LNCT_path for entry in parsed.directories],
+                                             expected_dirs)
+                            self.assertEqual([entry.DW_LNCT_path for entry in parsed.file_names],
+                                             expected_files)
 
 
 if __name__ == '__main__':
