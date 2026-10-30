@@ -8,6 +8,7 @@
 #-------------------------------------------------------------------------------
 from __future__ import annotations
 
+import sys
 import zlib
 from collections import defaultdict
 from functools import cached_property
@@ -15,7 +16,7 @@ from typing import IO, TYPE_CHECKING, Any, Literal, cast, overload
 
 from elftools.construct.lib.container import Container
 
-from ..common.exceptions import ELFCompressionError
+from ..common.exceptions import ELFCompressionError, ELFParseError
 from ..common.utils import elf_assert, parse_cstring_from_stream, struct_parse
 from .constants import SH_FLAGS
 from .notes import iter_notes
@@ -46,9 +47,16 @@ class Section:
         if self.compressed:
             # Read the compression header now to know about the size/alignment
             # of the decompressed data.
+            sh_offset = header['sh_offset']
+            chdr_size = self.structs.Elf_Chdr.sizeof()
+            if sh_offset + chdr_size > self.elffile.stream_len:
+                raise ELFParseError(
+                    f"Reading compression header of section {name!r} at offset"
+                    f" {sh_offset} past EOF {self.elffile.stream_len}"
+                )
             header = struct_parse(self.structs.Elf_Chdr,
                                   self.stream,
-                                  stream_pos=self['sh_offset'])
+                                  stream_pos=sh_offset)
             self._compression_type: str | int = header['ch_type']
             self._decompressed_size: int = header['ch_size']
             self._decompressed_align: int = header['ch_addralign']
@@ -88,7 +96,24 @@ class Section:
         """
         # If this section is NOBITS, there is no data. provide a dummy answer
         if self.header['sh_type'] == 'SHT_NOBITS':
+            if self.data_size > sys.maxsize:
+                # A size that cannot be represented at all can only come from a
+                # corrupt section header; report it instead of letting the
+                # allocation fail with a raw OverflowError.
+                raise ELFParseError(
+                    f"Section {self.name!r} has NOBITS size {self.data_size} that is too large to represent"
+                )
             return b'\0'*self.data_size
+
+        # The (possibly compressed) data read from the file must lie within
+        # the file: a section header pointing outside the stream is corrupt.
+        sh_offset = self['sh_offset']
+        sh_size = self['sh_size']
+        if sh_offset + sh_size > self.elffile.stream_len:
+            raise ELFParseError(
+                f"Reading section {self.name!r} at offset {sh_offset} of size"
+                f" {sh_size} past EOF {self.elffile.stream_len}"
+            )
 
         # If this section is compressed, deflate it
         if self.compressed:
@@ -117,7 +142,7 @@ class Section:
                     ' long'
                 )
         else:
-            self.stream.seek(self['sh_offset'])
+            self.stream.seek(sh_offset)
             result = self.stream.read(self._decompressed_size)
 
         return result
