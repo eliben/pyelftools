@@ -49,11 +49,14 @@ def struct_parse(struct: Construct, stream: IO[bytes], stream_pos: int | None = 
         If stream_pos is provided, the stream is seeked to this position before
         the parsing is done. Otherwise, the current position of the stream is
         used.
-        Wraps the error thrown by construct with ELFParseError.
+        Wraps invalid seek positions and Construct errors with ELFParseError.
     """
-    try:
-        if stream_pos is not None:
+    if stream_pos is not None:
+        try:
             stream.seek(stream_pos)
+        except (OverflowError, ValueError) as e:
+            raise ELFParseError(f'Invalid seek offset {stream_pos}') from e
+    try:
         return struct.parse_stream(stream)
     except ConstructError as e:
         raise ELFParseError(str(e))
@@ -70,7 +73,10 @@ def parse_cstring_from_stream(stream: IO[bytes], stream_pos: int | None = None) 
         the binary file.
     """
     if stream_pos is not None:
-        stream.seek(stream_pos)
+        try:
+            stream.seek(stream_pos)
+        except (OverflowError, ValueError) as e:
+            raise ELFParseError(f'Invalid seek offset {stream_pos}') from e
     CHUNKSIZE = 64
     chunks = []
     while True:
@@ -80,6 +86,26 @@ def parse_cstring_from_stream(stream: IO[bytes], stream_pos: int | None = None) 
             return b''.join(chunks)
         if len(chunk) < CHUNKSIZE:
             return None
+
+
+def check_file_range(offset: int, size: int, file_size: int) -> None:
+    """ Reject a byte range outside the file before seeking or allocating.
+    """
+    if offset < 0 or size < 0 or offset > file_size or size > file_size - offset:
+        raise ELFParseError(
+            f'File range at offset {offset} with size {size} exceeds file size {file_size}')
+
+
+def stream_read(stream: IO[bytes], offset: int, size: int) -> bytes:
+    """ Read an entire file-backed range, checking its bounds before reading.
+    """
+    stream.seek(0, os.SEEK_END)
+    check_file_range(offset, size, stream.tell())
+    stream.seek(offset)
+    data = stream.read(size)
+    if len(data) != size:
+        raise ELFParseError(f'Expected {size} bytes at offset {offset}, found {len(data)}')
+    return data
 
 
 def elf_assert(cond: object, msg: str = '') -> None:

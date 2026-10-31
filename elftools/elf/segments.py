@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import IO, TYPE_CHECKING, Any, Literal, overload
 
-from ..common.utils import struct_parse
+from ..common.utils import stream_read, struct_parse
 from ..construct import CString
 from .constants import SH_FLAGS
 from .notes import iter_notes
@@ -31,8 +31,7 @@ class Segment:
     def data(self) -> bytes:
         """ The segment data from the file.
         """
-        self.stream.seek(self['p_offset'])
-        return self.stream.read(self['p_filesz'])
+        return stream_read(self.stream, self['p_offset'], self['p_filesz'])
 
     @overload
     def __getitem__(self, name: Literal["p_filesz", "p_memsz", "p_offset", "p_vaddr"]) -> int: ...

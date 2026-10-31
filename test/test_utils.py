@@ -7,12 +7,40 @@
 import unittest
 from io import BytesIO
 from random import randint
+from tempfile import TemporaryFile
+from unittest.mock import Mock
 
+from elftools.common.exceptions import ELFParseError
 from elftools.common.utils import (
     merge_dicts,
     parse_cstring_from_stream,
     preserve_stream_pos,
+    struct_parse,
 )
+from elftools.construct import ULInt8
+
+
+class TestSeekErrors(unittest.TestCase):
+    def test_oversized_offset(self):
+        for factory in (BytesIO, TemporaryFile):
+            for parser in (parse_cstring_from_stream,
+                           lambda stream, offset: struct_parse(ULInt8(''), stream, offset)):
+                with self.subTest(stream=factory.__name__, parser=parser), factory() as stream:
+                    with self.assertRaises(ELFParseError) as caught:
+                        parser(stream, 2**64 - 1)
+                    self.assertIsInstance(caught.exception.__cause__, (OverflowError, ValueError))
+
+    def test_negative_offset(self):
+        with self.assertRaises(ELFParseError):
+            parse_cstring_from_stream(BytesIO(), -1)
+        with self.assertRaises(ELFParseError):
+            struct_parse(ULInt8(''), BytesIO(), -1)
+
+    def test_parser_value_error_is_not_wrapped(self):
+        struct = Mock()
+        struct.parse_stream.side_effect = ValueError('parser error')
+        with self.assertRaisesRegex(ValueError, 'parser error'):
+            struct_parse(struct, BytesIO(b'x'), 0)
 
 
 class Test_parse_cstring_from_stream(unittest.TestCase):

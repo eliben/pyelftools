@@ -16,7 +16,13 @@ from typing import IO, TYPE_CHECKING, Any, Literal, cast, overload
 from elftools.construct.lib.container import Container
 
 from ..common.exceptions import ELFCompressionError
-from ..common.utils import elf_assert, parse_cstring_from_stream, struct_parse
+from ..common.utils import (
+    check_file_range,
+    elf_assert,
+    parse_cstring_from_stream,
+    stream_read,
+    struct_parse,
+)
 from .constants import SH_FLAGS
 from .notes import iter_notes
 
@@ -46,6 +52,9 @@ class Section:
         if self.compressed:
             # Read the compression header now to know about the size/alignment
             # of the decompressed data.
+            check_file_range(self['sh_offset'], self['sh_size'], self.elffile.stream_len)
+            if self['sh_size'] < self.structs.Elf_Chdr.sizeof():
+                raise ELFCompressionError('Compressed section is too small for its header')
             header = struct_parse(self.structs.Elf_Chdr,
                                   self.stream,
                                   stream_pos=self['sh_offset'])
@@ -90,6 +99,10 @@ class Section:
         if self.header['sh_type'] == 'SHT_NOBITS':
             return b'\0'*self.data_size
 
+        # Section zero can store extended numbering in sh_size, not file data.
+        if self.header['sh_type'] == 'SHT_NULL':
+            return b''
+
         # If this section is compressed, deflate it
         if self.compressed:
             c_type = self._compression_type
@@ -97,8 +110,8 @@ class Section:
                 # Read the data to decompress starting right after the
                 # compression header until the end of the section.
                 hdr_size: int = self.structs.Elf_Chdr.sizeof()
-                self.stream.seek(self['sh_offset'] + hdr_size)
-                compressed: bytes = self.stream.read(self['sh_size'] - hdr_size)
+                compressed = stream_read(
+                    self.stream, self['sh_offset'] + hdr_size, self['sh_size'] - hdr_size)
 
                 decomp = zlib.decompressobj()
                 result = decomp.decompress(compressed, self.data_size)
@@ -117,8 +130,7 @@ class Section:
                     ' long'
                 )
         else:
-            self.stream.seek(self['sh_offset'])
-            result = self.stream.read(self._decompressed_size)
+            result = stream_read(self.stream, self['sh_offset'], self._decompressed_size)
 
         return result
 
