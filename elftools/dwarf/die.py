@@ -283,7 +283,7 @@ class DIE:
                     raw_value = dw_form.parse_stream(stream)
                     value = self._translate_attr_value(form, raw_value)
                 self.attributes[name] = AttributeValue(
-                        name=name,
+        name=name,
                     form=form,
                     value=value,
                     raw_value=raw_value,
