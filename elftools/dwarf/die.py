@@ -283,7 +283,7 @@ class DIE:
                     raw_value = dw_form.parse_stream(stream)
                     value = self._translate_attr_value(form, raw_value)
                 self.attributes[name] = AttributeValue(
-                    name=name,
+    name=name,
                     form=form,
                     value=value,
                     raw_value=raw_value,
@@ -313,7 +313,7 @@ class DIE:
                 raise DWARFError(
                     f'Found DW_FORM_indirect with real form {real_form} '
                     'that has no parse construct')
-                assert dw_form is not None
+            assert dw_form is not None
             raw_value: int = struct_parse(dw_form, self.stream)
 
             if real_form != 'DW_FORM_indirect': # Happy path: one level of indirection
