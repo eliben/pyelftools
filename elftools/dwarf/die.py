@@ -279,11 +279,11 @@ class DIE:
                     except KeyError:
                         raise DWARFError(
                             f'Attribute form {form} has no parse construct')
-                        assert dw_form is not None
+                    assert dw_form is not None
                     raw_value = dw_form.parse_stream(stream)
                     value = self._translate_attr_value(form, raw_value)
                 self.attributes[name] = AttributeValue(
-    name=name,
+                        name=name,
                     form=form,
                     value=value,
                     raw_value=raw_value,
