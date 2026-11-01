@@ -1,4 +1,3 @@
-
 """
 Test that elftools does not fail to load corrupted ELF files
 """
