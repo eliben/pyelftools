@@ -1253,6 +1253,9 @@ class ReadElf:
                 continue
 
             lineprogram_list.append(lineprogram)
+            # File and directory numbers are 0 based in DWARFv5
+            ver5 = lineprogram['version'] >= 5
+            index_base = 0 if ver5 else 1
             cu_filename = bytes2str(lineprogram['file_entry'][0].name)
             if lineprogram['include_directory']:
                 # GNU readelf 2.38 only outputs directory in wide mode
@@ -1272,19 +1275,19 @@ class ReadElf:
                 if state is None:
                     # Special handling for commands that don't set a new state
                     if entry.command == DW_LNS_set_file:
-                        file_entry = lineprogram['file_entry'][entry.args[0] - 1]
-                        if file_entry.dir_index == 0:
+                        file_entry = lineprogram['file_entry'][entry.args[0] - index_base]
+                        if file_entry.dir_index == 0 and not ver5:
                             # current directory
                             self._emitline(f'\n./{bytes2str(file_entry.name)}:[++]')
                         else:
                             self._emitline('\n{}/{}:'.format(
-                                bytes2str(lineprogram['include_directory'][file_entry.dir_index - 1]),
+                                bytes2str(lineprogram['include_directory'][file_entry.dir_index - index_base]),
                                 bytes2str(file_entry.name)))
                     elif entry.command == DW_LNE_define_file:
                         self._emitline('{}:'.format(bytes2str(lineprogram['include_directory'][entry.args[0].dir_index])))
                 elif lineprogram['version'] < 4 or self.elffile['e_machine'] == 'EM_PPC64':
                     filename = bytes2str(
-                        lineprogram['file_entry'][state.file - 1].name
+                        lineprogram['file_entry'][state.file - index_base].name
                     )
                     line = state.line if not state.end_sequence else '-'
                     address = (
@@ -1300,7 +1303,7 @@ class ReadElf:
                     # In readelf, on non-VLIW machines there is no op_index postfix after address.
                     # It used to be unconditional.
                     filename = bytes2str(
-                        lineprogram['file_entry'][state.file - 1].name
+                        lineprogram['file_entry'][state.file - index_base].name
                     )
                     line = f"{state.line:11d}" if not state.end_sequence else '-'
                     address = (
@@ -1695,7 +1698,7 @@ class ReadElf:
         self._emitline(f'  Segment size:    {int(cu.segment_selector_size)}')
         self._emitline(f'  Offset entries:  {int(cu.offset_count)}\n')
         if cu.offsets:
-            self._emitline(f'  Offsets starting at 0x{cu.offset_table_offset:x}:')
+            self._emitline(f'   Offset Entries starting at 0x{cu.offset_table_offset:x}:')
             for i_offset in enumerate(cu.offsets):
                 self._emitline(f"    [{i_offset[0]:6d}] 0x{i_offset[1]:x}")
 
