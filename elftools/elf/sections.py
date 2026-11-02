@@ -15,7 +15,7 @@ from typing import IO, TYPE_CHECKING, Any, Literal, cast, overload
 
 from elftools.construct.lib.container import Container
 
-from ..common.exceptions import ELFCompressionError
+from ..common.exceptions import ELFCompressionError, ELFParseError
 from ..common.utils import (
     check_file_range,
     elf_assert,
@@ -97,7 +97,10 @@ class Section:
         """
         # If this section is NOBITS, there is no data. provide a dummy answer
         if self.header['sh_type'] == 'SHT_NOBITS':
-            return b'\0'*self.data_size
+            try:
+                return b'\0'*self.data_size
+            except OverflowError as e:
+                raise ELFParseError(f'NOBITS section size {self.data_size} is too large') from e
 
         # Section zero can store extended numbering in sh_size, not file data.
         if self.header['sh_type'] == 'SHT_NULL':

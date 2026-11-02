@@ -89,6 +89,14 @@ class TestDataBounds(unittest.TestCase):
         self.assertEqual(section.data(), b'')
         stream.read.assert_not_called()
 
+    def test_nobits_size_overflow(self):
+        # This size cannot be represented by Python's bytes length, so the
+        # multiplication fails without attempting a large allocation.
+        section = self.section(BytesIO(), 0, 2**64 - 1, kind='SHT_NOBITS')
+        with self.assertRaisesRegex(ELFParseError, 'NOBITS section size .* is too large') as caught:
+            section.data()
+        self.assertIsInstance(caught.exception.__cause__, OverflowError)
+
     def test_compressed_header_bounds(self):
         for elfclass in (32, 64):
             structs = self.structs(elfclass)
