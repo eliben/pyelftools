@@ -1,0 +1,57 @@
+Executable mixed-bitness DWARF fixtures
+======================================
+
+These are deliberately constructed Linux x86-64 executables, not unmodified
+production binaries. Each ELF64 ET_EXEC contains GCC-generated i386 and
+x86-64 functions and two compilation units with address sizes 4 and 8.
+Both compilation-unit orders are provided for DWARF 4 and DWARF 5.
+
+The entry point calls the x86-64 function with positive and negative inputs,
+checks the results, switches to the Linux user compatibility code selector
+0x23, and calls the i386 function with the same inputs. It checks those
+results, returns through selector 0x33 to 64-bit mode, and exits through
+the Linux x86-64 syscall interface. It checks the code selectors as well.
+The stack and executable code are below 4 GiB. Exit 0 means both machine
+execution modes and both compiler-generated functions passed their checks.
+Exit 1 or 2 means the 64-bit or 32-bit checks failed, respectively.
+
+No 32-bit libc, dynamic loader, kernel-mode code, or emulator is required.
+Running or regenerating the fixtures requires Linux x86-64 with support for
+user compatibility mode; unit tests only parse their bytes and are portable.
+The fixed user selectors are defined in the Linux source:
+https://github.com/torvalds/linux/blob/master/arch/x86/include/asm/segment.h
+
+Rebuild all four fixtures and the independent expectations with:
+
+    python test/testfiles_for_unittests/mixed_bitness/build.py
+
+The generator uses GCC -O2 -m32/-m64 -gdwarf-4/-gdwarf-5 to produce assembly.
+The i386 assembly is assembled with .code32 and GNU as --64. This preserves
+the compiler's 4-byte DWARF addresses and emits ELF64 RELA relocations with
+the proper addends. Do not replace this with objcopy -O elf64-x86-64 on an
+ELF32 object: conversion of ELF32 REL relocations can lose implicit addends
+in debug-section references, even when the resulting executable runs.
+
+-gno-as-loc-support keeps the compiler-generated .debug_line addresses at
+the CU's width rather than letting an ELF64 assembler infer 8-byte addresses.
+-gno-variable-location-views makes the GNU readelf expectation extraction
+independent of its formatting of location view pairs. -ffunction-sections
+causes each CU to have a range list, and optimization produces three
+location list references per CU. The mode switch source has no DWARF CU.
+No DWARF section bytes are patched or copied from another executable.
+
+build.py executes each fixture, requires clean GNU readelf location/range
+and info dumps, and writes expected.json from those dumps without importing
+pyelftools. There are eight list references per executable, 32 in total.
+Tests compare every complete absolute interval and location expression with
+those independent expectations, through direct lookup and list iteration.
+
+The checked-in fixtures were generated using GCC 13.3.0 and GNU binutils
+2.42 on Linux x86-64. Regeneration with another compiler/binutils version
+can change instruction offsets, debug metadata, and expected.json. With
+the same tools, file-prefix mapping removes the build-directory path.
+LLVM dwarfdump 23.0.0 --verify reported no errors for all four fixtures;
+DWARF 5 produced harmless duplicate file-name warnings from GCC's explicit
+line-table output. GNU readelf 2.42 produced no warnings or errors.
+
+This code and its fixture source are in the public domain.

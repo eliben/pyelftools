@@ -1,0 +1,658 @@
+{
+  "dwarf4-32-first.elf": [
+    {
+      "locations": [
+        {
+          "offset": 0,
+          "entries": [
+            [
+              4198592,
+              4198611,
+              "(DW_OP_fbreg: 0)"
+            ],
+            [
+              4198611,
+              4198618,
+              "(DW_OP_reg0 (rax))"
+            ],
+            [
+              4198618,
+              4198622,
+              "(DW_OP_fbreg: 0)"
+            ],
+            [
+              4198622,
+              4198626,
+              "(DW_OP_breg0 (rax): 0; DW_OP_neg; DW_OP_stack_value)"
+            ]
+          ]
+        },
+        {
+          "offset": 57,
+          "entries": [
+            [
+              4198560,
+              4198568,
+              "(DW_OP_fbreg: 0; DW_OP_deref; DW_OP_plus_uconst: 7; DW_OP_stack_value)"
+            ],
+            [
+              4198568,
+              4198577,
+              "(DW_OP_reg0 (rax))"
+            ]
+          ]
+        },
+        {
+          "offset": 92,
+          "entries": [
+            [
+              4198560,
+              4198568,
+              "(DW_OP_lit0; DW_OP_stack_value)"
+            ],
+            [
+              4198568,
+              4198572,
+              "(DW_OP_lit1; DW_OP_stack_value)"
+            ],
+            [
+              4198572,
+              4198576,
+              "(DW_OP_lit2; DW_OP_stack_value)"
+            ],
+            [
+              4198576,
+              4198577,
+              "(DW_OP_lit3; DW_OP_stack_value)"
+            ]
+          ]
+        }
+      ],
+      "ranges": [
+        {
+          "offset": 0,
+          "entries": [
+            [
+              4198560,
+              4198577
+            ],
+            [
+              4198592,
+              4198627
+            ]
+          ]
+        }
+      ],
+      "version": 4,
+      "address_size": 4
+    },
+    {
+      "locations": [
+        {
+          "offset": 148,
+          "entries": [
+            [
+              4198672,
+              4198698,
+              "(DW_OP_reg5 (rdi))"
+            ],
+            [
+              4198698,
+              4198703,
+              "(DW_OP_breg5 (rdi): 0; DW_OP_neg; DW_OP_stack_value)"
+            ]
+          ]
+        },
+        {
+          "offset": 205,
+          "entries": [
+            [
+              4198644,
+              4198648,
+              "(DW_OP_breg5 (rdi): 7; DW_OP_stack_value)"
+            ],
+            [
+              4198648,
+              4198657,
+              "(DW_OP_reg0 (rax))"
+            ]
+          ]
+        },
+        {
+          "offset": 261,
+          "entries": [
+            [
+              4198644,
+              4198648,
+              "(DW_OP_lit0; DW_OP_stack_value)"
+            ],
+            [
+              4198648,
+              4198652,
+              "(DW_OP_lit1; DW_OP_stack_value)"
+            ],
+            [
+              4198652,
+              4198656,
+              "(DW_OP_lit2; DW_OP_stack_value)"
+            ],
+            [
+              4198656,
+              4198657,
+              "(DW_OP_lit3; DW_OP_stack_value)"
+            ]
+          ]
+        }
+      ],
+      "ranges": [
+        {
+          "offset": 24,
+          "entries": [
+            [
+              4198640,
+              4198657
+            ],
+            [
+              4198672,
+              4198703
+            ]
+          ]
+        }
+      ],
+      "version": 4,
+      "address_size": 8
+    }
+  ],
+  "dwarf4-64-first.elf": [
+    {
+      "locations": [
+        {
+          "offset": 0,
+          "entries": [
+            [
+              4198592,
+              4198618,
+              "(DW_OP_reg5 (rdi))"
+            ],
+            [
+              4198618,
+              4198623,
+              "(DW_OP_breg5 (rdi): 0; DW_OP_neg; DW_OP_stack_value)"
+            ]
+          ]
+        },
+        {
+          "offset": 57,
+          "entries": [
+            [
+              4198564,
+              4198568,
+              "(DW_OP_breg5 (rdi): 7; DW_OP_stack_value)"
+            ],
+            [
+              4198568,
+              4198577,
+              "(DW_OP_reg0 (rax))"
+            ]
+          ]
+        },
+        {
+          "offset": 113,
+          "entries": [
+            [
+              4198564,
+              4198568,
+              "(DW_OP_lit0; DW_OP_stack_value)"
+            ],
+            [
+              4198568,
+              4198572,
+              "(DW_OP_lit1; DW_OP_stack_value)"
+            ],
+            [
+              4198572,
+              4198576,
+              "(DW_OP_lit2; DW_OP_stack_value)"
+            ],
+            [
+              4198576,
+              4198577,
+              "(DW_OP_lit3; DW_OP_stack_value)"
+            ]
+          ]
+        }
+      ],
+      "ranges": [
+        {
+          "offset": 0,
+          "entries": [
+            [
+              4198560,
+              4198577
+            ],
+            [
+              4198592,
+              4198623
+            ]
+          ]
+        }
+      ],
+      "version": 4,
+      "address_size": 8
+    },
+    {
+      "locations": [
+        {
+          "offset": 209,
+          "entries": [
+            [
+              4198656,
+              4198675,
+              "(DW_OP_fbreg: 0)"
+            ],
+            [
+              4198675,
+              4198682,
+              "(DW_OP_reg0 (rax))"
+            ],
+            [
+              4198682,
+              4198686,
+              "(DW_OP_fbreg: 0)"
+            ],
+            [
+              4198686,
+              4198690,
+              "(DW_OP_breg0 (rax): 0; DW_OP_neg; DW_OP_stack_value)"
+            ]
+          ]
+        },
+        {
+          "offset": 266,
+          "entries": [
+            [
+              4198624,
+              4198632,
+              "(DW_OP_fbreg: 0; DW_OP_deref; DW_OP_plus_uconst: 7; DW_OP_stack_value)"
+            ],
+            [
+              4198632,
+              4198641,
+              "(DW_OP_reg0 (rax))"
+            ]
+          ]
+        },
+        {
+          "offset": 301,
+          "entries": [
+            [
+              4198624,
+              4198632,
+              "(DW_OP_lit0; DW_OP_stack_value)"
+            ],
+            [
+              4198632,
+              4198636,
+              "(DW_OP_lit1; DW_OP_stack_value)"
+            ],
+            [
+              4198636,
+              4198640,
+              "(DW_OP_lit2; DW_OP_stack_value)"
+            ],
+            [
+              4198640,
+              4198641,
+              "(DW_OP_lit3; DW_OP_stack_value)"
+            ]
+          ]
+        }
+      ],
+      "ranges": [
+        {
+          "offset": 48,
+          "entries": [
+            [
+              4198624,
+              4198641
+            ],
+            [
+              4198656,
+              4198691
+            ]
+          ]
+        }
+      ],
+      "version": 4,
+      "address_size": 4
+    }
+  ],
+  "dwarf5-32-first.elf": [
+    {
+      "locations": [
+        {
+          "offset": 12,
+          "entries": [
+            [
+              4198592,
+              4198611,
+              "(DW_OP_fbreg: 0)"
+            ],
+            [
+              4198611,
+              4198618,
+              "(DW_OP_reg0 (rax))"
+            ],
+            [
+              4198618,
+              4198622,
+              "(DW_OP_fbreg: 0)"
+            ],
+            [
+              4198622,
+              4198626,
+              "(DW_OP_breg0 (rax): 0; DW_OP_neg; DW_OP_stack_value)"
+            ]
+          ]
+        },
+        {
+          "offset": 43,
+          "entries": [
+            [
+              4198560,
+              4198568,
+              "(DW_OP_fbreg: 0; DW_OP_deref; DW_OP_plus_uconst: 7; DW_OP_stack_value)"
+            ],
+            [
+              4198568,
+              4198577,
+              "(DW_OP_reg0 (rax))"
+            ]
+          ]
+        },
+        {
+          "offset": 64,
+          "entries": [
+            [
+              4198560,
+              4198568,
+              "(DW_OP_lit0; DW_OP_stack_value)"
+            ],
+            [
+              4198568,
+              4198572,
+              "(DW_OP_lit1; DW_OP_stack_value)"
+            ],
+            [
+              4198572,
+              4198576,
+              "(DW_OP_lit2; DW_OP_stack_value)"
+            ],
+            [
+              4198576,
+              4198577,
+              "(DW_OP_lit3; DW_OP_stack_value)"
+            ]
+          ]
+        }
+      ],
+      "ranges": [
+        {
+          "offset": 12,
+          "entries": [
+            [
+              4198560,
+              4198577
+            ],
+            [
+              4198592,
+              4198627
+            ]
+          ]
+        }
+      ],
+      "version": 5,
+      "address_size": 4
+    },
+    {
+      "locations": [
+        {
+          "offset": 106,
+          "entries": [
+            [
+              4198672,
+              4198698,
+              "(DW_OP_reg5 (rdi))"
+            ],
+            [
+              4198698,
+              4198703,
+              "(DW_OP_breg5 (rdi): 0; DW_OP_neg; DW_OP_stack_value)"
+            ]
+          ]
+        },
+        {
+          "offset": 129,
+          "entries": [
+            [
+              4198644,
+              4198648,
+              "(DW_OP_breg5 (rdi): 7; DW_OP_stack_value)"
+            ],
+            [
+              4198648,
+              4198657,
+              "(DW_OP_reg0 (rax))"
+            ]
+          ]
+        },
+        {
+          "offset": 151,
+          "entries": [
+            [
+              4198644,
+              4198648,
+              "(DW_OP_lit0; DW_OP_stack_value)"
+            ],
+            [
+              4198648,
+              4198652,
+              "(DW_OP_lit1; DW_OP_stack_value)"
+            ],
+            [
+              4198652,
+              4198656,
+              "(DW_OP_lit2; DW_OP_stack_value)"
+            ],
+            [
+              4198656,
+              4198657,
+              "(DW_OP_lit3; DW_OP_stack_value)"
+            ]
+          ]
+        }
+      ],
+      "ranges": [
+        {
+          "offset": 37,
+          "entries": [
+            [
+              4198640,
+              4198657
+            ],
+            [
+              4198672,
+              4198703
+            ]
+          ]
+        }
+      ],
+      "version": 5,
+      "address_size": 8
+    }
+  ],
+  "dwarf5-64-first.elf": [
+    {
+      "locations": [
+        {
+          "offset": 12,
+          "entries": [
+            [
+              4198592,
+              4198618,
+              "(DW_OP_reg5 (rdi))"
+            ],
+            [
+              4198618,
+              4198623,
+              "(DW_OP_breg5 (rdi): 0; DW_OP_neg; DW_OP_stack_value)"
+            ]
+          ]
+        },
+        {
+          "offset": 35,
+          "entries": [
+            [
+              4198564,
+              4198568,
+              "(DW_OP_breg5 (rdi): 7; DW_OP_stack_value)"
+            ],
+            [
+              4198568,
+              4198577,
+              "(DW_OP_reg0 (rax))"
+            ]
+          ]
+        },
+        {
+          "offset": 57,
+          "entries": [
+            [
+              4198564,
+              4198568,
+              "(DW_OP_lit0; DW_OP_stack_value)"
+            ],
+            [
+              4198568,
+              4198572,
+              "(DW_OP_lit1; DW_OP_stack_value)"
+            ],
+            [
+              4198572,
+              4198576,
+              "(DW_OP_lit2; DW_OP_stack_value)"
+            ],
+            [
+              4198576,
+              4198577,
+              "(DW_OP_lit3; DW_OP_stack_value)"
+            ]
+          ]
+        }
+      ],
+      "ranges": [
+        {
+          "offset": 12,
+          "entries": [
+            [
+              4198560,
+              4198577
+            ],
+            [
+              4198592,
+              4198623
+            ]
+          ]
+        }
+      ],
+      "version": 5,
+      "address_size": 8
+    },
+    {
+      "locations": [
+        {
+          "offset": 103,
+          "entries": [
+            [
+              4198656,
+              4198675,
+              "(DW_OP_fbreg: 0)"
+            ],
+            [
+              4198675,
+              4198682,
+              "(DW_OP_reg0 (rax))"
+            ],
+            [
+              4198682,
+              4198686,
+              "(DW_OP_fbreg: 0)"
+            ],
+            [
+              4198686,
+              4198690,
+              "(DW_OP_breg0 (rax): 0; DW_OP_neg; DW_OP_stack_value)"
+            ]
+          ]
+        },
+        {
+          "offset": 134,
+          "entries": [
+            [
+              4198624,
+              4198632,
+              "(DW_OP_fbreg: 0; DW_OP_deref; DW_OP_plus_uconst: 7; DW_OP_stack_value)"
+            ],
+            [
+              4198632,
+              4198641,
+              "(DW_OP_reg0 (rax))"
+            ]
+          ]
+        },
+        {
+          "offset": 155,
+          "entries": [
+            [
+              4198624,
+              4198632,
+              "(DW_OP_lit0; DW_OP_stack_value)"
+            ],
+            [
+              4198632,
+              4198636,
+              "(DW_OP_lit1; DW_OP_stack_value)"
+            ],
+            [
+              4198636,
+              4198640,
+              "(DW_OP_lit2; DW_OP_stack_value)"
+            ],
+            [
+              4198640,
+              4198641,
+              "(DW_OP_lit3; DW_OP_stack_value)"
+            ]
+          ]
+        }
+      ],
+      "ranges": [
+        {
+          "offset": 45,
+          "entries": [
+            [
+              4198624,
+              4198641
+            ],
+            [
+              4198656,
+              4198691
+            ]
+          ]
+        }
+      ],
+      "version": 5,
+      "address_size": 4
+    }
+  ]
+}
