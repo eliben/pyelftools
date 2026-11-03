@@ -14,6 +14,7 @@ from typing import IO, TYPE_CHECKING, NamedTuple, NoReturn
 from ..common.exceptions import DWARFError
 from ..common.utils import struct_parse
 from .dwarf_util import _iter_CUs_in_section
+from .structs import DWARFStructs
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -21,7 +22,6 @@ if TYPE_CHECKING:
     from ..construct.lib.container import Container
     from .compileunit import CompileUnit
     from .dwarfinfo import DWARFInfo
-    from .structs import DWARFStructs
 
 
 class RangeEntry(NamedTuple):
@@ -81,10 +81,14 @@ class RangeListsPair:
         section = self._rnglists if cu.header.version >= 5 else self._ranges
         return section.get_range_list_at_offset(offset, cu)
 
-    def get_range_list_at_offset_ex(self, offset: int) -> Container:
+    def get_range_list_at_offset_ex(
+        self,
+        offset: int,
+        cu: CompileUnit | None = None,
+    ) -> list[Container]:
         """Gets an untranslated v5 rangelist from the v5 section.
         """
-        return self._rnglists.get_range_list_at_offset_ex(offset)
+        return self._rnglists.get_range_list_at_offset_ex(offset, cu)
 
     def iter_range_lists(self) -> NoReturn:
         """Tricky proposition, since the structure of ranges and rnglists
@@ -100,7 +104,7 @@ class RangeListsPair:
         """
         return self._rnglists.iter_CUs()
 
-    def iter_CU_range_lists_ex(self, cu: Container) -> Iterator[CompileUnit]:
+    def iter_CU_range_lists_ex(self, cu: Container) -> Iterator[list[Container]]:
         """See RangeLists.iter_CU_range_lists_ex()
 
         CU structure is only present in DWARFv5 rnglists sections. A well written
@@ -138,7 +142,6 @@ class RangeLists:
     ) -> None:
         self.stream = stream
         self.structs = structs
-        self._max_addr = 2 ** (self.structs.address_size * 8) - 1
         self.version = version
         self._dwarfinfo = dwarfinfo
 
@@ -149,18 +152,26 @@ class RangeLists:
     ) -> list[RangeEntry | BaseAddressEntry]:
         """ Get a range list at the given offset in the section.
 
-            The cu argument is necessary if the ranges section is a
-            DWARFv5 debug_rnglists one, and the target rangelist
-            contains indirect encodings
+            Passing cu selects its address size and is required for DWARF5+.
+            For earlier versions, omitting it uses the default structs
+            supplied when constructing this object.
         """
         self.stream.seek(offset, os.SEEK_SET)
         return self._parse_range_list_from_stream(cu)
 
-    def get_range_list_at_offset_ex(self, offset: int) -> Container:
+    def get_range_list_at_offset_ex(
+        self,
+        offset: int,
+        cu: CompileUnit | None = None,
+    ) -> list[Container]:
         """Get a DWARF v5 range list, addresses and offsets unresolved,
-        at the given offset in the section
+        at the given offset in the section.
+
+        Passing cu selects its address size. Otherwise, the default structs
+        supplied when constructing this object are used.
         """
-        return struct_parse(self.structs.Dwarf_rnglists_entries, self.stream, offset)
+        structs = cu.structs if cu is not None else self.structs
+        return struct_parse(structs.Dwarf_rnglists_entries, self.stream, offset)
 
     def iter_range_lists(self) -> Iterator[list[RangeEntry | BaseAddressEntry]]:
         """ Yields all range lists found in the section according to readelf rules.
@@ -198,13 +209,18 @@ class RangeLists:
         structs = next(self._dwarfinfo.iter_CUs()).structs # Just pick one
         return _iter_CUs_in_section(self.stream, structs, structs.Dwarf_rnglists_CU_header)
 
-    def iter_CU_range_lists_ex(self, cu: Container) -> Iterator[CompileUnit]:
+    def iter_CU_range_lists_ex(self, cu: Container) -> Iterator[list[Container]]:
         """For DWARF5, returns untranslated rangelists in the CU, where CU comes from iter_CUs above
         """
         stream = self.stream
-        stream.seek(cu.offset_table_offset + (64 if cu.is64 else 32) * cu.offset_count)
+        structs = DWARFStructs(
+            little_endian=self.structs.little_endian,
+            dwarf_format=64 if cu.is64 else 32,
+            address_size=cu.address_size,
+            dwarf_version=cu.version)
+        stream.seek(cu.offset_table_offset + structs.dwarf_format // 8 * cu.offset_count)
         while stream.tell() < cu.offset_after_length + cu.unit_length:
-            yield struct_parse(self.structs.Dwarf_rnglists_entries, stream)
+            yield struct_parse(structs.Dwarf_rnglists_entries, stream)
 
     def translate_v5_entry(
         self,
@@ -222,23 +238,25 @@ class RangeLists:
         self,
         cu: CompileUnit | None,
     ) -> list[RangeEntry | BaseAddressEntry]:
+        structs = cu.structs if cu is not None else self.structs
         if self.version >= 5:
             assert cu is not None
             return [entry_translate[entry.entry_type](entry, cu)
                 for entry
-                in struct_parse(self.structs.Dwarf_rnglists_entries, self.stream)]
+                in struct_parse(structs.Dwarf_rnglists_entries, self.stream)]
         else:
+            max_addr = 2 ** (structs.address_size * 8) - 1
             lst: list[RangeEntry | BaseAddressEntry] = []
             while True:
                 entry_offset = self.stream.tell()
                 begin_offset = struct_parse(
-                    self.structs.the_Dwarf_target_addr, self.stream)
+                    structs.the_Dwarf_target_addr, self.stream)
                 end_offset = struct_parse(
-                    self.structs.the_Dwarf_target_addr, self.stream)
+                    structs.the_Dwarf_target_addr, self.stream)
                 if begin_offset == 0 and end_offset == 0:
                     # End of list - we're done.
                     break
-                elif begin_offset == self._max_addr:
+                elif begin_offset == max_addr:
                     # Base address selection entry
                     lst.append(BaseAddressEntry(entry_offset=entry_offset, base_address=end_offset))
                 else:

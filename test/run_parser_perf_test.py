@@ -39,9 +39,9 @@ def parse_dwarf(ef, args):
                     llp.parse_from_attribute(attr, ver, die)
                 elif args.ranges and attr.name == "DW_AT_ranges":
                     if ver >= 5:
-                        ranges.get_range_list_at_offset_ex(attr.value)
+                        ranges.get_range_list_at_offset_ex(attr.value, cu)
                     else:
-                        ranges.get_range_list_at_offset(attr.value)
+                        ranges.get_range_list_at_offset(attr.value, cu)
 
 def slurp(filename):
     with open(filename, "rb") as file:
