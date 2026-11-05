@@ -7,6 +7,7 @@
 import io
 import os
 import unittest
+from unittest.mock import patch
 
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
@@ -72,6 +73,15 @@ class TestIdentification(unittest.TestCase):
             ELFFile(stream)
 
         self.assertEqual(stream.tell(), 0)
+
+    def test_load_from_path_closes_stream_on_parse_error(self):
+        stream = io.BytesIO(b'not an ELF file')
+
+        with patch('elftools.elf.elffile.open', return_value=stream, create=True):
+            with self.assertRaises(ELFError):
+                ELFFile.load_from_path('invalid.elf')
+
+        self.assertTrue(stream.closed)
 
 
 if __name__ == '__main__':

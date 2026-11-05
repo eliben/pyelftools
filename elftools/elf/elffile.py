@@ -116,7 +116,11 @@ class ELFFile:
         """
         # The returned ELFFile owns this stream for its own lifetime.
         stream = open(path, 'rb')  # noqa: SIM115
-        return ELFFile(stream, ELFFile.make_relative_loader(os.fsdecode(path)))
+        try:
+            return ELFFile(stream, ELFFile.make_relative_loader(os.fsdecode(path)))
+        except BaseException:
+            stream.close()
+            raise
 
     @staticmethod
     def make_relative_loader(base_path: str) -> Callable[[str], IO[bytes]]:
