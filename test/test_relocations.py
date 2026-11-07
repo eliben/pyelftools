@@ -149,6 +149,7 @@ class TestRelocation(unittest.TestCase):
             ('tls_relocs_x64_gcc.o', {'first': 4, 'second': 0, 'buffer': 0}),
             ('tls_relocs_x64_clang.o', {'first': 0, 'second': 4, 'buffer': 0}),
             ('tls_relocs_i386_gcc.o', {'first': 4, 'second': 0, 'buffer': 0}),
+            ('tls_relocs_arm_clang.o', {'first': 0, 'second': 4, 'buffer': 0}),
         ):
             with (self.subTest(filename=filename),
                   open(os.path.join(test_dir, filename), 'rb') as f):
