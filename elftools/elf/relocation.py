@@ -511,6 +511,11 @@ class RelocationHandler:
         ENUM_RELOC_TYPE_ARM['R_ARM_CALL']: _RELOCATION_RECIPE_TYPE(
             bytesize=4, has_addend=False,
             calc_func=_arm_reloc_calc_sym_plus_value_pcrel),
+        # The location of a thread-local variable in the debug sections of an
+        # object file: its offset in its TLS section, as objdump applies it.
+        ENUM_RELOC_TYPE_ARM['R_ARM_TLS_LDO32']: _RELOCATION_RECIPE_TYPE(
+            bytesize=4, has_addend=False,
+            calc_func=_reloc_calc_sym_plus_value),
     }
 
     _RELOCATION_RECIPES_AARCH64: Mapping[int, _RELOCATION_RECIPE_TYPE] = {
