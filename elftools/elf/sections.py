@@ -175,9 +175,20 @@ class StringTableSection(Section):
     def get_string(self, offset: int) -> str:
         """ Get the string stored at the given offset in this string table.
         """
-        table_offset = self['sh_offset']
-        s = parse_cstring_from_stream(self.stream, table_offset + offset)
+        if self.compressed:
+            data = self._decompressed_data
+            end = data.find(b'\x00', offset)
+            s = data[offset:end] if 0 <= offset <= end else b''
+        else:
+            table_offset = self['sh_offset']
+            s = parse_cstring_from_stream(self.stream, table_offset + offset)
         return s.decode('utf-8', errors='replace') if s else ''
+
+    @cached_property
+    def _decompressed_data(self) -> bytes:
+        # Inflate once on the first lookup, retaining the logical table for
+        # this section's lifetime rather than decompressing for every symbol.
+        return self.data()
 
 
 class SymbolTableIndexSection(Section):
