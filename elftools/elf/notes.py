@@ -61,7 +61,11 @@ def iter_notes(elffile: ELFFile, offset: int, size: int) -> Iterator[Container]:
         if len(name_data) != disk_namesz:
             break
         if note['n_namesz']:
-            note['n_name'] = bytes2str(CString('').parse(name_data))
+            # The name should be NUL-terminated within n_namesz, but malformed
+            # notes may lack the terminator; use the bytes as-is instead of
+            # failing with a low-level construct error, like readelf does.
+            raw_name = name_data[:note['n_namesz']]
+            note['n_name'] = bytes2str(raw_name.split(b'\x00', 1)[0])
         else:
             note['n_name'] = None
 
