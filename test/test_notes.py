@@ -1,11 +1,33 @@
 import os
+import struct
 import unittest
+from io import BytesIO
+from types import SimpleNamespace
 
 from elftools.elf.elffile import ELFFile
+from elftools.elf.notes import iter_notes
+from elftools.elf.structs import ELFStructs
 from elftools.elf.sections import NoteSection
 
 
 class TestNotes(unittest.TestCase):
+    def test_note_name_without_terminator(self):
+        # A malformed note whose name is not NUL-terminated within n_namesz
+        # must yield the name bytes as-is instead of raising a low-level
+        # construct ArrayError; readelf displays such notes without complaint.
+        structs = ELFStructs(elfclass=64, little_endian=True)
+        structs.create_basic_structs()
+        structs.create_advanced_structs()
+        name = b'GNUGNUXX'  # 8 bytes, no NUL terminator
+        desc = b'\x01\x02\x03\x04'
+        nhdr = struct.pack('<III', len(name), len(desc), 1)
+        data = nhdr + name + desc
+        elf = SimpleNamespace(stream=BytesIO(data), structs=structs)
+        notes = list(iter_notes(elf, 0, len(data)))
+        self.assertEqual(len(notes), 1)
+        self.assertEqual(notes[0]['n_name'], 'GNUGNUXX')
+        self.assertEqual(notes[0]['n_descdata'], desc)
+
     def test_note_after_gnu_property_type_note(self):
         with ELFFile.load_from_path(os.path.join('test', 'testfiles_for_unittests', 'note_after_gnu_property', 'main.elf')) as elf:
             note_sections = [section for section in elf.iter_sections() if isinstance(section, NoteSection)]
