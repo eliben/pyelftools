@@ -495,6 +495,7 @@ class ELFStructs:
             'EM_S390',
             'EM_SH',
             'EM_SPARC',
+            'EM_X86_64',
         } else self.Elf_word
 
         self.Elf_Nhdr = Struct('Elf_Nhdr',
