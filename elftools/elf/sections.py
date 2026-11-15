@@ -477,7 +477,9 @@ class AttributesSubsection(Section):
             subsubsec = self.subsubsection(self.stream,
                                            self.structs,
                                            self.stream.tell())
-            self.stream.seek(self.subsubsec_start + subsubsec.header.value)
+            elf_assert(subsubsec.header.value > 0,
+                       'Attributes subsubsection has zero size')
+            self.stream.seek(subsubsec.offset + subsubsec.header.value)
             yield subsubsec
 
     def __getitem__(self, name: str) -> Any:
@@ -538,7 +540,9 @@ class AttributesSection(Section):
             subsec = self.subsection(self.stream,
                                      self.structs,
                                      self.stream.tell())
-            self.stream.seek(self.subsec_start + subsec['length'])
+            elf_assert(subsec['length'] > 0,
+                       'Attributes subsection has zero length')
+            self.stream.seek(subsec.offset + subsec['length'])
             yield subsec
 
 
